@@ -13,7 +13,7 @@ are closed.
 | Release tag | `v0.3.2` |
 | Candidate implementation commit | `d9fa872dc289dcba6886f81551d21ba0d2016bb7` |
 | Branch where assembled | PR `#55`, `codex/pre-mainnet-liability-locks-20260505` |
-| Date assembled (UTC) | `2026-05-04T17:34:07Z` |
+| Date assembled (UTC) | `2026-05-04T17:55:43Z` |
 | Maintainer | `Marino Sabijan, MD <marinosabijan@gmail.com>` |
 
 Push status: direct `main` push was rejected by branch protection, so the
@@ -119,7 +119,7 @@ bypassing the policy.
 | Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | PASS | `artifacts/localnet-e2e-summary-2026-05-04T16-40-45-011Z.json` |
 | Executable adversarial localnet | included in localnet E2E | PASS: `57 blocked`, `0 unexpectedSuccess`, `0 inconclusive` | `artifacts/localnet-adversarial-matrix-2026-05-04T16-40-45-011Z.json` |
 | Operator drawer simulation | `SOLANA_KEYPAIR=<devnet governance keypair> npm run devnet:operator:drawer:sim` | PASS: `FAIL=0`; expected idempotent collisions and fixture skips only | console output |
-| Mainnet preflight, no sends | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 npm run protocol:bootstrap:genesis-live -- --plan` | BLOCKER: current operator env is missing `OMEGAX_LIVE_SETTLEMENT_MINT`; command failed before send path | console error; no transactions sent |
+| Mainnet preflight, no sends | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 OMEGAX_LIVE_SETTLEMENT_MINT=4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump npm run protocol:bootstrap:genesis-live -- --plan` | BLOCKER: current operator env is missing `OMEGAX_LIVE_ORACLE_KEYPAIR_PATH`; command failed before send path | console error; no transactions sent |
 | Mainnet unsafe config tests | `npm run verify:public` node suite | PASS | `tests/genesis_live_bootstrap_config.test.ts`, `tests/genesis_live_bootstrap_plan_cli.test.ts` |
 
 ## 6. Dependency Scan
@@ -162,11 +162,15 @@ No mainnet transaction was sent. The successful `--plan` path exits after
 config/keypair validation and JSON plan output; the current replay stopped even
 earlier at required-environment validation.
 
+The derived addresses below are from the previous successful no-send plan and
+must be regenerated after the current operator environment supplies the live
+oracle keypair path and final role-map inputs.
+
 | Field | Value |
 |-------|-------|
 | RPC | `https://api.mainnet-beta.solana.com` |
 | Program ID planned | `Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B` |
-| Settlement mint | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
+| Settlement mint supplied for current replay | `4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump` |
 | Governance authority used for plan | `AiNPYZQkbfcTkSh3r9vPKAMgMa3TbU47Jk3TaKTCB4Sg` |
 | Governance config address | `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU` |
 | Reserve domain | `WfQ7PjCTwuTCn3KM4mxUmyjQSw3RvcnyT3Gfdg2WUoq` |
@@ -182,14 +186,16 @@ earlier at required-environment validation.
 Current no-send replay:
 
 ```sh
-OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 npm run protocol:bootstrap:genesis-live -- --plan
+OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 \
+OMEGAX_LIVE_SETTLEMENT_MINT=4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump \
+npm run protocol:bootstrap:genesis-live -- --plan
 ```
 
 Result: BLOCKER. The command failed before any send path with
-`Missing required environment variable OMEGAX_LIVE_SETTLEMENT_MINT`. This is a
-safe failure and keeps mainnet untouched, but it means the final production
-role map and multisig posture are not yet freshly proven from the current
-operator environment.
+`Missing required environment variable OMEGAX_LIVE_ORACLE_KEYPAIR_PATH`. This
+is a safe failure and keeps mainnet untouched, but it means the final production
+oracle signer parity, role map, and multisig posture are not yet freshly proven
+from the current operator environment.
 
 Unsafe config proof:
 
