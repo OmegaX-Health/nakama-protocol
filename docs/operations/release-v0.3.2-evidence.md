@@ -12,20 +12,22 @@ are closed.
 |-------|-------|
 | Release tag | `v0.3.2` |
 | Candidate implementation commit | `d9fa872dc289dcba6886f81551d21ba0d2016bb7` |
-| Branch where assembled | PR `#55`, `codex/pre-mainnet-liability-locks-20260505` |
-| Date assembled (UTC) | `2026-05-04T18:10:14Z` |
+| Branch where assembled | merged `main` |
+| Date assembled (UTC) | `2026-05-04T18:21:27Z` |
 | Maintainer | `Marino Sabijan, MD <marinosabijan@gmail.com>` |
+| Final merged main SHA | `cce5975e580ae878a414120fbad65058f85cd766` |
 
 Push status: direct `main` push was rejected by branch protection, so the
 candidate moved to PR
 [`#55`](https://github.com/OmegaX-Health/omegax-protocol/pull/55). The PR
-branch is pushed and marked ready for review. Remote CI is green on PR head
-`f8d2727b4de8673d8e9ff2d87450f8c7597e805c`. The repo currently has a single
-write collaborator, `marinosabijan`, who is also the PR author, so GitHub cannot
-record a non-author approving review. Branch protection is therefore set to a
-solo-maintainer mode that keeps strict required status checks while removing
-the impossible separate-approval rule. The final merged `main` SHA must replace
-the PR-head SHA after merge.
+branch was pushed and merged through PR
+[`#55`](https://github.com/OmegaX-Health/omegax-protocol/pull/55) into
+`main` at merge commit `cce5975e580ae878a414120fbad65058f85cd766`. Remote CI was
+green on PR head `c90dc307237e06831c00344019a23cb7091918b7` before merge. The
+repo currently has a single write collaborator, `marinosabijan`, who was also
+the PR author, so GitHub could not record a non-author approving review. Branch
+protection is therefore set to a solo-maintainer mode that keeps strict
+required status checks while removing the impossible separate-approval rule.
 
 ## 2. Generated Artifact Hashes
 
@@ -49,20 +51,21 @@ the PR-head SHA after merge.
 
 | Workflow | Last green PR run URL | Run ID | Conclusion | Status |
 |----------|-------------------|--------|------------|--------|
-| Public CI (`ci.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/actions/runs/25332475611/job/74269330889` | `25332475611` | success | PASS |
-| CodeQL (`codeql.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/runs/74269517022` | `74269517022` | success | PASS |
-| Localnet E2E (`localnet-e2e.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/actions/runs/25332475638/job/74269331451` | `25332475638` | success | PASS |
+| Public CI (`ci.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/actions/runs/25335270808/job/74278805238` | `25335270808` | success | PASS |
+| CodeQL (`codeql.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/runs/74278957301` | `74278957301` | success | PASS |
+| Localnet E2E (`localnet-e2e.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/actions/runs/25335270813/job/74278805898` | `25335270813` | success | PASS |
 
 PR state at solo-maintainer branch-protection closure:
 
 | Field | Value |
 |-------|-------|
 | PR | [`#55`](https://github.com/OmegaX-Health/omegax-protocol/pull/55) |
-| Head SHA | `f8d2727b4de8673d8e9ff2d87450f8c7597e805c` |
+| Head SHA | `c90dc307237e06831c00344019a23cb7091918b7` |
 | Draft state | ready for review |
-| Merge state | `CLEAN` |
+| Merge state | merged into `main` |
 | Review decision | not required in solo-maintainer mode |
 | Current reviews | automated Codex comments only; GitHub rejected self-approval |
+| Merge commit | `cce5975e580ae878a414120fbad65058f85cd766` |
 
 Last remote `main` baseline before this local commit:
 
@@ -245,11 +248,11 @@ green on `d9fa872dc289dcba6886f81551d21ba0d2016bb7`.
 ## 12. Sign-off
 
 This evidence is sufficient for local pre-mainnet readiness review only. It is
-not sufficient for public mainnet funding until PR `#55` merges, the final
-merged SHA is recorded, Squads V4 2-of-3 governance and upgrade posture are
-proven, the current operator env successfully produces a no-send mainnet plan,
-the merged hardened binary is redeployed/rehearsed on devnet, and money/control
-surfaces receive internal or external money/control review.
+not sufficient for public mainnet funding until Squads V4 2-of-3 governance and
+upgrade posture are proven, the current operator env successfully produces a
+no-send mainnet plan, the merged hardened binary is redeployed/rehearsed on
+devnet, and money/control surfaces receive internal or external money/control
+review.
 
 Signed-off-by: Marino Sabijan, MD <marinosabijan@gmail.com>  
 Date: 2026-05-04
