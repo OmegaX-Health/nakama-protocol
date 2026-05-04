@@ -60,6 +60,21 @@ function humanizeSettlement(value?: string): string {
   }
 }
 
+function formatExternalLinkLabel(value?: string): string {
+  if (!value) return "Open";
+  try {
+    const url = new URL(value);
+    const path = url.pathname
+      .split("/")
+      .filter(Boolean)
+      .pop()
+      ?.replace(/-/g, " ");
+    return path ? `${path.replace(/\b\w/g, (c) => c.toUpperCase())}` : url.hostname;
+  } catch {
+    return "Open";
+  }
+}
+
 function cadenceLabel(cycleSeconds?: number): string {
   if (!cycleSeconds || cycleSeconds <= 0) return "—";
   const cycleDays = Math.round(cycleSeconds / 86_400);
@@ -205,9 +220,9 @@ export function PlanCoveragePanel({
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">Coverage details</p>
+            <p className="plans-card-eyebrow">Public terms</p>
             <h2 className="plans-card-title plans-card-title-display">
-              Public <em>terms</em>
+              Coverage <em>posture</em>
             </h2>
           </div>
         </div>
@@ -227,19 +242,16 @@ export function PlanCoveragePanel({
                   <span className="plans-review-label">Settlement</span>
                   <span className="plans-review-value">{humanizeSettlement(metadataDocument.defi.settlementStyle)}</span>
                 </div>
-                <div className="plans-review-row">
-                  <span className="plans-review-label">Technical terms</span>
-                  <span className="plans-review-value break-all">
-                    <a href={metadataDocument.defi.technicalTermsUri} target="_blank" rel="noreferrer">
-                      {metadataDocument.defi.technicalTermsUri}
+                <div className="plans-review-row plans-review-row-top">
+                  <span className="plans-review-label">Documents</span>
+                  <span className="plans-review-links" aria-label="Public coverage documents">
+                    <a className="plans-review-link" href={metadataDocument.defi.technicalTermsUri} target="_blank" rel="noreferrer">
+                      <span>{formatExternalLinkLabel(metadataDocument.defi.technicalTermsUri)}</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
                     </a>
-                  </span>
-                </div>
-                <div className="plans-review-row">
-                  <span className="plans-review-label">Risk disclosure</span>
-                  <span className="plans-review-value break-all">
-                    <a href={metadataDocument.defi.riskDisclosureUri} target="_blank" rel="noreferrer">
-                      {metadataDocument.defi.riskDisclosureUri}
+                    <a className="plans-review-link" href={metadataDocument.defi.riskDisclosureUri} target="_blank" rel="noreferrer">
+                      <span>{formatExternalLinkLabel(metadataDocument.defi.riskDisclosureUri)}</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
                     </a>
                   </span>
                 </div>
@@ -257,9 +269,10 @@ export function PlanCoveragePanel({
                 </div>
                 <div className="plans-review-row">
                   <span className="plans-review-label">Policy terms</span>
-                  <span className="plans-review-value break-all">
-                    <a href={metadataDocument.rwa.policyTermsUri} target="_blank" rel="noreferrer">
-                      {metadataDocument.rwa.policyTermsUri}
+                  <span className="plans-review-links">
+                    <a className="plans-review-link" href={metadataDocument.rwa.policyTermsUri} target="_blank" rel="noreferrer">
+                      <span>{formatExternalLinkLabel(metadataDocument.rwa.policyTermsUri)}</span>
+                      <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
                     </a>
                   </span>
                 </div>

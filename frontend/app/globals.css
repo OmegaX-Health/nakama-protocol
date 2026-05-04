@@ -3762,13 +3762,13 @@
 
   .ov-hero-title {
     margin: 0;
-    max-width: 10ch;
+    max-width: 14ch;
     font-family: var(--font-display), "Newsreader", Georgia, serif;
     font-style: italic;
-    font-size: clamp(3.25rem, 7vw, 6.4rem);
-    font-weight: 600;
-    line-height: 0.95;
-    letter-spacing: -0.05em;
+    font-size: clamp(3.05rem, 6.35vw, 5.85rem);
+    font-weight: 500;
+    line-height: 0.98;
+    letter-spacing: -0.035em;
     color: var(--foreground);
     text-wrap: balance;
   }
@@ -7435,6 +7435,86 @@
     color: var(--foreground);
     text-align: right;
     font-family: var(--font-mono), "Fira Code", monospace;
+  }
+
+  .plans-review-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 35%, transparent);
+  }
+
+  .plans-review-row:last-child {
+    border-bottom: none;
+  }
+
+  .plans-review-row-top {
+    align-items: flex-start;
+  }
+
+  .plans-review-label {
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+  }
+
+  .plans-review-value {
+    min-width: 0;
+    color: var(--foreground);
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: right;
+  }
+
+  .plans-review-links {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .plans-review-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.38rem;
+    min-height: 2rem;
+    max-width: 100%;
+    padding: 0.42rem 0.62rem;
+    border: 1px solid color-mix(in oklab, var(--cyan-ink) 20%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--signal-soft) 62%, transparent);
+    color: var(--cyan-ink);
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+  }
+
+  .plans-review-link:hover,
+  .plans-review-link:focus-visible {
+    border-color: color-mix(in oklab, var(--cyan-ink) 40%, var(--border));
+    background: color-mix(in oklab, var(--signal-soft) 90%, transparent);
+    text-decoration: none;
+    transform: translateY(-1px);
+    outline: none;
+  }
+
+  .plans-review-link .material-symbols-outlined {
+    font-size: 0.95rem;
+    line-height: 1;
   }
 
   .plans-wizard-support-grid {
