@@ -64,14 +64,9 @@ function formatExternalLinkLabel(value?: string): string {
   if (!value) return "Open";
   try {
     const url = new URL(value);
-    const path = url.pathname
-      .split("/")
-      .filter(Boolean)
-      .pop()
-      ?.replace(/-/g, " ");
-    return path ? `${path.replace(/\b\w/g, (c) => c.toUpperCase())}` : url.hostname;
+    return url.hostname;
   } catch {
-    return "Open";
+    return value;
   }
 }
 
@@ -79,6 +74,22 @@ function cadenceLabel(cycleSeconds?: number): string {
   if (!cycleSeconds || cycleSeconds <= 0) return "—";
   const cycleDays = Math.round(cycleSeconds / 86_400);
   return `Every ${cycleDays} day${cycleDays === 1 ? "" : "s"}`;
+}
+
+function CoverageDocumentLink({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="plans-review-document">
+      <div className="plans-review-document-copy">
+        <span className="plans-review-document-label">{label}</span>
+        <span className="plans-review-document-host">{formatExternalLinkLabel(href)}</span>
+        <span className="plans-review-document-url" title={href}>{href}</span>
+      </div>
+      <a className="secondary-button plans-review-document-action" href={href} target="_blank" rel="noreferrer" aria-label={`Open ${label}`}>
+        Open
+        <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+      </a>
+    </div>
+  );
 }
 
 export function PlanCoveragePanel({
@@ -244,16 +255,10 @@ export function PlanCoveragePanel({
                 </div>
                 <div className="plans-review-row plans-review-row-top">
                   <span className="plans-review-label">Documents</span>
-                  <span className="plans-review-links" aria-label="Public coverage documents">
-                    <a className="plans-review-link" href={metadataDocument.defi.technicalTermsUri} target="_blank" rel="noreferrer">
-                      <span>{formatExternalLinkLabel(metadataDocument.defi.technicalTermsUri)}</span>
-                      <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-                    </a>
-                    <a className="plans-review-link" href={metadataDocument.defi.riskDisclosureUri} target="_blank" rel="noreferrer">
-                      <span>{formatExternalLinkLabel(metadataDocument.defi.riskDisclosureUri)}</span>
-                      <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-                    </a>
-                  </span>
+                  <div className="plans-review-document-stack" aria-label="Public coverage documents">
+                    <CoverageDocumentLink href={metadataDocument.defi.technicalTermsUri} label="Technical terms" />
+                    <CoverageDocumentLink href={metadataDocument.defi.riskDisclosureUri} label="Risk disclosures" />
+                  </div>
                 </div>
               </>
             ) : null}
@@ -269,12 +274,9 @@ export function PlanCoveragePanel({
                 </div>
                 <div className="plans-review-row">
                   <span className="plans-review-label">Policy terms</span>
-                  <span className="plans-review-links">
-                    <a className="plans-review-link" href={metadataDocument.rwa.policyTermsUri} target="_blank" rel="noreferrer">
-                      <span>{formatExternalLinkLabel(metadataDocument.rwa.policyTermsUri)}</span>
-                      <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-                    </a>
-                  </span>
+                  <div className="plans-review-document-stack">
+                    <CoverageDocumentLink href={metadataDocument.rwa.policyTermsUri} label="Policy terms" />
+                  </div>
                 </div>
                 <div className="plans-review-row">
                   <span className="plans-review-label">License reference</span>
