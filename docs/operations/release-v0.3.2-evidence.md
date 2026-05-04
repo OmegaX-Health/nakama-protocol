@@ -11,15 +11,16 @@ are closed.
 | Field | Value |
 |-------|-------|
 | Release tag | `v0.3.2` |
-| Candidate implementation commit | pending signed PR-branch commit on top of `c3713f04ee2624d89daa219235fee64c38b81ec4` |
+| Candidate implementation commit | `d9fa872dc289dcba6886f81551d21ba0d2016bb7` |
 | Branch where assembled | local `codex/pre-mainnet-liability-locks-20260505` |
 | Date assembled (UTC) | `2026-05-04T16:38:16Z` |
 | Maintainer | `Marino Sabijan, MD <marinosabijan@gmail.com>` |
 
-Push status: direct `main` push was rejected by branch protection:
-`GH006: Changes must be made through a pull request; Required status check "verify" is expected.`
-Remote CI for the liability-hardening branch is therefore a blocker until the
-signed PR branch is pushed and approved.
+Push status: direct `main` push was rejected by branch protection, so the
+candidate moved to draft PR
+[`#55`](https://github.com/OmegaX-Health/omegax-protocol/pull/55). The PR
+branch is pushed and remote CI is green. The PR remains draft/unmerged pending
+review and production-signoff gates.
 
 ## 2. Generated Artifact Hashes
 
@@ -43,9 +44,9 @@ signed PR branch is pushed and approved.
 
 | Workflow | Candidate run URL | Run ID | Conclusion | Status |
 |----------|-------------------|--------|------------|--------|
-| Public CI (`ci.yml`) | blocked until PR branch | n/a | n/a | BLOCKER |
-| CodeQL (`codeql.yml`) | blocked until PR branch | n/a | n/a | BLOCKER |
-| Localnet E2E (`localnet-e2e.yml`) | no remote run found for candidate | n/a | n/a | BLOCKER |
+| Public CI (`ci.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/actions/runs/25331088101/job/74264690494` | `25331088101` | success | PASS |
+| CodeQL (`codeql.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/runs/74264861269` | `74264861269` | success | PASS |
+| Localnet E2E (`localnet-e2e.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/actions/runs/25331088045/job/74264691480` | `25331088045` | success | PASS |
 
 Last remote `main` baseline before this local commit:
 
@@ -112,6 +113,7 @@ actual settlement-asset reserve/funding/allocation capacity.
 | Strict pen-test | PASS, `npm run devnet:treasury:pen-test -- --strict` |
 | Strict result | `8 blocked`, `0 vulnerable`, `0 skipped`, `0 inconclusive` |
 | Evidence | `artifacts/devnet-treasury-pen-test-2026-05-04T15-53-44-974Z.json`, `artifacts/devnet-treasury-pen-test-2026-05-04T15-53-44-974Z.md`, tracked summary `docs/security/devnet-treasury-pen-test-2026-05-04.md` |
+| Hardened binary replay | BLOCKER: PR `#55` has not been redeployed to devnet and strict pen-test has not been rerun against the hardened binary |
 
 ## 9. Mainnet Preflight
 
@@ -174,15 +176,16 @@ branch:
 
 These fixes are locally proven by `npm run rust:test`, `npm run test:node`,
 `npm run verify:public`, and
-`OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet`. They still need remote
-PR CI before release promotion.
+`OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet`. Remote PR CI is also
+green on `d9fa872dc289dcba6886f81551d21ba0d2016bb7`.
 
 ## 12. Sign-off
 
 This evidence is sufficient for local pre-mainnet readiness review only. It is
-not sufficient for public mainnet funding until the candidate commit has a green
-PR/remote CI record, branch review policy is fixed or explicitly accepted, and
-money/control surfaces receive independent review.
+not sufficient for public mainnet funding until the PR is reviewed and merged,
+the branch-review policy is fixed or explicitly accepted, multisig governance
+and upgrade posture are proven, the hardened binary is redeployed/rehearsed on
+devnet, and money/control surfaces receive independent review.
 
 Signed-off-by: Marino Sabijan, MD <marinosabijan@gmail.com>  
 Date: 2026-05-04
