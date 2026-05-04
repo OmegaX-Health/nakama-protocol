@@ -15852,6 +15852,21 @@
       "code": 6106,
       "name": "CommitmentPaymentRailInactive",
       "msg": "Commitment payment rail is inactive"
+    },
+    {
+      "code": 6107,
+      "name": "PartialObligationTransitionUnsupported",
+      "msg": "Partial obligation lifecycle transitions are not supported"
+    },
+    {
+      "code": 6108,
+      "name": "InvalidObligationDeliveryMode",
+      "msg": "Invalid obligation delivery mode"
+    },
+    {
+      "code": 6109,
+      "name": "ClaimAdjudicationLocked",
+      "msg": "Claim adjudication is locked after payout or terminal state"
     }
   ],
   "types": [

@@ -10,6 +10,9 @@ const frontendProtocolSource = readFileSync(
   new URL("../../frontend/lib/protocol.ts", import.meta.url),
   "utf8",
 );
+const idl = JSON.parse(
+  readFileSync(new URL("../../idl/omegax_protocol.json", import.meta.url), "utf8"),
+) as { errors?: Array<{ name: string }> };
 
 test("[CSO-2026-05-04] claim recipients lock after approval or payout", () => {
   const body = extractRustFunctionBody("authorize_claim_recipient");
@@ -67,4 +70,51 @@ test("[CSO-2026-05-04] broad pool authority helper is removed from mutation path
   assert.match(extractRustFunctionBody("set_pool_oracle_permissions"), /require_curator_control\(/);
   assert.match(extractRustFunctionBody("set_pool_oracle_policy"), /require_curator_control\(/);
   assert.match(extractRustFunctionBody("update_allocation_caps"), /require_allocator\(/);
+});
+
+test("[CSO-2026-05-05] obligation lifecycle transitions reject partial amounts before mutation", () => {
+  const body = extractRustFunctionBody("settle_obligation");
+  const guardIndex = body.indexOf("require_full_obligation_transition_amount");
+  assert.notEqual(guardIndex, -1);
+  for (const mutation of [
+    "release_reserved_to_delivery",
+    "settle_delivery",
+    "cancel_outstanding",
+  ]) {
+    const mutationIndex = body.indexOf(mutation);
+    assert.notEqual(mutationIndex, -1);
+    assert.ok(guardIndex < mutationIndex, `${mutation} must be after the full-transition guard`);
+  }
+  assert.match(programSource, /PartialObligationTransitionUnsupported/);
+});
+
+test("[CSO-2026-05-05] obligation delivery mode is validated before ledger booking", () => {
+  const body = extractRustFunctionBody("create_obligation");
+  const guardIndex = body.indexOf("require_supported_obligation_delivery_mode");
+  const bookIndex = body.indexOf("book_owed");
+  assert.notEqual(guardIndex, -1);
+  assert.notEqual(bookIndex, -1);
+  assert.ok(guardIndex < bookIndex, "delivery mode must be checked before owed ledger mutation");
+  assert.match(programSource, /InvalidObligationDeliveryMode/);
+});
+
+test("[CSO-2026-05-05] claim adjudication locks after payout or terminal state before rewrites", () => {
+  const body = extractRustFunctionBody("adjudicate_claim_case");
+  const guardIndex = body.indexOf("require_claim_adjudication_mutable");
+  const rewriteIndex = body.indexOf("claim_case.adjudicator");
+  assert.notEqual(guardIndex, -1);
+  assert.notEqual(rewriteIndex, -1);
+  assert.ok(guardIndex < rewriteIndex, "adjudication lock must run before claim fields are rewritten");
+  assert.match(programSource, /ClaimAdjudicationLocked/);
+});
+
+test("[CSO-2026-05-05] IDL exposes pre-mainnet liability-state error codes", () => {
+  const errorNames = new Set((idl.errors ?? []).map((error) => error.name));
+  for (const expected of [
+    "PartialObligationTransitionUnsupported",
+    "InvalidObligationDeliveryMode",
+    "ClaimAdjudicationLocked",
+  ]) {
+    assert.ok(errorNames.has(expected), `IDL must expose ${expected}`);
+  }
 });

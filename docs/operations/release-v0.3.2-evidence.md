@@ -1,38 +1,41 @@
 # Release v0.3.2 Evidence
 
 This is the production-promotion evidence snapshot for the pre-mainnet security
-completion work. It is assembled for review, not a mainnet funding approval.
-Mainnet sends and real reserve funding remain blocked until the remote CI/PR and
-external-review gates below are closed.
+completion work, including the liability-state hardening branch. It is assembled
+for review, not a mainnet funding approval. Mainnet sends and real reserve
+funding remain blocked until the remote CI/PR and external-review gates below
+are closed.
 
 ## 1. Identity
 
 | Field | Value |
 |-------|-------|
 | Release tag | `v0.3.2` |
-| Candidate implementation commit | `a3756f6026c36c422c04d523a6f1290fe1756cff` |
-| Branch where assembled | local `main` |
-| Date assembled (UTC) | `2026-05-04T15:55:16Z` |
+| Candidate implementation commit | pending signed PR-branch commit on top of `c3713f04ee2624d89daa219235fee64c38b81ec4` |
+| Branch where assembled | local `codex/pre-mainnet-liability-locks-20260505` |
+| Date assembled (UTC) | `2026-05-04T16:38:16Z` |
 | Maintainer | `Marino Sabijan, MD <marinosabijan@gmail.com>` |
 
 Push status: direct `main` push was rejected by branch protection:
 `GH006: Changes must be made through a pull request; Required status check "verify" is expected.`
-Remote CI for `a3756f6026c36c422c04d523a6f1290fe1756cff` is therefore a blocker until this
-commit is pushed through an approved PR branch.
+Remote CI for the liability-hardening branch is therefore a blocker until the
+signed PR branch is pushed and approved.
 
 ## 2. Generated Artifact Hashes
 
 | Artifact | SHA-256 |
 |----------|---------|
-| `idl/omegax_protocol.json` | `1b725769b0edffdf74188132516b2a57babf937cd94a6c78bab4fa4cddc71c1b` |
-| `idl/omegax_protocol.source-hash` file | `8c72c891fbf84b928c831fc73a030f157f42d8863ea9cb2cc02e860849c556cd` |
-| `idl/omegax_protocol.source-hash` value | `cb89cecec5597e42d9dc2f958705aa10f83b8508237cd344177774154dbda762` |
+| `idl/omegax_protocol.json` | `c56e25b8e21240a053fac835ab148f2973aa7311a7fe2230ce4c70c3adee736b` |
+| `idl/omegax_protocol.source-hash` file | `081a79ef7df8b521e913efd5de3f1a136fe741adad423ce961e4a865e98b01f6` |
+| `idl/omegax_protocol.source-hash` value | `18e706864b7fb32783c27a380107c3ebff786a5cbac4b341867d990b1e10c61c` |
 | `shared/protocol_contract.json` | `14157588296844e66f7618fd96e46a5031c53e3c0207b6e6de193d8d96aa0082` |
 | `frontend/lib/generated/protocol-contract.ts` | `4a0153cdfc5a4513cf3cd0a680a1e797b910c08449b9d95da9165f97bc83a8fa` |
 | `frontend/lib/generated/protocol-contract.js` | `aba0d1fdf84bf9aa1f3c26405baef2174a05c12227d977ac99120aae78ce1e0c` |
 
 | Drift gate | Result |
 |------------|--------|
+| `npm run anchor:idl` | PASS, regenerated checked-in IDL and source hash |
+| `npm run protocol:contract` | PASS, regenerated checked-in protocol contract artifacts |
 | `npm run idl:freshness:check` | PASS, inside `npm run verify:public` |
 | `npm run protocol:contract:check` | PASS, inside `npm run verify:public` |
 
@@ -68,9 +71,11 @@ Last remote `main` baseline before this local commit:
 
 | Lane | Command | Result | Artifact |
 |------|---------|--------|----------|
+| Liability-state Rust regression | `npm run rust:test` | PASS: `80 passed`, `0 failed` | console output |
+| Liability-state Node/static regression | `npm run test:node` | PASS: `234 passed`, `0 failed` | console output |
 | Repo baseline health | `npm run verify:public` | PASS | SBOM under `artifacts/sbom/` |
-| Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | PASS | `artifacts/localnet-e2e-summary-2026-05-04T15-44-34-223Z.json` |
-| Executable adversarial localnet | included in localnet E2E | PASS: `57 blocked`, `0 unexpectedSuccess`, `0 inconclusive` | `artifacts/localnet-adversarial-matrix-2026-05-04T15-44-34-224Z.json` |
+| Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | PASS | `artifacts/localnet-e2e-summary-2026-05-04T16-40-45-011Z.json` |
+| Executable adversarial localnet | included in localnet E2E | PASS: `57 blocked`, `0 unexpectedSuccess`, `0 inconclusive` | `artifacts/localnet-adversarial-matrix-2026-05-04T16-40-45-011Z.json` |
 | Operator drawer simulation | `SOLANA_KEYPAIR=<devnet governance keypair> npm run devnet:operator:drawer:sim` | PASS: `FAIL=0`; expected idempotent collisions and fixture skips only | console output |
 | Mainnet preflight, no sends | `npm run protocol:bootstrap:genesis-live -- --plan` with distinct role wallets and mainnet USDC | PASS | console JSON; no transactions sent |
 | Mainnet unsafe config tests | `npm run verify:public` node suite | PASS | `tests/genesis_live_bootstrap_config.test.ts`, `tests/genesis_live_bootstrap_plan_cli.test.ts` |
@@ -153,7 +158,26 @@ solvency, or mixed-asset settlement. Other reserve assets may be shown as
 reserve context only; they do not settle USDC claims without an explicit
 priced/haircut/conversion or funding action.
 
-## 11. Sign-off
+## 11. Liability-State Hardening Addendum
+
+The prior internal review blockers are fixed locally on the liability-hardening
+branch:
+
+- `settle_obligation` now rejects partial transitions to claimable/payable,
+  settled, or canceled before reserve/settlement/cancellation mutation.
+- `adjudicate_claim_case` now rejects post-payout, settled, closed, or
+  obligation-terminal rewrites before claim fields are updated.
+- `create_obligation` now rejects unsupported delivery modes before owed ledger
+  booking.
+- The IDL exposes `PartialObligationTransitionUnsupported`,
+  `InvalidObligationDeliveryMode`, and `ClaimAdjudicationLocked`.
+
+These fixes are locally proven by `npm run rust:test`, `npm run test:node`,
+`npm run verify:public`, and
+`OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet`. They still need remote
+PR CI before release promotion.
+
+## 12. Sign-off
 
 This evidence is sufficient for local pre-mainnet readiness review only. It is
 not sufficient for public mainnet funding until the candidate commit has a green

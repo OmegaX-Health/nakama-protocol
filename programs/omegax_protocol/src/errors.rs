@@ -220,4 +220,10 @@ pub enum OmegaXProtocolError {
     CommitmentPaymentRailMismatch,
     #[msg("Commitment payment rail is inactive")]
     CommitmentPaymentRailInactive,
+    #[msg("Partial obligation lifecycle transitions are not supported")]
+    PartialObligationTransitionUnsupported,
+    #[msg("Invalid obligation delivery mode")]
+    InvalidObligationDeliveryMode,
+    #[msg("Claim adjudication is locked after payout or terminal state")]
+    ClaimAdjudicationLocked,
 }
