@@ -309,8 +309,9 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
       section: "oracles",
       poolAddress: selectedPool?.address,
       seriesAddress: selectedSeries?.address,
+      source: snapshot,
     }),
-    [selectedPool, selectedSeries],
+    [selectedPool, selectedSeries, snapshot],
   );
 
   /* ── Mesh integrity stats ── */

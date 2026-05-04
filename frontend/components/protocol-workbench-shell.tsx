@@ -17,6 +17,7 @@ import frontendPackage from "@/package.json";
 import { NETWORK_OPTIONS, normalizeExplorerCluster } from "@/lib/network-config";
 import { cn } from "@/lib/cn";
 import { computeWorkbenchMetrics, WORKBENCH_NAV } from "@/lib/workbench";
+import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
 
 const MOBILE_NAV_ID = "protocol-mobile-nav";
 const SOURCE_REPO_URL = process.env.NEXT_PUBLIC_SOURCE_REPO_URL ?? "https://github.com/OmegaX-Health/omegax-protocol";
@@ -31,12 +32,14 @@ function buildFooterMetadata(): { version: string; networkLabel: string } {
   return { version: `v${protocolVersion}`, networkLabel };
 }
 
-function personaBadgeForNav(sectionId: (typeof WORKBENCH_NAV)[number]["id"], persona: string) {
-  const metrics = computeWorkbenchMetrics();
+function personaBadgeForNav(
+  sectionId: (typeof WORKBENCH_NAV)[number]["id"],
+  persona: string,
+  metrics: ReturnType<typeof computeWorkbenchMetrics>,
+) {
 
   if (persona === "sponsor" && sectionId === "plans") return String(metrics.activeClaims);
   if (persona === "capital" && sectionId === "capital") return String(metrics.pendingRedemptions);
-  if (persona === "governance" && sectionId === "governance") return "4";
   if (persona === "governance" && sectionId === "oracles") return String(metrics.reservedObligations);
   return null;
 }
@@ -60,6 +63,8 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
   const { mounted, theme, toggleTheme } = useTheme();
   const { selectedNetwork, setSelectedNetwork, canSelectNetwork } = useNetworkContext();
   const { effectivePersona, previewPersona, setPreviewPersona, canPreviewPersona } = useWorkspacePersona();
+  const { snapshot } = useProtocolConsoleSnapshot();
+  const workbenchMetrics = computeWorkbenchMetrics(snapshot);
   const isOverviewRoute = pathname === "/overview" || pathname.startsWith("/overview/");
   const useFullscreenWorkbenchChrome = [
     "/overview",
@@ -189,7 +194,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
             <nav className="protocol-topbar-nav" aria-label="Primary navigation">
               {WORKBENCH_NAV.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                const badge = personaBadgeForNav(item.id, effectivePersona);
+                const badge = personaBadgeForNav(item.id, effectivePersona, workbenchMetrics);
 
                 return (
                   <Link
