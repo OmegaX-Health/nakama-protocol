@@ -211,6 +211,199 @@ fn sponsor_budget_reserve_and_settlement_walks_the_kernel() {
 }
 
 #[test]
+fn partial_claimable_transition_rejects_without_mutating_obligation() {
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let funding_line = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let obligation = sample_obligation(health_plan, policy_series, funding_line, asset_mint);
+
+    let status = obligation.status;
+    let outstanding_amount = obligation.outstanding_amount;
+    let reserved_amount = obligation.reserved_amount;
+    let result = require_full_obligation_transition_amount(
+        OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
+        outstanding_amount - 1,
+        &obligation,
+    );
+
+    let error = result.unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("Partial obligation lifecycle transitions are not supported"));
+    assert_eq!(obligation.status, status);
+    assert_eq!(obligation.outstanding_amount, outstanding_amount);
+    assert_eq!(obligation.reserved_amount, reserved_amount);
+}
+
+#[test]
+fn partial_settled_transition_rejects_from_reserved_and_delivery_states() {
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let funding_line = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let mut obligation = sample_obligation(health_plan, policy_series, funding_line, asset_mint);
+
+    for status in [
+        OBLIGATION_STATUS_RESERVED,
+        OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
+    ] {
+        obligation.status = status;
+        let result = require_full_obligation_transition_amount(
+            OBLIGATION_STATUS_SETTLED,
+            obligation.outstanding_amount - 1,
+            &obligation,
+        );
+        let error = result.unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("Partial obligation lifecycle transitions are not supported"));
+    }
+}
+
+#[test]
+fn partial_canceled_transition_rejects() {
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let funding_line = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let obligation = sample_obligation(health_plan, policy_series, funding_line, asset_mint);
+
+    let result = require_full_obligation_transition_amount(
+        OBLIGATION_STATUS_CANCELED,
+        obligation.outstanding_amount - 1,
+        &obligation,
+    );
+
+    let error = result.unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("Partial obligation lifecycle transitions are not supported"));
+}
+
+#[test]
+fn full_settlement_and_cancellation_amounts_remain_supported() {
+    let reserve_domain = Pubkey::new_unique();
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let funding_line_key = Pubkey::new_unique();
+
+    let mut settlement_line = sample_funding_line(
+        reserve_domain,
+        health_plan,
+        policy_series,
+        asset_mint,
+        FUNDING_LINE_TYPE_SPONSOR_BUDGET,
+    );
+    settlement_line.reserved_amount = 60;
+    let mut settlement_obligation =
+        sample_obligation(health_plan, policy_series, funding_line_key, asset_mint);
+    let mut domain_assets = 60;
+    let mut domain_sheet = ReserveBalanceSheet {
+        funded: 60,
+        reserved: 60,
+        owed: 60,
+        free: 0,
+        redeemable: 0,
+        ..ReserveBalanceSheet::default()
+    };
+    let mut plan_sheet = domain_sheet;
+    let mut line_sheet = domain_sheet;
+
+    require_full_obligation_transition_amount(
+        OBLIGATION_STATUS_SETTLED,
+        settlement_obligation.outstanding_amount,
+        &settlement_obligation,
+    )
+    .unwrap();
+    settle_delivery(
+        &mut domain_assets,
+        &mut domain_sheet,
+        &mut plan_sheet,
+        &mut line_sheet,
+        None,
+        None,
+        None,
+        None,
+        &mut settlement_line,
+        60,
+        &mut settlement_obligation,
+    )
+    .unwrap();
+
+    assert_eq!(domain_assets, 0);
+    assert_eq!(settlement_obligation.outstanding_amount, 0);
+    assert_eq!(settlement_obligation.settled_amount, 100);
+    assert_eq!(domain_sheet.settled, 60);
+
+    let mut cancellation_line = sample_funding_line(
+        reserve_domain,
+        health_plan,
+        policy_series,
+        asset_mint,
+        FUNDING_LINE_TYPE_SPONSOR_BUDGET,
+    );
+    cancellation_line.reserved_amount = 60;
+    let mut cancellation_obligation =
+        sample_obligation(health_plan, policy_series, funding_line_key, asset_mint);
+    let mut cancel_domain_sheet = ReserveBalanceSheet {
+        funded: 60,
+        reserved: 60,
+        owed: 60,
+        free: 0,
+        redeemable: 0,
+        ..ReserveBalanceSheet::default()
+    };
+    let mut cancel_plan_sheet = cancel_domain_sheet;
+    let mut cancel_line_sheet = cancel_domain_sheet;
+
+    require_full_obligation_transition_amount(
+        OBLIGATION_STATUS_CANCELED,
+        cancellation_obligation.outstanding_amount,
+        &cancellation_obligation,
+    )
+    .unwrap();
+    cancel_outstanding(
+        &mut cancel_domain_sheet,
+        &mut cancel_plan_sheet,
+        &mut cancel_line_sheet,
+        None,
+        None,
+        None,
+        None,
+        &mut cancellation_line,
+        60,
+        &mut cancellation_obligation,
+    )
+    .unwrap();
+
+    assert_eq!(cancellation_obligation.outstanding_amount, 0);
+    assert_eq!(cancellation_obligation.reserved_amount, 0);
+    assert_eq!(cancellation_line.released_amount, 60);
+    assert_eq!(cancel_domain_sheet.owed, 0);
+}
+
+#[test]
+fn invalid_obligation_delivery_mode_rejects() {
+    let mut sheet = ReserveBalanceSheet::default();
+    book_inflow_sheet(&mut sheet, 500).unwrap();
+    let funded_before = sheet.funded;
+    let free_before = sheet.free;
+
+    let result = require_supported_obligation_delivery_mode(99);
+
+    let error = result.unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("Invalid obligation delivery mode"));
+    assert_eq!(sheet.funded, funded_before);
+    assert_eq!(sheet.free, free_before);
+    assert!(require_supported_obligation_delivery_mode(OBLIGATION_DELIVERY_MODE_CLAIMABLE).is_ok());
+    assert!(require_supported_obligation_delivery_mode(OBLIGATION_DELIVERY_MODE_PAYABLE).is_ok());
+}
+
+#[test]
 fn reserve_capacity_rejects_unfunded_non_allocation_obligations() {
     let mut sheet = ReserveBalanceSheet::default();
     book_inflow_sheet(&mut sheet, 100).unwrap();
@@ -805,6 +998,89 @@ fn adjudication_rejects_linked_obligation_reserve_above_approved_amount() {
 
     let error = result.unwrap_err();
     assert!(error.to_string().contains("Amount exceeds approved claim"));
+}
+
+#[test]
+fn post_payout_claim_adjudication_rejects() {
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let funding_line = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let mut claim_case = sample_claim_case(health_plan, policy_series, funding_line, asset_mint);
+    claim_case.paid_amount = 1;
+
+    let result = require_claim_adjudication_mutable(&claim_case, None);
+
+    let error = result.unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("Claim adjudication is locked after payout or terminal state"));
+}
+
+#[test]
+fn settled_or_closed_claim_adjudication_rejects() {
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let funding_line = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let mut claim_case = sample_claim_case(health_plan, policy_series, funding_line, asset_mint);
+    claim_case.paid_amount = 0;
+
+    for intake_status in [CLAIM_INTAKE_SETTLED, CLAIM_INTAKE_CLOSED] {
+        claim_case.intake_status = intake_status;
+        let result = require_claim_adjudication_mutable(&claim_case, None);
+        let error = result.unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("Claim adjudication is locked after payout or terminal state"));
+    }
+}
+
+#[test]
+fn pre_payout_claim_adjudication_remains_mutable() {
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let funding_line = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let mut claim_case = sample_claim_case(health_plan, policy_series, funding_line, asset_mint);
+    claim_case.paid_amount = 0;
+
+    for intake_status in [
+        CLAIM_INTAKE_OPEN,
+        CLAIM_INTAKE_UNDER_REVIEW,
+        CLAIM_INTAKE_APPROVED,
+        CLAIM_INTAKE_DENIED,
+    ] {
+        claim_case.intake_status = intake_status;
+        require_claim_adjudication_mutable(&claim_case, None).unwrap();
+    }
+}
+
+#[test]
+fn terminal_or_settled_obligation_locks_adjudication() {
+    let health_plan = Pubkey::new_unique();
+    let policy_series = Pubkey::new_unique();
+    let funding_line = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let mut claim_case = sample_claim_case(health_plan, policy_series, funding_line, asset_mint);
+    let mut obligation = sample_obligation(health_plan, policy_series, funding_line, asset_mint);
+    claim_case.paid_amount = 0;
+    claim_case.intake_status = CLAIM_INTAKE_APPROVED;
+
+    obligation.status = OBLIGATION_STATUS_SETTLED;
+    let terminal_result = require_claim_adjudication_mutable(&claim_case, Some(&obligation));
+    let terminal_error = terminal_result.unwrap_err();
+    assert!(terminal_error
+        .to_string()
+        .contains("Claim adjudication is locked after payout or terminal state"));
+
+    obligation.status = OBLIGATION_STATUS_RESERVED;
+    obligation.settled_amount = 1;
+    let settled_result = require_claim_adjudication_mutable(&claim_case, Some(&obligation));
+    let settled_error = settled_result.unwrap_err();
+    assert!(settled_error
+        .to_string()
+        .contains("Claim adjudication is locked after payout or terminal state"));
 }
 
 fn membership_proof_input(membership_mode: u8, proof_mode: u8) -> MembershipProofValidationInput {
