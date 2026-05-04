@@ -7539,11 +7539,17 @@
   }
 
   .plans-review-document-action {
-    min-height: 2.35rem;
+    min-height: 2.5rem;
     gap: 0.35rem;
     padding: 0.56rem 0.78rem;
     font-size: 0.58rem;
     white-space: nowrap;
+  }
+
+  .plans-review-document-action:focus-visible {
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--surface) 86%, transparent),
+      0 0 0 4px color-mix(in oklab, var(--accent) 48%, transparent);
   }
 
   .plans-review-document-action .material-symbols-outlined {
@@ -8913,6 +8919,12 @@
     .plans-review-document {
       grid-template-columns: 1fr;
       gap: 0.65rem;
+    }
+
+    .plans-review-document-url {
+      overflow-x: visible;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     .plans-review-document-action {
