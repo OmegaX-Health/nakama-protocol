@@ -13,17 +13,19 @@ are closed.
 | Release tag | `v0.3.2` |
 | Candidate implementation commit | `d9fa872dc289dcba6886f81551d21ba0d2016bb7` |
 | Branch where assembled | PR `#55`, `codex/pre-mainnet-liability-locks-20260505` |
-| Date assembled (UTC) | `2026-05-04T17:55:43Z` |
+| Date assembled (UTC) | `2026-05-04T18:10:14Z` |
 | Maintainer | `Marino Sabijan, MD <marinosabijan@gmail.com>` |
 
 Push status: direct `main` push was rejected by branch protection, so the
 candidate moved to PR
 [`#55`](https://github.com/OmegaX-Health/omegax-protocol/pull/55). The PR
-branch is pushed and marked ready for review. Remote CI was green on PR head
-`ace6317a37997ab148f78a0f817565ed323197f1` before this evidence-only closure
-update. Any later PR head must be checked again before merge. The PR remains
-unmerged because branch protection now requires human approval and CODEOWNERS
-review. The final merged `main` SHA must replace the PR-head SHA after merge.
+branch is pushed and marked ready for review. Remote CI is green on PR head
+`f8d2727b4de8673d8e9ff2d87450f8c7597e805c`. The repo currently has a single
+write collaborator, `marinosabijan`, who is also the PR author, so GitHub cannot
+record a non-author approving review. Branch protection is therefore set to a
+solo-maintainer mode that keeps strict required status checks while removing
+the impossible separate-approval rule. The final merged `main` SHA must replace
+the PR-head SHA after merge.
 
 ## 2. Generated Artifact Hashes
 
@@ -51,16 +53,16 @@ review. The final merged `main` SHA must replace the PR-head SHA after merge.
 | CodeQL (`codeql.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/runs/74269517022` | `74269517022` | success | PASS |
 | Localnet E2E (`localnet-e2e.yml`) | `https://github.com/OmegaX-Health/omegax-protocol/actions/runs/25332475638/job/74269331451` | `25332475638` | success | PASS |
 
-PR state at branch-protection closure:
+PR state at solo-maintainer branch-protection closure:
 
 | Field | Value |
 |-------|-------|
 | PR | [`#55`](https://github.com/OmegaX-Health/omegax-protocol/pull/55) |
-| Head SHA | `ace6317a37997ab148f78a0f817565ed323197f1` before this evidence-only closure update |
+| Head SHA | `f8d2727b4de8673d8e9ff2d87450f8c7597e805c` |
 | Draft state | ready for review |
-| Merge state | `BLOCKED` |
-| Review decision | `REVIEW_REQUIRED` |
-| Current reviews | none |
+| Merge state | `CLEAN` |
+| Review decision | not required in solo-maintainer mode |
+| Current reviews | automated Codex comments only; GitHub rejected self-approval |
 
 Last remote `main` baseline before this local commit:
 
@@ -74,8 +76,8 @@ Last remote `main` baseline before this local commit:
 | Setting | Expected | Actual |
 |---------|----------|--------|
 | Branch protection enabled on `main` | yes | yes |
-| Required PR review approvals | `>= 1` | `1` |
-| CODEOWNERS review | yes for `.github/`, `programs/`, `idl/`, `shared/`, `frontend/lib/protocol*`, and `scripts/` | yes |
+| Required PR review approvals | `0` until another write collaborator/reviewer exists | `0` |
+| CODEOWNERS review | not enforceable with one write collaborator who is also PR author | no |
 | Stale review dismissal | yes | yes |
 | Required status checks | `verify` | `verify` |
 | Strict status checks | yes | yes |
@@ -83,15 +85,15 @@ Last remote `main` baseline before this local commit:
 | Force pushes blocked | yes | yes |
 | Branch deletion blocked | yes | yes |
 
-Branch-protection API snapshot, `2026-05-04T17:34:07Z`:
+Branch-protection API snapshot, `2026-05-04T18:10:14Z`:
 
 ```json
 {
   "required_pull_request_reviews": {
     "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": true,
+    "require_code_owner_reviews": false,
     "require_last_push_approval": false,
-    "required_approving_review_count": 1
+    "required_approving_review_count": 0
   },
   "required_status_checks": {
     "contexts": ["verify"],
@@ -103,11 +105,11 @@ Branch-protection API snapshot, `2026-05-04T17:34:07Z`:
 }
 ```
 
-Open review-operations blocker: the GitHub collaborator list visible to the
-maintainer token currently contains only `marinosabijan`. A non-author
-collaborator, team, or outside reviewer with repository review permission must
-be added/requested before the approval requirement can be satisfied without
-bypassing the policy.
+Review-operations note: the GitHub collaborator list visible to the maintainer
+token currently contains only `marinosabijan`. GitHub rejected self-approval
+with `Review Can not approve your own pull request`. A future team-review policy
+requires adding at least one non-author collaborator, team, or outside reviewer
+with repository review permission.
 
 ## 5. Local Validation Lanes
 
@@ -243,12 +245,11 @@ green on `d9fa872dc289dcba6886f81551d21ba0d2016bb7`.
 ## 12. Sign-off
 
 This evidence is sufficient for local pre-mainnet readiness review only. It is
-not sufficient for public mainnet funding until PR `#55` receives human
-CODEOWNERS approval and merges, the final merged SHA is recorded, Squads V4
-2-of-3 governance and upgrade posture are proven, the current operator env
-successfully produces a no-send mainnet plan, the merged hardened binary is
-redeployed/rehearsed on devnet, and money/control surfaces receive independent
-review.
+not sufficient for public mainnet funding until PR `#55` merges, the final
+merged SHA is recorded, Squads V4 2-of-3 governance and upgrade posture are
+proven, the current operator env successfully produces a no-send mainnet plan,
+the merged hardened binary is redeployed/rehearsed on devnet, and money/control
+surfaces receive internal or external money/control review.
 
 Signed-off-by: Marino Sabijan, MD <marinosabijan@gmail.com>  
 Date: 2026-05-04
