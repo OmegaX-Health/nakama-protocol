@@ -3229,7 +3229,9 @@ export function PlanCreationWizard() {
                   </div>
                   <div className="plans-launch-preview-row">
                     <span>Metadata URI</span>
-                    <span className="plans-launch-preview-value">{planMetadataUri}</span>
+                    <div className="plans-review-document-stack">
+                      <DocumentLinkRow href={planMetadataUri} label="Plan metadata" />
+                    </div>
                   </div>
                 </div>
               </article>
