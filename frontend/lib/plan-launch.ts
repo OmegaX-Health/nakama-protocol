@@ -3,6 +3,10 @@
 import { PublicKey } from "@solana/web3.js";
 
 import { DEVNET_PROTOCOL_FIXTURE_STATE } from "@/lib/devnet-fixtures";
+import {
+  GENESIS_PHASE0_RWA_FLAG,
+  phase0FlagEnabled,
+} from "@/lib/genesis-phase0-launch-profile";
 import { deriveLaunchLedgerAddresses } from "@/lib/plan-launch-tx";
 import {
   deriveFundingLinePda,
@@ -23,6 +27,12 @@ export type MembershipGateKind = "open" | "invite_only" | "nft_anchor" | "stake_
 export type PayoutAssetMode = "sol" | "spl";
 export type CoveragePathway = "" | "defi_native" | "rwa_policy";
 export type DefiSettlementMode = "" | "onchain_programmatic" | "hybrid_rails";
+
+export function isRwaPolicyLaunchEnabled(
+  env: { [key: string]: string | undefined } = process.env as { [key: string]: string | undefined },
+): boolean {
+  return phase0FlagEnabled(env, GENESIS_PHASE0_RWA_FLAG);
+}
 
 export type LaunchLaneBlueprint = {
   kind: LaneKind;

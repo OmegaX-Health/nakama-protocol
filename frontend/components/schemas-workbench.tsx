@@ -42,31 +42,31 @@ type SchemasWorkbenchProps = {
   searchParams?: RouteSearchParams;
 };
 
-const SCHEMA_PANELS: Array<{ id: SchemaPanelId; label: string; icon: string; number: string }> = [
-  { id: "registry", label: "Registry", icon: "database", number: "01" },
-  { id: "inspector", label: "Inspector", icon: "search", number: "02" },
+const SCHEMA_PANELS: Array<{ id: SchemaPanelId; label: string; icon: string }> = [
+  { id: "registry", label: "Registry", icon: "database" },
+  { id: "inspector", label: "Inspector", icon: "search" },
 ];
 
 function personaHeroCopy(persona: string): { eyebrow: string; subtitle: string } {
   switch (persona) {
     case "sponsor":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // SPONSOR_WORKSPACE",
+        eyebrow: "Schemas",
         subtitle: "Inspect the live series comparability and terms versions that govern plan-side claim and reserve behavior.",
       };
     case "capital":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // CAPITAL_WORKSPACE",
+        eyebrow: "Schemas",
         subtitle: "Audit the live schema posture behind every series your capital sleeves can be routed into.",
       };
     case "governance":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // GOVERNANCE_WORKSPACE",
+        eyebrow: "Schemas",
         subtitle: "Review versioned series schema posture and comparability drift before any governance or oracle control changes land.",
       };
     default:
       return {
-        eyebrow: "PROTOCOL_CONSOLE // OBSERVER_WORKSPACE",
+        eyebrow: "Schemas",
         subtitle: "Live series registry, comparability posture, and schema-linked routing context across the protocol shell.",
       };
   }
@@ -341,7 +341,7 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
             <div className="plans-hero-actions">
               <Link href={selectedSeries ? `/plans?plan=${encodeURIComponent(selectedSeries.healthPlan)}&series=${encodeURIComponent(selectedSeries.address)}` : "/plans"} className="plans-hero-cta">
                 <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
-                OPEN_PLAN_WORKSPACE
+                Back to plans
               </Link>
             </div>
           </div>
@@ -403,22 +403,22 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
 
         <section className="plans-kpi-strip" aria-label="Schema workspace telemetry">
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">SCHEMAS</span>
+            <span className="plans-kpi-label">Schemas</span>
             <span className="plans-kpi-value">{uniqueSchemaCount}</span>
             <span className="plans-kpi-meta">{verifiedSchemaCount} verified on-chain</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">SERIES</span>
+            <span className="plans-kpi-label">Series</span>
             <span className="plans-kpi-value">{snapshot.policySeries.length}</span>
             <span className="plans-kpi-meta">versioned products</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">PLANS</span>
+            <span className="plans-kpi-label">Plans</span>
             <span className="plans-kpi-value">{uniquePlanCount}</span>
             <span className="plans-kpi-meta">live sponsor roots</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">BOUND_POOLS</span>
+            <span className="plans-kpi-label">Bound pools</span>
             <span className="plans-kpi-value">{uniquePoolCount}</span>
             <span className="plans-kpi-meta">allocation-linked sleeves</span>
           </div>
@@ -437,7 +437,6 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
                   onClick={() => updateParams({ panel: panel.id })}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  <span className="plans-tab-number">{panel.number}</span>
                   <span className="material-symbols-outlined plans-tab-icon">{panel.icon}</span>
                   <span className="plans-tab-label">{panel.label}</span>
                 </button>

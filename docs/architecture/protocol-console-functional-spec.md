@@ -76,7 +76,7 @@ Use this together with:
 
 | Element | Required functionality |
 | --- | --- |
-| `ProtocolSummaryRail` | Show 2-4 route-level summary cards with label, value, and optional explanatory copy. |
+| Summary cards | Show 2-4 route-level facts with label, value, and optional explanatory copy. |
 | `SearchableSelect` | Combine a canonical selector with optional filter input, option count text, selected hint, empty message, and selector error. |
 | `FieldHint` | Show inline help on hover, focus, and tap/click; close on outside interaction and `Esc`. |
 | `ProtocolDetailDisclosure` | Collapse raw protocol values, manual overrides, hashes, and advanced accounting details until requested. |
@@ -324,6 +324,25 @@ Required page sections:
 | `Process queue` | Primary operator action | Advance eligible queue items when an operator is authorized to do so. | Must show impacted positions before signature. |
 | Impairment / pause banner | Alert | Explain when queue processing is blocked by impairment, pause, or governance controls. | Required when route-level blocking state exists. |
 
+#### Planned `/capital` panel: Reserve productivity
+
+This panel should ship only after the protocol implements the reserve
+productivity surface described in
+[`ADR 0002`](../adr/0002-reserve-productivity-and-strategy-adapters.md).
+Until then, strategy APY may appear as metadata, but no UI should imply that
+external yield deployment is active protocol behavior.
+
+| Element | Type | Required functionality | Required states / rules |
+| --- | --- | --- | --- |
+| Strategy registry table | Register | Show registered strategy profile, adapter program, asset mint, caps, liquidity floor, and active/pause state. | Read-only until strategy registration instructions exist. |
+| Reserve liquidity card | Summary card | Show free reserve, restricted/deployed reserve, encumbered reserve, and emergency floor. | Must state that deployed reserve is not free claims-paying reserve. |
+| Strategy position table | Register | Show principal deployed, principal recalled, realized yield, realized loss, pending recall, and impairment status. | One row per strategy position. |
+| `Deploy free reserve` | Operator action | Move eligible free reserve into a registered adapter. | Disabled until live protocol instructions, adapter review, cap checks, and liquidity-floor checks all pass. |
+| `Harvest yield` | Operator action | Reconcile realized same-mint yield back into the domain vault and ledgers. | Must verify vault reconciliation before showing success. |
+| `Recall principal` | Operator action | Pull strategy principal back to the domain vault. | Must remain available during strategy pause or emergency recall mode. |
+| `Mark impairment` | Operator action | Record strategy loss against the correct reserve, allocation, and class waterfall. | Must show affected ledgers and reason hash before signature. |
+| Premium surplus release drawer | Operator action | Recognize underwriting surplus after risk window and claim runoff. | Must be visually separate from strategy yield. |
+
 ### 3.4 `/claims`
 
 Purpose:
@@ -341,7 +360,7 @@ Required page sections:
 
 1. Hero with route narrative
 2. Route snapshot rail
-3. Self-serve claim-intake workspace
+3. Operator claim-intake workspace
 4. Operator adjudication and liability workspace
 5. Claim and obligation side rails
 
@@ -351,7 +370,7 @@ Required page sections:
 | --- | --- | --- | --- |
 | Plan selector | Searchable selector | Select the active `HealthPlan` in the current pool context. | Must react to `pool` filtering when present. |
 | Series selector | Searchable selector | Select the active `PolicySeries` for the selected plan. | Reset when plan changes. |
-| Operator panel tabs | Segment buttons | Switch the operator workspace between `Intake`, `Adjudication`, `Reserve`, and `Impairment`. | Reads/writes `panel` in the URL without hiding the self-serve intake card. |
+| Operator panel tabs | Segment buttons | Switch the operator workspace between `Intake`, `Adjudication`, `Reserve`, and `Impairment`. | Reads/writes `panel` in the URL without hiding the selected claim context. |
 | Claimant posture card | Read-only card | Show wallet, recognized role, and current participation count. | Observer mode must remain useful. |
 | Context card | Read-only card | Show pool filter, canonical route, and cross-link to member rights. | Pool filter should say `all pools` when unset. |
 
@@ -360,12 +379,12 @@ Required page sections:
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
 | Claim case id | Text input | Capture the canonical `ClaimCase` id seed. | Required before final submission; may be preseeded locally for convenience. |
-| Claimant field | Read-only field | Show the connected wallet that will own the submission. | Read-only for the self-serve flow. |
-| Member position selector | Select | Choose one of the connected wallet's enrolled `MemberPosition` records. | Must show an empty state when no self-owned member position exists for the selected plan context. |
+| Claimant field | Read-only field | Show the claimant wallet that will own the submission. | Read-only unless the operator flow explicitly allows claimant override. |
+| Member position selector | Select | Choose one enrolled `MemberPosition` record for the selected plan context. | Must show an empty state when no member position exists for the selected plan context. |
 | Funding line selector | Select | Choose the plan-side `FundingLine` the claim should open against. | Must be drawn from the selected plan context. |
 | Initial evidence reference | Text input | Capture a public pointer such as `ipfs://...`, URI, CID, or digest seed. | Must reject raw file uploads to chain-bound state. |
 | Eligibility notice | Inline notice | Explain when the connected wallet cannot submit because no eligible member position exists. | Must remain visible before the primary action. |
-| `Open claim case` | Primary button | Create the claim on-chain with the selected plan, member position, funding line, claimant, and evidence reference. | Must be blocked until wallet, member position, and funding line are all present. |
+| `Open claim case` | Primary button | Create the claim on-chain with the selected plan, member position, funding line, claimant, and evidence reference. | Must be blocked until wallet, eligible member position, and open funding line are all present; member self-submit must keep claimant equal to the member wallet, while plan/operator flows may explicitly override claimant. |
 
 #### `/claims` panel: Operator liability workspace
 
@@ -383,7 +402,7 @@ Required page sections:
 
 Purpose:
 
-- Member-rights route for self-serve enrollment, active rights, and operator review.
+- Member-rights route for operator-mediated enrollment, active rights, and eligibility review.
 
 Primary users:
 
@@ -396,7 +415,7 @@ Required page sections:
 
 1. Hero with route narrative
 2. Route snapshot rail
-3. Self-serve enrollment workspace
+3. Operator-mediated enrollment workspace
 4. Member review and eligibility workspace
 5. Rights posture rail
 
@@ -414,7 +433,7 @@ Required page sections:
 
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
-| Connected wallet | Read-only field | Show the wallet that will own the member position. | Required for self-serve clarity. |
+| Connected wallet | Read-only field | Show the wallet that will own the member position. | Required for audit clarity. |
 | Series scope | Read-only/meta field | Show the selected lane or `plan root` when no series is selected. | Must match the plan/series context used by the transaction. |
 | Membership model | Read-only/meta field | Show the selected plan's enrollment rule. | Must match plan configuration. |
 | Existing position field | Read-only field | Show whether the enrollment already exists. | Distinguish new draft vs existing position. |
@@ -425,7 +444,7 @@ Required page sections:
 | Delegated-rights posture | Status chips / register field | Show any delegated rights already recorded on existing member positions. | Read-only on this route for the current canonical model. |
 | `Open member position` | Primary button | Create the member position when the wallet and enrollment rule allow it. | Disabled with reason when blocked by token gate, invite-only authority mismatch, missing wallet, or duplicate member position. |
 
-Standalone grant/revoke delegation is not part of the current mounted self-serve route because the live canonical program does not expose that as a separate member-facing transaction surface.
+Standalone grant/revoke delegation is not part of the current mounted route because the live canonical program does not expose that as a separate member-facing transaction surface.
 
 ### 3.6 `/governance`
 

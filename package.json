@@ -1,6 +1,6 @@
 {
   "name": "omegax-protocol",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Public OmegaX Solana protocol workspace with the on-chain program, frontend console, docs, and verification tooling.",
   "author": "OMEGAX HEALTH FZCO",
   "contributors": [
@@ -21,7 +21,8 @@
     "anchor:build": "anchor build",
     "anchor:build:checked": "node scripts/anchor_build_with_stack_gate.mjs",
     "anchor:test": "node scripts/anchor_test_with_stack_gate.mjs",
-    "anchor:idl": "npm run anchor:build:checked && mkdir -p idl && cp target/idl/omegax_protocol.json idl/omegax_protocol.json",
+    "anchor:idl": "npm run anchor:build:checked && mkdir -p idl && cp target/idl/omegax_protocol.json idl/omegax_protocol.json && node scripts/check_idl_freshness.mjs --write",
+    "idl:freshness:check": "node scripts/check_idl_freshness.mjs",
     "rust:fmt:check": "cargo fmt --all -- --check",
     "rust:test": "cargo test -p omegax_protocol --lib",
     "rust:lint": "cargo clippy -p omegax_protocol --all-targets -- -A unexpected_cfgs -A deprecated -A clippy::too_many_arguments -D warnings",
@@ -33,11 +34,17 @@
     "protocol:bootstrap": "node --import tsx scripts/bootstrap_protocol.ts",
     "protocol:bootstrap:devnet-live": "node --import tsx scripts/bootstrap_devnet_live_protocol.ts",
     "protocol:bootstrap:genesis-live": "node --import tsx scripts/bootstrap_genesis_live_protocol.ts",
+    "devnet:founder:rehearsal": "node --import tsx scripts/devnet_founder_rehearsal.ts",
     "devnet:frontend:bootstrap": "node --import tsx scripts/bootstrap_devnet_frontend_parity.ts",
     "devnet:beta:observe": "node --import tsx scripts/devnet_beta_observability.ts",
     "devnet:beta:deploy": "node --import tsx scripts/deploy_devnet_beta.ts",
     "devnet:frontend:smoke": "node --import tsx scripts/devnet_frontend_role_smoke.ts",
     "devnet:frontend:signoff": "DEVNET_FIXTURE_STRICT=1 node --import tsx scripts/devnet_frontend_role_smoke.ts",
+    "devnet:operator:drawer:sim": "node --import tsx scripts/devnet_operator_drawer_sim.ts",
+    "devnet:program:redeploy-fresh": "node --import tsx scripts/deploy_fresh_devnet_program.ts",
+    "devnet:governance:handoff": "node --import tsx scripts/devnet_protocol_governance_handoff.ts",
+    "devnet:treasury:seed-canaries": "node --import tsx scripts/seed_devnet_treasury_canaries.ts",
+    "devnet:treasury:pen-test": "node --import tsx scripts/devnet_treasury_pen_test.ts",
     "devnet:governance:smoke:create-vote": "node --import tsx scripts/devnet_governance_smoke.ts create-vote",
     "devnet:governance:smoke:execute": "node --import tsx scripts/devnet_governance_smoke.ts execute",
     "devnet:governance:ui:readonly": "node --import tsx scripts/devnet_governance_ui_readonly.ts",
@@ -45,6 +52,8 @@
     "schema:metadata-hash": "node --import tsx scripts/generate_schema_metadata_hash.ts",
     "schema:rule-hashes": "node --import tsx scripts/generate_outcome_rule_hashes.ts",
     "schema:generate-standard": "node --import tsx scripts/generate_standard_health_outcomes_schema.ts",
+    "genesis:actuarial:review": "node --import tsx scripts/genesis_actuarial_review.ts",
+    "nomad:curve:poc": "node --import tsx scripts/nomad_curve_actuarial_poc.ts",
     "frontend:install": "npm --prefix frontend ci",
     "frontend:dev": "npm --prefix frontend run dev",
     "frontend:dev:reset": "pkill -f \"[n]ext dev\" || true; rm -rf frontend/.next frontend/.next-dev-*; npm run frontend:dev",
@@ -56,8 +65,10 @@
     "semantic:readiness:check": "node scripts/check_semantic_readiness.mjs",
     "public:hygiene:check": "node scripts/check_public_repo_hygiene.mjs",
     "license:audit": "node scripts/check_dependency_licenses.mjs",
-    "ci:public": "npm run rust:fmt:check && npm run rust:test && npm run rust:lint && npm run protocol:contract:check && npm run test:node && npm run frontend:build && npm run semantic:readiness:check && npm run public:hygiene:check",
-    "verify:public": "npm run ci:public && npm run license:audit",
+    "security:audit:deps": "node scripts/check_dependency_advisories.mjs",
+    "security:sbom": "node scripts/generate_sbom.mjs",
+    "ci:public": "npm run rust:fmt:check && npm run rust:test && npm run rust:lint && npm run idl:freshness:check && npm run protocol:contract:check && npm run test:node && npm run frontend:build && npm run semantic:readiness:check && npm run public:hygiene:check",
+    "verify:public": "npm run ci:public && npm run license:audit && npm run security:audit:deps && npm run security:sbom",
     "doctor": "node scripts/doctor.mjs",
     "verify": "npm run doctor && npm run ci:public"
   },
@@ -65,16 +76,19 @@
     "@solana/spl-governance": "^0.3.28",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
-    "bs58": "^6.0.0",
-    "tweetnacl": "^1.0.3"
+    "bs58": "^6.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.37",
+    "license-checker": "25.0.1",
     "playwright": "^1.58.2",
     "tsx": "^4.19.2"
   },
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "npm@10.9.2"
+  "packageManager": "npm@10.9.2",
+  "overrides": {
+    "uuid": "14.0.0"
+  }
 }

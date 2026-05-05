@@ -22,6 +22,8 @@ type GenesisProtectAcuteSetupPanelProps = {
   bootstrapHref: string;
   oracleBindingsHref: string;
   claimsHref: string;
+  adminActionsEnabled?: boolean;
+  founderCommitmentHref?: string;
   skuConsoleHrefs: Record<GenesisProtectAcuteSkuKey, {
     claims: string;
     treasury: string;
@@ -39,9 +41,40 @@ function posturePillClass(state: GenesisProtectAcuteSetupModel["posture"]["state
   }
 }
 
+function readinessPillClass(phase: GenesisProtectAcuteSetupModel["readinessPhase"]): string {
+  switch (phase) {
+    case "issuance_ready":
+      return "status-ok";
+    case "paused":
+      return "status-error";
+    default:
+      return "status-off";
+  }
+}
+
 function utilizationLabel(bps: bigint | null): string {
   if (bps === null) return "N/A";
   return `${Number(bps) / 100}%`;
+}
+
+function commitmentModeLabel(mode: number): string {
+  switch (mode) {
+    case 0:
+      return "DIRECT_PREMIUM";
+    case 1:
+      return "TREASURY_CREDIT";
+    case 2:
+      return "WATERFALL_RESERVE";
+    default:
+      return `MODE_${mode}`;
+  }
+}
+
+function shortHash(value: string | null | undefined): string {
+  const normalized = value?.trim() ?? "";
+  if (!normalized) return "None";
+  if (normalized.length <= 16) return normalized;
+  return `${normalized.slice(0, 8)}…${normalized.slice(-8)}`;
 }
 
 function checklistRows(props: GenesisProtectAcuteSetupPanelProps) {
@@ -56,27 +89,27 @@ function checklistRows(props: GenesisProtectAcuteSetupPanelProps) {
     },
     {
       key: "event7SeriesReady",
-      title: "Event 7 series exists",
-      detail: "The fast demo SKU stays wired to the canonical metadata URI and protection mode.",
+      title: "Event 7 coverage product exists",
+      detail: "The fast demo SKU stays wired to the canonical PolicySeries metadata URI and protection mode.",
       ready: props.model.checklist.event7SeriesReady,
       href: props.bootstrapHref,
       action: "Restore launch SKU",
     },
     {
       key: "travel30SeriesReady",
-      title: "Travel 30 series exists",
-      detail: "The primary launch SKU stays wired to the canonical metadata URI and protection mode.",
+      title: "Travel 30 coverage product exists",
+      detail: "The primary launch SKU stays wired to the canonical PolicySeries metadata URI and protection mode.",
       ready: props.model.checklist.travel30SeriesReady,
       href: props.bootstrapHref,
       action: "Restore launch SKU",
     },
     {
       key: "fundingLinesReady",
-      title: "Canonical funding lines exist",
-      detail: "Event 7 keeps premium, sponsor, and liquidity lanes while Travel 30 keeps premium and liquidity.",
+      title: "Canonical reserve lanes exist",
+      detail: "Event 7 keeps premium, sponsor, and liquidity FundingLine lanes while Travel 30 keeps premium and liquidity.",
       ready: props.model.checklist.fundingLinesReady,
       href: props.bootstrapHref,
-      action: "Restore funding lanes",
+      action: "Restore reserve lanes",
     },
     {
       key: "poolReady",
@@ -153,6 +186,9 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
             </h2>
           </div>
           <div className="flex flex-wrap gap-2">
+            <span className={`status-pill ${readinessPillClass(props.model.readinessPhase)}`}>
+              {props.model.readinessPhaseCopy.label}
+            </span>
             <span className={`status-pill ${posturePillClass(props.model.posture.state)}`}>
               {props.model.posture.state.toUpperCase()}
             </span>
@@ -168,6 +204,14 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
           </div>
         </div>
 
+        <div className="plans-notice liquid-glass" role="status">
+          <span className="material-symbols-outlined plans-notice-icon" aria-hidden="true">flag</span>
+          <p>
+            <strong>{props.model.readinessPhaseCopy.title}.</strong>{" "}
+            {props.model.readinessPhaseCopy.detail}
+          </p>
+        </div>
+
         <p className="plans-card-body">
           The Genesis template creates the canonical two-SKU shell in place.
           Current public posture: bounded end-of-month mainnet target, not broadly live insurance today, with Phase 0 operator-backed claim review while reserve, oracle, and pool controls finish operator sign-off.
@@ -176,42 +220,42 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
         <div className="plans-settings-grid">
           <div className="plans-settings-row">
             <div>
-              <span className="plans-settings-label">CLAIM_COUNT</span>
-              <span className="plans-settings-lane">Claim cases currently linked to the Genesis plan</span>
+              <span className="plans-settings-label">Claims</span>
+              <span className="plans-settings-lane">ClaimCase records currently linked to the Genesis plan</span>
             </div>
             <span className="plans-settings-address">{formatAmount(props.model.claimCount)}</span>
           </div>
           <div className="plans-settings-row">
             <div>
-              <span className="plans-settings-label">RESERVED_AMOUNT</span>
-              <span className="plans-settings-lane">Current reserve already encumbered across Genesis funding lines</span>
+              <span className="plans-settings-label">Reserved amount</span>
+              <span className="plans-settings-lane">Current reserve already encumbered across Genesis FundingLine lanes</span>
             </div>
             <span className="plans-settings-address">{formatAmount(props.model.reservedAmount)}</span>
           </div>
           <div className="plans-settings-row">
             <div>
-              <span className="plans-settings-label">PENDING_PAYOUT</span>
-              <span className="plans-settings-lane">Claimable or payable exposure visible on the live reserve lanes</span>
+              <span className="plans-settings-label">Payout/liability pending</span>
+              <span className="plans-settings-lane">Claimable or payable Obligation exposure visible on the live reserve lanes</span>
             </div>
             <span className="plans-settings-address">{formatAmount(props.model.pendingPayoutAmount)}</span>
           </div>
           <div className="plans-settings-row">
             <div>
-              <span className="plans-settings-label">RESERVE_UTILIZATION</span>
+              <span className="plans-settings-label">Reserve utilization</span>
               <span className="plans-settings-lane">Reserved plus pending payout as a share of currently posted claims-paying capital</span>
             </div>
             <span className="plans-settings-address">{utilizationLabel(props.model.reserveUtilizationBps)}</span>
           </div>
           <div className="plans-settings-row">
             <div>
-              <span className="plans-settings-label">CLAIMS_PAYING_CAPITAL</span>
+              <span className="plans-settings-label">Claims-paying capital</span>
               <span className="plans-settings-lane">Premium, sponsor, and LP-backed capital currently posted to Genesis reserve lanes</span>
             </div>
             <span className="plans-settings-address">{formatAmount(props.model.claimsPayingCapital)}</span>
           </div>
           <div className="plans-settings-row">
             <div>
-              <span className="plans-settings-label">LIVE_STRESS_FLAGS</span>
+              <span className="plans-settings-label">Live stress flags</span>
               <span className="plans-settings-lane">Queue-only capital sleeves and impairment stay visible while the bounded launch window remains under operator review</span>
             </div>
             <span className="plans-settings-address">
@@ -219,6 +263,143 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
             </span>
           </div>
         </div>
+
+        <div className="plans-notice liquid-glass" role="status">
+          <span className="material-symbols-outlined plans-notice-icon" aria-hidden="true">lock</span>
+          <p>
+            <strong>Founder commitments are read-only here.</strong>{" "}
+            Pending deposits are refundable holds, not active cover, not LP deposits, and not claims-paying reserve until activation or posting rules are satisfied.
+          </p>
+        </div>
+
+        {props.founderCommitmentHref ? (
+          <div className="plans-wizard-support-actions">
+            <Link href={props.founderCommitmentHref} className="secondary-button inline-flex w-fit" target="_blank" rel="noreferrer">
+              Open consumer Founder flow
+            </Link>
+          </div>
+        ) : null}
+
+        <div className="plans-settings-grid">
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Founder campaigns</span>
+              <span className="plans-settings-lane">Read-only campaign status linked to this plan and policy series</span>
+            </div>
+            <span className="plans-settings-address">
+              {props.model.founderCommitments.activeCampaignCount}/{props.model.founderCommitments.campaignCount} active
+            </span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Payment rails</span>
+              <span className="plans-settings-lane">Accepted assets under the same Founder campaign, not split treasury campaigns</span>
+            </div>
+            <span className="plans-settings-address">
+              {props.model.founderCommitments.waterfallRailCount}/{props.model.founderCommitments.paymentRailCount} waterfall
+            </span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Pending commitments</span>
+              <span className="plans-settings-lane">Commitment positions still waiting for activation or refund</span>
+            </div>
+            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.pendingPositionCount)}</span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Custody pending</span>
+              <span className="plans-settings-lane">Deposited token amount still held in the DomainAssetVault commitment lane</span>
+            </div>
+            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.pendingCustodyAmount)}</span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Coverage pending</span>
+              <span className="plans-settings-lane">Coverage amount represented by pending commitments, not active coverage</span>
+            </div>
+            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.pendingCoverageAmount)}</span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Treasury inventory</span>
+              <span className="plans-settings-lane">Legacy treasury-credit amount locked as inventory after activation</span>
+            </div>
+            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.treasuryInventoryAmount)}</span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Pending reserve impact</span>
+              <span className="plans-settings-lane">Claims-paying reserve impact from pending commitments</span>
+            </div>
+            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.claimsPayingReserveImpact)}</span>
+          </div>
+        </div>
+
+        {props.model.founderCommitments.rows.length > 0 ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {props.model.founderCommitments.rows.map((row) => (
+              <article key={row.address} className="operator-summary-card">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-[var(--foreground)]">{row.displayName}</p>
+                    <p className="field-help">
+                      {row.campaignId} · {commitmentModeLabel(row.mode)} · {row.paymentRailCount} rail{row.paymentRailCount === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  <span className={`status-pill ${row.status === 1 ? "status-ok" : "status-off"}`}>
+                    status={row.status}
+                  </span>
+                </div>
+                <div className="plans-settings-grid">
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Pending</span>
+                    <span className="plans-settings-address">{formatAmount(row.pendingAmount)}</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Policy series</span>
+                    <span className="plans-settings-address">{row.policySeries ? shortHash(row.policySeries) : "Unlinked"}</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Funding line</span>
+                    <span className="plans-settings-address">{shortHash(row.coverageFundingLine)}</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Terms hash</span>
+                    <span className="plans-settings-address">{shortHash(row.termsHashHex)}</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Activated</span>
+                    <span className="plans-settings-address">{formatAmount(row.activatedAmount)}</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Treasury locked</span>
+                    <span className="plans-settings-address">{formatAmount(row.treasuryLockedAmount)}</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Waterfall rails</span>
+                    <span className="plans-settings-address">{formatAmount(row.waterfallRailCount)}</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <span className="plans-settings-label">Refunded</span>
+                    <span className="plans-settings-address">{formatAmount(row.refundedAmount)}</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        {props.model.founderCommitments.warnings.length > 0 ? (
+          <div className="space-y-2">
+            {props.model.founderCommitments.warnings.map((warning) => (
+              <div key={warning} className="plans-notice liquid-glass" role="status">
+                <span className="material-symbols-outlined plans-notice-icon" aria-hidden="true">info</span>
+                <p>{warning}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {props.model.posture.reasons.length > 0 ? (
           <div className="space-y-2">
@@ -301,9 +482,11 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
         </div>
 
         <div className="plans-wizard-support-actions">
-          <Link href={props.bootstrapHref} className="secondary-button inline-flex w-fit">
-            Rerun Genesis template
-          </Link>
+          {props.adminActionsEnabled ? (
+            <Link href={props.bootstrapHref} className="secondary-button inline-flex w-fit">
+              Rerun Genesis template
+            </Link>
+          ) : null}
           {props.planAddress ? (
             <Link href={props.claimsHref} className="secondary-button inline-flex w-fit">
               Open claim console
@@ -337,13 +520,15 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
                   <p className="text-sm font-semibold text-[var(--foreground)]">{row.title}</p>
                   <p className="field-help">{row.detail}</p>
                 </div>
-                <span className={`status-pill ${row.ready ? "status-ok" : "status-off"}`}>
-                  {row.ready ? "Ready" : "Action needed"}
-                </span>
-              </div>
-              <Link href={row.href} className="secondary-button inline-flex w-fit">
-                {row.action}
-              </Link>
+              <span className={`status-pill ${row.ready ? "status-ok" : "status-off"}`}>
+                {row.ready ? "Ready" : "Action needed"}
+              </span>
+            </div>
+              {props.adminActionsEnabled ? (
+                <Link href={row.href} className="secondary-button inline-flex w-fit">
+                  {row.action}
+                </Link>
+              ) : null}
             </article>
           ))}
         </div>

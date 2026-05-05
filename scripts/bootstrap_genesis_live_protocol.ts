@@ -13,6 +13,7 @@ import {
   PublicKey,
   SystemProgram,
 } from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 import protocolModule from "../frontend/lib/protocol.ts";
 import { loadEnvFile } from "./support/load_env_file.ts";
@@ -21,6 +22,7 @@ import {
   stableStringify,
 } from "./support/genesis_live_bootstrap_config.ts";
 import { wrapConnectionWithRpcRetry } from "./support/rpc_retry.ts";
+import { keypairFromFile, requiredPublicKeyEnv, sha256Bytes } from "./support/script_helpers.ts";
 
 type ProtocolModule = typeof import("../frontend/lib/protocol.ts");
 
@@ -44,21 +46,10 @@ type CurrentValue = {
 const FRONTEND_ENV_PATH = resolve(process.cwd(), "frontend/.env.local");
 const DEFAULT_GOVERNANCE_KEYPAIR_PATH = resolve(homedir(), ".config/solana/id.json");
 
-function sha256Bytes(label: string): number[] {
-  return [...createHash("sha256").update(label).digest()];
-}
-
 function schemaMetadataHashHex(path: string): string {
   const raw = readFileSync(path, "utf8");
   const parsed = JSON.parse(raw);
   return createHash("sha256").update(stableStringify(parsed)).digest("hex");
-}
-
-function keypairFromFile(path: string): Keypair {
-  if (!existsSync(path)) {
-    throw new Error(`Missing keypair file: ${path}`);
-  }
-  return Keypair.fromSecretKey(Uint8Array.from(JSON.parse(readFileSync(path, "utf8"))));
 }
 
 function parseArgs(argv: string[]): { planOnly: boolean } {
@@ -130,8 +121,26 @@ function planSummary(
   config: ReturnType<typeof loadGenesisLiveBootstrapConfig>,
 ) {
   return {
+    noTransactionsSent: true,
     rpcUrl: config.rpcUrl,
     programId: protocol.getProgramId().toBase58(),
+    launchProfile: {
+      id: config.launchProfile.id,
+      network: config.launchProfile.network,
+      description: config.launchProfile.description,
+      lpDeposits: config.launchProfile.lpDeposits,
+      lpRedemptionRequests: config.launchProfile.lpRedemptionRequests,
+      dashboards: {
+        capital: config.launchProfile.capitalDashboard,
+        reserves: config.launchProfile.reserveDashboard,
+        claims: config.launchProfile.claimsDashboard,
+        oracle: config.launchProfile.oracleDashboard,
+        commitments: config.launchProfile.commitmentsDashboard,
+      },
+      disabledSurfaces: config.launchProfile.disabledSurfaces,
+      hiddenSurfaces: config.launchProfile.hiddenSurfaces,
+      assertions: config.launchProfile.mainnetPlanAssertions,
+    },
     governanceAuthority: config.governanceAuthority,
     governanceConfigAddress: config.governanceConfigAddress,
     settlementMint: config.settlementMint,
@@ -157,6 +166,18 @@ function planSummary(
     fundingLines: config.fundingLines,
     pool: config.liquidityPool,
     capitalClasses: config.capitalClasses,
+    lpClassPosture: {
+      restrictionMode: "open",
+      minLockupSeconds: "2592000",
+      minLockupDays: 30,
+      redemptionPolicy: "queue_only",
+      tokenProgram: "classic_spl_only",
+    },
+    redemptionPosture: {
+      policy: "queue_only",
+      requestSurface: config.launchProfile.lpRedemptionRequests,
+      processingSurface: config.launchProfile.capitalAdminActions,
+    },
     allocations: config.allocations,
     fundingAmounts: config.fundingAmounts,
   };
@@ -168,6 +189,19 @@ function stringifyJson(value: unknown): string {
     (_key, currentValue) => (typeof currentValue === "bigint" ? currentValue.toString() : currentValue),
     2,
   );
+}
+
+function loadAndValidateOracleKeypair(config: ReturnType<typeof loadGenesisLiveBootstrapConfig>): Keypair {
+  if (!existsSync(config.roles.oracleKeypairPath)) {
+    throw new Error("Genesis live oracle keypair file was not found.");
+  }
+  const oracle = keypairFromFile(config.roles.oracleKeypairPath);
+  if (oracle.publicKey.toBase58() !== config.roles.oracleAuthority) {
+    throw new Error(
+      `OMEGAX_LIVE_ORACLE_WALLET (${config.roles.oracleAuthority}) does not match the configured oracle keypair.`,
+    );
+  }
+  return oracle;
 }
 
 async function main() {
@@ -182,6 +216,7 @@ async function main() {
   });
 
   if (planOnly) {
+    loadAndValidateOracleKeypair(config);
     console.log(stringifyJson(planSummary(protocol, config)));
     return;
   }
@@ -190,12 +225,7 @@ async function main() {
     throw new Error(`Genesis schema metadata file not found: ${config.schema.metadataLocalPath}`);
   }
 
-  const oracle = keypairFromFile(config.roles.oracleKeypairPath);
-  if (oracle.publicKey.toBase58() !== config.roles.oracleAuthority) {
-    throw new Error(
-      `OMEGAX_LIVE_ORACLE_WALLET (${config.roles.oracleAuthority}) does not match ${config.roles.oracleKeypairPath} (${oracle.publicKey.toBase58()}).`,
-    );
-  }
+  const oracle = loadAndValidateOracleKeypair(config);
 
   const seniorLp = config.capitalClasses.senior.lpKeypairPath
     ? keypairFromFile(config.capitalClasses.senior.lpKeypairPath)
@@ -276,6 +306,19 @@ async function main() {
     reserveDomain: config.reserveDomain.address,
     assetMint: config.settlementMint,
   }).toBase58();
+  // PT-2026-04-27-01/02 fix: vault token account is now PDA-owned and the
+  // program initializes it inline. Operators no longer pre-create the token
+  // account or pass `OMEGAX_GENESIS_SETTLEMENT_VAULT_TOKEN_ACCOUNT`.
+  const vaultTokenAccountAddress = protocol
+    .deriveDomainAssetVaultTokenAccountPda({
+      reserveDomain: config.reserveDomain.address,
+      assetMint: config.settlementMint,
+    })
+    .toBase58();
+  const protocolFeeVault = protocol.deriveProtocolFeeVaultPda({
+    reserveDomain: config.reserveDomain.address,
+    assetMint: config.settlementMint,
+  }).toBase58();
   const vaultExists = await protocol.accountExists(connection, domainAssetVault);
   const ledgerExists = await protocol.accountExists(connection, domainAssetLedger);
   if (!vaultExists || !ledgerExists) {
@@ -290,7 +333,6 @@ async function main() {
       instructionName: "create_domain_asset_vault",
       args: {
         asset_mint: new PublicKey(config.settlementMint),
-        vault_token_account: protocol.ZERO_PUBKEY_KEY,
       },
       accounts: [
         { pubkey: governance.publicKey, isSigner: true, isWritable: true },
@@ -298,6 +340,9 @@ async function main() {
         { pubkey: config.reserveDomain.address, isWritable: true },
         { pubkey: domainAssetVault, isWritable: true },
         { pubkey: domainAssetLedger, isWritable: true },
+        { pubkey: new PublicKey(config.settlementMint) },
+        { pubkey: vaultTokenAccountAddress, isWritable: true },
+        { pubkey: TOKEN_PROGRAM_ID },
         { pubkey: SystemProgram.programId },
       ],
     });
@@ -806,6 +851,35 @@ async function main() {
           { pubkey: fundingLineLedgerFor(config.fundingLines.event7Sponsor.address), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: config.healthPlan.address, assetMint: config.settlementMint }), isWritable: true },
           { pubkey: seriesReserveLedgerFor(config.policySeries.event7.address), isWritable: true },
+          { pubkey: requiredPublicKeyEnv("OMEGAX_GENESIS_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
+          { pubkey: config.settlementMint },
+          { pubkey: vaultTokenAccountAddress, isWritable: true },
+          { pubkey: TOKEN_PROGRAM_ID },
+        ],
+      });
+    }
+  }
+
+  if (config.fundingAmounts.event7Premium > 0n || config.fundingAmounts.travel30Premium > 0n) {
+    const protocolFeeVaultExists = await protocol.accountExists(connection, protocolFeeVault);
+    if (!protocolFeeVaultExists) {
+      await sendProtocolInstruction({
+        protocol,
+        connection,
+        feePayer: governance,
+        label: "init_protocol_fee_vault:genesis-settlement",
+        instructionName: "init_protocol_fee_vault",
+        args: {
+          asset_mint: new PublicKey(config.settlementMint),
+          fee_recipient: governance.publicKey,
+        },
+        accounts: [
+          { pubkey: governance.publicKey, isSigner: true, isWritable: true },
+          { pubkey: governanceAddress },
+          { pubkey: config.reserveDomain.address },
+          { pubkey: domainAssetVault },
+          { pubkey: protocolFeeVault, isWritable: true },
+          { pubkey: SystemProgram.programId },
         ],
       });
     }
@@ -847,7 +921,11 @@ async function main() {
         { pubkey: fundingLineLedgerFor(premium.fundingLine), isWritable: true },
         { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: config.healthPlan.address, assetMint: config.settlementMint }), isWritable: true },
         { pubkey: seriesReserveLedgerFor(premium.policySeries), isWritable: true },
-        { pubkey: classLedgerFor(config.capitalClasses.senior.address), isWritable: true },
+        { pubkey: protocolFeeVault, isWritable: true },
+        { pubkey: requiredPublicKeyEnv("OMEGAX_GENESIS_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
+        { pubkey: config.settlementMint },
+        { pubkey: vaultTokenAccountAddress, isWritable: true },
+        { pubkey: TOKEN_PROGRAM_ID },
       ],
     });
   }
@@ -894,6 +972,17 @@ async function main() {
         { pubkey: lpSeed.capitalClass, isWritable: true },
         { pubkey: classLedgerFor(lpSeed.capitalClass), isWritable: true },
         { pubkey: lpPosition, isWritable: true },
+        {
+          pubkey: requiredPublicKeyEnv(
+            lpSeed.label === "senior"
+              ? "OMEGAX_GENESIS_SENIOR_LP_SETTLEMENT_SOURCE_TOKEN_ACCOUNT"
+              : "OMEGAX_GENESIS_JUNIOR_LP_SETTLEMENT_SOURCE_TOKEN_ACCOUNT",
+          ),
+          isWritable: true,
+        },
+        { pubkey: config.settlementMint },
+        { pubkey: vaultTokenAccountAddress, isWritable: true },
+        { pubkey: TOKEN_PROGRAM_ID },
         { pubkey: SystemProgram.programId },
       ],
     });

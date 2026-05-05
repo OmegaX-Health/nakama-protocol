@@ -7,9 +7,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 
+import { DocumentLinkRow } from "@/components/document-link-row";
 import { ProtocolDetailDisclosure } from "@/components/protocol-detail-disclosure";
+import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { SearchableSelect } from "@/components/searchable-select";
-import { executeProtocolTransaction } from "@/lib/protocol-action";
+import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
   buildBackfillSchemaDependencyLedgerTx,
   buildCloseOutcomeSchemaTx,
@@ -68,6 +70,7 @@ function schemaVisibilityLabel(value: number): string {
 export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelProps) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
+  const { confirmReview, reviewPrompt } = useProtocolTransactionReviewPrompt();
   const [schemas, setSchemas] = useState<SchemaSummary[]>([]);
   const [rules, setRules] = useState<RuleSummary[]>([]);
   const [dependencies, setDependencies] = useState<SchemaDependencyLedgerSummary[]>([]);
@@ -160,11 +163,15 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
         visibility: Number.parseInt(visibility, 10) || 0,
         metadataUri,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Register schema",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -174,7 +181,6 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } finally {
       setBusy(null);
     }
@@ -193,11 +199,15 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
         schemaKeyHashHex: selectedSchema.schemaKeyHashHex,
         verified: verifyState,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: verifyState ? "Verify schema" : "Unverify schema",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -207,7 +217,6 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } finally {
       setBusy(null);
     }
@@ -231,11 +240,15 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
         schemaKeyHashHex: selectedSchema.schemaKeyHashHex,
         poolRuleAddresses,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Backfill schema dependency ledger",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -245,7 +258,6 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Backfill inputs are invalid.");
       setStatusTone("error");
@@ -268,11 +280,15 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
         recentBlockhash: blockhash,
         schemaKeyHashHex: selectedSchema.schemaKeyHashHex,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Close schema",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -282,7 +298,6 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Close recipient is invalid.");
       setStatusTone("error");
@@ -293,6 +308,7 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
 
   return (
     <div className="space-y-4">
+      {reviewPrompt}
       <section className="surface-card-soft space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -356,8 +372,14 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
               <ul className="mt-2 space-y-1 text-sm text-[var(--muted-foreground)]">
                 <li>Tracked dependencies: {selectedDependency?.poolRuleAddresses.length ?? 0}</li>
                 <li>Pool rules using schema: {matchingRules.length}</li>
-                <li>Metadata: {selectedSchema.metadataUri || "n/a"}</li>
               </ul>
+              {selectedSchema.metadataUri ? (
+                <div className="plans-review-document-stack mt-3">
+                  <DocumentLinkRow href={selectedSchema.metadataUri} label="Schema metadata" />
+                </div>
+              ) : (
+                <p className="field-help mt-3">No schema metadata URI is published.</p>
+              )}
             </article>
           </div>
         ) : (

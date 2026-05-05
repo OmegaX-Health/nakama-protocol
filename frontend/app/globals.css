@@ -1111,9 +1111,7 @@
   .surface-card-soft,
   .protocol-link-card,
   .protocol-list-card,
-  .protocol-metric-card,
-  .protocol-signal-card,
-  .protocol-summary-card {
+  .protocol-metric-card {
     position: relative;
     overflow: hidden;
     border: 1px solid var(--border);
@@ -1186,51 +1184,6 @@
     gap: 0.72rem;
   }
 
-  .protocol-signal-stack,
-  .protocol-rail-stack {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .protocol-summary-rail {
-    align-self: stretch;
-    display: flex;
-    flex-direction: column;
-    gap: 0.72rem;
-    padding: 0.72rem;
-    border: 1px solid color-mix(in oklab, var(--border) 82%, var(--accent) 18%);
-    border-radius: 1.12rem;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(239, 242, 244, 0.82)),
-      rgba(255, 255, 255, 0.16);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.62),
-      0 18px 38px rgba(10, 21, 37, 0.05);
-    backdrop-filter: blur(18px);
-  }
-
-  .dark .protocol-summary-rail {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(14, 24, 39, 0.82)),
-      rgba(255, 255, 255, 0.02);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.04),
-      0 20px 40px rgba(0, 0, 0, 0.2);
-  }
-
-  .protocol-summary-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-
-  .protocol-summary-grid {
-    display: grid;
-    gap: 0.58rem;
-    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  }
-
   /*
    * Prefer these semantic panel classes for new protocol UI work so the layout
    * stays shell-first and register-first instead of devolving into nested cards.
@@ -1254,73 +1207,6 @@
       linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 40%),
       rgba(15, 24, 39, 0.88);
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
-  }
-
-  .protocol-summary-card,
-  .protocol-signal-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.28rem;
-    min-height: 0;
-    padding: 0.82rem 0.88rem;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(242, 244, 246, 0.94)),
-      var(--panel-heavy);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.7),
-      0 14px 28px rgba(10, 21, 37, 0.04);
-  }
-
-  .dark .protocol-summary-card,
-  .dark .protocol-signal-card {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 42%),
-      rgba(15, 24, 39, 0.9);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.04),
-      0 16px 32px rgba(0, 0, 0, 0.18);
-  }
-
-  .protocol-summary-card::after,
-  .protocol-signal-card::after {
-    content: none;
-  }
-
-  .protocol-summary-card .protocol-meta,
-  .protocol-signal-card .protocol-meta {
-    color: var(--muted-foreground);
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .protocol-summary-card strong,
-  .protocol-signal-card strong {
-    color: var(--foreground);
-    display: block;
-    margin-top: 0.04rem;
-    font-family: var(--font-sans), "Space Grotesk", system-ui, sans-serif;
-    font-size: clamp(1rem, 1.8vw, 1.28rem);
-    font-style: normal;
-    font-weight: 600;
-    line-height: 1.12;
-    letter-spacing: -0.03em;
-    text-wrap: balance;
-    word-break: break-word;
-  }
-
-  .protocol-summary-card .protocol-section-copy,
-  .protocol-signal-card .protocol-section-copy {
-    color: var(--muted-foreground);
-    font-size: 0.82rem;
-    line-height: 1.45;
-  }
-
-  .protocol-summary-note {
-    margin: 0;
-    color: var(--muted-foreground);
-    font-size: 0.82rem;
-    line-height: 1.48;
   }
 
   .protocol-metric-value {
@@ -2259,12 +2145,9 @@
     .protocol-hero,
     .surface-card,
     .surface-card-soft,
-    .protocol-summary-rail,
-    .protocol-summary-card,
     .protocol-link-card,
     .protocol-list-card,
     .protocol-metric-card,
-    .protocol-signal-card,
     .workspace-header-band,
     .workspace-next-action-card {
       border-radius: 1.15rem;
@@ -3879,13 +3762,13 @@
 
   .ov-hero-title {
     margin: 0;
-    max-width: 10ch;
+    max-width: 14ch;
     font-family: var(--font-display), "Newsreader", Georgia, serif;
     font-style: italic;
-    font-size: clamp(3.25rem, 7vw, 6.4rem);
-    font-weight: 600;
-    line-height: 0.95;
-    letter-spacing: -0.05em;
+    font-size: clamp(3.05rem, 6.35vw, 5.85rem);
+    font-weight: 500;
+    line-height: 0.98;
+    letter-spacing: -0.035em;
     color: var(--foreground);
     text-wrap: balance;
   }
@@ -5034,6 +4917,12 @@
     padding-top: 0.2rem;
   }
 
+  .plans-action-disabled {
+    opacity: 0.64;
+    cursor: default;
+    pointer-events: none;
+  }
+
   .plans-context-bar {
     --plans-context-control-height: 3.8rem;
     display: flex;
@@ -5438,6 +5327,7 @@
     align-items: center;
     gap: 0.5rem;
     flex: 1;
+    min-height: 2.5rem;
     min-width: max-content;
     padding: 0.65rem 1rem;
     border: none;
@@ -5478,24 +5368,6 @@
     box-shadow:
       0 4px 14px -4px rgba(0, 0, 0, 0.45),
       inset 0 0 0 1px rgba(51, 197, 244, 0.18);
-  }
-
-  .plans-tab-number {
-    font-family: var(--font-mono), "Fira Code", monospace;
-    font-size: 0.56rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    padding: 0.1rem 0.35rem;
-    border-radius: 0.3rem;
-    border: 1px solid color-mix(in oklab, var(--border) 60%, transparent);
-    color: var(--muted-foreground);
-    transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease;
-  }
-
-  .plans-tab-active .plans-tab-number {
-    color: var(--accent);
-    background: color-mix(in oklab, var(--signal-soft) 65%, transparent);
-    border-color: color-mix(in oklab, var(--accent) 25%, transparent);
   }
 
   .plans-tab-icon {
@@ -7522,6 +7394,21 @@
     color: var(--cyan-ink);
   }
 
+  .plans-wizard-chip-disabled,
+  .plans-wizard-chip:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+    transform: none;
+    border-style: dashed;
+  }
+
+  .plans-wizard-chip-disabled:hover,
+  .plans-wizard-chip:disabled:hover {
+    transform: none;
+    color: var(--muted-foreground);
+    border-color: color-mix(in oklab, var(--border-strong) 16%, var(--border));
+  }
+
   .plans-wizard-chip:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--accent) 52%, transparent);
     outline-offset: 2px;
@@ -7570,6 +7457,126 @@
     color: var(--foreground);
     text-align: right;
     font-family: var(--font-mono), "Fira Code", monospace;
+  }
+
+  .plans-review-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 35%, transparent);
+  }
+
+  .plans-review-row:last-child {
+    border-bottom: none;
+  }
+
+  .plans-review-row-top {
+    align-items: flex-start;
+  }
+
+  .plans-review-label {
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+  }
+
+  .plans-review-value {
+    min-width: 0;
+    color: var(--foreground);
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: right;
+  }
+
+  .plans-review-document-stack {
+    display: grid;
+    gap: 0.5rem;
+    width: min(100%, 38rem);
+    min-width: 0;
+  }
+
+  .plans-review-document {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    padding: 0.72rem 0.78rem;
+    border: 1px solid color-mix(in oklab, var(--border) 52%, transparent);
+    border-radius: 0.85rem;
+    background: color-mix(in oklab, var(--surface-elevated) 38%, transparent);
+  }
+
+  .plans-review-document-copy {
+    display: grid;
+    gap: 0.16rem;
+    min-width: 0;
+  }
+
+  .plans-review-document-label {
+    color: var(--foreground);
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .plans-review-document-host {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  .plans-review-document-url {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-block: 0.08rem 0.12rem;
+    color: color-mix(in oklab, var(--foreground) 72%, var(--muted-foreground));
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    text-align: left;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .plans-review-document-url::-webkit-scrollbar {
+    height: 0.38rem;
+  }
+
+  .plans-review-document-url::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--border-strong) 55%, transparent);
+  }
+
+  .plans-review-document-action {
+    min-height: 2.5rem;
+    gap: 0.35rem;
+    padding: 0.56rem 0.78rem;
+    font-size: 0.58rem;
+    white-space: nowrap;
+  }
+
+  .plans-review-document-action:focus-visible {
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--surface) 86%, transparent),
+      0 0 0 4px color-mix(in oklab, var(--accent) 48%, transparent);
+  }
+
+  .plans-review-document-action .material-symbols-outlined {
+    font-size: 0.94rem;
+    line-height: 1;
   }
 
   .plans-wizard-support-grid {
@@ -8698,6 +8705,48 @@
       backdrop-filter: blur(28px) saturate(170%);
     }
 
+    /*
+     * Tap-target audit: every interactive control in the topbar bumps to
+     * 44x44px on mobile so the hamburger, network/persona/theme dropdowns,
+     * and wallet trigger meet the iOS HIG minimum. The labels stay compact
+     * (font-size + letter-spacing already tuned in the parent block) but the
+     * hit area grows to satisfy a fingertip. Primary action buttons inside
+     * the workbench do not need this override since they are already block
+     * level with generous vertical padding.
+     */
+    .protocol-topbar-menu-button {
+      min-height: 2.75rem;
+      width: 2.75rem;
+    }
+
+    .protocol-toolbar-button {
+      min-height: 2.75rem;
+      min-width: 2.75rem;
+    }
+
+    .protocol-toolbar-icon-button {
+      min-height: 2.75rem;
+      min-width: 2.75rem;
+    }
+  }
+
+  /*
+   * Very narrow screens (<400px). The topbar wordmark, DEVNET pill, and
+   * three toolbar icons compete for ~280px of usable horizontal space after
+   * accounting for the hamburger and gutter padding. Without this shrink the
+   * wordmark visibly overlaps the network pill on iPhone SE-class viewports.
+   * Drop the wordmark image footprint so the network/persona/theme controls
+   * always have unambiguous separation.
+   */
+  @media (max-width: 399px) {
+    .protocol-topbar-wordmark-image {
+      width: 6rem;
+      max-width: min(22vw, 6rem);
+    }
+  }
+
+  @media (max-width: 899px) {
+
     .protocol-mobile-nav-link {
       display: flex;
       align-items: center;
@@ -8825,6 +8874,37 @@
     }
   }
 
+  @media (max-width: 899px) {
+    .plans-kpi-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+      padding: 0.15rem 0.2rem;
+    }
+
+    .plans-kpi-metric,
+    .plans-kpi-metric:first-child {
+      gap: 0.3rem;
+      padding: 0.7rem 0.78rem;
+      border: 1px solid color-mix(in oklab, var(--border) 56%, transparent);
+      border-radius: 0.95rem;
+      background: color-mix(in oklab, var(--surface-elevated) 36%, transparent);
+    }
+
+    .plans-kpi-label {
+      font-size: 0.54rem;
+      letter-spacing: 0.14em;
+      line-height: 1.2;
+      white-space: normal;
+    }
+
+    .plans-kpi-meta {
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      line-height: 1.35;
+    }
+  }
+
   @media (max-width: 767px) {
     .plans-hero {
       padding: 0.4rem 0.65rem 0;
@@ -8852,12 +8932,9 @@
 
     .plans-tab {
       flex: 0 0 auto;
-      padding: 0.55rem 0.85rem;
+      min-height: 2.5rem;
+      padding: 0.58rem 0.9rem;
       font-size: 0.74rem;
-    }
-
-    .plans-tab-number {
-      display: none;
     }
 
     .plans-member-grid {
@@ -8881,6 +8958,31 @@
 
     .plans-card-title-display {
       font-size: clamp(1.4rem, 5vw, 1.7rem);
+    }
+
+    .plans-review-row-top {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.55rem;
+    }
+
+    .plans-review-document-stack {
+      width: 100%;
+    }
+
+    .plans-review-document {
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+    }
+
+    .plans-review-document-url {
+      overflow-x: visible;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .plans-review-document-action {
+      width: 100%;
     }
 
     .plans-vitality-stats {
@@ -9064,5 +9166,348 @@
       letter-spacing: 0.18em;
       color: var(--muted-foreground);
     }
+  }
+}
+
+@layer components {
+  .operator-drawer {
+    display: grid;
+    gap: 1.15rem;
+  }
+
+  .operator-drawer-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .operator-drawer-nav-item {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid color-mix(in oklab, var(--border) 72%, transparent);
+    border-radius: 12px;
+    background: color-mix(in oklab, var(--surface-elevated) 60%, transparent);
+    color: var(--foreground);
+    text-align: left;
+    transition:
+      border-color 160ms ease,
+      background 160ms ease,
+      transform 160ms ease;
+  }
+
+  .operator-drawer-nav-item:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in oklab, var(--accent) 32%, var(--border));
+  }
+
+  .operator-drawer-nav-item:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--accent) 50%, transparent);
+    outline-offset: 2px;
+  }
+
+  .operator-drawer-nav-item-active {
+    border-color: color-mix(in oklab, var(--accent) 55%, var(--border));
+    background: color-mix(in oklab, var(--accent) 10%, var(--surface-elevated));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 30%, transparent);
+  }
+
+  .operator-drawer-nav-label {
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .operator-drawer-nav-blurb {
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+
+  .operator-drawer-body {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .operator-drawer-section {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .operator-drawer-fieldset {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 1rem 1.05rem 1.1rem;
+    border: 1px solid color-mix(in oklab, var(--border) 68%, transparent);
+    border-radius: 14px;
+    background: color-mix(in oklab, var(--surface-elevated) 52%, transparent);
+  }
+
+  .operator-drawer-legend {
+    padding: 0 0.35rem;
+    color: var(--foreground);
+    font-size: 0.86rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .operator-drawer-hint {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .operator-drawer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+  }
+
+  .operator-drawer-divider {
+    height: 1px;
+    background: color-mix(in oklab, var(--border) 72%, transparent);
+    margin: 0.25rem 0;
+  }
+
+  .operator-drawer-advanced-toggle {
+    justify-self: start;
+    padding: 0.35rem 0.65rem;
+    border: 1px dashed color-mix(in oklab, var(--border-strong) 35%, var(--border));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted-foreground);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+
+  .operator-drawer-advanced-toggle:hover {
+    color: var(--foreground);
+    border-color: color-mix(in oklab, var(--accent) 40%, var(--border));
+  }
+
+  .operator-drawer-subtabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    border: 1px solid color-mix(in oklab, var(--border) 58%, transparent);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--surface-elevated) 38%, transparent);
+  }
+
+  .operator-drawer-subtab {
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+  }
+
+  .operator-drawer-subtab:hover {
+    color: var(--foreground);
+  }
+
+  .operator-drawer-subtab-active {
+    background: color-mix(in oklab, var(--accent) 18%, transparent);
+    border-color: color-mix(in oklab, var(--accent) 45%, transparent);
+    color: var(--foreground);
+  }
+
+  .operator-drawer-rights {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.4rem 0.75rem;
+  }
+
+  @media (max-width: 720px) {
+    .operator-drawer-nav {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .operator-drawer-rights {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    /*
+     * Table card-stack pattern.
+     * Tables across the workbench (capital allocations, plan claims, oracle
+     * watch, governance proposals, schemas) all use .plans-table with
+     * data-label attributes on every <td>. At narrow viewports they used to
+     * be horizontally-scrollable wallpaper; here they collapse into a
+     * card-per-row layout that surfaces the data-label as the field name and
+     * the cell content as the value, so a sponsor can actually read every
+     * row on a phone instead of scroll-hunting columns.
+     */
+    .plans-table thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .plans-table tbody tr {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      padding: 0.625rem 0.75rem;
+      margin-bottom: 0.5rem;
+      border: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+      border-radius: 0.5rem;
+      background: color-mix(in oklab, var(--surface-soft) 92%, transparent);
+    }
+
+    .plans-table tbody tr:hover {
+      background: color-mix(in oklab, var(--surface-strong) 92%, transparent);
+    }
+
+    .plans-table tbody tr:last-child td,
+    .plans-table tbody tr td {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.32rem 0;
+      text-align: right;
+      border-bottom: 1px solid color-mix(in oklab, var(--border) 22%, transparent);
+    }
+
+    .plans-table tbody tr td:last-child {
+      border-bottom: 0;
+      padding-right: 0;
+    }
+
+    .plans-table tbody tr td::before {
+      content: attr(data-label);
+      flex-shrink: 0;
+      align-self: center;
+      font-family: var(--font-mono), "Fira Code", monospace;
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted-foreground);
+      text-align: left;
+    }
+
+    /* Mobile sheet panel: full-width edge-to-edge, drop the left border, and
+       respect the iOS bottom safe-area so action buttons clear the home bar. */
+    .wizard-detail-sheet-panel,
+    .wizard-detail-sheet-panel-wide {
+      width: 100vw;
+      max-width: 100vw;
+      border-left: 0;
+    }
+
+    .wizard-detail-sheet-body {
+      padding-bottom: calc(1.35rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    /*
+     * Hide the sticky resource footer on mobile.
+     * On a 375px viewport the footer was eating ~80px of screen real estate
+     * for SOURCE / SDK / DOCS / STATUS / AUDITS links no operator needs
+     * mid-task. The sidebar nav already carries everything needed for in-task
+     * navigation on mobile; the footer links are desktop reference material.
+     * Footer stays in the accessibility tree and DOM for screen readers and
+     * crawlers but is hidden from the visual viewport.
+     */
+    .protocol-footer {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+  }
+
+  .omegax-term {
+    position: relative;
+    display: inline;
+  }
+
+  .omegax-term-trigger {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: help;
+    text-decoration: underline dotted var(--cyan-ink);
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
+  }
+
+  .omegax-term-trigger:hover,
+  .omegax-term-trigger:focus-visible {
+    color: var(--cyan-ink);
+    outline: none;
+    text-decoration-thickness: 2px;
+  }
+
+  .omegax-term-popover {
+    position: absolute;
+    z-index: 50;
+    bottom: calc(100% + 0.4rem);
+    left: 0;
+    width: 18rem;
+    max-width: min(18rem, 90vw);
+    padding: 0.75rem 0.875rem;
+    background: var(--panel-ceramic-strong);
+    border: 1px solid var(--border-strong);
+    border-radius: 0.625rem;
+    box-shadow: var(--panel-shadow);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--foreground);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    white-space: normal;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  .omegax-term-popover-eyebrow {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .omegax-term-popover-body {
+    margin: 0;
+    color: var(--foreground);
+  }
+
+  .omegax-term-popover-link {
+    color: var(--cyan-ink);
+    text-decoration: underline;
+    font-size: 0.75rem;
+    align-self: flex-start;
+  }
+
+  .omegax-term-popover-link:hover,
+  .omegax-term-popover-link:focus-visible {
+    text-decoration-thickness: 2px;
   }
 }

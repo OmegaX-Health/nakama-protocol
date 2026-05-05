@@ -8,10 +8,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { Landmark, LoaderCircle, RefreshCcw, Users, Vote as VoteIcon, WalletCards } from "lucide-react";
 
+import { Amount } from "@/components/amount";
 import { GovernanceProposalDetailPanel } from "@/components/governance-proposal-detail-panel";
 import { ProtocolDetailDisclosure } from "@/components/protocol-detail-disclosure";
 import { RealmsActionsPanel } from "@/components/realms-actions-panel";
-import { executeProtocolTransaction } from "@/lib/protocol-action";
+import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
+import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
   buildDepositGoverningTokensTx,
   buildSchemaStateProposalPlan,
@@ -84,6 +86,7 @@ export function GovernanceConsole({
   const { publicKey, sendTransaction } = useWallet();
   const router = useRouter();
   const runtime = useMemo(() => getGovernanceRuntimeConfig(), []);
+  const { confirmReview, reviewPrompt } = useProtocolTransactionReviewPrompt();
   const [dashboard, setDashboard] = useState<GovernanceDashboardSummary | null>(null);
   const [protocolConfig, setProtocolConfig] = useState<ProtocolConfigSummary | null>(initialProtocolConfig);
   const [schemas, setSchemas] = useState<SchemaSummary[]>([]);
@@ -235,11 +238,15 @@ export function GovernanceConsole({
         connection,
         owner: publicKey,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Deposit governance tokens",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -249,7 +256,6 @@ export function GovernanceConsole({
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Deposit failed.");
       setStatusTone("error");
@@ -268,11 +274,15 @@ export function GovernanceConsole({
         connection,
         owner: publicKey,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Withdraw governance tokens",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -282,7 +292,6 @@ export function GovernanceConsole({
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Withdraw failed.");
       setStatusTone("error");
@@ -300,11 +309,15 @@ export function GovernanceConsole({
       const plan = await planBuilder();
       let lastExplorerUrl: string | null = null;
       for (const step of plan.steps) {
-        const result = await executeProtocolTransaction({
+        const result = await executeProtocolTransactionWithToast({
           connection,
           sendTransaction,
           tx: step.tx,
           label: step.label,
+          confirmReview,
+          onRetry: () => {
+            void submitPlan(label, planBuilder);
+          },
         });
         if (!result.ok) {
           setStatus(result.error);
@@ -339,11 +352,15 @@ export function GovernanceConsole({
         recentBlockhash: blockhash,
         emergencyPaused,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: emergencyPaused ? "Enable protocol pause" : "Resume protocol",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -353,7 +370,6 @@ export function GovernanceConsole({
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Protocol pause update failed.");
       setStatusTone("error");
@@ -420,6 +436,7 @@ export function GovernanceConsole({
 
   return (
     <div className="space-y-5">
+      {reviewPrompt}
       <section className="surface-card space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
@@ -464,7 +481,9 @@ export function GovernanceConsole({
 
           <article className="operator-summary-card">
             <p className="metric-label">Native treasury</p>
-            <p className="text-sm font-semibold text-[var(--foreground)]">{Number(dashboard.nativeTreasuryLamports) / 1e9} SOL</p>
+            <p className="text-sm font-semibold text-[var(--foreground)]">
+              <Amount value={dashboard.nativeTreasuryLamports} showUsd />
+            </p>
             <p className="text-xs text-[var(--muted-foreground)] break-all">{dashboard.nativeTreasuryAddress}</p>
           </article>
 

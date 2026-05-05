@@ -8,7 +8,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useConnection } from "@solana/wallet-adapter-react";
 
 import { GovernanceConsole } from "@/components/governance-console";
-import { ProtocolBootstrapPanel } from "@/components/protocol-bootstrap-panel";
+import {
+  GovernanceOperatorDrawer,
+  type GovernanceOperatorSection,
+} from "@/components/governance-operator-drawer";
 import { useWorkspacePersona } from "@/components/workspace-persona";
 import { GovernanceQueueSkeleton } from "@/components/governance-queue-skeleton";
 import { loadGovernanceProposalQueue } from "@/lib/governance-readonly";
@@ -40,12 +43,7 @@ const TAB_ICONS: Record<GovernanceTabId, string> = {
   templates: "hub",
 };
 
-const TAB_NUMBERS: Record<GovernanceTabId, string> = {
-  overview: "01",
-  queue: "02",
-  authorities: "03",
-  templates: "04",
-};
+const OPERATOR_PERSONAS: ReadonlySet<string> = new Set(["capital", "governance", "sponsor"]);
 
 /* ── Helpers ────────────────────────────────────────── */
 
@@ -53,22 +51,22 @@ function personaHeroCopy(persona: string): { eyebrow: string; subtitle: string }
   switch (persona) {
     case "sponsor":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // SPONSOR_WORKSPACE",
+        eyebrow: "Governance",
         subtitle: "Track plan and series controls under governance review before they reach the operational rail.",
       };
     case "capital":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // CAPITAL_WORKSPACE",
+        eyebrow: "Governance",
         subtitle: "Inspect protocol controls and authority posture that shape the capital lanes you're allocated to.",
       };
     case "governance":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // GOVERNANCE_WORKSPACE",
+        eyebrow: "Governance",
         subtitle: "Operate the proposal queue, control authorities, and template surface for the shared protocol shell.",
       };
     default:
       return {
-        eyebrow: "PROTOCOL_CONSOLE // OBSERVER_WORKSPACE",
+        eyebrow: "Governance",
         subtitle: "Live proposals, control authorities, and operational templates exposed by the OmegaX protocol shell.",
       };
   }
@@ -153,6 +151,14 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
   const [governanceProposalRows, setGovernanceProposalRows] = useState<Parameters<typeof buildGovernanceQueue>[0]>([]);
   const [proposalQueueLoaded, setProposalQueueLoaded] = useState(false);
   const [proposalQueueError, setProposalQueueError] = useState<string | null>(null);
+  const canOperate = OPERATOR_PERSONAS.has(effectivePersona);
+  const [operatorOpen, setOperatorOpen] = useState(false);
+  const [operatorSection, setOperatorSection] = useState<GovernanceOperatorSection>("governance");
+
+  const openOperator = useCallback((next: GovernanceOperatorSection) => {
+    setOperatorSection(next);
+    setOperatorOpen(true);
+  }, []);
   const queue = useMemo(() => buildGovernanceQueue(governanceProposalRows), [governanceProposalRows]);
 
   /* ── Selection state ── */
@@ -406,6 +412,18 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
               </h1>
               <p className="plans-hero-subtitle">{heroSubtitle}</p>
             </div>
+            {canOperate ? (
+              <div className="plans-hero-actions">
+                <button
+                  type="button"
+                  className="plans-hero-cta"
+                  onClick={() => openOperator("governance")}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+                  Operator actions
+                </button>
+              </div>
+            ) : null}
           </div>
         </header>
 
@@ -475,7 +493,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
         {/* ── KPI strip ─────────────────────── */}
         <section className="plans-kpi-strip" aria-label="Governance workspace telemetry">
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">PROPOSAL_QUEUE</span>
+            <span className="plans-kpi-label">Proposal queue</span>
             <span className="plans-kpi-value" aria-live="polite" aria-label={queueStatus.metricAriaLabel}>
               {showQueueSkeleton ? <span className="governance-queue-skeleton-line governance-queue-skeleton-line-kpi" aria-hidden="true" /> : (
                 <>
@@ -489,17 +507,17 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
             </span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">AUTHORITIES</span>
+            <span className="plans-kpi-label">Authorities</span>
             <span className="plans-kpi-value">{configuredAuthorityWallets.length}</span>
             <span className="plans-kpi-meta">{authorityWallets.length} live lanes</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">TEMPLATES</span>
+            <span className="plans-kpi-label">Templates</span>
             <span className="plans-kpi-value">{GOVERNANCE_TEMPLATE_ROWS.length}</span>
             <span className="plans-kpi-meta">scoped controls</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">RESERVE_DOMAINS</span>
+            <span className="plans-kpi-label">Reserve domains</span>
             <span className="plans-kpi-value">{reserveDomains.length}</span>
             <span className="plans-kpi-meta">{reserveDomains.filter((domain) => domain.active).length} active</span>
           </div>
@@ -519,7 +537,6 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                   onClick={() => handleTabChange(tab.id)}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  <span className="plans-tab-number">{TAB_NUMBERS[tab.id as GovernanceTabId]}</span>
                   <span className="material-symbols-outlined plans-tab-icon">{TAB_ICONS[tab.id as GovernanceTabId]}</span>
                   <span className="plans-tab-label">{tab.label}</span>
                 </button>
@@ -542,7 +559,54 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
             {/* ── Overview tab ── */}
             {activeTab === "overview" ? (
               <div className="plans-overview-grid">
-                <ProtocolBootstrapPanel snapshot={snapshot} onRefresh={refresh} />
+                <article className="plans-card heavy-glass">
+                  <div className="plans-card-head">
+                    <div>
+                      <p className="plans-card-eyebrow">Bootstrap</p>
+                      <h2 className="plans-card-title plans-card-title-display">
+                        Protocol <em>status</em>
+                      </h2>
+                    </div>
+                    {canOperate ? (
+                      <button
+                        type="button"
+                        className="plans-secondary-cta"
+                        onClick={() =>
+                          openOperator(
+                            snapshot.protocolGovernance
+                              ? snapshot.reserveDomains.length === 0
+                                ? "domain"
+                                : "vault"
+                              : "governance",
+                          )
+                        }
+                      >
+                        <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+                        Operator actions
+                      </button>
+                    ) : null}
+                  </div>
+                  <div className="plans-data-grid">
+                    <div className="plans-data-row">
+                      <span className="plans-data-label">Governance</span>
+                      <span className="plans-data-value">
+                        {snapshot.protocolGovernance ? "Initialized" : "Missing"}
+                      </span>
+                    </div>
+                    <div className="plans-data-row">
+                      <span className="plans-data-label">Reserve domains</span>
+                      <span className="plans-data-value">
+                        {snapshot.reserveDomains.length}
+                      </span>
+                    </div>
+                    <div className="plans-data-row">
+                      <span className="plans-data-label">Domain vaults</span>
+                      <span className="plans-data-value">
+                        {snapshot.domainAssetVaults.length}
+                      </span>
+                    </div>
+                  </div>
+                </article>
                 <article className="plans-card plans-vitality heavy-glass">
                   <div className="plans-card-head">
                     <div>
@@ -948,6 +1012,16 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
           </aside>
         </div>
       </div>
+
+      {canOperate ? (
+        <GovernanceOperatorDrawer
+          open={operatorOpen}
+          initialSection={operatorSection}
+          onOpenChange={setOperatorOpen}
+          onRefresh={refresh}
+          snapshot={snapshot}
+        />
+      ) : null}
     </div>
   );
 }

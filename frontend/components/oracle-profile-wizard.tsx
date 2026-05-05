@@ -8,12 +8,13 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { CheckCircle2, LoaderCircle, ShieldCheck } from "lucide-react";
 
+import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { cn } from "@/lib/cn";
 import {
   resolveOracleWizardBootstrapState,
   type OracleWizardBlockingError,
 } from "@/lib/oracle-profile-wizard-bootstrap";
-import { executeProtocolTransaction } from "@/lib/protocol-action";
+import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
   ORACLE_TYPE_HEALTH_APP,
   ORACLE_TYPE_HOSPITAL_CLINIC,
@@ -210,6 +211,7 @@ type OracleProfileWizardProps = {
 export function OracleProfileWizard({ mode, oracleAddress = "" }: OracleProfileWizardProps) {
   const { connection } = useConnection();
   const { connected, publicKey, sendTransaction } = useWallet();
+  const { confirmReview, reviewPrompt } = useProtocolTransactionReviewPrompt();
 
   const [stepIndex, setStepIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -568,11 +570,15 @@ export function OracleProfileWizard({ mode, oracleAddress = "" }: OracleProfileW
           supportedSchemaKeyHashesHex: selectedSchemaHashes,
         });
 
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: mode === "register" ? "Register oracle profile" : "Update oracle profile",
+        confirmReview,
+        onConfirmed: async () => {
+          await loadWizardData();
+        },
       });
 
       if (!result.ok) {
@@ -585,7 +591,6 @@ export function OracleProfileWizard({ mode, oracleAddress = "" }: OracleProfileW
       setStatusMessage(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await loadWizardData();
     } finally {
       setBusyAction(null);
     }
@@ -593,6 +598,7 @@ export function OracleProfileWizard({ mode, oracleAddress = "" }: OracleProfileW
     appUrl,
     connected,
     connection,
+    confirmReview,
     displayName,
     legalName,
     loadWizardData,
@@ -629,11 +635,15 @@ export function OracleProfileWizard({ mode, oracleAddress = "" }: OracleProfileW
         oracle: publicKey,
         recentBlockhash: blockhash,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Claim oracle activation",
+        confirmReview,
+        onConfirmed: async () => {
+          await loadWizardData();
+        },
       });
       if (!result.ok) {
         setClaimError(result.error);
@@ -641,11 +651,10 @@ export function OracleProfileWizard({ mode, oracleAddress = "" }: OracleProfileW
       }
       setClaimSuccess(result.message);
       setTxUrl(result.explorerUrl);
-      await loadWizardData();
     } finally {
       setClaimBusy(false);
     }
-  }, [connected, connection, loadWizardData, normalizedOracleAddress, publicKey, sendTransaction, walletAddress]);
+  }, [connected, confirmReview, connection, loadWizardData, normalizedOracleAddress, publicKey, sendTransaction, walletAddress]);
 
   const showClaimHelper = useMemo(() => {
     if (!normalizedOracleAddress || !isPublicKey(normalizedOracleAddress)) return false;
@@ -798,6 +807,7 @@ export function OracleProfileWizard({ mode, oracleAddress = "" }: OracleProfileW
 
   return (
     <div className="plans-shell">
+      {reviewPrompt}
       <div className="plans-wizard-scroll">
         <header className="plans-wizard-header">
           <div className="plans-wizard-header-ident">

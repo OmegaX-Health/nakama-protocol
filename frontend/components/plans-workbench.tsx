@@ -5,39 +5,43 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useConnection } from "@solana/wallet-adapter-react";
 
+import { PlanCoveragePanel } from "@/components/plan-coverage-panel";
+import {
+  PlanOperatorDrawer,
+  type PlanOperatorSection,
+} from "@/components/plan-operator-drawer";
 import { GenesisProtectAcuteClaimsConsolePanel } from "@/components/genesis-protect-acute-claims-console";
 import { GenesisProtectAcuteReserveConsolePanel } from "@/components/genesis-protect-acute-reserve-console";
 import { GenesisProtectAcuteSetupPanel } from "@/components/genesis-protect-acute-setup-panel";
-import { PlanCoveragePanel } from "@/components/plan-coverage-panel";
-import {
-  ClaimIntakePanel,
-  ClaimsOperatorPanel,
-  MemberSelfServePanel,
-  MembersOperatorPanel,
-  TreasuryOperatorPanel,
-} from "@/components/workbench-action-panels";
+import { useNetworkContext } from "@/components/network-context";
 import { useWorkspacePersona } from "@/components/workspace-persona";
 import { buildCanonicalConsoleStateFromSnapshot } from "@/lib/console-model";
 import { formatAmount, plansForPool, seriesOutcomeCount } from "@/lib/canonical-ui";
-import { GENESIS_PROTECT_ACUTE_PLAN_ID } from "@/lib/genesis-protect-acute";
+import { firstSearchParamValue, type RouteSearchParams, toURLSearchParams } from "@/lib/search-params";
+import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
+import {
+  GENESIS_PROTECT_ACUTE_PLAN_ID,
+  GENESIS_PROTECT_ACUTE_POOL_ID,
+  GENESIS_PROTECT_ACUTE_SKUS,
+  type GenesisProtectAcuteSkuKey,
+} from "@/lib/genesis-protect-acute";
+import {
+  GENESIS_PROTECT_ACUTE_PRIMARY_SKU,
+  GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
+  buildGenesisProtectAcuteArtifactAddresses,
+  buildGenesisProtectAcuteSetupModel,
+} from "@/lib/genesis-protect-acute-operator";
 import {
   buildGenesisProtectAcuteClaimConsoleModel,
   buildGenesisProtectAcuteReserveConsoleModel,
   normalizeGenesisProtectAcuteClaimQueueFilter,
   normalizeGenesisProtectAcuteReserveLaneFilter,
-  type GenesisProtectAcuteClaimQueueFilter,
-  type GenesisProtectAcuteReserveLaneFilter,
 } from "@/lib/genesis-protect-acute-console";
 import {
-  buildGenesisProtectAcuteSetupModel,
-  GENESIS_PROTECT_ACUTE_PRIMARY_SKU,
-  GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-} from "@/lib/genesis-protect-acute-operator";
-import { isUnsetDevnetWalletAddress } from "@/lib/devnet-fixtures";
-import { firstSearchParamValue, type RouteSearchParams, toURLSearchParams } from "@/lib/search-params";
-import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
+  isGenesisPhase0SurfaceActionable,
+  resolveGenesisPhase0LaunchProfile,
+} from "@/lib/genesis-phase0-launch-profile";
 import {
   buildAuditTrail,
   defaultTabForPersona,
@@ -51,95 +55,69 @@ import {
   describeObligationStatus,
   describeSeriesMode,
   describeSeriesStatus,
-  fetchProtocolReadiness,
-  type ProtocolReadiness,
   SERIES_MODE_PROTECTION,
   shortenAddress,
+  hasConfiguredPoolTerms,
 } from "@/lib/protocol";
 import { cn } from "@/lib/cn";
 
 /* ── Constants ──────────────────────────────────────── */
 
 const SERIES_OPTIONAL_TABS = new Set<PlanTabId>(["members", "claims", "treasury", "overview"]);
-
-const TAB_NUMBERS: Record<PlanTabId, string> = {
-  overview: "01",
-  coverage: "02",
-  members: "03",
-  claims: "04",
-  treasury: "05",
-};
+const OPERATOR_PERSONAS: ReadonlySet<string> = new Set(["capital", "governance", "sponsor"]);
 
 type TabHero = { eyebrow: string; title: string; emphasis: string; tail: string; subtitle: string };
-type PlansRouteMode = "plans" | "claims" | "members";
+type PlansRouteMode = "plans" | "claims";
 
 const TAB_HEROES: Record<PlanTabId, TabHero> = {
   overview: {
-    eyebrow: "ACTIVE_WORKSPACE",
-    title: "Active",
-    emphasis: "Workspace.",
+    eyebrow: "Plan",
+    title: "Overview",
+    emphasis: "",
     tail: "",
-    subtitle:
-      "A single operational heartbeat for your plan — capital velocity, claim activity and reserve depth across every lane.",
+    subtitle: "Capital velocity, claim activity, and reserve depth at a glance.",
   },
   coverage: {
-    eyebrow: "PROTECTION_AND_PREMIUM_WORKSPACE",
+    eyebrow: "Plan",
     title: "Coverage",
-    emphasis: "&",
-    tail: "Protection.",
-    subtitle:
-      "Structured protection posture, premium rails, and linked capital context for the active protection lane. This tab only appears when the plan actually has coverage lanes.",
+    emphasis: "",
+    tail: "",
+    subtitle: "Protection series, premium schedule, and linked capital for this plan.",
   },
   members: {
-    eyebrow: "MEMBER_ELIGIBILITY_REGISTER",
-    title: "Member Eligibility",
-    emphasis: "&",
-    tail: "Register.",
-    subtitle:
-      "Every wallet enlisted against this plan, with delegated rights and eligibility posture. Enlist new members or inspect the current register.",
+    eyebrow: "Plan",
+    title: "Members",
+    emphasis: "",
+    tail: "",
+    subtitle: "Enrolled wallets and their eligibility. Enlist new members or review the register.",
   },
   claims: {
-    eyebrow: "LIABILITY_MONITOR",
-    title: "Liability",
-    emphasis: "Monitor.",
+    eyebrow: "Plan",
+    title: "Claims",
+    emphasis: "",
     tail: "",
-    subtitle:
-      "Adjudicated claim cases and outstanding obligations in protocol custody. Trace reserve pressure and initiate settlement actions.",
+    subtitle: "Claim cases and outstanding obligations. Trigger reserve and settlement actions.",
   },
   treasury: {
-    eyebrow: "TREASURY_LANES_AND_CONTROLS",
+    eyebrow: "Plan",
     title: "Treasury",
-    emphasis: "&",
-    tail: "Control Lanes.",
-    subtitle:
-      "Funding lines, reserve posture and every administrative wallet that can act on this plan. The full custody surface.",
+    emphasis: "",
+    tail: "",
+    subtitle: "Funding lines and reserve posture for this plan.",
   },
 };
 
 const ROUTE_HEROES: Record<Exclude<PlansRouteMode, "plans">, TabHero> = {
   claims: {
-    eyebrow: "CANONICAL_CLAIMS_ROUTE",
-    title: "Claim",
-    emphasis: "Ledger.",
+    eyebrow: "Protocol",
+    title: "Claims",
+    emphasis: "",
     tail: "",
-    subtitle:
-      "The live liability workspace for adjudicated claim cases and reserve-linked obligations, mounted directly on its own canonical route.",
-  },
-  members: {
-    eyebrow: "CANONICAL_MEMBERS_ROUTE",
-    title: "Member",
-    emphasis: "Register.",
-    tail: "",
-    subtitle:
-      "The live enrollment and delegation workspace for member positions, mounted directly on its own canonical route without falling back to a redirect.",
+    subtitle: "Claim cases and reserve-linked obligations across every plan.",
   },
 };
 
 /* ── Helpers ────────────────────────────────────────── */
-
-function formatControlLaneAddress(address?: string | null, size = 6) {
-  return isUnsetDevnetWalletAddress(address) ? "Not configured" : shortenAddress(address ?? "", size);
-}
 
 function statusVariant(described: string): "success" | "warning" | "danger" | "info" | "muted" {
   const l = described.toLowerCase();
@@ -154,12 +132,111 @@ function StatusBadge({ label }: { label: string }) {
   return <span className={`plans-badge plans-badge-${statusVariant(label)}`}>{label}</span>;
 }
 
+function humanizeFundingLineType(lineType: number): string {
+  const raw = describeFundingLineType(lineType);
+  if (raw.startsWith("unknown")) return raw;
+  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function PlansEmptyState({ title, copy }: { title: string; copy: string }) {
   return (
     <div className="plans-empty liquid-glass">
       <strong>{title}</strong>
       <p>{copy}</p>
     </div>
+  );
+}
+
+function GenesisPreBootstrapLanding(props: {
+  bootstrapHref: string;
+  overviewHref: string;
+  artifactSummary: {
+    healthPlanAddress: string | null;
+    poolAddress: string | null;
+  };
+}) {
+  return (
+    <section className="plans-stack">
+      <article className="plans-card heavy-glass">
+        <div className="plans-card-head">
+          <div>
+            <p className="plans-card-eyebrow">GENESIS_READY_SURFACE</p>
+            <h2 className="plans-card-title plans-card-title-display">
+              Create Genesis Protect Acute <em>first</em>
+            </h2>
+          </div>
+          <span className="status-pill status-off">Not created</span>
+        </div>
+        <p className="plans-card-body">
+          Genesis Protect Acute is the default launch story, but this live snapshot does not yet expose the canonical plan shell.
+          Create the template before calling Event 7 or Travel 30 live.
+        </p>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          {(["travel30", "event7"] as const).map((skuKey) => {
+            const sku = GENESIS_PROTECT_ACUTE_SKUS[skuKey];
+            return (
+              <article key={sku.key} className="plans-wizard-support-card">
+                <p className="plans-card-eyebrow">{sku.key === GENESIS_PROTECT_ACUTE_PRIMARY_SKU.key ? "Primary coverage product" : "Fast demo coverage product"}</p>
+                <h3 className="plans-wizard-support-title">{sku.displayName}</h3>
+                <p className="plans-wizard-support-copy">{sku.issuanceControls.publicStatusRule}</p>
+                <div className="plans-settings-grid">
+                  <div className="plans-settings-row">
+                    <div>
+                      <span className="plans-settings-label">Cover window</span>
+                      <span className="plans-settings-lane">Published SKU posture</span>
+                    </div>
+                    <span className="plans-settings-address">{sku.coverWindowDays} days</span>
+                  </div>
+                  <div className="plans-settings-row">
+                    <div>
+                      <span className="plans-settings-label">Payout cap</span>
+                      <span className="plans-settings-lane">Maximum visible member benefit</span>
+                    </div>
+                    <span className="plans-settings-address">${sku.payoutCapUsd.toLocaleString()}</span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="plans-settings-grid">
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Launch truth</span>
+              <span className="plans-settings-lane">Readiness target only until reserve, oracle, and operator sign-off are complete</span>
+            </div>
+            <span className="plans-settings-address">Not broadly live insurance</span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Canonical plan PDA</span>
+              <span className="plans-settings-lane">Derived from the selected live reserve domain when available</span>
+            </div>
+            <span className="plans-settings-address">{props.artifactSummary.healthPlanAddress ?? "Awaiting reserve domain"}</span>
+          </div>
+          <div className="plans-settings-row">
+            <div>
+              <span className="plans-settings-label">Canonical pool PDA</span>
+              <span className="plans-settings-lane">Genesis reserve pool expected behind the coverage products</span>
+            </div>
+            <span className="plans-settings-address">{props.artifactSummary.poolAddress ?? "Awaiting reserve domain"}</span>
+          </div>
+        </div>
+
+        <div className="plans-wizard-support-actions">
+          <Link href={props.bootstrapHref} className="plans-primary-cta">
+            <span className="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
+            Create Genesis template
+          </Link>
+          <Link href={props.overviewHref} className="plans-secondary-cta">
+            <span className="material-symbols-outlined" aria-hidden="true">account_tree</span>
+            Open infrastructure map
+          </Link>
+        </div>
+      </article>
+    </section>
   );
 }
 
@@ -180,10 +257,10 @@ function walletInitials(wallet: string): string {
 
 function personaEyebrow(persona: string): string {
   switch (persona) {
-    case "sponsor": return "PROTOCOL_CONSOLE // SPONSOR_WORKSPACE";
-    case "capital": return "PROTOCOL_CONSOLE // CAPITAL_WORKSPACE";
-    case "governance": return "PROTOCOL_CONSOLE // GOVERNANCE_WORKSPACE";
-    default: return "PROTOCOL_CONSOLE // OBSERVER_WORKSPACE";
+    case "sponsor": return "Sponsor";
+    case "capital": return "Capital";
+    case "governance": return "Governance";
+    default: return "Observer";
   }
 }
 
@@ -239,37 +316,47 @@ type PlansWorkbenchProps = {
 };
 
 export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
-  const { connection } = useConnection();
   const router = useRouter();
   const pathname = usePathname();
   const { effectivePersona } = useWorkspacePersona();
+  const { selectedNetwork } = useNetworkContext();
   const { snapshot, loading, error, refresh } = useProtocolConsoleSnapshot();
+  const phase0Profile = useMemo(
+    () => resolveGenesisPhase0LaunchProfile({ network: selectedNetwork }),
+    [selectedNetwork],
+  );
   const consoleState = useMemo(() => buildCanonicalConsoleStateFromSnapshot(snapshot), [snapshot]);
-  const routeMode: PlansRouteMode = pathname === "/claims" ? "claims" : pathname === "/members" ? "members" : "plans";
-  const forcedTab: PlanTabId | null = routeMode === "claims" ? "claims" : routeMode === "members" ? "members" : null;
+  const routeMode: PlansRouteMode = pathname === "/claims" ? "claims" : "plans";
+  const forcedTab: PlanTabId | null = routeMode === "claims" ? "claims" : null;
 
   /* ── Selection state ── */
 
   const requestedTab = firstSearchParamValue(searchParams.tab);
-  const requestedSetup = firstSearchParamValue(searchParams.setup);
-  const genesisRequested = requestedSetup === GENESIS_PROTECT_ACUTE_TEMPLATE_KEY;
+  const querySetup = firstSearchParamValue(searchParams.setup)?.trim() ?? "";
+  const genesisSetupMode = querySetup === GENESIS_PROTECT_ACUTE_TEMPLATE_KEY;
   const queryPool = firstSearchParamValue(searchParams.pool)?.trim() ?? "";
-  const allPlans = useMemo(
-    () => (queryPool ? plansForPool(queryPool, snapshot) : snapshot.healthPlans),
-    [queryPool, snapshot],
-  );
-  const queryPlan = firstSearchParamValue(searchParams.plan)?.trim() ?? "";
-  const matchedPlan = useMemo(() => allPlans.find((plan) => plan.address === queryPlan) ?? null, [allPlans, queryPlan]);
   const genesisPlan = useMemo(
     () => snapshot.healthPlans.find((plan) => plan.planId === GENESIS_PROTECT_ACUTE_PLAN_ID) ?? null,
     [snapshot.healthPlans],
   );
+  const genesisPool = useMemo(
+    () => snapshot.liquidityPools.find((pool) => pool.poolId === GENESIS_PROTECT_ACUTE_POOL_ID) ?? null,
+    [snapshot.liquidityPools],
+  );
+  const allPlans = useMemo(
+    () => {
+      if (genesisSetupMode) return genesisPlan ? [genesisPlan] : [];
+      return queryPool ? plansForPool(queryPool, snapshot) : snapshot.healthPlans;
+    },
+    [genesisPlan, genesisSetupMode, queryPool, snapshot],
+  );
+  const queryPlan = firstSearchParamValue(searchParams.plan)?.trim() ?? "";
+  const matchedPlan = useMemo(() => allPlans.find((plan) => plan.address === queryPlan) ?? null, [allPlans, queryPlan]);
   const hasInvalidPlan = Boolean(queryPlan) && !matchedPlan;
   const selectedPlan = useMemo(() => {
     if (hasInvalidPlan) return null;
-    if (genesisRequested) return genesisPlan;
     return matchedPlan ?? allPlans[0] ?? null;
-  }, [allPlans, genesisPlan, genesisRequested, hasInvalidPlan, matchedPlan]);
+  }, [allPlans, hasInvalidPlan, matchedPlan]);
 
   const planSeries = useMemo(() => {
     if (!selectedPlan) return [];
@@ -287,7 +374,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
     },
     [forcedTab, planProtectionSeries.length],
   );
-  const defaultTab = defaultTabForPersona("plans", effectivePersona) as PlanTabId;
+  const defaultTab = (genesisSetupMode ? "overview" : defaultTabForPersona("plans", effectivePersona)) as PlanTabId;
   const activeTab = (forcedTab
     ?? availablePlanTabs.find((tab) => tab.id === requestedTab)?.id
     ?? availablePlanTabs.find((tab) => tab.id === defaultTab)?.id
@@ -297,31 +384,31 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
   const querySeries = firstSearchParamValue(searchParams.series)?.trim() ?? "";
   const queryClaim = firstSearchParamValue(searchParams.claim)?.trim() ?? "";
   const queryMember = firstSearchParamValue(searchParams.member)?.trim() ?? "";
-  const routePanel = firstSearchParamValue(searchParams.panel)?.trim() ?? "";
-  const queryQueue = firstSearchParamValue(searchParams.queue)?.trim() ?? "";
-  const queryLaneFilter = firstSearchParamValue(searchParams.lane)?.trim() ?? "";
-  const queryLine = firstSearchParamValue(searchParams.line)?.trim() ?? "";
-  const genesisClaimQueueFilter = normalizeGenesisProtectAcuteClaimQueueFilter(queryQueue);
-  const genesisReserveLaneFilter = normalizeGenesisProtectAcuteReserveLaneFilter(queryLaneFilter);
   const seriesSelectionOptional = SERIES_OPTIONAL_TABS.has(activeTab);
   const matchedSeries = useMemo(
     () => planSeries.find((series) => series.address === querySeries) ?? null,
     [planSeries, querySeries],
   );
   const hasInvalidSeries = Boolean(querySeries) && !matchedSeries;
-  const preferredProtectionSeries = useMemo(() => {
-    if (selectedPlan?.planId !== GENESIS_PROTECT_ACUTE_PLAN_ID) return planProtectionSeries[0] ?? null;
-    return planProtectionSeries.find((series) => series.seriesId === GENESIS_PROTECT_ACUTE_PRIMARY_SKU.seriesId)
-      ?? planProtectionSeries[0]
-      ?? null;
-  }, [planProtectionSeries, selectedPlan?.planId]);
+  const preferredProtectionSeries = useMemo(
+    () => {
+      if (genesisSetupMode) {
+        return planProtectionSeries.find((series) => series.seriesId === GENESIS_PROTECT_ACUTE_SKUS.travel30.seriesId)
+          ?? planProtectionSeries[0]
+          ?? null;
+      }
+      return planProtectionSeries[0] ?? null;
+    },
+    [genesisSetupMode, planProtectionSeries],
+  );
   const selectedSeries = useMemo(() => {
     if (hasInvalidSeries) return null;
     if (matchedSeries && (activeTab !== "coverage" || matchedSeries.mode === SERIES_MODE_PROTECTION)) return matchedSeries;
+    if (genesisSetupMode) return preferredProtectionSeries;
     if (activeTab === "coverage") return preferredProtectionSeries;
     if (seriesSelectionOptional) return null;
     return planSeries[0] ?? null;
-  }, [activeTab, hasInvalidSeries, matchedSeries, planSeries, preferredProtectionSeries, seriesSelectionOptional]);
+  }, [activeTab, genesisSetupMode, hasInvalidSeries, matchedSeries, planSeries, preferredProtectionSeries, seriesSelectionOptional]);
 
   /* ── Derived data ── */
 
@@ -365,103 +452,98 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
     () => snapshot.reserveDomains.find((domain) => domain.address === selectedPlan?.reserveDomain) ?? null,
     [selectedPlan?.reserveDomain, snapshot.reserveDomains],
   );
-  const genesisSetupVisible = routeMode === "plans"
-    && (genesisRequested || selectedPlan?.planId === GENESIS_PROTECT_ACUTE_PLAN_ID || genesisPlan?.address === selectedPlan?.address);
-  const genesisActivePlan = selectedPlan?.planId === GENESIS_PROTECT_ACUTE_PLAN_ID;
-  const [genesisReadiness, setGenesisReadiness] = useState<ProtocolReadiness | null>(null);
-  const genesisSetupModel = useMemo(
-    () => buildGenesisProtectAcuteSetupModel({ snapshot, readiness: genesisReadiness }),
-    [genesisReadiness, snapshot],
+  const genesisReserveDomain = useMemo(
+    () => {
+      if (selectedReserveDomain) return selectedReserveDomain;
+      if (genesisPool) {
+        return snapshot.reserveDomains.find((domain) => domain.address === genesisPool.reserveDomain) ?? null;
+      }
+      return snapshot.reserveDomains[0] ?? null;
+    },
+    [genesisPool, selectedReserveDomain, snapshot.reserveDomains],
   );
-  const genesisPoolAddress = genesisSetupModel.pool?.address ?? null;
-  const genesisPlanAddress = genesisSetupModel.plan?.address ?? genesisPlan?.address ?? null;
-  const genesisPrimarySeriesAddress = genesisSetupModel.seriesBySku.travel30?.address ?? null;
-  const genesisBootstrapHref = `/plans/new?template=${GENESIS_PROTECT_ACUTE_TEMPLATE_KEY}`;
-  const genesisWorkspaceHref = buildPlansHref({
-    plan: genesisPlanAddress,
-    series: genesisPrimarySeriesAddress,
-    tab: "overview",
-    setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-  });
-  const genesisClaimsHref = buildPlansHref({
-    plan: genesisPlanAddress,
-    series: genesisPrimarySeriesAddress,
-    tab: "claims",
-    setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-  });
-  const genesisTreasuryHref = buildPlansHref({
-    plan: genesisPlanAddress,
-    series: genesisPrimarySeriesAddress,
-    tab: "treasury",
-    setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-  });
-  const genesisSkuConsoleHrefs = {
-    event7: {
-      claims: buildPlansHref({
-        plan: genesisPlanAddress,
-        series: genesisSetupModel.seriesBySku.event7?.address ?? null,
-        tab: "claims",
-        setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-      }),
-      treasury: buildPlansHref({
-        plan: genesisPlanAddress,
-        series: genesisSetupModel.seriesBySku.event7?.address ?? null,
-        tab: "treasury",
-        setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-      }),
+  const genesisArtifactAddresses = useMemo(
+    () => {
+      if (!genesisReserveDomain) return null;
+      return buildGenesisProtectAcuteArtifactAddresses(genesisReserveDomain.address);
     },
-    travel30: {
-      claims: buildPlansHref({
-        plan: genesisPlanAddress,
-        series: genesisSetupModel.seriesBySku.travel30?.address ?? null,
-        tab: "claims",
-        setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-      }),
-      treasury: buildPlansHref({
-        plan: genesisPlanAddress,
-        series: genesisSetupModel.seriesBySku.travel30?.address ?? null,
-        tab: "treasury",
-        setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-      }),
-    },
-  } as const;
-  const genesisCapitalClassesHref = genesisPoolAddress
-    ? `/capital?pool=${encodeURIComponent(genesisPoolAddress)}&tab=classes`
-    : "/capital?tab=classes";
-  const genesisCapitalAllocationsHref = genesisPoolAddress
-    ? `/capital?pool=${encodeURIComponent(genesisPoolAddress)}&tab=allocations`
-    : "/capital?tab=allocations";
-  const genesisOracleBindingsHref = "/oracles?tab=bindings";
+    [genesisReserveDomain],
+  );
+  const genesisSetupModel = useMemo(
+    () => buildGenesisProtectAcuteSetupModel({
+      snapshot,
+      readiness: {
+        poolTermsConfigured: hasConfiguredPoolTerms(genesisPool),
+        poolOraclePolicyConfigured: Boolean(
+          genesisPool && snapshot.poolOraclePolicies.some((policy) => policy.liquidityPool === genesisPool.address),
+        ),
+      },
+    }),
+    [genesisPool, snapshot],
+  );
+  const genesisClaimQueueFilter = normalizeGenesisProtectAcuteClaimQueueFilter(firstSearchParamValue(searchParams.queue));
+  const genesisReserveLaneFilter = normalizeGenesisProtectAcuteReserveLaneFilter(firstSearchParamValue(searchParams.lane));
+  const queryFundingLine = firstSearchParamValue(searchParams.fundingLine)?.trim() ?? "";
   const genesisClaimConsoleModel = useMemo(
-    () => (genesisActivePlan
-      ? buildGenesisProtectAcuteClaimConsoleModel({
-        snapshot,
-        setupModel: genesisSetupModel,
-        selectedSeriesAddress: selectedSeries?.address ?? null,
-        selectedClaimAddress: queryClaim || null,
-        queueFilter: genesisClaimQueueFilter,
-      })
-      : null),
-    [genesisActivePlan, genesisClaimQueueFilter, genesisSetupModel, queryClaim, selectedSeries?.address, snapshot],
+    () => buildGenesisProtectAcuteClaimConsoleModel({
+      snapshot,
+      setupModel: genesisSetupModel,
+      selectedSeriesAddress: selectedSeries?.address,
+      selectedClaimAddress: queryClaim,
+      queueFilter: genesisClaimQueueFilter,
+    }),
+    [genesisClaimQueueFilter, genesisSetupModel, queryClaim, selectedSeries?.address, snapshot],
   );
   const genesisReserveConsoleModel = useMemo(
-    () => (genesisActivePlan
-      ? buildGenesisProtectAcuteReserveConsoleModel({
-        snapshot,
-        setupModel: genesisSetupModel,
-        selectedSeriesAddress: selectedSeries?.address ?? null,
-        selectedFundingLineAddress: queryLine || null,
-        laneFilter: genesisReserveLaneFilter,
-      })
-      : null),
-    [genesisActivePlan, genesisReserveLaneFilter, genesisSetupModel, queryLine, selectedSeries?.address, snapshot],
+    () => buildGenesisProtectAcuteReserveConsoleModel({
+      snapshot,
+      setupModel: genesisSetupModel,
+      selectedSeriesAddress: selectedSeries?.address,
+      selectedFundingLineAddress: queryFundingLine,
+      laneFilter: genesisReserveLaneFilter,
+    }),
+    [genesisReserveLaneFilter, genesisSetupModel, queryFundingLine, selectedSeries?.address, snapshot],
+  );
+  const genesisPlanAddress = genesisSetupModel.plan?.address ?? selectedPlan?.address ?? null;
+  const genesisPoolAddress = genesisSetupModel.pool?.address ?? genesisPool?.address ?? null;
+  const genesisClaimsHref = buildPlansHref({
+    setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
+    plan: genesisPlanAddress,
+    series: selectedSeries?.address ?? genesisSetupModel.seriesBySku.travel30?.address,
+    tab: "claims",
+  });
+  const genesisTreasuryHref = buildPlansHref({
+    setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
+    plan: genesisPlanAddress,
+    series: selectedSeries?.address ?? genesisSetupModel.seriesBySku.travel30?.address,
+    tab: "treasury",
+  });
+  const genesisBootstrapHref = `/plans/new?template=${GENESIS_PROTECT_ACUTE_TEMPLATE_KEY}`;
+  const genesisSkuConsoleHrefs = useMemo(
+    () => Object.fromEntries(
+      (Object.keys(GENESIS_PROTECT_ACUTE_SKUS) as GenesisProtectAcuteSkuKey[]).map((skuKey) => {
+        const series = genesisSetupModel.seriesBySku[skuKey]?.address ?? null;
+        return [skuKey, {
+          claims: buildPlansHref({
+            setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
+            plan: genesisPlanAddress,
+            series,
+            tab: "claims",
+          }),
+          treasury: buildPlansHref({
+            setup: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
+            plan: genesisPlanAddress,
+            series,
+            tab: "treasury",
+          }),
+        }];
+      }),
+    ) as Record<GenesisProtectAcuteSkuKey, { claims: string; treasury: string }>,
+    [genesisPlanAddress, genesisSetupModel.seriesBySku],
   );
   const selectedClaim = useMemo(
-    () => {
-      if (activeTab === "claims" && genesisClaimConsoleModel) return genesisClaimConsoleModel.selectedClaimCase;
-      return filteredClaims.find((claim) => claim.address === queryClaim) ?? filteredClaims[0] ?? null;
-    },
-    [activeTab, filteredClaims, genesisClaimConsoleModel, queryClaim],
+    () => filteredClaims.find((claim) => claim.address === queryClaim) ?? filteredClaims[0] ?? null,
+    [filteredClaims, queryClaim],
   );
   const seriesSelectorOptions = activeTab === "coverage" ? planProtectionSeries : planSeries;
   const auditTrail = useMemo(
@@ -469,8 +551,9 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
       section: "plans",
       planAddress: selectedPlan?.address,
       seriesAddress: selectedSeries?.address,
+      source: snapshot,
     }),
-    [selectedPlan, selectedSeries],
+    [selectedPlan, selectedSeries, snapshot],
   );
 
   /* ── Members filter state ── */
@@ -489,32 +572,6 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
       return !(label.includes("eligible") || label.includes("active") || label.includes("pending") || label.includes("review"));
     });
   }, [filteredMembers, memberSearch, memberStatusFilter]);
-
-  useEffect(() => {
-    if (!genesisSetupVisible || !genesisPoolAddress) {
-      setGenesisReadiness(null);
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const nextReadiness = await fetchProtocolReadiness({
-          connection,
-          poolAddress: genesisPoolAddress,
-        });
-        if (!cancelled) {
-          setGenesisReadiness(nextReadiness);
-        }
-      } catch {
-        if (!cancelled) {
-          setGenesisReadiness(null);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [connection, genesisPoolAddress, genesisSetupVisible]);
 
   /* ── URL sync ── */
 
@@ -545,28 +602,12 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
       nextUpdates.claim = selectedClaim.address;
     }
     if ((routeMode === "claims" || activeTab === "claims") && !selectedClaim && queryClaim) nextUpdates.claim = null;
-    if ((routeMode === "members" || activeTab === "members") && selectedMember && queryMember !== selectedMember.address) {
+    if (activeTab === "members" && selectedMember && queryMember !== selectedMember.address) {
       nextUpdates.member = selectedMember.address;
     }
-    if ((routeMode === "members" || activeTab === "members") && !selectedMember && queryMember) nextUpdates.member = null;
-    if (activeTab === "claims" && genesisActivePlan) {
-      const desiredQueue = genesisClaimQueueFilter === "all" ? null : genesisClaimQueueFilter;
-      if ((queryQueue || null) !== desiredQueue) nextUpdates.queue = desiredQueue;
-    } else if (queryQueue) {
-      nextUpdates.queue = null;
-    }
-    if (activeTab === "treasury" && genesisActivePlan) {
-      const desiredLane = genesisReserveLaneFilter === "all" ? null : genesisReserveLaneFilter;
-      if ((queryLaneFilter || null) !== desiredLane) nextUpdates.lane = desiredLane;
-      const selectedFundingLineAddress = genesisReserveConsoleModel?.selectedLane?.fundingLineAddress ?? null;
-      if (selectedFundingLineAddress && queryLine !== selectedFundingLineAddress) nextUpdates.line = selectedFundingLineAddress;
-      if (!selectedFundingLineAddress && queryLine) nextUpdates.line = null;
-    } else {
-      if (queryLaneFilter) nextUpdates.lane = null;
-      if (queryLine) nextUpdates.line = null;
-    }
+    if (activeTab === "members" && !selectedMember && queryMember) nextUpdates.member = null;
     if (Object.keys(nextUpdates).length > 0) updateParams(nextUpdates);
-  }, [activeTab, forcedTab, genesisActivePlan, genesisClaimQueueFilter, genesisReserveConsoleModel?.selectedLane?.fundingLineAddress, genesisReserveLaneFilter, hasInvalidPlan, hasInvalidSeries, queryClaim, queryLaneFilter, queryLine, queryMember, queryPlan, queryQueue, querySeries, requestedTab, routeMode, selectedClaim, selectedMember, selectedPlan, selectedSeries, updateParams]);
+  }, [activeTab, forcedTab, hasInvalidPlan, hasInvalidSeries, queryClaim, queryMember, queryPlan, querySeries, requestedTab, routeMode, selectedClaim, selectedMember, selectedPlan, selectedSeries, updateParams]);
 
   /* ── Scroll tab into view ── */
 
@@ -577,6 +618,27 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
     const activeButton = bar.querySelector<HTMLButtonElement>(`[data-tab-id="${activeTab}"]`);
     if (activeButton) activeButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
   }, [activeTab]);
+
+  /* ── Operator drawer ── */
+
+  const canOperate =
+    OPERATOR_PERSONAS.has(effectivePersona)
+    && isGenesisPhase0SurfaceActionable(phase0Profile, "policyAdminActions");
+  const [operatorOpen, setOperatorOpen] = useState(false);
+  const [operatorSection, setOperatorSection] = useState<PlanOperatorSection>("funding");
+
+  const openOperator = useCallback((next: PlanOperatorSection) => {
+    setOperatorSection(next);
+    setOperatorOpen(true);
+  }, []);
+
+  const sectionForTab: Record<PlanTabId, PlanOperatorSection> = {
+    overview: "funding",
+    coverage: "funding",
+    members: "members",
+    claims: "claims",
+    treasury: "funding",
+  };
 
   /* ── Derived stats ── */
 
@@ -604,8 +666,18 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
     }));
   }, [sponsorView]);
 
-  const hero = routeMode === "plans" ? TAB_HEROES[activeTab] : ROUTE_HEROES[routeMode];
-  const eyebrow = routeMode === "plans" && activeTab === "overview" ? personaEyebrow(effectivePersona) : hero.eyebrow;
+  const hero = genesisSetupMode && routeMode === "plans"
+    ? {
+      eyebrow: "Genesis Protect Acute",
+      title: "Launch",
+      emphasis: "readiness",
+      tail: "",
+      subtitle: "Sponsor/operator control room for Travel 30, Event 7, reserve lanes, claims, capital, oracles, and governance.",
+    }
+    : routeMode === "plans" ? TAB_HEROES[activeTab] : ROUTE_HEROES[routeMode];
+  const eyebrow = genesisSetupMode && routeMode === "plans"
+    ? hero.eyebrow
+    : routeMode === "plans" && activeTab === "overview" ? personaEyebrow(effectivePersona) : hero.eyebrow;
   const planWorkspaceHref = `/plans${selectedPlan || selectedSeries
     ? `?${new URLSearchParams({
       ...(selectedPlan ? { plan: selectedPlan.address } : {}),
@@ -616,10 +688,11 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
   /* ── Invalid selection guard ── */
 
   const invalidSelection = hasInvalidPlan
-    ? { title: "Plan not found", copy: "The requested health plan is not present in the current live protocol state. Choose another plan to continue." }
+    ? { title: "Plan not found", copy: "The requested coverage plan is not present in the current live protocol state. Choose another plan to continue." }
     : hasInvalidSeries
-      ? { title: "Series not found", copy: "The requested policy series is not linked to the selected plan. Choose another series or clear the series filter." }
+      ? { title: "Coverage product not found", copy: "The requested coverage product is not linked to the selected plan. Choose another product or clear the filter." }
       : null;
+  const showGenesisPreBootstrap = genesisSetupMode && !loading && !error && !genesisSetupModel.plan;
 
   /* ── Main render ── */
 
@@ -641,18 +714,37 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
               <p className="plans-hero-subtitle">{hero.subtitle}</p>
             </div>
             <div className="plans-hero-actions">
-              <Link href={routeMode === "plans" ? "/plans/new" : planWorkspaceHref} className="plans-hero-cta">
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  {routeMode === "plans" ? "add" : "arrow_back"}
-                </span>
-                {routeMode === "plans" ? "NEW_PLAN" : "OPEN_PLAN_WORKSPACE"}
-              </Link>
-              {routeMode === "plans" ? (
-                <Link href={genesisPlanAddress ? genesisWorkspaceHref : genesisBootstrapHref} className="plans-hero-cta">
-                  <span className="material-symbols-outlined" aria-hidden="true">rocket_launch</span>
-                  {genesisPlanAddress ? "OPEN_GENESIS" : "GENESIS_TEMPLATE"}
-                </Link>
+              {canOperate ? (
+                <button
+                  type="button"
+                  className="plans-hero-cta"
+                  onClick={() => openOperator(sectionForTab[activeTab])}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">tune</span>
+                  Operator actions
+                </button>
               ) : null}
+              {routeMode === "plans" ? (
+                canOperate ? (
+                  <Link
+                    href={genesisSetupMode ? genesisBootstrapHref : "/plans/new"}
+                    className="plans-secondary-cta"
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">add</span>
+                    {genesisSetupMode ? "Genesis template" : "New plan"}
+                  </Link>
+                ) : (
+                  <span className="plans-secondary-cta plans-action-disabled" aria-disabled="true">
+                    <span className="material-symbols-outlined" aria-hidden="true">visibility</span>
+                    Read-only Phase 0
+                  </span>
+                )
+              ) : (
+                <Link href={planWorkspaceHref} className={canOperate ? "plans-secondary-cta" : "plans-hero-cta"}>
+                  <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+                  Back to plan
+                </Link>
+              )}
             </div>
           </div>
         </header>
@@ -662,7 +754,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
             <article className="plans-card liquid-glass">
               <div className="plans-card-head">
                 <div>
-                  <p className="plans-card-eyebrow">LIVE_PROTOCOL_STATE</p>
+                  <p className="plans-card-eyebrow">Live protocol state</p>
                   <h2 className="plans-card-title plans-card-title-display">
                     {loading ? <>Syncing <em>devnet</em></> : <>RPC <em>attention</em></>}
                   </h2>
@@ -677,12 +769,23 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
           </div>
         ) : null}
 
+        {showGenesisPreBootstrap ? (
+          <GenesisPreBootstrapLanding
+            bootstrapHref={genesisBootstrapHref}
+            overviewHref="/overview"
+            artifactSummary={{
+              healthPlanAddress: genesisArtifactAddresses?.healthPlanAddress ?? null,
+              poolAddress: genesisArtifactAddresses?.poolAddress ?? null,
+            }}
+          />
+        ) : (
+          <>
         {/* ── Context bar ────────────────────── */}
         <div className="plans-context-bar">
           <div className="plans-context-selectors liquid-glass">
             <HeroSelector
-              eyebrow="HEALTH_PLAN"
-              label="Health plan"
+              eyebrow="Plan"
+              label="Coverage plan"
               value={selectedPlan}
               options={allPlans}
               renderLabel={(plan) => plan.displayName}
@@ -692,13 +795,13 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
             />
             <span className="plans-context-divider" aria-hidden="true" />
             <HeroSelector
-              eyebrow="POLICY_SERIES"
-              label="Policy series"
+              eyebrow={genesisSetupMode ? "Coverage product" : "Series"}
+              label={genesisSetupMode ? "Coverage product" : "Policy series"}
               value={selectedSeries}
               options={seriesSelectorOptions}
               renderLabel={(series) => series.displayName}
               renderMeta={(series) => `${series.seriesId} · ${describeSeriesMode(series.mode)}`}
-              placeholder={seriesSelectorOptions.length > 0 ? (activeTab === "coverage" ? "Choose protection lane" : "All series") : "No series"}
+              placeholder={seriesSelectorOptions.length > 0 ? (activeTab === "coverage" || genesisSetupMode ? "Choose coverage product" : "All series") : "No coverage products"}
               disabled={!selectedPlan || seriesSelectorOptions.length === 0}
               onChange={(value) => updateParams({ series: value || null })}
             />
@@ -720,7 +823,6 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                     onClick={() => updateParams({ tab: tab.id })}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    <span className="plans-tab-number">{TAB_NUMBERS[tab.id as PlanTabId]}</span>
                     <span className="plans-tab-label">{tab.label}</span>
                   </button>
                 );
@@ -738,24 +840,26 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
 
               {/* ── OVERVIEW ── */}
               {activeTab === "overview" ? (
-                <div className="plans-stack">
-                  {genesisSetupVisible ? (
-                    <GenesisProtectAcuteSetupPanel
-                      model={genesisSetupModel}
-                      planAddress={genesisPlanAddress}
-                      treasuryHref={genesisTreasuryHref}
-                      capitalClassesHref={genesisCapitalClassesHref}
-                      capitalAllocationsHref={genesisCapitalAllocationsHref}
-                      bootstrapHref={genesisBootstrapHref}
-                      oracleBindingsHref={genesisOracleBindingsHref}
-                      claimsHref={genesisClaimsHref}
-                      skuConsoleHrefs={genesisSkuConsoleHrefs}
-                    />
-                  ) : null}
+                genesisSetupMode ? (
+                  <GenesisProtectAcuteSetupPanel
+                    model={genesisSetupModel}
+                    planAddress={genesisPlanAddress}
+                    treasuryHref={genesisTreasuryHref}
+                    capitalClassesHref={`/capital${genesisPoolAddress ? `?${new URLSearchParams({ pool: genesisPoolAddress, tab: "classes" }).toString()}` : ""}`}
+                    capitalAllocationsHref={`/capital${genesisPoolAddress ? `?${new URLSearchParams({ pool: genesisPoolAddress, tab: "allocations" }).toString()}` : ""}`}
+                    bootstrapHref={genesisBootstrapHref}
+                    oracleBindingsHref={`/oracles${genesisPoolAddress ? `?${new URLSearchParams({ pool: genesisPoolAddress, tab: "bindings" }).toString()}` : "?tab=bindings"}`}
+                    claimsHref={genesisClaimsHref}
+                    skuConsoleHrefs={genesisSkuConsoleHrefs}
+                    adminActionsEnabled={canOperate}
+                    founderCommitmentHref={process.env.NEXT_PUBLIC_PROTECT_FOUNDER_COMMITMENT_URL ?? "https://omegax.health/protect/founder"}
+                  />
+                ) : (
+                  <div className="plans-stack">
                   <article className="plans-card plans-vitality heavy-glass">
                     <div className="plans-card-head">
                       <div>
-                        <p className="plans-card-eyebrow">PROTOCOL_VITALITY_INDEX</p>
+                        <p className="plans-card-eyebrow">Vitality</p>
                         <h2 className="plans-card-title plans-card-title-display">
                           {selectedPlan?.displayName ?? "Awaiting plan"}
                         </h2>
@@ -790,7 +894,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                     {vitalityBars.length > 0 ? (
                       <div className="plans-vitality-chart" aria-label="Per-series reserved capital">
                         <div className="plans-vitality-chart-head">
-                          <span className="plans-chart-label">RESERVED_BY_SERIES</span>
+                          <span className="plans-chart-label">Reserved by series</span>
                           <span className="plans-chart-legend">Reserved · Claims</span>
                         </div>
                         <div className="plans-vitality-bars">
@@ -817,7 +921,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                   <article className="plans-card plans-lanes heavy-glass">
                     <div className="plans-card-head">
                       <div>
-                        <p className="plans-card-eyebrow">SERIES_LANES</p>
+                        <p className="plans-card-eyebrow">Series</p>
                         <h2 className="plans-card-title plans-card-title-display">
                           {planSeries.length} active <em>{planSeries.length === 1 ? "lane" : "lanes"}</em>
                         </h2>
@@ -857,6 +961,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                     )}
                   </article>
                 </div>
+                )
               ) : null}
 
               {/* ── COVERAGE ── */}
@@ -874,41 +979,24 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
               {/* ── MEMBERS ── */}
               {activeTab === "members" ? (
                 <div className="plans-stack">
-                  <MemberSelfServePanel
-                    plan={selectedPlan}
-                    series={selectedSeries}
-                    members={filteredMembers}
-                    onRefresh={refresh}
-                  />
-                  <MembersOperatorPanel
-                    plan={selectedPlan}
-                    series={selectedSeries}
-                    members={filteredMembers}
-                    selectedMemberAddress={selectedMember?.address ?? null}
-                    selectedPanel={routePanel}
-                    onSelectMember={(address) => updateParams({ member: address, panel: "review" })}
-                    onSelectPanel={(panel) => updateParams({ panel })}
-                    onRefresh={refresh}
-                  />
                   <article className="plans-card heavy-glass">
                     <div className="plans-members-head">
                       <div>
-                        <p className="plans-card-eyebrow">ELIGIBILITY_REGISTER</p>
+                        <p className="plans-card-eyebrow">Register</p>
                         <h2 className="plans-card-title plans-card-title-display">
                           {filteredMembers.length} <em>members</em> enlisted
                         </h2>
                       </div>
-                      <Link
-                        href={`/members?${new URLSearchParams({
-                          ...(selectedPlan ? { plan: selectedPlan.address } : {}),
-                          ...(selectedSeries ? { series: selectedSeries.address } : {}),
-                          panel: "enroll",
-                        }).toString()}`}
-                        className="plans-primary-cta"
-                      >
-                        <span className="material-symbols-outlined">person_add</span>
-                        ENLIST_MEMBER
-                      </Link>
+                      {canOperate ? (
+                        <button
+                          type="button"
+                          className="plans-primary-cta"
+                          onClick={() => openOperator("members")}
+                        >
+                          <span className="material-symbols-outlined">person_add</span>
+                          Enlist member
+                        </button>
+                      ) : null}
                     </div>
 
                     <div className="plans-members-toolbar">
@@ -920,7 +1008,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                             className={cn("plans-chip", memberStatusFilter === key && "plans-chip-active")}
                             onClick={() => setMemberStatusFilter(key)}
                           >
-                            STATUS:{key.toUpperCase()}
+                            {key.charAt(0).toUpperCase() + key.slice(1)}
                           </button>
                         ))}
                       </div>
@@ -957,7 +1045,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                                 <StatusBadge label={eligibility} />
                               </button>
                               <div className="plans-member-meta">
-                                <span className="plans-member-label">DELEGATED_RIGHTS</span>
+                                <span className="plans-member-label">Delegated rights</span>
                                 <span className="plans-member-rights">
                                   {member.delegatedRights.length > 0 ? member.delegatedRights.join(" · ") : "—"}
                                 </span>
@@ -980,77 +1068,27 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
 
               {/* ── CLAIMS ── */}
               {activeTab === "claims" ? (
-                <div className="plans-stack">
-                  {genesisActivePlan && genesisClaimConsoleModel ? (
-                    <>
-                      <GenesisProtectAcuteClaimsConsolePanel
-                        model={genesisClaimConsoleModel}
-                        poolAddress={genesisPoolAddress}
-                        onSelectFilter={(filter: GenesisProtectAcuteClaimQueueFilter) => updateParams({ queue: filter === "all" ? null : filter })}
-                        onSelectClaim={(address, panel) => updateParams({ claim: address, panel })}
-                      />
-                      {routePanel === "intake" || filteredClaims.length === 0 ? (
-                        <ClaimIntakePanel
-                          plan={selectedPlan}
-                          series={selectedSeries}
-                          members={filteredMembers}
-                          fundingLines={planFundingLines}
-                          onRefresh={refresh}
-                        />
-                      ) : null}
-                      {selectedClaim ? (
-                        <ClaimsOperatorPanel
-                          plan={selectedPlan}
-                          series={selectedSeries}
-                          claimCases={filteredClaims}
-                          obligations={filteredObligations}
-                          members={filteredMembers}
-                          fundingLines={planFundingLines}
-                          allocations={snapshot.allocationPositions}
-                          classes={snapshot.capitalClasses}
-                          pools={snapshot.liquidityPools}
-                          selectedClaimAddress={selectedClaim?.address ?? null}
-                          selectedPanel={routePanel}
-                          onSelectClaim={(address) => updateParams({ claim: address, panel: "adjudication" })}
-                          onSelectPanel={(panel) => updateParams({ panel })}
-                          onRefresh={refresh}
-                        />
-                      ) : null}
-                    </>
-                  ) : (
-                    <>
-                      <ClaimIntakePanel
-                        plan={selectedPlan}
-                        series={selectedSeries}
-                        members={filteredMembers}
-                        fundingLines={planFundingLines}
-                        onRefresh={refresh}
-                      />
-                      <ClaimsOperatorPanel
-                        plan={selectedPlan}
-                        series={selectedSeries}
-                        claimCases={filteredClaims}
-                        obligations={filteredObligations}
-                        members={filteredMembers}
-                        fundingLines={planFundingLines}
-                        allocations={snapshot.allocationPositions}
-                        classes={snapshot.capitalClasses}
-                        pools={snapshot.liquidityPools}
-                        selectedClaimAddress={selectedClaim?.address ?? null}
-                        selectedPanel={routePanel}
-                        onSelectClaim={(address) => updateParams({ claim: address, panel: "adjudication" })}
-                        onSelectPanel={(panel) => updateParams({ panel })}
-                        onRefresh={refresh}
-                      />
-                      <article className="plans-card plans-claims-control heavy-glass">
+                genesisSetupMode ? (
+                  <GenesisProtectAcuteClaimsConsolePanel
+                    model={genesisClaimConsoleModel}
+                    poolAddress={genesisPoolAddress}
+                    onSelectFilter={(filter) => updateParams({ queue: filter })}
+                    onSelectClaim={(address, panel) => {
+                      updateParams({ claim: address, panel });
+                      if (canOperate) openOperator("claims");
+                    }}
+                  />
+                ) : (
+                  <div className="plans-stack">
+                  <article className="plans-card plans-claims-control heavy-glass">
                         <div className="plans-claims-control-segment">
-                          <span className="plans-control-label">ACTIVE_PLAN</span>
+                          <span className="plans-control-label">Plan</span>
                           <span className="plans-control-value">{selectedPlan?.planId ?? "—"}</span>
                           <span className="plans-control-meta">{selectedPlan?.sponsorLabel ?? ""}</span>
                         </div>
                         <div className="plans-claims-control-divider" aria-hidden="true" />
                         <div className="plans-claims-control-segment">
-                          <span className="plans-control-label">LIVE_CASES</span>
+                          <span className="plans-control-label">Live cases</span>
                           <span className="plans-control-value">{filteredClaims.length}</span>
                           <span className="plans-control-meta">
                             {filteredObligations.length} obligations tracked
@@ -1058,37 +1096,31 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                         </div>
                         <div className="plans-claims-control-divider" aria-hidden="true" />
                         <div className="plans-claims-control-segment">
-                          <span className="plans-control-label">SYSTEM_STATUS</span>
+                          <span className="plans-control-label">Status</span>
                           <span className="plans-control-value plans-control-value-accent">
                             <span className="plans-live-dot" aria-hidden="true" />
-                            NOMINAL
+                            Nominal
                           </span>
                           <span className="plans-control-meta">Adjudication queue live</span>
                         </div>
-                        <div className="plans-claims-control-actions">
-                          <button type="button" className="plans-secondary-cta">
-                            <span className="material-symbols-outlined">download</span>
-                            EXPORT_CSV
-                          </button>
-                          <Link
-                            href={`/claims?${new URLSearchParams({
-                              ...(selectedPlan ? { plan: selectedPlan.address } : {}),
-                              ...(selectedSeries ? { series: selectedSeries.address } : {}),
-                              ...(selectedClaim ? { claim: selectedClaim.address } : filteredClaims[0] ? { claim: filteredClaims[0].address } : {}),
-                              panel: "reserve",
-                            }).toString()}`}
-                            className="plans-primary-cta"
-                          >
-                            <span className="material-symbols-outlined">bolt</span>
-                            INITIATE_RESERVE
-                          </Link>
-                        </div>
+                        {canOperate ? (
+                          <div className="plans-claims-control-actions">
+                            <button
+                              type="button"
+                              className="plans-primary-cta"
+                              onClick={() => openOperator("claims")}
+                            >
+                              <span className="material-symbols-outlined">bolt</span>
+                              Initiate reserve
+                            </button>
+                          </div>
+                        ) : null}
                       </article>
 
                       <article className="plans-card heavy-glass">
                         <div className="plans-card-head">
                           <div>
-                            <p className="plans-card-eyebrow">ADJUDICATION_REGISTER</p>
+                            <p className="plans-card-eyebrow">Register</p>
                             <h2 className="plans-card-title plans-card-title-display">
                               Claim <em>cases</em>
                             </h2>
@@ -1140,9 +1172,9 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                         <article className="plans-card heavy-glass">
                           <div className="plans-card-head">
                             <div>
-                              <p className="plans-card-eyebrow">OUTSTANDING_OBLIGATIONS</p>
+                              <p className="plans-card-eyebrow">Obligations</p>
                               <h2 className="plans-card-title plans-card-title-display">
-                                Protocol <em>liabilities</em>
+                                Outstanding <em>liabilities</em>
                               </h2>
                             </div>
                             <span className="plans-card-meta">{filteredObligations.length} tracked</span>
@@ -1179,103 +1211,24 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                           </div>
                         </article>
                       ) : null}
-                    </>
-                  )}
                 </div>
+                )
               ) : null}
 
               {/* ── TREASURY ── */}
               {activeTab === "treasury" ? (
-                <div className="plans-stack">
-                  {genesisActivePlan && genesisReserveConsoleModel ? (
-                    <>
-                      <GenesisProtectAcuteReserveConsolePanel
-                        model={genesisReserveConsoleModel}
-                        onSelectFilter={(filter: GenesisProtectAcuteReserveLaneFilter) => updateParams({ lane: filter === "all" ? null : filter })}
-                        onSelectLane={(fundingLineAddress) => updateParams({ line: fundingLineAddress })}
-                      />
-                      <article className="plans-card heavy-glass">
-                        <div className="plans-card-head">
-                          <div>
-                            <p className="plans-card-eyebrow">GENESIS_TREASURY_MODE</p>
-                            <h2 className="plans-card-title plans-card-title-display">
-                              Reserve and <em>launch controls</em>
-                            </h2>
-                          </div>
-                          <span className={`status-pill ${genesisSetupModel.posture.state === "healthy" ? "status-ok" : genesisSetupModel.posture.state === "paused" ? "status-error" : "status-off"}`}>
-                            {genesisSetupModel.posture.state.toUpperCase()}
-                          </span>
-                        </div>
-                        <p className="plans-card-body">
-                          Reserve posting, premium recording, and pause controls stay in the same mounted Genesis workspace, but they are now scoped from the selected live reserve lane above instead of starting from raw IDs.
-                        </p>
-                        <div className="plans-wizard-support-actions">
-                          <Link href={genesisBootstrapHref} className="secondary-button inline-flex w-fit">
-                            Rerun Genesis template
-                          </Link>
-                          <Link href={genesisCapitalClassesHref} className="secondary-button inline-flex w-fit">
-                            Open capital classes
-                          </Link>
-                          <Link href={genesisCapitalAllocationsHref} className="secondary-button inline-flex w-fit">
-                            Open allocations
-                          </Link>
-                          <Link href={genesisOracleBindingsHref} className="secondary-button inline-flex w-fit">
-                            Open oracle bindings
-                          </Link>
-                        </div>
-                      </article>
-                    </>
-                  ) : genesisSetupVisible ? (
-                    <article className="plans-card heavy-glass">
-                      <div className="plans-card-head">
-                        <div>
-                          <p className="plans-card-eyebrow">GENESIS_TREASURY_MODE</p>
-                          <h2 className="plans-card-title plans-card-title-display">
-                            Reserve and <em>launch controls</em>
-                          </h2>
-                        </div>
-                        <span className={`status-pill ${genesisSetupModel.posture.state === "healthy" ? "status-ok" : genesisSetupModel.posture.state === "paused" ? "status-error" : "status-off"}`}>
-                          {genesisSetupModel.posture.state.toUpperCase()}
-                        </span>
-                      </div>
-                      <p className="plans-card-body">
-                        Use the existing treasury, capital, and oracle panels below to finish reserve floor review, operator bindings,
-                        and issuance posture for the canonical Event 7 and Travel 30 launch shell.
-                      </p>
-                      <div className="plans-wizard-support-actions">
-                        <Link href={genesisBootstrapHref} className="secondary-button inline-flex w-fit">
-                          Rerun Genesis template
-                        </Link>
-                        <Link href={genesisCapitalClassesHref} className="secondary-button inline-flex w-fit">
-                          Open capital classes
-                        </Link>
-                        <Link href={genesisCapitalAllocationsHref} className="secondary-button inline-flex w-fit">
-                          Open allocations
-                        </Link>
-                        <Link href={genesisOracleBindingsHref} className="secondary-button inline-flex w-fit">
-                          Open oracle bindings
-                        </Link>
-                      </div>
-                    </article>
-                  ) : null}
-                  <TreasuryOperatorPanel
-                    plan={selectedPlan}
-                    series={selectedSeries}
-                    seriesOptions={planSeries}
-                    reserveDomain={selectedReserveDomain}
-                    fundingLines={planFundingLines}
-                    allocations={snapshot.allocationPositions.filter((allocation) => allocation.healthPlan === selectedPlan?.address)}
-                    classes={snapshot.capitalClasses}
-                    pools={snapshot.liquidityPools}
-                    selectedFundingLineAddress={genesisActivePlan ? genesisReserveConsoleModel?.selectedLane?.fundingLineAddress ?? null : null}
-                    onSelectFundingLine={(fundingLineAddress) => updateParams({ line: fundingLineAddress })}
-                    onRefresh={refresh}
+                genesisSetupMode ? (
+                  <GenesisProtectAcuteReserveConsolePanel
+                    model={genesisReserveConsoleModel}
+                    onSelectFilter={(filter) => updateParams({ lane: filter })}
+                    onSelectLane={(fundingLineAddress) => updateParams({ fundingLine: fundingLineAddress })}
                   />
-                  {!genesisActivePlan ? (
-                    <article className="plans-card heavy-glass">
+                ) : (
+                  <div className="plans-stack">
+                  <article className="plans-card heavy-glass">
                       <div className="plans-card-head">
                         <div>
-                          <p className="plans-card-eyebrow">FUNDING_LINES</p>
+                          <p className="plans-card-eyebrow">Funding lines</p>
                           <h2 className="plans-card-title plans-card-title-display">
                             Reserve <em>balances</em>
                           </h2>
@@ -1296,7 +1249,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                                 <div className="plans-funding-row-head">
                                   <div>
                                     <span className="plans-funding-name">{line.displayName}</span>
-                                    <span className="plans-funding-type">{describeFundingLineType(line.lineType)}</span>
+                                    <span className="plans-funding-type">{humanizeFundingLineType(line.lineType)}</span>
                                   </div>
                                   <span className="plans-funding-amount">${formatAmount(fundedVal)}</span>
                                 </div>
@@ -1318,50 +1271,8 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                         />
                       )}
                     </article>
-                  ) : null}
-
-                  <article className="plans-card heavy-glass">
-                    <div className="plans-card-head">
-                      <div>
-                        <p className="plans-card-eyebrow">ADMINISTRATION_LANES</p>
-                        <h2 className="plans-card-title plans-card-title-display">
-                          Control <em>addresses</em>
-                        </h2>
-                      </div>
-                      <span className="plans-card-meta">{selectedPlan?.planId}</span>
-                    </div>
-                    <div className="plans-settings-grid">
-                      <div className="plans-settings-row">
-                        <div>
-                          <span className="plans-settings-label">RESERVE_DOMAIN</span>
-                          <span className="plans-settings-lane">Reserve domain</span>
-                        </div>
-                        <span className="plans-settings-address">{formatControlLaneAddress(selectedPlan?.reserveDomain, 6)}</span>
-                      </div>
-                      <div className="plans-settings-row">
-                        <div>
-                          <span className="plans-settings-label">PLAN_ADMIN</span>
-                          <span className="plans-settings-lane">Plan admin</span>
-                        </div>
-                        <span className="plans-settings-address">{formatControlLaneAddress(selectedPlan?.planAdmin, 6)}</span>
-                      </div>
-                      <div className="plans-settings-row">
-                        <div>
-                          <span className="plans-settings-label">SPONSOR_OPERATOR</span>
-                          <span className="plans-settings-lane">Sponsor operator</span>
-                        </div>
-                        <span className="plans-settings-address">{formatControlLaneAddress(selectedPlan?.sponsorOperator, 6)}</span>
-                      </div>
-                      <div className="plans-settings-row">
-                        <div>
-                          <span className="plans-settings-label">CLAIMS_OPERATOR</span>
-                          <span className="plans-settings-lane">Claims operator</span>
-                        </div>
-                        <span className="plans-settings-address">{formatControlLaneAddress(selectedPlan?.claimsOperator, 6)}</span>
-                      </div>
-                    </div>
-                  </article>
                 </div>
+                )
               ) : null}
             </section>
 
@@ -1369,10 +1280,10 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
             <aside className="plans-rail">
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">SPONSOR_VELOCITY</span>
+                  <span className="plans-rail-tag">Sponsor velocity</span>
                   <span className="plans-rail-subtag">
                     <span className="plans-live-dot" aria-hidden="true" />
-                    LIVE
+                    Live
                   </span>
                 </div>
                 <div className="plans-rail-hero">
@@ -1402,8 +1313,8 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
 
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">FIELD_LOG</span>
-                  <span className="plans-rail-subtag">LIVE_AUDIT</span>
+                  <span className="plans-rail-tag">Activity</span>
+                  <span className="plans-rail-subtag">Live audit</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (
@@ -1423,7 +1334,35 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
             </aside>
           </div>
         )}
+          </>
+        )}
       </div>
+
+      {canOperate ? (
+        <PlanOperatorDrawer
+          open={operatorOpen}
+          initialSection={operatorSection}
+          onOpenChange={setOperatorOpen}
+          onRefresh={refresh}
+          plan={selectedPlan}
+          series={selectedSeries}
+          reserveDomain={selectedReserveDomain}
+          fundingLines={planFundingLines}
+          seriesOptions={planSeries}
+          members={filteredMembers}
+          claimCases={filteredClaims}
+          obligations={filteredObligations}
+          allocations={snapshot.allocationPositions.filter(
+            (allocation) => allocation.healthPlan === selectedPlan?.address,
+          )}
+          classes={snapshot.capitalClasses}
+          pools={snapshot.liquidityPools}
+          domainAssetVaults={snapshot.domainAssetVaults}
+          protocolFeeVaults={snapshot.protocolFeeVaults}
+          poolOracleFeeVaults={snapshot.poolOracleFeeVaults}
+          poolOraclePolicies={snapshot.poolOraclePolicies}
+        />
+      ) : null}
     </div>
   );
 }

@@ -37,14 +37,6 @@ const TAB_ICONS: Record<OracleTabId, string> = {
   staking: "shield",
 };
 
-const TAB_NUMBERS: Record<OracleTabId, string> = {
-  registry: "01",
-  bindings: "02",
-  attestations: "03",
-  disputes: "04",
-  staking: "05",
-};
-
 const TAB_LABELS: Record<OracleTabId, string> = {
   registry: "Operators",
   bindings: "Bindings",
@@ -96,22 +88,22 @@ function personaHeroCopy(persona: string): { eyebrow: string; subtitle: string }
   switch (persona) {
     case "sponsor":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // SPONSOR_WORKSPACE",
+        eyebrow: "Oracles",
         subtitle: "Track which operators sign your coverage lanes and where the dispute watch is currently elevated.",
       };
     case "capital":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // CAPITAL_WORKSPACE",
+        eyebrow: "Oracles",
         subtitle: "Audit oracle bindings, attestation throughput, and reserve obligation integrity across the pool surface.",
       };
     case "governance":
       return {
-        eyebrow: "PROTOCOL_CONSOLE // GOVERNANCE_WORKSPACE",
+        eyebrow: "Oracles",
         subtitle: "Operate the attestation mesh — adjudicate disputes, review feeds, and approve operator posture changes.",
       };
     default:
       return {
-        eyebrow: "PROTOCOL_CONSOLE // OBSERVER_WORKSPACE",
+        eyebrow: "Oracles",
         subtitle: "Operator coverage, attestation feeds, and dispute watch across the protocol's reserve obligation mesh.",
       };
   }
@@ -317,8 +309,9 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
       section: "oracles",
       poolAddress: selectedPool?.address,
       seriesAddress: selectedSeries?.address,
+      source: snapshot,
     }),
-    [selectedPool, selectedSeries],
+    [selectedPool, selectedSeries, snapshot],
   );
 
   /* ── Mesh integrity stats ── */
@@ -453,19 +446,19 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
         {/* ── KPI strip ─────────────────────── */}
         <section className="plans-kpi-strip" aria-label="Oracle workspace telemetry">
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">OPERATORS</span>
+            <span className="plans-kpi-label">Operators</span>
             <span className="plans-kpi-value">{oracleOperators.length}</span>
             <span className="plans-kpi-meta">
               {selectedPoolApprovals.filter((approval) => approval.active).length} approved · {claimsOperators.length} claims
             </span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">BOUND_SERIES</span>
+            <span className="plans-kpi-label">Bound series</span>
             <span className="plans-kpi-value">{boundSeries.length}</span>
             <span className="plans-kpi-meta">linked to {selectedPool?.poolId ?? "—"}</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">ATTESTATIONS_LIVE</span>
+            <span className="plans-kpi-label">Live attestations</span>
             <span className="plans-kpi-value">
               <span className="plans-kpi-pulse" aria-hidden="true" />
               {attestations.length}
@@ -473,7 +466,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
             <span className="plans-kpi-meta">{scopedClaimCases.length} claim {scopedClaimCases.length === 1 ? "case" : "cases"} in scope</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">DISPUTE_WATCH</span>
+            <span className="plans-kpi-label">Dispute watch</span>
             <span className="plans-kpi-value">{disputes.length}</span>
             <span className="plans-kpi-meta">{scopedObligations.length} obligations tracked</span>
           </div>
@@ -493,7 +486,6 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                   onClick={() => updateParams({ tab: tab.id })}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  <span className="plans-tab-number">{TAB_NUMBERS[tab.id as OracleTabId]}</span>
                   <span className="material-symbols-outlined plans-tab-icon">{TAB_ICONS[tab.id as OracleTabId]}</span>
                   <span className="plans-tab-label">{TAB_LABELS[tab.id as OracleTabId]}</span>
                 </button>

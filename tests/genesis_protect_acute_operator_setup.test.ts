@@ -4,6 +4,7 @@ import test from "node:test";
 import fixturesModule from "../frontend/lib/devnet-fixtures.ts";
 import genesisCatalogModule from "../frontend/lib/genesis-protect-acute.ts";
 import genesisOperatorModule from "../frontend/lib/genesis-protect-acute-operator.ts";
+import protocolModule from "../frontend/lib/protocol.ts";
 
 const { DEVNET_PROTOCOL_FIXTURE_STATE } =
   fixturesModule as typeof import("../frontend/lib/devnet-fixtures.ts");
@@ -24,9 +25,25 @@ const {
   genesisProtectAcuteBootstrapCapitalClasses,
   genesisProtectAcuteBootstrapFundingLines,
 } = genesisOperatorModule as typeof import("../frontend/lib/genesis-protect-acute-operator.ts");
+const { hasConfiguredPoolTerms } = protocolModule as typeof import("../frontend/lib/protocol.ts");
 
 function cloneFixtureSnapshot() {
   return structuredClone(DEVNET_PROTOCOL_FIXTURE_STATE);
+}
+
+function clearGenesisQueueOnlyPressure(snapshot: ReturnType<typeof cloneFixtureSnapshot>) {
+  const pool = snapshot.liquidityPools.find((entry) => entry.poolId === GENESIS_PROTECT_ACUTE_POOL_ID)!;
+  pool.redemptionPolicy = 0;
+  for (const capitalClass of snapshot.capitalClasses.filter((entry) => entry.liquidityPool === pool.address)) {
+    capitalClass.queueOnlyRedemptions = false;
+  }
+}
+
+function configureGenesisOperators(snapshot: ReturnType<typeof cloneFixtureSnapshot>) {
+  const plan = snapshot.healthPlans.find((entry) => entry.planId === GENESIS_PROTECT_ACUTE_PLAN_ID)!;
+  plan.sponsorOperator = "GenSponsor11111111111111111111111111111111";
+  plan.claimsOperator = "GenClaims1111111111111111111111111111111";
+  plan.oracleAuthority = "GenOracle1111111111111111111111111111111";
 }
 
 test("Genesis operator bootstrap definitions stay aligned to the canonical launch ids", () => {
@@ -86,20 +103,97 @@ test("Genesis setup model stays in caution while queue-only launch sleeves remai
   assert.equal(model.checklist.fundingLinesReady, true);
   assert.equal(model.checklist.poolReady, true);
   assert.equal(model.posture.state, "caution");
+  assert.equal(model.readinessPhase, "reserve_pending");
   assert.equal(model.queueOnlyRedemptionsActive, true);
+});
+
+test("Genesis readiness phase is not_created when the canonical plan is absent", () => {
+  const snapshot = cloneFixtureSnapshot();
+  snapshot.healthPlans = snapshot.healthPlans.filter((entry) => entry.planId !== GENESIS_PROTECT_ACUTE_PLAN_ID);
+
+  const model = buildGenesisProtectAcuteSetupModel({
+    snapshot,
+    readiness: {
+      poolTermsConfigured: true,
+      poolOraclePolicyConfigured: true,
+    },
+  });
+
+  assert.equal(model.readinessPhase, "not_created");
+  assert.match(model.readinessPhaseCopy.title, /not created/i);
+});
+
+test("Genesis readiness phase is shell_incomplete while canonical coverage products are missing", () => {
+  const snapshot = cloneFixtureSnapshot();
+  snapshot.policySeries = snapshot.policySeries.filter(
+    (entry) => entry.seriesId !== GENESIS_PROTECT_ACUTE_SKUS.travel30.seriesId,
+  );
+
+  const model = buildGenesisProtectAcuteSetupModel({
+    snapshot,
+    readiness: {
+      poolTermsConfigured: true,
+      poolOraclePolicyConfigured: true,
+    },
+  });
+
+  assert.equal(model.checklist.travel30SeriesReady, false);
+  assert.equal(model.readinessPhase, "shell_incomplete");
+});
+
+test("Genesis readiness phase is operator_pending after reserve pressure clears but sign-off is incomplete", () => {
+  const snapshot = cloneFixtureSnapshot();
+  configureGenesisOperators(snapshot);
+  clearGenesisQueueOnlyPressure(snapshot);
+
+  const model = buildGenesisProtectAcuteSetupModel({
+    snapshot,
+    readiness: {
+      poolTermsConfigured: true,
+      poolOraclePolicyConfigured: false,
+    },
+  });
+
+  assert.equal(model.queueOnlyRedemptionsActive, false);
+  assert.equal(model.checklist.poolOraclePolicyReady, false);
+  assert.equal(model.readinessPhase, "operator_pending");
+});
+
+test("Genesis pool terms readiness requires live pool configuration hashes", () => {
+  const snapshot = cloneFixtureSnapshot();
+  const pool = snapshot.liquidityPools.find((entry) => entry.poolId === GENESIS_PROTECT_ACUTE_POOL_ID)!;
+
+  assert.equal(hasConfiguredPoolTerms(pool), false);
+  assert.equal(hasConfiguredPoolTerms({
+    ...pool,
+    strategyHashHex: "11".repeat(32),
+    allowedExposureHashHex: "22".repeat(32),
+    externalYieldAdapterHashHex: "33".repeat(32),
+  }), true);
+});
+
+test("Genesis setup does not treat a pool shell as configured pool terms", () => {
+  const snapshot = cloneFixtureSnapshot();
+  configureGenesisOperators(snapshot);
+  clearGenesisQueueOnlyPressure(snapshot);
+
+  const model = buildGenesisProtectAcuteSetupModel({
+    snapshot,
+    readiness: {
+      poolTermsConfigured: false,
+      poolOraclePolicyConfigured: true,
+    },
+  });
+
+  assert.equal(model.checklist.poolReady, true);
+  assert.equal(model.checklist.poolTermsReady, false);
+  assert.equal(model.readinessPhase, "operator_pending");
 });
 
 test("Genesis setup model can reach healthy when setup is complete and queue-only pressure is cleared", () => {
   const snapshot = cloneFixtureSnapshot();
-  const plan = snapshot.healthPlans.find((entry) => entry.planId === GENESIS_PROTECT_ACUTE_PLAN_ID)!;
-  const pool = snapshot.liquidityPools.find((entry) => entry.poolId === GENESIS_PROTECT_ACUTE_POOL_ID)!;
-  plan.sponsorOperator = "GenSponsor11111111111111111111111111111111";
-  plan.claimsOperator = "GenClaims1111111111111111111111111111111";
-  plan.oracleAuthority = "GenOracle1111111111111111111111111111111";
-  pool.redemptionPolicy = 0;
-  for (const capitalClass of snapshot.capitalClasses.filter((entry) => entry.liquidityPool === pool.address)) {
-    capitalClass.queueOnlyRedemptions = false;
-  }
+  configureGenesisOperators(snapshot);
+  clearGenesisQueueOnlyPressure(snapshot);
 
   const model = buildGenesisProtectAcuteSetupModel({
     snapshot,
@@ -110,6 +204,7 @@ test("Genesis setup model can reach healthy when setup is complete and queue-onl
   });
 
   assert.equal(model.posture.state, "healthy");
+  assert.equal(model.readinessPhase, "issuance_ready");
   assert.equal(model.queueOnlyRedemptionsActive, false);
   assert.equal(model.checklist.reserveTargetReviewReady, true);
 });
@@ -128,5 +223,6 @@ test("Genesis setup model becomes paused when launch controls are paused", () =>
   });
 
   assert.equal(model.posture.state, "paused");
+  assert.equal(model.readinessPhase, "paused");
   assert.match(model.posture.reasons.join(" "), /blocking issuance/i);
 });

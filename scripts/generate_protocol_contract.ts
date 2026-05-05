@@ -74,16 +74,17 @@ const CHECKED_IN_IDL_PATH = resolve(REPO_ROOT, 'idl/omegax_protocol.json');
 const CONTRACT_JSON_PATH = resolve(REPO_ROOT, 'shared/protocol_contract.json');
 const FRONTEND_GENERATED_PATH = resolve(REPO_ROOT, 'frontend/lib/generated/protocol-contract.ts');
 const FRONTEND_GENERATED_JS_PATH = resolve(REPO_ROOT, 'frontend/lib/generated/protocol-contract.js');
-const KOTLIN_GENERATED_PATH = resolve(
-  REPO_ROOT,
-  'android-native/protocol/src/main/java/com/omegax/protocol/ProtocolContract.kt',
-);
 
 const PDA_SEEDS: Record<string, string[]> = {
   protocol_governance: ['protocol_governance'],
   reserve_domain: ['reserve_domain', '<domain_id>'],
   domain_asset_vault: ['domain_asset_vault', '<reserve_domain>', '<asset_mint>'],
+  domain_asset_vault_token: ['domain_asset_vault_token', '<reserve_domain>', '<asset_mint>'],
   domain_asset_ledger: ['domain_asset_ledger', '<reserve_domain>', '<asset_mint>'],
+  reserve_asset_rail: ['reserve_asset_rail', '<reserve_domain>', '<asset_mint>'],
+  protocol_fee_vault: ['protocol_fee_vault', '<reserve_domain>', '<asset_mint>'],
+  pool_treasury_vault: ['pool_treasury_vault', '<liquidity_pool>', '<asset_mint>'],
+  pool_oracle_fee_vault: ['pool_oracle_fee_vault', '<liquidity_pool>', '<oracle>', '<asset_mint>'],
   health_plan: ['health_plan', '<reserve_domain>', '<plan_id>'],
   plan_reserve_ledger: ['plan_reserve_ledger', '<health_plan>', '<asset_mint>'],
   policy_series: ['policy_series', '<health_plan>', '<series_id>'],
@@ -92,6 +93,10 @@ const PDA_SEEDS: Record<string, string[]> = {
   membership_anchor_seat: ['membership_anchor_seat', '<health_plan>', '<anchor_ref>'],
   funding_line: ['funding_line', '<health_plan>', '<line_id>'],
   funding_line_ledger: ['funding_line_ledger', '<funding_line>', '<asset_mint>'],
+  commitment_campaign: ['commitment_campaign', '<health_plan>', '<campaign_id>'],
+  commitment_payment_rail: ['commitment_payment_rail', '<campaign>', '<payment_asset_mint>'],
+  commitment_ledger: ['commitment_ledger', '<campaign>', '<payment_asset_mint>'],
+  commitment_position: ['commitment_position', '<campaign>', '<depositor>', '<beneficiary>'],
   claim_case: ['claim_case', '<health_plan>', '<claim_id>'],
   obligation: ['obligation', '<funding_line>', '<obligation_id>'],
   liquidity_pool: ['liquidity_pool', '<reserve_domain>', '<pool_id>'],
@@ -326,60 +331,6 @@ ${pdaSeedsEntries}
 `;
 }
 
-function renderKotlin(contract: ProtocolContract, sha256: string): string {
-  const discriminatorEntries = contract.instructions
-    .map(
-      (ix) =>
-        `        ${kotlinString(ix.name)} to byteArrayOf(${ix.discriminator
-          .map((it) => `${it.toString()}u.toByte()`)
-          .join(', ')}),`,
-    )
-    .join('\n');
-
-  const pdaSeedsEntries = Object.entries(contract.pdaSeeds)
-    .map(
-      ([seedName, seeds]) =>
-        `        ${kotlinString(seedName)} to listOf(${seeds.map((seed) => kotlinString(seed)).join(', ')}),`,
-    )
-    .join('\n');
-
-  const accountDiscriminatorEntries = Object.entries(contract.accountDiscriminators)
-    .map(
-      ([name, discriminator]) =>
-        `        ${kotlinString(name)} to byteArrayOf(${discriminator
-          .map((it) => `${it.toString()}u.toByte()`)
-          .join(', ')}),`,
-    )
-    .join('\n');
-
-  return `// AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
-// source: shared/protocol_contract.json
-// contract_sha256: ${sha256}
-
-package com.omegax.protocol
-
-object ProtocolContract {
-    const val PROGRAM_ID: String = ${kotlinString(contract.programId)}
-
-    val instructionDiscriminators: Map<String, ByteArray> = mapOf(
-${discriminatorEntries}
-    )
-
-    val pdaSeeds: Map<String, List<String>> = mapOf(
-${pdaSeedsEntries}
-    )
-
-    val accountDiscriminators: Map<String, ByteArray> = mapOf(
-${accountDiscriminatorEntries}
-    )
-}
-`;
-}
-
-function kotlinString(value: string): string {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
-
 function ensureParent(path: string) {
   mkdirSync(dirname(path), { recursive: true });
 }
@@ -451,15 +402,11 @@ function main() {
   ensureParent(FRONTEND_GENERATED_JS_PATH);
   writeFileSync(FRONTEND_GENERATED_JS_PATH, renderJs(contract, contractSha), 'utf8');
 
-  ensureParent(KOTLIN_GENERATED_PATH);
-  writeFileSync(KOTLIN_GENERATED_PATH, renderKotlin(contract, contractSha), 'utf8');
-
   process.stdout.write(
     [
       `[protocol:contract] wrote ${resolve(CONTRACT_JSON_PATH)}`,
       `[protocol:contract] wrote ${resolve(FRONTEND_GENERATED_PATH)}`,
       `[protocol:contract] wrote ${resolve(FRONTEND_GENERATED_JS_PATH)}`,
-      `[protocol:contract] wrote ${resolve(KOTLIN_GENERATED_PATH)}`,
       `[protocol:contract] contract_sha256=${contractSha}`,
     ].join('\n') + '\n',
   );

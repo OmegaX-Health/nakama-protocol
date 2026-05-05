@@ -5,7 +5,7 @@ OmegaX Protocol is a Solana settlement layer for builders creating health apps, 
 On Solana devnet beta today, the public surface in this repository can already anchor:
 
 - normalized outcome events produced by OmegaX Health or future compatible oracle operators
-- member enrollment, claim intake, obligations, reserve booking, and payouts
+- operator-mediated member enrollment, claim intake, obligations, reserve booking, and payouts
 - sponsor-funded reward or protection lanes
 - LP-facing capital pools, classes, allocations, redemptions, and impairment handling
 
@@ -47,13 +47,13 @@ Start with:
 
 - [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface)
 - [Protocol Architecture](https://docs.omegax.health/docs/protocol/architecture)
-- [Release v0.3.0](./docs/operations/release-v0.3.0.md)
+- [Release v0.3.1](./docs/operations/release-v0.3.1.md)
 
 ## What Exists Today on Devnet Beta
 
 - reserve domains and domain asset vaults define settlement boundaries and payment rails
 - health plans, policy series, and funding lines define sponsor and member-side products
-- member enrollment, claim intake, obligations, settlement, and impairment are mounted in the canonical console
+- operator-mediated member enrollment, claim intake, obligations, settlement, and impairment are mounted in the canonical console
 - liquidity pools, capital classes, allocations, and redemptions define LP-facing exposure and queue behavior
 - oracle registry and schema registry accounts let outside event producers and integrations target the same public surface
 
@@ -89,10 +89,16 @@ This repository treats the earlier pool-first surface as retired devnet history 
 
 ## Release Status
 
-Current publish target: `v0.3.0`
+Current publish target: `v0.3.1`
 
-This is the first publishable canonical OmegaX health-capital-markets surface.
+This patch hardens the first publishable canonical OmegaX health-capital-markets surface.
 
+- reserve inflows now require checked SPL token transfers into the configured domain vault token account before ledgers increase
+- redemption payouts are derived on-chain from queued shares and NAV rather than caller-supplied payout amounts
+- emergency pause now covers reserve-moving exits, settlement paths, and new commitment deposits
+- settlement and redemption fee carve-outs must leave a positive net recipient payout; oracle-fee accrual is bound to the matching claim attestation
+- fee accrual leaves reserve ledgers and LP TVL net of fee claims while `DomainAssetVault.total_assets` tracks physical custody until SPL fee withdrawal
+- optional mutable reserve ledgers are bound to the expected series, class, allocation, funding line, domain, and mint before mutation
 - it is a hard-break devnet migration from the retired pool-first model
 - reserve domains define hard custody and legal settlement boundaries
 - health plans define sponsor, member, liability, and claims administration roots
@@ -106,7 +112,7 @@ This is the first publishable canonical OmegaX health-capital-markets surface.
 - the mounted Genesis claims tab now behaves as an operator claim queue with summary cards, queue filters, selected-case detail, and contextual handoff into adjudication, reserve, and oracle follow-through
 - the mounted Genesis treasury tab now behaves as a reserve console with lane filters, per-SKU reserve attribution, degraded-visibility warnings, and treasury actions scoped from the selected live funding lane
 - `/governance` now exposes mounted protocol bootstrap actions for governance, reserve domains, and domain asset vaults
-- `/members` now leads with self-serve enrollment and `/claims` now leads with self-serve claim intake on the canonical model
+- `/members` and `/claims` now route into the mounted plan/operator workspace instead of advertising standalone self-serve dapp actions
 - mounted workbenches now include sponsor-side post-launch series and funding-line actions, LP credentialing updates, and claim impairment handling
 - the protocol now includes first-class oracle registry and outcome-schema registry accounts with checked-in generated artifacts
 
@@ -128,7 +134,7 @@ Read the canonical design set first:
 - [MIGRATION_MATRIX](./docs/MIGRATION_MATRIX.md)
 - [Public Release Gate](./docs/operations/public-release-gate.md)
 - [Devnet Beta Runbook](./docs/operations/devnet-beta-runbook.md)
-- [Release v0.3.0](./docs/operations/release-v0.3.0.md)
+- [Release v0.3.1](./docs/operations/release-v0.3.1.md)
 
 ## Repository Layout
 
@@ -137,7 +143,7 @@ Read the canonical design set first:
 - [`tests/`](./tests/) contains the fast Node-based scenario suite
 - [`e2e/`](./e2e/) contains the heavier localnet audit entrypoint
 - [`scripts/`](./scripts/) contains artifact generation and devnet migration helpers
-- [`idl/`](./idl/), [`shared/`](./shared/), and [`android-native/protocol/`](./android-native/protocol/) contain checked-in generated contract artifacts
+- [`idl/`](./idl/), [`shared/`](./shared/), and [`frontend/lib/generated/`](./frontend/lib/generated/) contain checked-in generated contract artifacts
 
 ## Quick Start
 
@@ -183,6 +189,7 @@ These helpers are for repo maintainers and shared-devnet operators rather than f
   - emits stable canonical fixture ids for the new model
 - `npm run protocol:bootstrap:devnet-live`
   - seeds the canonical plan/capital/oracle/schema graph onto shared devnet using the configured signer
+  - requires real SPL source/vault token accounts for funding and LP deposit seed transactions
   - provisions reusable local role wallets under `$HOME/.config/solana/omegax-devnet/`
   - syncs canonical public role addresses back into `frontend/.env.local`
 - `npm run devnet:frontend:bootstrap`

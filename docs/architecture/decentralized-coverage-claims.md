@@ -1,6 +1,6 @@
 # Decentralized Coverage Claims
 
-This note describes the canonical protection-claim model after the health-capital-markets rearchitecture.
+This note describes the **abstract** canonical protection-claim model after the health-capital-markets rearchitecture. For a **deterministic, end-to-end Genesis Protect Acute walkthrough** with worked happy-path and messy-path traces (incomplete evidence, more-info-needed, partial approval, denial-over-cap, deferred settlement), see [`./genesis-protect-claim-trace.md`](./genesis-protect-claim-trace.md).
 
 ## Why this exists
 
@@ -68,6 +68,21 @@ The canonical public flow is:
    - `reserve_obligation` -> `settle_obligation` for linked protection liabilities
 
 The economic consequence is expressed through `Obligation` state transitions:
+
+`open_claim_case` is intentionally authorization-bound at intake. The signer must either be the
+enrolled `MemberPosition.wallet` opening a claim for itself, or the plan's claim/plan operator
+opening the case through an operator workflow. The provided member position and funding line must
+belong to the selected plan and policy series, and the funding line must still be open.
+
+Evidence references are mutable only until the first attestation. `attest_claim_case` must reference
+the current `claim_case.evidence_ref_hash`, use a governance-verified schema supported by the oracle
+profile, and run while protocol emergency pause and plan oracle-finality hold are clear. For
+premium, sponsor, and other non-LP funding lines, the attesting oracle must be the plan's configured
+`HealthPlan.oracle_authority`. For LP-allocation-backed claims, attestation instead requires active
+pool oracle approval plus the
+`POOL_ORACLE_PERMISSION_ATTEST_CLAIM` permission bit. Pool quorum is still policy metadata in Phase 0;
+multi-attestation finality is a later adjudication/finality layer, not something this instruction
+pretends to enforce.
 
 - proposed
 - reserved

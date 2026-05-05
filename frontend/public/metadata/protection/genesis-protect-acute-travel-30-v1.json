@@ -16,7 +16,7 @@
     "coverWindowDays": 30,
     "currency": "USDC",
     "benefitStyle": "hybrid_fixed_plus_reimbursement",
-    "maxPayoutUsd": 5000
+    "maxPayoutUsd": 3000
   },
   "pricing": {
     "retailUsd": 99,
@@ -46,7 +46,7 @@
       }
     ],
     "reimbursementTopUp": {
-      "aggregateCapUsd": 5000,
+      "aggregateCapUsd": 3000,
       "description": "Actual acute emergency medical spend above the fixed tier benefit, capped at the aggregate maximum."
     }
   },

@@ -8,8 +8,10 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
 
+import { DocumentLinkRow } from "@/components/document-link-row";
+import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { SearchableSelect } from "@/components/searchable-select";
-import { executeProtocolTransaction } from "@/lib/protocol-action";
+import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
   buildSetPoolOraclePermissionsTx,
   buildSetPoolOraclePolicyTx,
@@ -54,6 +56,7 @@ function normalize(value: string): string {
 export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: PoolOraclesPanelProps) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
+  const { confirmReview, reviewPrompt } = useProtocolTransactionReviewPrompt();
   const embedded = sectionMode === "embedded";
   const canAct = Boolean(publicKey && sendTransaction);
 
@@ -269,11 +272,15 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
         recentBlockhash: blockhash,
         active: approvalActive,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: approvalActive ? "Approve oracle" : "Disable oracle approval",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -283,7 +290,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } finally {
       setBusy(null);
     }
@@ -303,11 +309,15 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
         permissions: Number.parseInt(permissionMask, 10) || 0,
         recentBlockhash: blockhash,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Set oracle permissions",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -317,7 +327,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } finally {
       setBusy(null);
     }
@@ -341,11 +350,15 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
         allowDelegateClaim,
         challengeWindowSecs: Number.parseInt(challengeWindowSecs, 10) || 0,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Set oracle policy",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -355,7 +368,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } finally {
       setBusy(null);
     }
@@ -363,6 +375,7 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
 
   return (
     <section className={embedded ? "space-y-4" : "surface-card space-y-4"}>
+      {reviewPrompt}
       {!embedded ? (
         <div className="space-y-1">
           <h2 className="hero-title">Oracle Network</h2>
@@ -390,7 +403,7 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
         </div>
 
         <p className="field-help">
-          Approvals + quorum determine who can vote on outcomes and settle claims for this pool.
+          Approvals and permissions define which oracles may attest for this pool; quorum is recorded for the future finality layer.
         </p>
 
         <div className="flex flex-wrap gap-2">
@@ -544,7 +557,9 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
                   </a>
                 ) : null}
                 {selectedOracle.metadataUri ? (
-                  <p className="field-help break-all">Metadata: {selectedOracle.metadataUri}</p>
+                  <div className="plans-review-document-stack mt-2">
+                    <DocumentLinkRow href={selectedOracle.metadataUri} label="Oracle metadata" />
+                  </div>
                 ) : null}
               </div>
             </article>
@@ -661,7 +676,9 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
                 </div>
 
                 {row.metadataUri ? (
-                  <p className="field-help mt-2 break-all">Metadata: {row.metadataUri}</p>
+                  <div className="plans-review-document-stack mt-2">
+                    <DocumentLinkRow href={row.metadataUri} label="Oracle metadata" />
+                  </div>
                 ) : null}
               </li>
             ))}

@@ -8,7 +8,8 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { CheckCircle2, ExternalLink, LoaderCircle, Vote as VoteIcon } from "lucide-react";
 
-import { executeProtocolTransaction } from "@/lib/protocol-action";
+import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
+import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
   buildCastGovernanceVoteTx,
   buildExecuteGovernanceTransactionTx,
@@ -40,6 +41,7 @@ export function GovernanceProposalDetailPanel({
 }: GovernanceProposalDetailPanelProps) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
+  const { confirmReview, reviewPrompt } = useProtocolTransactionReviewPrompt();
   const [detail, setDetail] = useState<GovernanceProposalDetailSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -96,11 +98,15 @@ export function GovernanceProposalDetailPanel({
         owner: publicKey,
         proposalAddress: new PublicKey(proposalAddress),
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: approve ? "Cast yes vote" : "Cast no vote",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -110,7 +116,6 @@ export function GovernanceProposalDetailPanel({
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Vote submission failed.");
       setStatusTone("error");
@@ -130,11 +135,15 @@ export function GovernanceProposalDetailPanel({
         owner: publicKey,
         proposalAddress: new PublicKey(proposalAddress),
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Relinquish vote",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -144,7 +153,6 @@ export function GovernanceProposalDetailPanel({
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Relinquish vote failed.");
       setStatusTone("error");
@@ -168,11 +176,15 @@ export function GovernanceProposalDetailPanel({
         rawInstructions: proposalTransaction.rawInstructions,
         walletAddress: publicKey,
       });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: `Execute instruction ${proposalTransaction.instructionIndex + 1}`,
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -182,7 +194,6 @@ export function GovernanceProposalDetailPanel({
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Execution failed.");
       setStatusTone("error");
@@ -218,6 +229,8 @@ export function GovernanceProposalDetailPanel({
   const pendingTransactions = detail.proposalTransactions.filter((row) => row.executionStatus !== 1);
 
   return (
+    <>
+    {reviewPrompt}
     <section className={`surface-card ${sectionMode === "page" ? "space-y-5" : "space-y-4"}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
@@ -435,5 +448,6 @@ export function GovernanceProposalDetailPanel({
         )}
       </article>
     </section>
+    </>
   );
 }

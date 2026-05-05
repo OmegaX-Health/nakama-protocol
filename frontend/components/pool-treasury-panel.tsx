@@ -8,8 +8,9 @@ import { PublicKey } from "@solana/web3.js";
 
 import { ProtocolDetailDisclosure } from "@/components/protocol-detail-disclosure";
 import { usePoolWorkspaceContext } from "@/components/pool-workspace-context";
+import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { SearchableSelect } from "@/components/searchable-select";
-import { executeProtocolTransaction } from "@/lib/protocol-action";
+import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
   buildWithdrawPoolOracleFeeSolTx,
   buildWithdrawPoolOracleFeeSplTx,
@@ -40,6 +41,7 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const { capabilities } = usePoolWorkspaceContext();
+  const { confirmReview, reviewPrompt } = useProtocolTransactionReviewPrompt();
   const [reserves, setReserves] = useState<PoolTreasuryReserveSummary[]>([]);
   const [protocolFeeVaults, setProtocolFeeVaults] = useState<ProtocolFeeVaultSummary[]>([]);
   const [oracleFeeVaults, setOracleFeeVaults] = useState<PoolOracleFeeVaultSummary[]>([]);
@@ -120,6 +122,25 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
     () => oracleFeeVaults.find((row) => row.address === selectedOracleFeeVaultAddress) ?? null,
     [oracleFeeVaults, selectedOracleFeeVaultAddress],
   );
+
+  useEffect(() => {
+    if (selectedReserve?.paymentMint === ZERO_PUBKEY) {
+      setTreasuryRecipient(selectedReserve.feeRecipient);
+    }
+  }, [selectedReserve?.address, selectedReserve?.feeRecipient, selectedReserve?.paymentMint]);
+
+  useEffect(() => {
+    if (selectedProtocolFeeVault?.paymentMint === ZERO_PUBKEY) {
+      setProtocolFeeRecipient(selectedProtocolFeeVault.feeRecipient);
+    }
+  }, [selectedProtocolFeeVault?.address, selectedProtocolFeeVault?.feeRecipient, selectedProtocolFeeVault?.paymentMint]);
+
+  useEffect(() => {
+    if (selectedOracleFeeVault?.paymentMint === ZERO_PUBKEY) {
+      setOracleFeeRecipient(selectedOracleFeeVault.feeRecipient);
+    }
+  }, [selectedOracleFeeVault?.address, selectedOracleFeeVault?.feeRecipient, selectedOracleFeeVault?.paymentMint]);
+
   const poolTreasuryGuard = useMemo(() => {
     if (!capabilities.canWithdrawPoolTreasury) {
       return "Pool treasury withdrawals require an active oracle signer with treasury-withdraw permissions on this pool.";
@@ -130,8 +151,11 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
     if (!selectedReserve) {
       return "Select a reserve before submitting a withdrawal.";
     }
+    if (selectedReserve.paymentMint === ZERO_PUBKEY && treasuryRecipient.trim() !== selectedReserve.feeRecipient) {
+      return "SOL withdrawals must use the configured pool treasury fee recipient.";
+    }
     return null;
-  }, [capabilities.canWithdrawPoolTreasury, publicKey, selectedReserve, sendTransaction]);
+  }, [capabilities.canWithdrawPoolTreasury, publicKey, selectedReserve, sendTransaction, treasuryRecipient]);
   const protocolFeeGuard = useMemo(() => {
     if (!capabilities.canWithdrawProtocolFees) {
       return "Protocol fee withdrawals require the governance authority or protocol admin wallet.";
@@ -142,20 +166,26 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
     if (!selectedProtocolFeeVault) {
       return "Select a protocol fee vault before submitting a withdrawal.";
     }
+    if (selectedProtocolFeeVault.paymentMint === ZERO_PUBKEY && protocolFeeRecipient.trim() !== selectedProtocolFeeVault.feeRecipient) {
+      return "SOL withdrawals must use the configured protocol fee recipient.";
+    }
     return null;
-  }, [capabilities.canWithdrawProtocolFees, publicKey, selectedProtocolFeeVault, sendTransaction]);
+  }, [capabilities.canWithdrawProtocolFees, protocolFeeRecipient, publicKey, selectedProtocolFeeVault, sendTransaction]);
   const oracleFeeGuard = useMemo(() => {
     if (!capabilities.canWithdrawOracleFees) {
-      return "Oracle fee withdrawals require the matching active oracle signer with fee-withdraw permissions.";
+      return "Oracle fee withdrawals require the matching oracle wallet, oracle admin, or governance authority.";
     }
     if (!publicKey || !sendTransaction) {
-      return "Connect the authorized oracle wallet to withdraw oracle fees.";
+      return "Connect an authorized oracle or governance wallet to withdraw oracle fees.";
     }
     if (!selectedOracleFeeVault) {
       return "Select an oracle fee vault before submitting a withdrawal.";
     }
+    if (selectedOracleFeeVault.paymentMint === ZERO_PUBKEY && oracleFeeRecipient.trim() !== selectedOracleFeeVault.feeRecipient) {
+      return "SOL withdrawals must use the configured oracle fee recipient.";
+    }
     return null;
-  }, [capabilities.canWithdrawOracleFees, publicKey, selectedOracleFeeVault, sendTransaction]);
+  }, [capabilities.canWithdrawOracleFees, oracleFeeRecipient, publicKey, selectedOracleFeeVault, sendTransaction]);
 
   async function onWithdrawPoolTreasury() {
     if (!publicKey || !sendTransaction || !selectedReserve) return;
@@ -176,16 +206,21 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
         : buildWithdrawPoolTreasurySplTx({
             oracle: publicKey,
             poolAddress: new PublicKey(poolAddress),
+            reserveDomainAddress: new PublicKey(selectedReserve.reserveDomain),
             paymentMint: new PublicKey(selectedReserve.paymentMint),
             recipientTokenAccount: new PublicKey(treasuryRecipientTokenAccount.trim()),
             amount,
             recentBlockhash: blockhash,
           });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Withdraw pool treasury",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -195,7 +230,6 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Pool treasury withdrawal inputs are invalid.");
       setStatusTone("error");
@@ -215,22 +249,28 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
       const tx = selectedProtocolFeeVault.paymentMint === ZERO_PUBKEY
         ? buildWithdrawProtocolFeeSolTx({
             governanceAuthority: publicKey,
+            reserveDomainAddress: new PublicKey(selectedProtocolFeeVault.reserveDomain),
             recipientSystemAccount: new PublicKey(protocolFeeRecipient.trim()),
             amount,
             recentBlockhash: blockhash,
           })
         : buildWithdrawProtocolFeeSplTx({
             governanceAuthority: publicKey,
+            reserveDomainAddress: new PublicKey(selectedProtocolFeeVault.reserveDomain),
             paymentMint: new PublicKey(selectedProtocolFeeVault.paymentMint),
             recipientTokenAccount: new PublicKey(protocolFeeRecipientTokenAccount.trim()),
             amount,
             recentBlockhash: blockhash,
           });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Withdraw protocol fees",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -240,7 +280,6 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Protocol fee withdrawal inputs are invalid.");
       setStatusTone("error");
@@ -260,6 +299,7 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
       const tx = selectedOracleFeeVault.paymentMint === ZERO_PUBKEY
         ? buildWithdrawPoolOracleFeeSolTx({
             oracle: publicKey,
+            oracleAddress: new PublicKey(selectedOracleFeeVault.oracle),
             poolAddress: new PublicKey(poolAddress),
             recipientSystemAccount: new PublicKey(oracleFeeRecipient.trim()),
             amount,
@@ -267,17 +307,23 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
           })
         : buildWithdrawPoolOracleFeeSplTx({
             oracle: publicKey,
+            oracleAddress: new PublicKey(selectedOracleFeeVault.oracle),
             poolAddress: new PublicKey(poolAddress),
+            reserveDomainAddress: new PublicKey(selectedOracleFeeVault.reserveDomain),
             paymentMint: new PublicKey(selectedOracleFeeVault.paymentMint),
             recipientTokenAccount: new PublicKey(oracleFeeRecipientTokenAccount.trim()),
             amount,
             recentBlockhash: blockhash,
           });
-      const result = await executeProtocolTransaction({
+      const result = await executeProtocolTransactionWithToast({
         connection,
         sendTransaction,
         tx,
         label: "Withdraw pool oracle fees",
+        confirmReview,
+        onConfirmed: async () => {
+          await refresh();
+        },
       });
       if (!result.ok) {
         setStatus(result.error);
@@ -287,7 +333,6 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
       setStatus(result.message);
       setStatusTone("ok");
       setTxUrl(result.explorerUrl);
-      await refresh();
     } catch (cause) {
       setStatus(cause instanceof Error ? cause.message : "Oracle fee withdrawal inputs are invalid.");
       setStatusTone("error");
@@ -298,6 +343,7 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
 
   return (
     <div className="space-y-4">
+      {reviewPrompt}
       <section className="surface-card-soft space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -350,6 +396,7 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
                 <div className="space-y-2 text-sm text-[var(--muted-foreground)]">
                   <p>Reserve account: <span className="break-all font-mono">{selectedReserve.address}</span></p>
                   <p>Payment mint: <span className="break-all font-mono">{selectedReserve.paymentMint === ZERO_PUBKEY ? "SOL" : selectedReserve.paymentMint}</span></p>
+                  <p>Fee recipient: <span className="break-all font-mono">{selectedReserve.feeRecipient}</span></p>
                 </div>
               </ProtocolDetailDisclosure>
             </article>
@@ -366,11 +413,11 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
                 {selectedReserve.paymentMint === ZERO_PUBKEY ? (
                   <label className="space-y-1">
                     <span className="metric-label">Recipient system account</span>
-                    <input className="field-input" value={treasuryRecipient} onChange={(event) => setTreasuryRecipient(event.target.value)} />
+                    <input className="field-input" value={treasuryRecipient} onChange={(event) => setTreasuryRecipient(event.target.value)} disabled />
                   </label>
                 ) : (
                   <label className="space-y-1">
-                    <span className="metric-label">Recipient token account</span>
+                    <span className="metric-label">Recipient token account owned by {shortAddress(selectedReserve.feeRecipient)}</span>
                     <input className="field-input" value={treasuryRecipientTokenAccount} onChange={(event) => setTreasuryRecipientTokenAccount(event.target.value)} />
                   </label>
                 )}
@@ -419,6 +466,7 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
                 <div className="space-y-2 text-sm text-[var(--muted-foreground)]">
                   <p>Vault account: <span className="break-all font-mono">{selectedProtocolFeeVault.address}</span></p>
                   <p>Payment mint: <span className="break-all font-mono">{selectedProtocolFeeVault.paymentMint === ZERO_PUBKEY ? "SOL" : selectedProtocolFeeVault.paymentMint}</span></p>
+                  <p>Fee recipient: <span className="break-all font-mono">{selectedProtocolFeeVault.feeRecipient}</span></p>
                 </div>
               </ProtocolDetailDisclosure>
             </article>
@@ -435,11 +483,11 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
                 {selectedProtocolFeeVault.paymentMint === ZERO_PUBKEY ? (
                   <label className="space-y-1">
                     <span className="metric-label">Recipient system account</span>
-                    <input className="field-input" value={protocolFeeRecipient} onChange={(event) => setProtocolFeeRecipient(event.target.value)} />
+                    <input className="field-input" value={protocolFeeRecipient} onChange={(event) => setProtocolFeeRecipient(event.target.value)} disabled />
                   </label>
                 ) : (
                   <label className="space-y-1">
-                    <span className="metric-label">Recipient token account</span>
+                    <span className="metric-label">Recipient token account owned by {shortAddress(selectedProtocolFeeVault.feeRecipient)}</span>
                     <input className="field-input" value={protocolFeeRecipientTokenAccount} onChange={(event) => setProtocolFeeRecipientTokenAccount(event.target.value)} />
                   </label>
                 )}
@@ -486,12 +534,14 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
               <ul className="operator-summary-list">
                 <li>Oracle: {shortAddress(selectedOracleFeeVault.oracle)}</li>
                 <li>Payment mint: {selectedOracleFeeVault.paymentMint === ZERO_PUBKEY ? "SOL" : shortAddress(selectedOracleFeeVault.paymentMint)}</li>
+                <li>Fee recipient: {shortAddress(selectedOracleFeeVault.feeRecipient)}</li>
               </ul>
               <ProtocolDetailDisclosure title="Vault addresses" summary="Full oracle fee vault details stay collapsed unless you are auditing the rail.">
                 <div className="space-y-2 text-sm text-[var(--muted-foreground)]">
                   <p>Vault account: <span className="break-all font-mono">{selectedOracleFeeVault.address}</span></p>
                   <p>Oracle: <span className="break-all font-mono">{selectedOracleFeeVault.oracle}</span></p>
                   <p>Pool: <span className="break-all font-mono">{selectedOracleFeeVault.pool}</span></p>
+                  <p>Fee recipient: <span className="break-all font-mono">{selectedOracleFeeVault.feeRecipient}</span></p>
                 </div>
               </ProtocolDetailDisclosure>
             </article>
@@ -508,11 +558,11 @@ export function PoolTreasuryPanel({ poolAddress }: PoolTreasuryPanelProps) {
                 {selectedOracleFeeVault.paymentMint === ZERO_PUBKEY ? (
                   <label className="space-y-1">
                     <span className="metric-label">Recipient system account</span>
-                    <input className="field-input" value={oracleFeeRecipient} onChange={(event) => setOracleFeeRecipient(event.target.value)} />
+                    <input className="field-input" value={oracleFeeRecipient} onChange={(event) => setOracleFeeRecipient(event.target.value)} disabled />
                   </label>
                 ) : (
                   <label className="space-y-1">
-                    <span className="metric-label">Recipient token account</span>
+                    <span className="metric-label">Recipient token account owned by {shortAddress(selectedOracleFeeVault.feeRecipient)}</span>
                     <input className="field-input" value={oracleFeeRecipientTokenAccount} onChange={(event) => setOracleFeeRecipientTokenAccount(event.target.value)} />
                   </label>
                 )}

@@ -5,6 +5,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { DocumentLinkRow } from "@/components/document-link-row";
+import { ProtocolDetailDisclosure } from "@/components/protocol-detail-disclosure";
 import { formatAmount } from "@/lib/canonical-ui";
 import { buildCanonicalPoolHref } from "@/lib/canonical-routes";
 import {
@@ -33,10 +35,36 @@ type PlanCoveragePanelProps = {
   policySeries: PolicySeriesSnapshot[];
 };
 
+function humanizeFundingLineType(lineType: number): string {
+  const raw = describeFundingLineType(lineType);
+  if (raw.startsWith("unknown")) return raw;
+  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function humanizePathway(value?: string): string {
+  if (!value) return "—";
+  switch (value) {
+    case "defi_native": return "DeFi native";
+    case "traditional": return "Traditional";
+    case "hybrid": return "Hybrid";
+    default: return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}
+
+function humanizeSettlement(value?: string): string {
+  if (!value) return "—";
+  switch (value) {
+    case "onchain_programmatic": return "On-chain programmatic";
+    case "onchain_attested": return "On-chain attested";
+    case "offchain_manual": return "Off-chain manual";
+    default: return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+}
+
 function cadenceLabel(cycleSeconds?: number): string {
-  if (!cycleSeconds || cycleSeconds <= 0) return "Not published";
+  if (!cycleSeconds || cycleSeconds <= 0) return "—";
   const cycleDays = Math.round(cycleSeconds / 86_400);
-  return `${cycleDays} day${cycleDays === 1 ? "" : "s"}`;
+  return `Every ${cycleDays} day${cycleDays === 1 ? "" : "s"}`;
 }
 
 export function PlanCoveragePanel({
@@ -120,14 +148,14 @@ export function PlanCoveragePanel({
         <article className="plans-card heavy-glass">
           <div className="plans-card-head">
             <div>
-              <p className="plans-card-eyebrow">COVERAGE_WORKSPACE</p>
+              <p className="plans-card-eyebrow">Coverage</p>
               <h2 className="plans-card-title plans-card-title-display">
-                No <em>protection lanes</em>
+                No <em>coverage</em> configured
               </h2>
             </div>
           </div>
           <p className="plans-card-body">
-            This plan does not currently expose a protection `PolicySeries`, so the coverage workspace stays hidden until one exists.
+            This plan doesn’t have any protection lanes yet. Add one from the creation wizard when you’re ready.
           </p>
         </article>
       </div>
@@ -139,7 +167,7 @@ export function PlanCoveragePanel({
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">PROTECTION_SERIES</p>
+            <p className="plans-card-eyebrow">Coverage</p>
             <h2 className="plans-card-title plans-card-title-display">
               {activeSeries?.displayName ?? "Coverage lane"}
             </h2>
@@ -148,100 +176,116 @@ export function PlanCoveragePanel({
         </div>
         <div className="plans-wizard-review-grid">
           <div className="plans-review-row">
-            <span className="plans-review-label">SERIES_ID</span>
-            <span className="plans-review-value">{activeSeries?.seriesId ?? "—"}</span>
-          </div>
-          <div className="plans-review-row">
-            <span className="plans-review-label">SERIES_ADDRESS</span>
-            <span className="plans-review-value">{shortenAddress(activeSeries?.address ?? "", 6)}</span>
-          </div>
-          <div className="plans-review-row">
-            <span className="plans-review-label">PLAN</span>
-            <span className="plans-review-value">{shortenAddress(planAddress, 6)}</span>
-          </div>
-          <div className="plans-review-row">
-            <span className="plans-review-label">PREMIUM_CADENCE</span>
+            <span className="plans-review-label">Premium schedule</span>
             <span className="plans-review-value">{cadenceLabel(activeSeries?.cycleSeconds)}</span>
           </div>
+          <div className="plans-review-row">
+            <span className="plans-review-label">Series</span>
+            <span className="plans-review-value">{activeSeries?.seriesId ?? "—"}</span>
+          </div>
         </div>
+        {activeSeries ? (
+          <ProtocolDetailDisclosure
+            title="Protocol details"
+            summary="On-chain addresses for this series."
+          >
+            <div className="plans-wizard-review-grid">
+              <div className="plans-review-row">
+                <span className="plans-review-label">Series address</span>
+                <span className="plans-review-value break-all">{shortenAddress(activeSeries.address, 6)}</span>
+              </div>
+              <div className="plans-review-row">
+                <span className="plans-review-label">Plan address</span>
+                <span className="plans-review-value break-all">{shortenAddress(planAddress, 6)}</span>
+              </div>
+            </div>
+          </ProtocolDetailDisclosure>
+        ) : null}
       </article>
 
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">PUBLIC_PROTECTION_METADATA</p>
+            <p className="plans-card-eyebrow">Public terms</p>
             <h2 className="plans-card-title plans-card-title-display">
               Coverage <em>posture</em>
             </h2>
           </div>
-          <span className="plans-card-meta">{activeSeries?.metadataUri ?? "No URI"}</span>
         </div>
         {metadataLoading ? (
-          <p className="plans-card-body">Loading structured protection metadata…</p>
+          <p className="plans-card-body">Loading coverage details…</p>
         ) : metadataError ? (
           <p className="plans-card-body">{metadataError}</p>
         ) : metadataDocument ? (
           <div className="plans-wizard-review-grid">
             <div className="plans-review-row">
-              <span className="plans-review-label">PATHWAY</span>
-              <span className="plans-review-value">{metadataDocument.coveragePathway}</span>
-            </div>
-            <div className="plans-review-row">
-              <span className="plans-review-label">METADATA_URI</span>
-              <span className="plans-review-value">{metadataDocument.metadataUri}</span>
+              <span className="plans-review-label">Pathway</span>
+              <span className="plans-review-value">{humanizePathway(metadataDocument.coveragePathway)}</span>
             </div>
             {metadataDocument.defi ? (
               <>
                 <div className="plans-review-row">
-                  <span className="plans-review-label">SETTLEMENT</span>
-                  <span className="plans-review-value">{metadataDocument.defi.settlementStyle}</span>
+                  <span className="plans-review-label">Settlement</span>
+                  <span className="plans-review-value">{humanizeSettlement(metadataDocument.defi.settlementStyle)}</span>
                 </div>
-                <div className="plans-review-row">
-                  <span className="plans-review-label">TECHNICAL_TERMS</span>
-                  <span className="plans-review-value">{metadataDocument.defi.technicalTermsUri}</span>
-                </div>
-                <div className="plans-review-row">
-                  <span className="plans-review-label">RISK_DISCLOSURE</span>
-                  <span className="plans-review-value">{metadataDocument.defi.riskDisclosureUri}</span>
+                <div className="plans-review-row plans-review-row-top">
+                  <span className="plans-review-label">Documents</span>
+                  <div className="plans-review-document-stack" aria-label="Public coverage documents">
+                    <DocumentLinkRow href={metadataDocument.defi.technicalTermsUri} label="Technical terms" />
+                    <DocumentLinkRow href={metadataDocument.defi.riskDisclosureUri} label="Risk disclosures" />
+                  </div>
                 </div>
               </>
             ) : null}
             {metadataDocument.rwa ? (
               <>
                 <div className="plans-review-row">
-                  <span className="plans-review-label">LEGAL_ENTITY</span>
+                  <span className="plans-review-label">Legal entity</span>
                   <span className="plans-review-value">{metadataDocument.rwa.legalEntityName}</span>
                 </div>
                 <div className="plans-review-row">
-                  <span className="plans-review-label">JURISDICTION</span>
+                  <span className="plans-review-label">Jurisdiction</span>
                   <span className="plans-review-value">{metadataDocument.rwa.jurisdiction}</span>
                 </div>
                 <div className="plans-review-row">
-                  <span className="plans-review-label">POLICY_TERMS</span>
-                  <span className="plans-review-value">{metadataDocument.rwa.policyTermsUri}</span>
+                  <span className="plans-review-label">Policy terms</span>
+                  <div className="plans-review-document-stack">
+                    <DocumentLinkRow href={metadataDocument.rwa.policyTermsUri} label="Policy terms" />
+                  </div>
                 </div>
                 <div className="plans-review-row">
-                  <span className="plans-review-label">LICENSE_REF</span>
+                  <span className="plans-review-label">License reference</span>
                   <span className="plans-review-value">{metadataDocument.rwa.regulatoryLicenseRef}</span>
                 </div>
                 <div className="plans-review-row">
-                  <span className="plans-review-label">COMPLIANCE_CONTACT</span>
+                  <span className="plans-review-label">Compliance contact</span>
                   <span className="plans-review-value">{metadataDocument.rwa.complianceContact}</span>
                 </div>
               </>
             ) : null}
+            <ProtocolDetailDisclosure
+              title="Protocol details"
+              summary="Raw metadata URI."
+            >
+              <div className="plans-review-row">
+                <span className="plans-review-label">Metadata URI</span>
+                <div className="plans-review-document-stack">
+                  <DocumentLinkRow href={metadataDocument.metadataUri} label="Metadata URI" />
+                </div>
+              </div>
+            </ProtocolDetailDisclosure>
           </div>
         ) : (
-          <p className="plans-card-body">No structured protection metadata could be read for this series.</p>
+          <p className="plans-card-body">No public coverage details have been published for this series.</p>
         )}
       </article>
 
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">PREMIUM_INCOME_LINES</p>
+            <p className="plans-card-eyebrow">Premium</p>
             <h2 className="plans-card-title plans-card-title-display">
-              Premium <em>rails</em>
+              Premium <em>funding</em>
             </h2>
           </div>
           <span className="plans-card-meta">{premiumLines.length} tracked</span>
@@ -261,7 +305,7 @@ export function PlanCoveragePanel({
                 {premiumLines.map((line) => (
                   <tr key={line.address}>
                     <td data-label="Line">{line.displayName}</td>
-                    <td data-label="Type">{describeFundingLineType(line.lineType)}</td>
+                    <td data-label="Type">{humanizeFundingLineType(line.lineType)}</td>
                     <td data-label="Funded">{formatAmount(line.fundedAmount)}</td>
                     <td data-label="Available">{formatAmount(availableFundingLineBalance(line))}</td>
                   </tr>
@@ -270,22 +314,22 @@ export function PlanCoveragePanel({
             </table>
           </div>
         ) : (
-          <p className="plans-card-body">No premium-income funding line is currently linked to this protection series.</p>
+          <p className="plans-card-body">No premium funding line is linked to this coverage yet.</p>
         )}
       </article>
 
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">LINKED_CAPITAL_CONTEXT</p>
+            <p className="plans-card-eyebrow">Capital</p>
             <h2 className="plans-card-title plans-card-title-display">
-              Pool and capital <em>support</em>
+              Linked <em>pools</em>
             </h2>
           </div>
           <span className="plans-card-meta">{linkedPools.length} pool{linkedPools.length === 1 ? "" : "s"}</span>
         </div>
         {linkedPools.length === 0 ? (
-          <p className="plans-card-body">No capital pool linkage is currently recorded for this protection series.</p>
+          <p className="plans-card-body">No capital pool is linked to this coverage yet.</p>
         ) : (
           <div className="plans-lane-stack">
             {linkedPools.map((pool) => (
@@ -297,10 +341,10 @@ export function PlanCoveragePanel({
                 <div className="plans-lane-meta">
                   {linkedPools.length === 1 ? (
                     <Link href={buildCanonicalPoolHref(pool.address, { section: "coverage" })} className="secondary-button inline-flex">
-                      Open pool coverage tools
+                      Open pool
                     </Link>
                   ) : (
-                    <span className="plans-lane-mode">Multiple linked pools; choose pool-specific tooling explicitly.</span>
+                    <span className="plans-lane-mode">Multiple pools — pick one explicitly.</span>
                   )}
                 </div>
               </div>

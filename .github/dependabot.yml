@@ -1,0 +1,76 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    # Version-update PRs are paused during the mainnet security/redeploy window.
+    # Dependabot security alerts remain handled through the advisory gate.
+    schedule:
+      interval: monthly
+      day: monday
+      time: "04:00"
+    open-pull-requests-limit: 0
+    groups:
+      npm-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: monthly
+      day: monday
+      time: "04:15"
+    open-pull-requests-limit: 0
+    groups:
+      frontend-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+      time: "04:30"
+    open-pull-requests-limit: 0
+    groups:
+      cargo-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+      time: "04:45"
+    open-pull-requests-limit: 0
+    groups:
+      github-actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"

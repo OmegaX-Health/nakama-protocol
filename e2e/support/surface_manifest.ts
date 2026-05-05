@@ -6,12 +6,14 @@ export const SCENARIO_ORDER = [
   "schema_registry_and_binding_lifecycle",
   "reserve_domain_and_vault_setup",
   "bootstrap_to_self_serve_plan_journey",
+  "founder_commitment_waterfall_lifecycle",
   "sponsor_funded_plan_lifecycle",
   "reward_obligation_lifecycle",
   "protection_claim_lifecycle",
   "liquidity_pool_and_capital_class_lifecycle",
   "allocation_and_deallocation_lifecycle",
   "impairment_and_redemption_queue_lifecycle",
+  "fee_vault_lifecycle",
 ] as const;
 
 export type ScenarioName = (typeof SCENARIO_ORDER)[number];
@@ -71,12 +73,30 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
       "Fresh bootstrap state, canonical launch rails, oracle onboarding, member enrollment, claim intake, and LP capital all stay connected as one end-to-end operating path.",
     instructions: [],
   },
+  founder_commitment_waterfall_lifecycle: {
+    title: "Founder Commitment Waterfall Lifecycle",
+    focus:
+      "Founder Travel30 stays one public campaign with multiple payment rails, pending custody outside claims-paying reserve, waterfall activation only after rail pricing/freshness controls, and explicit refund/pause controls.",
+    instructions: [
+      "configure_reserve_asset_rail",
+      "publish_reserve_asset_rail_price",
+      "create_commitment_campaign",
+      "create_commitment_payment_rail",
+      "deposit_commitment",
+      "activate_direct_premium_commitment",
+      "activate_treasury_credit_commitment",
+      "activate_waterfall_commitment",
+      "refund_commitment",
+      "pause_commitment_campaign",
+    ],
+  },
   sponsor_funded_plan_lifecycle: {
     title: "Sponsor-Funded Plan Lifecycle",
     focus: "Sponsors create plans, version product lanes, enroll members, and fund plan-side lines without minting LP exposure.",
     instructions: [
       "create_health_plan",
       "create_policy_series",
+      "initialize_series_reserve_ledger",
       "version_policy_series",
       "open_member_position",
       "update_member_eligibility",
@@ -100,6 +120,7 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
     instructions: [
       "record_premium_payment",
       "open_claim_case",
+      "authorize_claim_recipient",
       "attach_claim_evidence_ref",
       "attest_claim_case",
       "adjudicate_claim_case",
@@ -133,6 +154,22 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
     focus: "Impairment, restricted capital, and redemption queue pressure remain visible in class and allocation ledgers.",
     instructions: [
       "mark_impairment",
+    ],
+  },
+  fee_vault_lifecycle: {
+    title: "Fee Vault Lifecycle",
+    focus:
+      "Phase 1.6/1.7 fee accumulation + withdrawal infrastructure: governance-init fee vaults per rail, accrual hooks on the inflow handlers (premium / deposit / redemption / claim settle), and per-rail-authority withdrawals across SOL and SPL.",
+    instructions: [
+      "init_protocol_fee_vault",
+      "init_pool_treasury_vault",
+      "init_pool_oracle_fee_vault",
+      "withdraw_protocol_fee_sol",
+      "withdraw_protocol_fee_spl",
+      "withdraw_pool_treasury_sol",
+      "withdraw_pool_treasury_spl",
+      "withdraw_pool_oracle_fee_sol",
+      "withdraw_pool_oracle_fee_spl",
     ],
   },
 };

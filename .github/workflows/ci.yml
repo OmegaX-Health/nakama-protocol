@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd
         with:
           fetch-depth: 0
 
@@ -25,7 +25,19 @@ jobs:
           else
             before="${{ github.event.before }}"
             if [[ -z "${before}" || "${before}" == "0000000000000000000000000000000000000000" ]]; then
-              range="${{ github.sha }}"
+              # First push to a new branch. Scoping the DCO range to commits
+              # unique to this branch (vs the default branch) avoids
+              # rescanning the entire repository history — old commits that
+              # predate the DCO requirement are already accepted on the
+              # default branch and should not block a fresh feature branch.
+              # Falls back to just HEAD if origin/${default_branch} is not
+              # available for any reason.
+              default_branch="${{ github.event.repository.default_branch }}"
+              if git rev-parse --verify "origin/${default_branch}" >/dev/null 2>&1; then
+                range="origin/${default_branch}..${{ github.sha }}"
+              else
+                range="${{ github.sha }}"
+              fi
             else
               range="${before}..${{ github.sha }}"
             fi
@@ -55,7 +67,7 @@ jobs:
           fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 20
           cache: npm
@@ -64,12 +76,16 @@ jobs:
             frontend/package-lock.json
 
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
+          toolchain: 1.88.0
           components: rustfmt, clippy
 
-      - name: Install cargo-license
-        run: cargo install cargo-license --locked
+      - name: Install Rust audit tooling
+        run: |
+          cargo install cargo-license --version 0.7.0 --locked
+          cargo install cargo-audit --version 0.22.1 --locked
+          cargo install cargo-deny --version 0.19.4 --locked
 
       - name: Install root dependencies
         run: npm ci
@@ -86,6 +102,15 @@ jobs:
       - name: Rust lint
         run: npm run rust:lint
 
+      - name: Rust dependency advisories
+        run: cargo audit
+
+      - name: Rust dependency policy
+        run: cargo deny check advisories bans sources
+
+      - name: IDL freshness check
+        run: npm run idl:freshness:check
+
       - name: Protocol contract sync
         run: npm run protocol:contract:check
 
@@ -95,8 +120,17 @@ jobs:
       - name: Frontend build
         run: npm run frontend:build
 
+      - name: Semantic readiness check
+        run: npm run semantic:readiness:check
+
       - name: Public hygiene scan
         run: npm run public:hygiene:check
 
       - name: Dependency license audit
         run: npm run license:audit
+
+      - name: npm dependency advisories
+        run: npm run security:audit:deps
+
+      - name: Generate SBOM
+        run: npm run security:sbom

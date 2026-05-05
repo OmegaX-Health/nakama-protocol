@@ -177,7 +177,7 @@ const wrapperSettlementMint = envPreferred(
 );
 
 const openDomainId = "open-health-usdc";
-const wrapperDomainId = "wrapper-health-rwa";
+const wrapperDomainId = "wrapper-health-reserve";
 
 const openReserveDomain = deriveReserveDomainPda({ domainId: openDomainId }).toBase58();
 const wrapperReserveDomain = deriveReserveDomainPda({ domainId: wrapperDomainId }).toBase58();
@@ -561,7 +561,7 @@ export const DEVNET_PROTOCOL_FIXTURE_STATE: DevnetProtocolFixtureState = {
       status: SERIES_STATUS_ACTIVE,
       assetMint: rewardMint,
       cycleSeconds: 30 * 86_400,
-      termsVersion: "v2026.1",
+      termsVersion: "2026.1",
       comparabilityKey: "activity-rewards-core",
     },
     {
@@ -574,7 +574,7 @@ export const DEVNET_PROTOCOL_FIXTURE_STATE: DevnetProtocolFixtureState = {
       status: SERIES_STATUS_ACTIVE,
       assetMint: rewardMint,
       cycleSeconds: 30 * 86_400,
-      termsVersion: "v2026.1",
+      termsVersion: "2026.1",
       comparabilityKey: "preventive-adherence",
     },
     {
@@ -587,7 +587,7 @@ export const DEVNET_PROTOCOL_FIXTURE_STATE: DevnetProtocolFixtureState = {
       status: SERIES_STATUS_ACTIVE,
       assetMint: settlementMint,
       cycleSeconds: 30 * 86_400,
-      termsVersion: "v2026.1",
+      termsVersion: "2026.1",
       comparabilityKey: "catastrophic-protection",
     },
     {

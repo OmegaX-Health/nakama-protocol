@@ -35,20 +35,23 @@ This directory contains the repository's command-line helpers.
 - `bootstrap_protocol.ts` writes the canonical hard-break devnet migration manifest and env exports
 - `bootstrap_devnet_live_protocol.ts` seeds the canonical shared-devnet plan/capital/oracle/schema graph, then hands protocol governance over to the configured governance PDA when one is present, and syncs the resulting env addresses back into the frontend bootstrap files
 - `bootstrap_genesis_live_protocol.ts` seeds the real Genesis Protect Acute launch surface from explicit live inputs instead of the baked devnet fixture matrix
+- `devnet_founder_rehearsal.ts` runs the operator-only Founder Travel30 signed devnet rehearsal; `--plan` is read-only, while `--execute` sends signed devnet transactions and writes a redacted evidence bundle under `artifacts/devnet-founder-rehearsal-*`
 - `bootstrap_devnet_frontend_parity.ts` syncs canonical fixture env values and writes `frontend/public/devnet-fixtures.json`
 - `devnet_beta_observability.ts` collects structured devnet observability output
 - `devnet_frontend_role_smoke.ts` validates the canonical fixture matrix in smoke or strict mode
 - `devnet_governance_smoke.ts` runs the shared-devnet native governance smoke in `create-vote` and `execute` phases
 - `devnet_governance_ui_readonly.ts` boots the local frontend and verifies readonly governance routes against devnet data
+- `devnet_operator_drawer_sim.ts` simulates the mounted operator drawer transactions against devnet and fails on real builder/wiring mismatches such as membership proof-mode or gate-configuration errors
+- `seed_devnet_treasury_canaries.ts` seeds devnet treasury pen-test canary state; with the local operator signer it creates a linked-claim obligation canary, and with `OMEGAX_DEVNET_PROTOCOL_GOVERNANCE_KEYPAIR_PATH` it can also seed governance-gated fee-vault and LP-redemption canaries
 - `deploy_devnet_beta.ts` runs the checked build, artifact parity, and canonical manifest/bootstrap preparation for the hard-break migration
 - `governance_schema_state_update.ts` updates governance-controlled schema state, including historical schema-dependency backfills when older accounts must be retired safely
-- `upload_schema_to_ipfs.ts` publishes schema content to IPFS
-
 ## Usage guidance
 
 - Prefer package scripts from the repository root when they exist.
 - Use `npm run verify:public` for the public release gate.
 - Use `npm run frontend:workbench:mobile-sidebar:smoke` for the targeted mobile drawer accessibility smoke.
+- Use `npm run devnet:operator:drawer:sim` for the targeted plan/governance operator drawer transaction smoke.
+- Use `npm run devnet:treasury:seed-canaries` before `npm run devnet:treasury:pen-test` when the devnet snapshot lacks live treasury outflow canaries.
 - Use `npm run test:e2e:localnet` as an additional release-candidate sign-off step when the public protocol surface changes.
 - Use `npm run semantic:readiness:check` when you want the canonical-surface wording guard on its own.
 - Treat deployment and bootstrap helpers as operator tooling, not general contributor entry points.
@@ -56,5 +59,6 @@ This directory contains the repository's command-line helpers.
 - The hard-break devnet migration now centers on the manifest emitted by `npm run protocol:bootstrap`.
 - The shared-devnet release sign-off path now typically runs `npm run protocol:bootstrap:devnet-live`, `npm run devnet:frontend:bootstrap`, `npm run devnet:frontend:signoff`, the governance smoke pair, and `npm run devnet:beta:observe` in one tracked rollout window.
 - Use [`../docs/operations/genesis-live-bootstrap.md`](../docs/operations/genesis-live-bootstrap.md) for the Genesis mainnet-ready bootstrap path and its required env inputs.
+- Use `npm run devnet:founder:rehearsal -- --plan` to preview the Founder Travel30 canonical IDs, per-asset rails, and per-asset funding lines without sending; use `npm run devnet:founder:rehearsal -- --execute --resume` only from an operator shell with a funded `SOLANA_KEYPAIR`.
 - The governance smoke uses the existing `GOVERNANCE_SECRET_KEY_BASE58` signer or the local Solana keypair fallback, requires pre-existing DAO tokens, only SOL-airdrops fee balance when the signer drops below the configured threshold, and expects the protocol governance authority handoff to match `GOVERNANCE_CONFIG`.
 - The readonly governance UI smoke requires Playwright Chromium locally: `npx playwright install chromium`.

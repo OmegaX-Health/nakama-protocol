@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 
 import { PublicKey } from "@solana/web3.js";
 
+import phase0Module from "../../frontend/lib/genesis-phase0-launch-profile.ts";
 import genesisModule from "../../frontend/lib/genesis-protect-acute.ts";
 import protocolModule from "../../frontend/lib/protocol.ts";
 
@@ -43,10 +44,16 @@ const {
   deriveReserveDomainPda,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
 
+const {
+  resolveGenesisPhase0LaunchProfile,
+  phase0FlagEnabled,
+} = phase0Module as typeof import("../../frontend/lib/genesis-phase0-launch-profile.ts");
+
 type GenesisLiveBootstrapEnv = NodeJS.ProcessEnv;
 
 export type GenesisLiveBootstrapConfig = {
   rpcUrl: string;
+  launchProfile: ReturnType<typeof resolveGenesisPhase0LaunchProfile>;
   governanceAuthority: string;
   governanceConfigAddress: string | null;
   settlementMint: string;
@@ -223,6 +230,34 @@ function parsePubkey(value: string, label: string): string {
   }
 }
 
+/**
+ * Returns true when the resolved RPC URL should be treated as Solana mainnet.
+ * Conservative: only explicit non-mainnet markers (devnet/testnet/localnet)
+ * disable the guard; anything else is treated as mainnet to avoid custom-
+ * domain bypasses.
+ *
+ * See docs/security/mainnet-privileged-role-controls.md §4 for the policy
+ * this guard enforces.
+ */
+function isMainnetCluster(rpcUrl: string): boolean {
+  const normalized = rpcUrl.trim().toLowerCase();
+  if (!normalized) return true;
+
+  // Explicit non-mainnet markers disable the guard for rehearsals/localnet.
+  if (
+    normalized.includes("devnet")
+    || normalized.includes("testnet")
+    || normalized.includes("localhost")
+    || normalized.includes("127.0.0.1")
+  ) {
+    return false;
+  }
+
+  // Mainnet endpoints can be hosted behind custom domains without the
+  // literal "mainnet" in the URL; default to mainnet unless clearly non-mainnet.
+  return true;
+}
+
 function optionalPubkey(
   env: GenesisLiveBootstrapEnv,
   name: string,
@@ -246,6 +281,47 @@ function parseBigIntEnv(env: GenesisLiveBootstrapEnv, name: string, fallback: bi
   } catch {
     throw new Error(`Invalid ${name}: expected a non-negative integer base-unit amount.`);
   }
+}
+
+function assertPhase0MainnetBootstrapAttemptAllowed(params: {
+  env: GenesisLiveBootstrapEnv;
+  targetingMainnet: boolean;
+}): void {
+  if (!params.targetingMainnet) return;
+
+  const guardedAttempts: Array<{ attempt: string; allow: string; label: string }> = [
+    {
+      attempt: "OMEGAX_LIVE_ENABLE_REWARD_LAUNCH",
+      allow: "OMEGAX_ALLOW_MAINNET_REWARD_LAUNCH",
+      label: "reward launch creation",
+    },
+    {
+      attempt: "OMEGAX_LIVE_ENABLE_RWA_POLICY",
+      allow: "OMEGAX_ALLOW_MAINNET_RWA_LAUNCH",
+      label: "RWA policy creation",
+    },
+    {
+      attempt: "OMEGAX_LIVE_ENABLE_HYBRID_LAUNCH",
+      allow: "OMEGAX_ALLOW_MAINNET_HYBRID_LAUNCH",
+      label: "hybrid launch creation",
+    },
+    {
+      attempt: "OMEGAX_LIVE_ENABLE_ADMIN_BOOTSTRAP",
+      allow: "OMEGAX_ALLOW_MAINNET_ADMIN_BOOTSTRAP",
+      label: "extra admin bootstrap",
+    },
+  ];
+
+  const blocked = guardedAttempts.filter((entry) =>
+    phase0FlagEnabled(params.env, entry.attempt) && !phase0FlagEnabled(params.env, entry.allow),
+  );
+  if (blocked.length === 0) return;
+
+  throw new Error(
+    "Mainnet Phase 0 bootstrap blocked: "
+      + blocked.map((entry) => `${entry.label} set by ${entry.attempt} without ${entry.allow}=1`).join("; ")
+      + ". Genesis Phase 0 bootstraps LP classes, protection policy series, funding lines, and reserve visibility only by default.",
+  );
 }
 
 function absolutePublicUri(pathOrUrl: string): string {
@@ -343,6 +419,113 @@ export function loadGenesisLiveBootstrapConfig(params: {
     null,
     "OMEGAX_LIVE_MEMBERSHIP_INVITE_AUTHORITY",
   );
+
+  // Mainnet privileged-role guard. See
+  // docs/security/mainnet-privileged-role-controls.md §4 for the full policy.
+  //
+  // PT-2026-04-27-05 closed the silent role-collapse case via the opt-in
+  // OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 flag. The guard below tightens
+  // that into a hard-fail: any bootstrap that resolves to a mainnet RPC URL
+  // (or sets OMEGAX_LIVE_CLUSTER_OVERRIDE=mainnet) must (a) set the distinct-
+  // keys flag explicitly, and (b) provide explicit env vars for every
+  // operational role so none default to the governance signer. The break-
+  // glass override OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1 exists for
+  // documented rehearsal or emergency recovery and emits a loud warning to
+  // stderr so it appears in the release-candidate evidence trail.
+  const rpcUrlForGuard =
+    optionalEnv(env, "SOLANA_RPC_URL")
+    ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL")
+    ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_RPC_URL")
+    ?? "https://api.mainnet-beta.solana.com";
+  const clusterOverride = optionalEnv(env, "OMEGAX_LIVE_CLUSTER_OVERRIDE")?.toLowerCase() ?? null;
+  const targetingMainnet =
+    clusterOverride === "mainnet"
+    || (clusterOverride !== "devnet" && clusterOverride !== "localnet" && isMainnetCluster(rpcUrlForGuard));
+  const breakGlass = env.OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET === "1";
+  const launchProfile = resolveGenesisPhase0LaunchProfile({
+    network: targetingMainnet ? "mainnet-beta" : "devnet",
+    env: {
+      NEXT_PUBLIC_ENABLE_REWARD_LAUNCH: env.OMEGAX_LIVE_ENABLE_REWARD_LAUNCH,
+      NEXT_PUBLIC_ENABLE_RWA_POLICY: env.OMEGAX_LIVE_ENABLE_RWA_POLICY,
+      NEXT_PUBLIC_ENABLE_HYBRID_LAUNCH: env.OMEGAX_LIVE_ENABLE_HYBRID_LAUNCH,
+      NEXT_PUBLIC_ENABLE_DAO_FALLBACK: env.OMEGAX_LIVE_ENABLE_DAO_FALLBACK,
+      NEXT_PUBLIC_ENABLE_PROTOCOL_OPERATOR_ACTIONS: env.OMEGAX_LIVE_ENABLE_ADMIN_BOOTSTRAP,
+      NEXT_PUBLIC_ALLOW_MAINNET_FUTURE_SURFACES: env.OMEGAX_ALLOW_MAINNET_FUTURE_SURFACES,
+    },
+  });
+
+  assertPhase0MainnetBootstrapAttemptAllowed({ env, targetingMainnet });
+
+  if (targetingMainnet && !breakGlass) {
+    if (env.OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS !== "1") {
+      throw new Error(
+        "Mainnet bootstrap blocked: OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 is required for live cluster bootstraps. "
+          + "Set it explicitly, or set OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1 as a documented break-glass override "
+          + "(record the override in the release-candidate evidence template). "
+          + "See docs/security/mainnet-privileged-role-controls.md §3-4.",
+      );
+    }
+    const requiredRoleEnvVars = [
+      "OMEGAX_LIVE_RESERVE_DOMAIN_ADMIN",
+      "OMEGAX_LIVE_SPONSOR_WALLET",
+      "OMEGAX_LIVE_SPONSOR_OPERATOR_WALLET",
+      "OMEGAX_LIVE_CLAIMS_OPERATOR_WALLET",
+      "OMEGAX_LIVE_POOL_CURATOR_WALLET",
+      "OMEGAX_LIVE_POOL_ALLOCATOR_WALLET",
+      "OMEGAX_LIVE_POOL_SENTINEL_WALLET",
+    ];
+    const missingRoleEnvVars = requiredRoleEnvVars.filter((name) => !optionalEnv(env, name));
+    if (missingRoleEnvVars.length > 0) {
+      throw new Error(
+        `Mainnet bootstrap blocked: ${missingRoleEnvVars.length} privileged role(s) would default to the governance signer: `
+          + `${missingRoleEnvVars.join(", ")}. Set each to an explicit, distinct wallet (multisig PDA strongly recommended for governance and high-value roles), `
+          + "or set OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1 as a documented break-glass override. "
+          + "See docs/security/mainnet-privileged-role-controls.md §1-4.",
+      );
+    }
+  } else if (targetingMainnet && breakGlass) {
+    process.stderr.write(
+      "[bootstrap] BREAK-GLASS: OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1 active. "
+        + "Privileged roles may default to the governance signer; record this override in the release-candidate evidence template.\n",
+    );
+  }
+
+  // PT-2026-04-27-05 fix: opt-in validation that operator roles are distinct
+  // pubkeys. Set OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 in the operator
+  // environment for mainnet bootstrap to refuse a config where governance,
+  // sponsor, claims_operator, oracle, pool curator/allocator/sentinel, etc.
+  // collapse onto a single keypair. Without this guard the defaults silently
+  // route every role through governanceAuthority — a single compromise drains
+  // the whole protocol.
+  if (env.OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS === "1" && !(targetingMainnet && breakGlass)) {
+    const toBase58 = (value: PublicKey | string): string =>
+      typeof value === "string" ? value : value.toBase58();
+    const roleKeys: Array<[string, PublicKey | string]> = [
+      ["governance", governanceAuthority],
+      ["reserveDomainAdmin", reserveDomainAdmin],
+      ["sponsor", sponsor],
+      ["sponsorOperator", sponsorOperator],
+      ["claimsOperator", claimsOperator],
+      ["oracle", oracleAuthority],
+      ["poolCurator", poolCurator],
+      ["poolAllocator", poolAllocator],
+      ["poolSentinel", poolSentinel],
+    ];
+    if (membershipInviteAuthority) {
+      roleKeys.push(["membershipInviteAuthority", membershipInviteAuthority]);
+    }
+    const seen = new Map<string, string>();
+    for (const [role, key] of roleKeys) {
+      const k = toBase58(key);
+      const prior = seen.get(k);
+      if (prior) {
+        throw new Error(
+          `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 but roles "${prior}" and "${role}" both resolve to ${k}`,
+        );
+      }
+      seen.set(k, role);
+    }
+  }
   const membershipMode = membershipInviteAuthority ? 2 : 0;
   const membershipGateKind = membershipInviteAuthority ? 1 : 0;
 
@@ -426,6 +609,7 @@ export function loadGenesisLiveBootstrapConfig(params: {
       ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL")
       ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_RPC_URL")
       ?? "https://api.mainnet-beta.solana.com",
+    launchProfile,
     governanceAuthority,
     governanceConfigAddress: optionalPubkey(
       env,
