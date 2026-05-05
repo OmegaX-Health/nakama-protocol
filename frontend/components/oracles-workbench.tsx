@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { OracleRegistryVerificationPanel } from "@/components/oracle-registry-verification-panel";
 import { PoolOraclesPanel } from "@/components/pool-oracles-panel";
 import { useWorkspacePersona } from "@/components/workspace-persona";
-import { claimCasesForOracleContext, formatAmount, seriesForPool } from "@/lib/canonical-ui";
+import { claimCasesForOracleContext, formatSettlementUnits, rawAmountTitle, seriesForPool } from "@/lib/canonical-ui";
 import { firstSearchParamValue, type RouteSearchParams, toURLSearchParams } from "@/lib/search-params";
 import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
 import { buildAuditTrail, defaultTabForPersona, ORACLE_TABS, type OracleTabId } from "@/lib/workbench";
@@ -99,12 +99,12 @@ function personaHeroCopy(persona: string): { eyebrow: string; subtitle: string }
     case "governance":
       return {
         eyebrow: "Oracles",
-        subtitle: "Operate the attestation mesh — adjudicate disputes, review feeds, and approve operator posture changes.",
+        subtitle: "Review evidence feeds, dispute posture, and operator approvals before changing oracle controls.",
       };
     default:
       return {
         eyebrow: "Oracles",
-        subtitle: "Operator coverage, attestation feeds, and dispute watch across the protocol's reserve obligation mesh.",
+        subtitle: "Evidence providers, attestations, and dispute watch across the protocol's health coverage and reserve obligations.",
       };
   }
 }
@@ -389,7 +389,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
           <div className="plans-hero-copy">
             <span className="plans-hero-eyebrow">{heroEyebrow}</span>
             <h1 className="plans-hero-title">
-              Attestation <em>Mesh</em>
+              Evidence &amp; <em>oracles</em>
             </h1>
             <p className="plans-hero-subtitle">{heroSubtitle}</p>
           </div>
@@ -400,7 +400,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
             <article className="plans-card liquid-glass">
               <div className="plans-card-head">
                 <div>
-                  <p className="plans-card-eyebrow">LIVE_PROTOCOL_STATE</p>
+                  <p className="plans-card-eyebrow">Live protocol state</p>
                   <h2 className="plans-card-title plans-card-title-display">
                     {loading ? <>Syncing <em>operators</em></> : <>RPC <em>attention</em></>}
                   </h2>
@@ -419,7 +419,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
         <div className="plans-context-bar">
           <div className="plans-context-selectors liquid-glass">
             <HeroSelector
-              eyebrow="POOL_CONTEXT"
+              eyebrow="Reserve pool"
               label="Pool context"
               value={selectedPool}
               options={allPools}
@@ -430,7 +430,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
             />
             <span className="plans-context-divider" aria-hidden="true" />
             <HeroSelector
-              eyebrow="POLICY_SERIES"
+              eyebrow="Coverage product"
               label="Policy series"
               value={selectedSeries}
               options={boundSeries}
@@ -446,10 +446,10 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
         {/* ── KPI strip ─────────────────────── */}
         <section className="plans-kpi-strip" aria-label="Oracle workspace telemetry">
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">Operators</span>
+            <span className="plans-kpi-label">Snapshot operators</span>
             <span className="plans-kpi-value">{oracleOperators.length}</span>
             <span className="plans-kpi-meta">
-              {selectedPoolApprovals.filter((approval) => approval.active).length} approved · {claimsOperators.length} claims
+              {selectedPoolApprovals.filter((approval) => approval.active).length} pool approved · {claimsOperators.length} claims operators
             </span>
           </div>
           <div className="plans-kpi-metric">
@@ -509,7 +509,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                   <article className="plans-card heavy-glass">
                     <div className="plans-card-head">
                       <div>
-                        <p className="plans-card-eyebrow">OPERATOR_REGISTRY</p>
+                        <p className="plans-card-eyebrow">Operator registry</p>
                         <h2 className="plans-card-title plans-card-title-display">
                           Signing <em>operators</em>
                         </h2>
@@ -520,7 +520,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                       </span>
                     </div>
                     <p className="plans-card-body">
-                      Registered oracle profiles and their live approval posture for the selected pool. Claims operators remain plan-scoped and appear in posture telemetry.
+                      Snapshot operators are shown here. The live pool registry above can expose additional profiles before they are bound to this selected pool context.
                     </p>
                     <div className="plans-table-wrap">
                       <table className="plans-table">
@@ -566,7 +566,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                 <article className="plans-card heavy-glass">
                   <div className="plans-card-head">
                     <div>
-                      <p className="plans-card-eyebrow">SOURCE_BINDINGS</p>
+                      <p className="plans-card-eyebrow">Source bindings</p>
                       <h2 className="plans-card-title plans-card-title-display">
                         {selectedPoolApprovals.length} approved <em>operators</em>
                       </h2>
@@ -621,7 +621,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                 <article className="plans-card heavy-glass">
                   <div className="plans-card-head">
                     <div>
-                      <p className="plans-card-eyebrow">ATTESTATION_FEED</p>
+                      <p className="plans-card-eyebrow">Attestation feed</p>
                       <h2 className="plans-card-title plans-card-title-display">
                         Live <em>signals</em>
                       </h2>
@@ -670,7 +670,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                 <article className="plans-card heavy-glass">
                   <div className="plans-card-head">
                     <div>
-                      <p className="plans-card-eyebrow">DISPUTE_WATCH</p>
+                      <p className="plans-card-eyebrow">Dispute watch</p>
                       <h2 className="plans-card-title plans-card-title-display">
                         Escalated <em>obligations</em>
                       </h2>
@@ -708,7 +708,9 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                                   <StatusBadge label={describeObligationStatus(obligation.status)} />
                                 </td>
                                 <td data-label="Watch amount">
-                                  <span className="plans-table-amount">{formatAmount(watch)}</span>
+                                  <span className="plans-table-amount" title={rawAmountTitle(watch)}>
+                                    {formatSettlementUnits(watch)}
+                                  </span>
                                 </td>
                               </tr>
                             );
@@ -731,7 +733,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                   <article className="plans-card heavy-glass">
                     <div className="plans-card-head">
                       <div>
-                        <p className="plans-card-eyebrow">ACCESS_POSTURE</p>
+                        <p className="plans-card-eyebrow">Access posture</p>
                         <h2 className="plans-card-title plans-card-title-display">
                           Operator <em>authority</em>
                         </h2>
@@ -740,11 +742,11 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                     </div>
                     <div className="plans-data-grid">
                       <div className="plans-data-row">
-                        <span className="plans-data-label">Oracle_Operators</span>
+                        <span className="plans-data-label">Oracle operators</span>
                         <strong className="plans-data-value">{oracleOperators.length}</strong>
                       </div>
                       <div className="plans-data-row">
-                        <span className="plans-data-label">Claims_Operators</span>
+                        <span className="plans-data-label">Claims operators</span>
                         <strong className="plans-data-value">{claimsOperators.length}</strong>
                       </div>
                       <div className="plans-data-row">
@@ -754,7 +756,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                         </span>
                       </div>
                       <div className="plans-data-row">
-                        <span className="plans-data-label">Schema_Gate</span>
+                        <span className="plans-data-label">Schema gate</span>
                         <span className="plans-data-value">
                           {selectedPoolPolicy?.requireVerifiedSchema ? "Verified only" : "Open"}
                         </span>
@@ -765,25 +767,25 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
                   <article className="plans-card heavy-glass">
                     <div className="plans-card-head">
                       <div>
-                        <p className="plans-card-eyebrow">COVERAGE_SURFACE</p>
+                        <p className="plans-card-eyebrow">Coverage surface</p>
                         <h2 className="plans-card-title">Mesh reach</h2>
                       </div>
                     </div>
                     <div className="plans-data-grid">
                       <div className="plans-data-row">
-                        <span className="plans-data-label">Bound_Series</span>
+                        <span className="plans-data-label">Bound series</span>
                         <strong className="plans-data-value">{boundSeries.length}</strong>
                       </div>
                       <div className="plans-data-row">
-                        <span className="plans-data-label">Visible_Pools</span>
+                        <span className="plans-data-label">Visible pools</span>
                         <strong className="plans-data-value">{allPools.length}</strong>
                       </div>
                       <div className="plans-data-row">
-                        <span className="plans-data-label">Live_Attestations</span>
+                        <span className="plans-data-label">Live attestations</span>
                         <strong className="plans-data-value">{attestations.length}</strong>
                       </div>
                       <div className="plans-data-row">
-                        <span className="plans-data-label">Active_Disputes</span>
+                        <span className="plans-data-label">Active disputes</span>
                         <strong className="plans-data-value">{disputes.length}</strong>
                       </div>
                     </div>
@@ -798,7 +800,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
               {/* Mesh integrity gauge */}
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">MESH_INTEGRITY</span>
+                  <span className="plans-rail-tag">Evidence integrity</span>
                   <span className={cn("plans-badge", `plans-badge-${meshHealthVariant}`)}>
                     {meshHealthLabel}
                   </span>
@@ -836,7 +838,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
               {/* Selected binding */}
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">SELECTED_BINDING</span>
+                  <span className="plans-rail-tag">Selected binding</span>
                   <span className="plans-rail-subtag">SERIES</span>
                 </div>
                 {selectedSeries ? (
@@ -880,8 +882,8 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
               {/* Field log */}
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">FIELD_LOG</span>
-                  <span className="plans-rail-subtag">LIVE_AUDIT</span>
+                  <span className="plans-rail-tag">Field log</span>
+                  <span className="plans-rail-subtag">Live audit</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (

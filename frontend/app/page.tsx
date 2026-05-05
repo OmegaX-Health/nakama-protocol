@@ -3,5 +3,5 @@
 import { redirect } from "next/navigation";
 
 export default function HomePage() {
-  redirect("/plans?setup=genesis-protect-acute");
+  redirect("/overview");
 }

@@ -76,6 +76,16 @@ function connectionMetaLabel(network: NetworkMode, rpcProfile: RpcProfile): stri
   return `${formatNetworkLabel(network).toUpperCase()} // ${formatRpcProfileLabel(rpcProfile).toUpperCase()}`;
 }
 
+function walletPriority(name: string): number {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("phantom")) return 0;
+  if (normalized.includes("solflare")) return 1;
+  if (normalized.includes("backpack")) return 2;
+  if (normalized.includes("glow")) return 3;
+  if (normalized.includes("metamask")) return 20;
+  return 10;
+}
+
 type WalletButtonProps = {
   className?: string;
   mobile?: boolean;
@@ -520,11 +530,11 @@ export function WalletButton({ className, mobile = false }: WalletButtonProps) {
               <div className="wallet-surface-body">
                 <div className="wallet-surface-summary">
                   <div className="wallet-surface-summary-copy">
-                    <span className="wallet-surface-summary-label">{connectionMetaLabel(selectedNetwork, resolvedRpcProfile)}</span>
-                    <span className="wallet-surface-summary-title">
-                      {hydratedConnected ? middleTruncate(connectedAddress, 8, 6) : "Choose a wallet to continue"}
-                    </span>
-                    <span className="wallet-surface-summary-meta">{endpointSummary(resolvedEndpoint)}</span>
+                  <span className="wallet-surface-summary-label">{connectionMetaLabel(selectedNetwork, resolvedRpcProfile)}</span>
+                  <span className="wallet-surface-summary-title">
+                      {hydratedConnected ? middleTruncate(connectedAddress, 8, 6) : "Choose a Solana wallet"}
+                  </span>
+                  <span className="wallet-surface-summary-meta">{endpointSummary(resolvedEndpoint)}</span>
                   </div>
                   {walletIcon ? <img src={walletIcon} alt="" className="wallet-surface-summary-icon" /> : <Wallet className="wallet-surface-summary-fallback" strokeWidth={1.8} />}
                 </div>
@@ -579,7 +589,11 @@ export function WalletButton({ className, mobile = false }: WalletButtonProps) {
                               <span className="wallet-wallet-name">{candidate.adapter.name}</span>
                             </span>
                             <span className="wallet-wallet-caption">
-                              {isCurrent && hydratedConnected ? "Connected wallet" : "Ready in this browser"}
+                              {isCurrent && hydratedConnected
+                                ? "Connected wallet"
+                                : candidate.adapter.name.toLowerCase().includes("metamask")
+                                  ? "Only use if it exposes a Solana account"
+                                  : "Ready for Solana in this browser"}
                             </span>
                           </span>
                           <span className="wallet-wallet-state">
@@ -654,6 +668,8 @@ function sortWallets<T extends { adapter: { name: string } }>(wallets: T[], curr
     const rightCurrent = right.adapter.name === currentWalletName;
     if (leftCurrent && !rightCurrent) return -1;
     if (!leftCurrent && rightCurrent) return 1;
+    const byPriority = walletPriority(left.adapter.name) - walletPriority(right.adapter.name);
+    if (byPriority !== 0) return byPriority;
     return left.adapter.name.localeCompare(right.adapter.name);
   });
 }

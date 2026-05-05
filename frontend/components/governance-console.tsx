@@ -31,7 +31,6 @@ import {
   type ProtocolConfigSummary,
   type SchemaSummary,
 } from "@/lib/protocol";
-import { formatRpcError } from "@/lib/rpc-errors";
 
 type GovernanceConsoleProps = {
   initialProtocolConfig?: ProtocolConfigSummary | null;
@@ -122,10 +121,8 @@ export function GovernanceConsole({
       setProtocolConfig(nextProtocolConfig ?? initialProtocolConfig);
       setSchemas(nextSchemas);
     } catch (cause) {
-      setStatus(formatRpcError(cause, {
-        fallback: "Failed to load governance state.",
-        rpcEndpoint: connection.rpcEndpoint,
-      }));
+      console.warn("Governance state load failed", cause);
+      setStatus("Native governance is not configured for this environment, or the selected RPC endpoint cannot read the governance realm yet.");
       setStatusTone("error");
     } finally {
       setLoading(false);
@@ -421,7 +418,7 @@ export function GovernanceConsole({
           </button>
         </div>
         <p className="field-help">
-          Configure `NEXT_PUBLIC_GOVERNANCE_REALM`, `NEXT_PUBLIC_GOVERNANCE_CONFIG`, and `NEXT_PUBLIC_GOVERNANCE_TOKEN_MINT` to enable native governance.
+          Native governance is not available in this environment yet. The bounded action templates below remain visible for review.
         </p>
         {status ? <p className={statusTone === "error" ? "field-error" : "field-help"}>{status}</p> : null}
       </section>

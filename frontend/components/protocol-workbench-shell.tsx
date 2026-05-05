@@ -14,7 +14,7 @@ import { useTheme } from "@/components/theme-provider";
 import { WalletButton } from "@/components/wallet-providers";
 import { useWorkspacePersona } from "@/components/workspace-persona";
 import frontendPackage from "@/package.json";
-import { NETWORK_OPTIONS, normalizeExplorerCluster } from "@/lib/network-config";
+import { NETWORK_OPTIONS } from "@/lib/network-config";
 import { cn } from "@/lib/cn";
 import { computeWorkbenchMetrics, WORKBENCH_NAV } from "@/lib/workbench";
 import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
@@ -25,9 +25,8 @@ const SDK_PACKAGE_URL = "https://www.npmjs.com/package/@omegax/protocol-sdk";
 const DOCS_URL = "https://docs.omegax.health";
 const SECURITY_AUDITS_URL = "https://omegax.health/protocol/audit";
 
-function buildFooterMetadata(): { version: string; networkLabel: string } {
-  const configuredCluster = normalizeExplorerCluster(process.env.NEXT_PUBLIC_SOLANA_EXPLORER_CLUSTER);
-  const networkLabel = NETWORK_OPTIONS.find((option) => option.id === configuredCluster)?.label ?? "Devnet";
+function buildFooterMetadata(selectedNetwork: string): { version: string; networkLabel: string } {
+  const networkLabel = NETWORK_OPTIONS.find((option) => option.id === selectedNetwork)?.label ?? "Devnet";
   const protocolVersion = (process.env.NEXT_PUBLIC_PROTOCOL_BUILD_VERSION || "").trim() || frontendPackage.version;
   return { version: `v${protocolVersion}`, networkLabel };
 }
@@ -87,7 +86,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
   const isDarkTheme = mounted && theme === "dark";
   const ThemeIcon = isDarkTheme ? SunMedium : MoonStar;
   const nextThemeLabel = isDarkTheme ? "light" : "dark";
-  const footerMetadata = buildFooterMetadata();
+  const footerMetadata = buildFooterMetadata(selectedNetwork);
 
   useEffect(() => {
     setIsMobileNavOpen(false);

@@ -67,7 +67,7 @@ function personaHeroCopy(persona: string): { eyebrow: string; subtitle: string }
     default:
       return {
         eyebrow: "Governance",
-        subtitle: "Live proposals, control authorities, and operational templates exposed by the OmegaX protocol shell.",
+        subtitle: "Review proposal status, authority wallets, and bounded risk-control templates for the OmegaX protocol.",
       };
   }
 }
@@ -408,7 +408,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
             <div className="plans-hero-copy">
               <span className="plans-hero-eyebrow">{heroEyebrow}</span>
               <h1 className="plans-hero-title">
-                Control <em>plane</em>
+                Governance <em>controls</em>
               </h1>
               <p className="plans-hero-subtitle">{heroSubtitle}</p>
             </div>

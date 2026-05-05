@@ -22,12 +22,17 @@ export function DocumentLinkRow({ href, label, sourceLabel }: DocumentLinkRowPro
   const normalizedHref = href.trim();
 
   return (
-    <div className="plans-review-document">
+    <a
+      className="plans-review-document"
+      href={normalizedHref}
+      target={normalizedHref.startsWith("/") ? undefined : "_blank"}
+      rel={normalizedHref.startsWith("/") ? undefined : "noreferrer"}
+    >
       <div className="plans-review-document-copy">
         <span className="plans-review-document-label">{label}</span>
         <span className="plans-review-document-host">{formatDocumentSource(normalizedHref, sourceLabel)}</span>
         <span className="plans-review-document-url" title={normalizedHref}>{normalizedHref}</span>
       </div>
-    </div>
+    </a>
   );
 }

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useConnection } from "@solana/wallet-adapter-react";
 
-import { formatAmount } from "@/lib/canonical-ui";
+import { formatSettlementUnits } from "@/lib/canonical-ui";
 import { loadGovernanceProposalQueue } from "@/lib/governance-readonly";
 import { buildOverviewStats, overviewStatsModeFromDemoFlag, resolveOverviewStatsSource } from "@/lib/overview-metrics";
 import { formatRpcError } from "@/lib/rpc-errors";
@@ -20,10 +20,10 @@ import { useWorkspacePersona } from "@/components/workspace-persona";
 
 function formatCompact(value: bigint): string {
   const num = Number(value);
-  if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
-  if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `$${(num / 1_000).toFixed(0)}K`;
-  return `$${num.toLocaleString()}`;
+  if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B units`;
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M units`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K units`;
+  return `${num.toLocaleString()} units`;
 }
 
 function SignalWave() {
@@ -256,7 +256,7 @@ export function OverviewWorkbench({ demo = false }: OverviewWorkbenchProps) {
       {
         align: "start" as const,
         entry: "ENTRY_01",
-        href: "/plans",
+        href: "/plans?setup=genesis-protect-acute",
         status: `${stats.planCount} plans`,
         title: "Plans",
         summary: "Coverage series, member exposure, and sponsor operations across the public OmegaX protocol surface.",
@@ -399,7 +399,7 @@ export function OverviewWorkbench({ demo = false }: OverviewWorkbenchProps) {
               </div>
 
               <div className="ov-total-stack">
-                <span className="ov-total-value">${formatAmount(stats.tvl)}</span>
+                <span className="ov-total-value">{formatSettlementUnits(stats.tvl)}</span>
                 <span className="ov-total-label">
                   {statsMode === "demo"
                     ? "Demo fixture value locked"
