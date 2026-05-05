@@ -446,19 +446,19 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
         {/* ── KPI strip ─────────────────────── */}
         <section className="plans-kpi-strip" aria-label="Oracle workspace telemetry">
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">OPERATORS</span>
+            <span className="plans-kpi-label">Operators</span>
             <span className="plans-kpi-value">{oracleOperators.length}</span>
             <span className="plans-kpi-meta">
               {selectedPoolApprovals.filter((approval) => approval.active).length} approved · {claimsOperators.length} claims
             </span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">BOUND_SERIES</span>
+            <span className="plans-kpi-label">Bound series</span>
             <span className="plans-kpi-value">{boundSeries.length}</span>
             <span className="plans-kpi-meta">linked to {selectedPool?.poolId ?? "—"}</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">ATTESTATIONS_LIVE</span>
+            <span className="plans-kpi-label">Live attestations</span>
             <span className="plans-kpi-value">
               <span className="plans-kpi-pulse" aria-hidden="true" />
               {attestations.length}
@@ -466,7 +466,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
             <span className="plans-kpi-meta">{scopedClaimCases.length} claim {scopedClaimCases.length === 1 ? "case" : "cases"} in scope</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">DISPUTE_WATCH</span>
+            <span className="plans-kpi-label">Dispute watch</span>
             <span className="plans-kpi-value">{disputes.length}</span>
             <span className="plans-kpi-meta">{scopedObligations.length} obligations tracked</span>
           </div>

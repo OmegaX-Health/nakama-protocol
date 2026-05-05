@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { DocumentLinkRow } from "@/components/document-link-row";
 import { ProtocolDetailDisclosure } from "@/components/protocol-detail-disclosure";
 import { formatAmount } from "@/lib/canonical-ui";
 import { buildCanonicalPoolHref } from "@/lib/canonical-routes";
@@ -60,36 +61,10 @@ function humanizeSettlement(value?: string): string {
   }
 }
 
-function formatExternalLinkLabel(value?: string): string {
-  if (!value) return "Open";
-  try {
-    const url = new URL(value);
-    return url.hostname;
-  } catch {
-    return value;
-  }
-}
-
 function cadenceLabel(cycleSeconds?: number): string {
   if (!cycleSeconds || cycleSeconds <= 0) return "—";
   const cycleDays = Math.round(cycleSeconds / 86_400);
   return `Every ${cycleDays} day${cycleDays === 1 ? "" : "s"}`;
-}
-
-function CoverageDocumentLink({ href, label }: { href: string; label: string }) {
-  return (
-    <div className="plans-review-document">
-      <div className="plans-review-document-copy">
-        <span className="plans-review-document-label">{label}</span>
-        <span className="plans-review-document-host">{formatExternalLinkLabel(href)}</span>
-        <span className="plans-review-document-url" title={href}>{href}</span>
-      </div>
-      <a className="secondary-button plans-review-document-action" href={href} target="_blank" rel="noreferrer" aria-label={`Open ${label}`}>
-        Open
-        <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
-      </a>
-    </div>
-  );
 }
 
 export function PlanCoveragePanel({
@@ -256,8 +231,8 @@ export function PlanCoveragePanel({
                 <div className="plans-review-row plans-review-row-top">
                   <span className="plans-review-label">Documents</span>
                   <div className="plans-review-document-stack" aria-label="Public coverage documents">
-                    <CoverageDocumentLink href={metadataDocument.defi.technicalTermsUri} label="Technical terms" />
-                    <CoverageDocumentLink href={metadataDocument.defi.riskDisclosureUri} label="Risk disclosures" />
+                    <DocumentLinkRow href={metadataDocument.defi.technicalTermsUri} label="Technical terms" />
+                    <DocumentLinkRow href={metadataDocument.defi.riskDisclosureUri} label="Risk disclosures" />
                   </div>
                 </div>
               </>
@@ -275,7 +250,7 @@ export function PlanCoveragePanel({
                 <div className="plans-review-row">
                   <span className="plans-review-label">Policy terms</span>
                   <div className="plans-review-document-stack">
-                    <CoverageDocumentLink href={metadataDocument.rwa.policyTermsUri} label="Policy terms" />
+                    <DocumentLinkRow href={metadataDocument.rwa.policyTermsUri} label="Policy terms" />
                   </div>
                 </div>
                 <div className="plans-review-row">
@@ -294,7 +269,9 @@ export function PlanCoveragePanel({
             >
               <div className="plans-review-row">
                 <span className="plans-review-label">Metadata URI</span>
-                <span className="plans-review-value break-all">{metadataDocument.metadataUri}</span>
+                <div className="plans-review-document-stack">
+                  <DocumentLinkRow href={metadataDocument.metadataUri} label="Metadata URI" />
+                </div>
               </div>
             </ProtocolDetailDisclosure>
           </div>
