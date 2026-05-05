@@ -3762,13 +3762,13 @@
 
   .ov-hero-title {
     margin: 0;
-    max-width: 10ch;
+    max-width: 14ch;
     font-family: var(--font-display), "Newsreader", Georgia, serif;
     font-style: italic;
-    font-size: clamp(3.25rem, 7vw, 6.4rem);
-    font-weight: 600;
-    line-height: 0.95;
-    letter-spacing: -0.05em;
+    font-size: clamp(3.05rem, 6.35vw, 5.85rem);
+    font-weight: 500;
+    line-height: 0.98;
+    letter-spacing: -0.035em;
     color: var(--foreground);
     text-wrap: balance;
   }
@@ -7437,6 +7437,126 @@
     font-family: var(--font-mono), "Fira Code", monospace;
   }
 
+  .plans-review-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 35%, transparent);
+  }
+
+  .plans-review-row:last-child {
+    border-bottom: none;
+  }
+
+  .plans-review-row-top {
+    align-items: flex-start;
+  }
+
+  .plans-review-label {
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.58rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+  }
+
+  .plans-review-value {
+    min-width: 0;
+    color: var(--foreground);
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: right;
+  }
+
+  .plans-review-document-stack {
+    display: grid;
+    gap: 0.5rem;
+    width: min(100%, 38rem);
+    min-width: 0;
+  }
+
+  .plans-review-document {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    padding: 0.72rem 0.78rem;
+    border: 1px solid color-mix(in oklab, var(--border) 52%, transparent);
+    border-radius: 0.85rem;
+    background: color-mix(in oklab, var(--surface-elevated) 38%, transparent);
+  }
+
+  .plans-review-document-copy {
+    display: grid;
+    gap: 0.16rem;
+    min-width: 0;
+  }
+
+  .plans-review-document-label {
+    color: var(--foreground);
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .plans-review-document-host {
+    color: var(--muted-foreground);
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  .plans-review-document-url {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-block: 0.08rem 0.12rem;
+    color: color-mix(in oklab, var(--foreground) 72%, var(--muted-foreground));
+    font-family: var(--font-mono), "Fira Code", monospace;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    text-align: left;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .plans-review-document-url::-webkit-scrollbar {
+    height: 0.38rem;
+  }
+
+  .plans-review-document-url::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--border-strong) 55%, transparent);
+  }
+
+  .plans-review-document-action {
+    min-height: 2.5rem;
+    gap: 0.35rem;
+    padding: 0.56rem 0.78rem;
+    font-size: 0.58rem;
+    white-space: nowrap;
+  }
+
+  .plans-review-document-action:focus-visible {
+    box-shadow:
+      0 0 0 2px color-mix(in oklab, var(--surface) 86%, transparent),
+      0 0 0 4px color-mix(in oklab, var(--accent) 48%, transparent);
+  }
+
+  .plans-review-document-action .material-symbols-outlined {
+    font-size: 0.94rem;
+    line-height: 1;
+  }
+
   .plans-wizard-support-grid {
     display: grid;
     gap: 0.85rem;
@@ -8784,6 +8904,31 @@
 
     .plans-card-title-display {
       font-size: clamp(1.4rem, 5vw, 1.7rem);
+    }
+
+    .plans-review-row-top {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.55rem;
+    }
+
+    .plans-review-document-stack {
+      width: 100%;
+    }
+
+    .plans-review-document {
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+    }
+
+    .plans-review-document-url {
+      overflow-x: visible;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .plans-review-document-action {
+      width: 100%;
     }
 
     .plans-vitality-stats {

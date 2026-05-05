@@ -60,10 +60,36 @@ function humanizeSettlement(value?: string): string {
   }
 }
 
+function formatExternalLinkLabel(value?: string): string {
+  if (!value) return "Open";
+  try {
+    const url = new URL(value);
+    return url.hostname;
+  } catch {
+    return value;
+  }
+}
+
 function cadenceLabel(cycleSeconds?: number): string {
   if (!cycleSeconds || cycleSeconds <= 0) return "—";
   const cycleDays = Math.round(cycleSeconds / 86_400);
   return `Every ${cycleDays} day${cycleDays === 1 ? "" : "s"}`;
+}
+
+function CoverageDocumentLink({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="plans-review-document">
+      <div className="plans-review-document-copy">
+        <span className="plans-review-document-label">{label}</span>
+        <span className="plans-review-document-host">{formatExternalLinkLabel(href)}</span>
+        <span className="plans-review-document-url" title={href}>{href}</span>
+      </div>
+      <a className="secondary-button plans-review-document-action" href={href} target="_blank" rel="noreferrer" aria-label={`Open ${label}`}>
+        Open
+        <span className="material-symbols-outlined" aria-hidden="true">open_in_new</span>
+      </a>
+    </div>
+  );
 }
 
 export function PlanCoveragePanel({
@@ -205,9 +231,9 @@ export function PlanCoveragePanel({
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">Coverage details</p>
+            <p className="plans-card-eyebrow">Public terms</p>
             <h2 className="plans-card-title plans-card-title-display">
-              Public <em>terms</em>
+              Coverage <em>posture</em>
             </h2>
           </div>
         </div>
@@ -227,21 +253,12 @@ export function PlanCoveragePanel({
                   <span className="plans-review-label">Settlement</span>
                   <span className="plans-review-value">{humanizeSettlement(metadataDocument.defi.settlementStyle)}</span>
                 </div>
-                <div className="plans-review-row">
-                  <span className="plans-review-label">Technical terms</span>
-                  <span className="plans-review-value break-all">
-                    <a href={metadataDocument.defi.technicalTermsUri} target="_blank" rel="noreferrer">
-                      {metadataDocument.defi.technicalTermsUri}
-                    </a>
-                  </span>
-                </div>
-                <div className="plans-review-row">
-                  <span className="plans-review-label">Risk disclosure</span>
-                  <span className="plans-review-value break-all">
-                    <a href={metadataDocument.defi.riskDisclosureUri} target="_blank" rel="noreferrer">
-                      {metadataDocument.defi.riskDisclosureUri}
-                    </a>
-                  </span>
+                <div className="plans-review-row plans-review-row-top">
+                  <span className="plans-review-label">Documents</span>
+                  <div className="plans-review-document-stack" aria-label="Public coverage documents">
+                    <CoverageDocumentLink href={metadataDocument.defi.technicalTermsUri} label="Technical terms" />
+                    <CoverageDocumentLink href={metadataDocument.defi.riskDisclosureUri} label="Risk disclosures" />
+                  </div>
                 </div>
               </>
             ) : null}
@@ -257,11 +274,9 @@ export function PlanCoveragePanel({
                 </div>
                 <div className="plans-review-row">
                   <span className="plans-review-label">Policy terms</span>
-                  <span className="plans-review-value break-all">
-                    <a href={metadataDocument.rwa.policyTermsUri} target="_blank" rel="noreferrer">
-                      {metadataDocument.rwa.policyTermsUri}
-                    </a>
-                  </span>
+                  <div className="plans-review-document-stack">
+                    <CoverageDocumentLink href={metadataDocument.rwa.policyTermsUri} label="Policy terms" />
+                  </div>
                 </div>
                 <div className="plans-review-row">
                   <span className="plans-review-label">License reference</span>

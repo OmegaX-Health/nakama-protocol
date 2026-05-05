@@ -541,8 +541,9 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
       section: "plans",
       planAddress: selectedPlan?.address,
       seriesAddress: selectedSeries?.address,
+      source: snapshot,
     }),
-    [selectedPlan, selectedSeries],
+    [selectedPlan, selectedSeries, snapshot],
   );
 
   /* ── Members filter state ── */

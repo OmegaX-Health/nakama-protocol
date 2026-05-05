@@ -39,6 +39,7 @@ pub(crate) fn create_obligation(
         args.allocation_position,
         args.asset_mint,
     )?;
+    require_supported_obligation_delivery_mode(args.delivery_mode)?;
 
     let obligation = &mut ctx.accounts.obligation;
     obligation.reserve_domain = ctx.accounts.health_plan.reserve_domain;

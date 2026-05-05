@@ -116,6 +116,11 @@ pub(crate) fn adjudicate_claim_case(
     );
 
     let claim_case = &mut ctx.accounts.claim_case;
+    let adjudication_obligation = ctx.accounts.obligation.as_ref().map(|obligation| {
+        let obligation: &Obligation = obligation;
+        obligation
+    });
+    require_claim_adjudication_mutable(claim_case, adjudication_obligation)?;
     let claim_case_key = claim_case.key();
     claim_case.adjudicator = ctx.accounts.authority.key();
     claim_case.review_state = args.review_state;

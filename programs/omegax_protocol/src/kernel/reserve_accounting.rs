@@ -205,6 +205,49 @@ pub(crate) fn sync_adjudicated_claim_liability(
     Ok(())
 }
 
+pub(crate) fn require_claim_adjudication_mutable(
+    claim_case: &ClaimCase,
+    obligation: Option<&Obligation>,
+) -> Result<()> {
+    require!(
+        claim_case.paid_amount == 0 && claim_case.intake_status < CLAIM_INTAKE_SETTLED,
+        OmegaXProtocolError::ClaimAdjudicationLocked
+    );
+    if let Some(obligation) = obligation {
+        require!(
+            obligation.status < OBLIGATION_STATUS_SETTLED && obligation.settled_amount == 0,
+            OmegaXProtocolError::ClaimAdjudicationLocked
+        );
+    }
+    Ok(())
+}
+
+pub(crate) fn require_supported_obligation_delivery_mode(delivery_mode: u8) -> Result<()> {
+    match delivery_mode {
+        OBLIGATION_DELIVERY_MODE_CLAIMABLE | OBLIGATION_DELIVERY_MODE_PAYABLE => Ok(()),
+        _ => err!(OmegaXProtocolError::InvalidObligationDeliveryMode),
+    }
+}
+
+pub(crate) fn require_full_obligation_transition_amount(
+    next_status: u8,
+    amount: u64,
+    obligation: &Obligation,
+) -> Result<()> {
+    match next_status {
+        OBLIGATION_STATUS_CLAIMABLE_PAYABLE
+        | OBLIGATION_STATUS_SETTLED
+        | OBLIGATION_STATUS_CANCELED => {
+            require!(
+                amount == obligation.outstanding_amount,
+                OmegaXProtocolError::PartialObligationTransitionUnsupported
+            );
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
 pub(crate) fn sync_linked_claim_case_reserve(
     claim_case: &mut ClaimCase,
     claim_case_key: Pubkey,

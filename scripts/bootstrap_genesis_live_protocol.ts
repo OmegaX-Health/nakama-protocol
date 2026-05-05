@@ -161,6 +161,19 @@ function stringifyJson(value: unknown): string {
   );
 }
 
+function loadAndValidateOracleKeypair(config: ReturnType<typeof loadGenesisLiveBootstrapConfig>): Keypair {
+  if (!existsSync(config.roles.oracleKeypairPath)) {
+    throw new Error("Genesis live oracle keypair file was not found.");
+  }
+  const oracle = keypairFromFile(config.roles.oracleKeypairPath);
+  if (oracle.publicKey.toBase58() !== config.roles.oracleAuthority) {
+    throw new Error(
+      `OMEGAX_LIVE_ORACLE_WALLET (${config.roles.oracleAuthority}) does not match the configured oracle keypair.`,
+    );
+  }
+  return oracle;
+}
+
 async function main() {
   const { planOnly } = parseArgs(process.argv.slice(2));
   loadEnvFile(FRONTEND_ENV_PATH);
@@ -173,6 +186,7 @@ async function main() {
   });
 
   if (planOnly) {
+    loadAndValidateOracleKeypair(config);
     console.log(stringifyJson(planSummary(protocol, config)));
     return;
   }
@@ -181,12 +195,7 @@ async function main() {
     throw new Error(`Genesis schema metadata file not found: ${config.schema.metadataLocalPath}`);
   }
 
-  const oracle = keypairFromFile(config.roles.oracleKeypairPath);
-  if (oracle.publicKey.toBase58() !== config.roles.oracleAuthority) {
-    throw new Error(
-      `OMEGAX_LIVE_ORACLE_WALLET (${config.roles.oracleAuthority}) does not match ${config.roles.oracleKeypairPath} (${oracle.publicKey.toBase58()}).`,
-    );
-  }
+  const oracle = loadAndValidateOracleKeypair(config);
 
   const seniorLp = config.capitalClasses.senior.lpKeypairPath
     ? keypairFromFile(config.capitalClasses.senior.lpKeypairPath)
@@ -276,6 +285,10 @@ async function main() {
       assetMint: config.settlementMint,
     })
     .toBase58();
+  const protocolFeeVault = protocol.deriveProtocolFeeVaultPda({
+    reserveDomain: config.reserveDomain.address,
+    assetMint: config.settlementMint,
+  }).toBase58();
   const vaultExists = await protocol.accountExists(connection, domainAssetVault);
   const ledgerExists = await protocol.accountExists(connection, domainAssetLedger);
   if (!vaultExists || !ledgerExists) {
@@ -817,6 +830,31 @@ async function main() {
     }
   }
 
+  if (config.fundingAmounts.event7Premium > 0n || config.fundingAmounts.travel30Premium > 0n) {
+    const protocolFeeVaultExists = await protocol.accountExists(connection, protocolFeeVault);
+    if (!protocolFeeVaultExists) {
+      await sendProtocolInstruction({
+        protocol,
+        connection,
+        feePayer: governance,
+        label: "init_protocol_fee_vault:genesis-settlement",
+        instructionName: "init_protocol_fee_vault",
+        args: {
+          asset_mint: new PublicKey(config.settlementMint),
+          fee_recipient: governance.publicKey,
+        },
+        accounts: [
+          { pubkey: governance.publicKey, isSigner: true, isWritable: true },
+          { pubkey: governanceAddress },
+          { pubkey: config.reserveDomain.address },
+          { pubkey: domainAssetVault },
+          { pubkey: protocolFeeVault, isWritable: true },
+          { pubkey: SystemProgram.programId },
+        ],
+      });
+    }
+  }
+
   for (const premium of [
     {
       label: "event7",
@@ -853,6 +891,7 @@ async function main() {
         { pubkey: fundingLineLedgerFor(premium.fundingLine), isWritable: true },
         { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: config.healthPlan.address, assetMint: config.settlementMint }), isWritable: true },
         { pubkey: seriesReserveLedgerFor(premium.policySeries), isWritable: true },
+        { pubkey: protocolFeeVault, isWritable: true },
         { pubkey: requiredPublicKeyEnv("OMEGAX_GENESIS_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
         { pubkey: config.settlementMint },
         { pubkey: vaultTokenAccountAddress, isWritable: true },

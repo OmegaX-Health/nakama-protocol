@@ -24,6 +24,7 @@ pub(crate) fn settle_obligation(
         amount <= obligation.outstanding_amount,
         OmegaXProtocolError::AmountExceedsOutstandingObligation
     );
+    require_full_obligation_transition_amount(args.next_status, amount, obligation)?;
     validate_treasury_mutation_bindings(
         ctx.accounts.series_reserve_ledger.as_deref(),
         ctx.accounts.pool_class_ledger.as_deref(),
