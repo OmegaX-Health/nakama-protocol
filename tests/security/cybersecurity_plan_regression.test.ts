@@ -52,6 +52,26 @@ test("[CSO-2026-05-04] commitment activation requires active campaign and rail",
   assert.match(programSource, /require_commitment_payment_rail_active\(payment_rail\)/);
 });
 
+test("[CSO-2026-05-05] linked obligations require linked claim accounts before settlement mutation", () => {
+  const body = extractRustFunctionBody("settle_obligation");
+  const linkedFlagIndex = body.indexOf("let obligation_is_linked = obligation_has_linked_claim_case(obligation)");
+  const claimBranchIndex = body.indexOf("if let Some(claim_case)");
+  const settlementMutationIndex = body.indexOf("settle_delivery");
+  assert.notEqual(linkedFlagIndex, -1);
+  assert.notEqual(claimBranchIndex, -1);
+  assert.notEqual(settlementMutationIndex, -1);
+  assert.ok(
+    linkedFlagIndex < claimBranchIndex,
+    "linked obligation detection must run before optional claim-account routing",
+  );
+  assert.ok(
+    linkedFlagIndex < settlementMutationIndex,
+    "linked obligation detection must run before settlement balance mutation",
+  );
+  assert.match(body, /if obligation_is_linked[\s\S]+claim_case\.is_some\(\)[\s\S]+member_position\.is_some\(\)/);
+  assert.match(body, /else if obligation_is_linked[\s\S]+SettlementOutflowAccountsRequired/);
+});
+
 test("[CSO-2026-05-04] asset-backed obligation settlement always requires outflow", () => {
   const body = extractRustFunctionBody("settle_obligation");
   assert.match(body, /else if args\.next_status == OBLIGATION_STATUS_SETTLED/);
@@ -60,6 +80,26 @@ test("[CSO-2026-05-04] asset-backed obligation settlement always requires outflo
   assert.match(body, /transfer_from_domain_vault\(/);
   assert.match(frontendProtocolSource, /const includeSettlementOutflow = Boolean\(\s*params\.vaultTokenAccountAddress\s*&&\s*params\.recipientTokenAccountAddress/s);
   assert.match(frontendProtocolSource, /optionalProtocolAccount\(params\.memberPositionAddress\)/);
+});
+
+test("[CSO-2026-05-05] waterfall activation books only haircut and cap bounded reserve capacity", () => {
+  const body = extractRustFunctionBody("activate_waterfall_commitment");
+  const capacityIndex = body.indexOf("reserve_capacity_amount");
+  const exposureCapIndex = body.indexOf("let exposure_cap = checked_mul_div_u64");
+  const fundedMutationIndex = body.indexOf("funding_line.funded_amount = next_funded");
+  const ledgerMutationIndex = body.indexOf("book_inflow_sheet");
+  assert.notEqual(capacityIndex, -1);
+  assert.notEqual(exposureCapIndex, -1);
+  assert.notEqual(fundedMutationIndex, -1);
+  assert.notEqual(ledgerMutationIndex, -1);
+  assert.ok(capacityIndex < fundedMutationIndex, "capacity must be haircut-adjusted before funding mutation");
+  assert.ok(exposureCapIndex < fundedMutationIndex, "exposure cap must be computed before funding mutation");
+  assert.ok(fundedMutationIndex < ledgerMutationIndex, "cap check must run before reserve ledger booking");
+  assert.match(body, /next_funded <= exposure_cap[\s\S]+InsufficientFreeReserveCapacity/);
+  assert.match(body, /activate_commitment_position\([\s\S]+capacity_amount/);
+  assert.match(programSource, /fn reserve_capacity_amount\(amount: u64, haircut_bps: u16, max_exposure_bps: u16\)/);
+  assert.match(programSource, /checked_sub\(u64::from\(haircut_bps\)\)/);
+  assert.match(programSource, /fn checked_mul_div_u64\(value: u64, numerator: u64, denominator: u64\)/);
 });
 
 test("[CSO-2026-05-04] broad pool authority helper is removed from mutation paths", () => {

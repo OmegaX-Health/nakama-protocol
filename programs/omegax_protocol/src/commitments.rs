@@ -646,8 +646,14 @@ pub(crate) fn activate_waterfall_commitment(
         OmegaXProtocolError::InsufficientFreeReserveCapacity
     );
     funding_line.funded_amount = next_funded;
-    book_inflow_sheet(&mut ctx.accounts.coverage_domain_asset_ledger.sheet, capacity_amount)?;
-    book_inflow_sheet(&mut ctx.accounts.coverage_plan_reserve_ledger.sheet, capacity_amount)?;
+    book_inflow_sheet(
+        &mut ctx.accounts.coverage_domain_asset_ledger.sheet,
+        capacity_amount,
+    )?;
+    book_inflow_sheet(
+        &mut ctx.accounts.coverage_plan_reserve_ledger.sheet,
+        capacity_amount,
+    )?;
     book_inflow_sheet(
         &mut ctx.accounts.coverage_funding_line_ledger.sheet,
         capacity_amount,
@@ -685,11 +691,8 @@ fn reserve_capacity_amount(amount: u64, haircut_bps: u16, max_exposure_bps: u16)
     let net_bps = u64::from(BASIS_POINTS_DENOMINATOR)
         .checked_sub(u64::from(haircut_bps))
         .ok_or(error!(OmegaXProtocolError::ArithmeticError))?;
-    let capacity_amount = checked_mul_div_u64(
-        amount,
-        net_bps,
-        u64::from(BASIS_POINTS_DENOMINATOR),
-    )?;
+    let capacity_amount =
+        checked_mul_div_u64(amount, net_bps, u64::from(BASIS_POINTS_DENOMINATOR))?;
     require!(
         capacity_amount > 0,
         OmegaXProtocolError::InsufficientFreeReserveCapacity

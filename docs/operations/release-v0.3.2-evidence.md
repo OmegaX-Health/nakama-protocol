@@ -217,7 +217,7 @@ Unsafe config proof:
 | External audit completed for this release | no — no external audit conducted |
 | Bug bounty program | no public bounty recorded in this repo |
 | Third-party review date | none |
-| Internal pen-test report | `docs/security/devnet-treasury-pen-test-2026-05-04.md` |
+| Internal pen-test report | `docs/security/devnet-treasury-pen-test-2026-05-05.md` |
 | Outstanding high/critical internal findings | none known after the strict devnet run; external review still missing |
 | Independent-review packet | `docs/security/mainnet-money-control-review-packet-v0.3.2.md` |
 
