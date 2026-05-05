@@ -66,12 +66,14 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
   const { snapshot } = useProtocolConsoleSnapshot();
   const workbenchMetrics = computeWorkbenchMetrics(snapshot);
   const isOverviewRoute = pathname === "/overview" || pathname.startsWith("/overview/");
+  const isCoverageRoute = pathname === "/coverage" || pathname.startsWith("/coverage/");
   const useFullscreenWorkbenchChrome = [
     "/overview",
     "/plans",
     "/capital",
     "/governance",
     "/oracles",
+    "/coverage",
   ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   const networkMenuRef = useRef<HTMLDivElement | null>(null);
@@ -380,6 +382,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
         className={cn(
           "protocol-footer",
           useFullscreenWorkbenchChrome && "protocol-footer-fullscreen",
+          isCoverageRoute && "protocol-footer-document",
           isOverviewRoute && "protocol-footer-overview",
         )}
       >
