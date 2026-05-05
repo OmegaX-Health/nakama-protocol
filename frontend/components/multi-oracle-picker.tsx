@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { FieldHint } from "@/components/field-hint";
+import { DocumentLinkRow } from "@/components/document-link-row";
 import { cn } from "@/lib/cn";
 
 export type MultiOracleOption = {
@@ -144,9 +145,13 @@ export function MultiOraclePicker({
                   </span>
                 </div>
               </div>
-              <p className="wizard-inline-copy mt-1 break-all">
-                {entry?.metadataUri || "Selected verifier"}
-              </p>
+              {entry?.metadataUri ? (
+                <div className="plans-review-document-stack mt-2">
+                  <DocumentLinkRow href={entry.metadataUri} label="Verifier metadata" />
+                </div>
+              ) : (
+                <p className="wizard-inline-copy mt-1">Selected verifier</p>
+              )}
               <div className="mt-3 flex justify-end">
                 <button
                   type="button"
@@ -183,9 +188,13 @@ export function MultiOraclePicker({
                   <span className={`status-pill ${entry.active ? "status-ok" : "status-off"}`}>{entry.active ? "Active" : "Inactive"}</span>
                 </div>
               </div>
-              <p className="wizard-inline-copy mt-1 break-all">
-                {entry.metadataUri || "No metadata URI"}
-              </p>
+              {entry.metadataUri ? (
+                <div className="plans-review-document-stack mt-2">
+                  <DocumentLinkRow href={entry.metadataUri} label="Verifier metadata" />
+                </div>
+              ) : (
+                <p className="wizard-inline-copy mt-1">No metadata URI</p>
+              )}
             </div>
           );
         })}

@@ -46,6 +46,14 @@ pub(crate) fn settle_obligation(
     )?;
     let net_to_recipient = checked_sub(amount, oracle_fee)?;
     require_positive_amount(net_to_recipient)?;
+    let obligation_is_linked = obligation_has_linked_claim_case(obligation);
+
+    if obligation_is_linked {
+        require!(
+            ctx.accounts.claim_case.is_some() && ctx.accounts.member_position.is_some(),
+            OmegaXProtocolError::SettlementOutflowAccountsRequired
+        );
+    }
 
     if let Some(claim_case) = ctx.accounts.claim_case.as_deref() {
         require_matching_linked_claim_case(
@@ -167,6 +175,8 @@ pub(crate) fn settle_obligation(
                     resolved_recipient,
                     OmegaXProtocolError::Unauthorized
                 );
+            } else if obligation_is_linked {
+                return Err(OmegaXProtocolError::SettlementOutflowAccountsRequired.into());
             } else {
                 require_keys_eq!(
                     recipient_ta.owner,
@@ -244,6 +254,15 @@ pub(crate) fn settle_obligation(
             }
             _ => {}
         }
+    } else if obligation_is_linked
+        && matches!(
+            args.next_status,
+            OBLIGATION_STATUS_SETTLED
+                | OBLIGATION_STATUS_CLAIMABLE_PAYABLE
+                | OBLIGATION_STATUS_CANCELED
+        )
+    {
+        return Err(OmegaXProtocolError::SettlementOutflowAccountsRequired.into());
     }
 
     emit!(ObligationStatusChangedEvent {

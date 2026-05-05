@@ -20,6 +20,7 @@ import {
   isActiveClaimStatus,
   isObligationOnDisputeWatch,
   toBigIntAmount,
+  type ProtocolConsoleSnapshot,
 } from "./protocol";
 
 import type { GovernanceProposalSummary } from "@/lib/governance-readonly";
@@ -27,6 +28,20 @@ import type { GovernanceProposalSummary } from "@/lib/governance-readonly";
 export type WorkbenchSection = "overview" | "plans" | "capital" | "governance" | "oracles";
 
 export type WorkbenchPersona = "observer" | "sponsor" | "capital" | "governance";
+
+type WorkbenchProtocolSource = Pick<
+  ProtocolConsoleSnapshot,
+  | "allocationPositions"
+  | "capitalClasses"
+  | "claimCases"
+  | "fundingLines"
+  | "healthPlans"
+  | "liquidityPools"
+  | "lpPositions"
+  | "memberPositions"
+  | "obligations"
+  | "policySeries"
+>;
 
 export type WorkbenchTab = {
   id: string;
@@ -152,16 +167,19 @@ type BuildAuditTrailInput =
     section: "capital";
     poolAddress?: string | null;
     classAddress?: string | null;
+    source?: WorkbenchProtocolSource;
   }
   | {
     section: "plans";
     planAddress?: string | null;
     seriesAddress?: string | null;
+    source?: WorkbenchProtocolSource;
   }
   | {
     section: "oracles";
     poolAddress?: string | null;
     seriesAddress?: string | null;
+    source?: WorkbenchProtocolSource;
   }
   | {
     section: "governance";
@@ -523,17 +541,17 @@ export function buildGovernanceQueue(proposals: GovernanceProposalSummary[] = []
   }));
 }
 
-export function computeWorkbenchMetrics() {
-  const activeClaims = DEVNET_PROTOCOL_FIXTURE_STATE.claimCases.filter((claim) => isActiveClaimStatus(claim.intakeStatus)).length;
-  const pendingRedemptions = DEVNET_PROTOCOL_FIXTURE_STATE.lpPositions.filter(hasPendingRedemptionQueue).length;
-  const reservedObligations = DEVNET_PROTOCOL_FIXTURE_STATE.obligations.filter(
+export function computeWorkbenchMetrics(source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE) {
+  const activeClaims = source.claimCases.filter((claim) => isActiveClaimStatus(claim.intakeStatus)).length;
+  const pendingRedemptions = source.lpPositions.filter(hasPendingRedemptionQueue).length;
+  const reservedObligations = source.obligations.filter(
     (obligation) =>
       obligation.status === OBLIGATION_STATUS_RESERVED || obligation.status === OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
   ).length;
-  const queueOnlyPools = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools.filter(
+  const queueOnlyPools = source.liquidityPools.filter(
     (pool) => pool.redemptionPolicy === REDEMPTION_POLICY_QUEUE_ONLY,
   ).length;
-  const approvedClaims = DEVNET_PROTOCOL_FIXTURE_STATE.claimCases.filter(
+  const approvedClaims = source.claimCases.filter(
     (claim) => claim.intakeStatus === CLAIM_INTAKE_APPROVED,
   ).length;
 
@@ -703,25 +721,29 @@ function buildOverviewAuditTrail(
   ];
 }
 
-function buildCapitalAuditTrail(poolAddress?: string | null, classAddress?: string | null): WorkbenchAuditItem[] {
-  const pool = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools.find((candidate) => candidate.address === (poolAddress ?? ""))
-    ?? DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools[0]
+function buildCapitalAuditTrail(
+  poolAddress?: string | null,
+  classAddress?: string | null,
+  source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE,
+): WorkbenchAuditItem[] {
+  const pool = source.liquidityPools.find((candidate) => candidate.address === (poolAddress ?? ""))
+    ?? source.liquidityPools[0]
     ?? null;
   if (!pool) return buildOverviewAuditTrail("capital");
 
-  const poolClasses = DEVNET_PROTOCOL_FIXTURE_STATE.capitalClasses.filter((capitalClass) => capitalClass.liquidityPool === pool.address);
+  const poolClasses = source.capitalClasses.filter((capitalClass) => capitalClass.liquidityPool === pool.address);
   const selectedClass = poolClasses.find((capitalClass) => capitalClass.address === (classAddress ?? ""))
     ?? poolClasses[0]
     ?? null;
-  const scopedAllocations = DEVNET_PROTOCOL_FIXTURE_STATE.allocationPositions.filter((allocation) =>
+  const scopedAllocations = source.allocationPositions.filter((allocation) =>
     selectedClass ? allocation.capitalClass === selectedClass.address : allocation.liquidityPool === pool.address,
   );
   const leadAllocation = [...scopedAllocations].sort((left, right) =>
     compareAmountsDesc(left.allocatedAmount, right.allocatedAmount),
   )[0] ?? null;
-  const leadSeries = DEVNET_PROTOCOL_FIXTURE_STATE.policySeries.find((series) => series.address === leadAllocation?.policySeries) ?? null;
-  const leadPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans.find((plan) => plan.address === leadAllocation?.healthPlan) ?? null;
-  const scopedObligations = DEVNET_PROTOCOL_FIXTURE_STATE.obligations.filter((obligation) =>
+  const leadSeries = source.policySeries.find((series) => series.address === leadAllocation?.policySeries) ?? null;
+  const leadPlan = source.healthPlans.find((plan) => plan.address === leadAllocation?.healthPlan) ?? null;
+  const scopedObligations = source.obligations.filter((obligation) =>
     obligation.liquidityPool === pool.address && (!selectedClass || obligation.capitalClass === selectedClass.address),
   );
   const payableObligations = scopedObligations.filter((obligation) => obligation.status === OBLIGATION_STATUS_CLAIMABLE_PAYABLE);
@@ -734,7 +756,7 @@ function buildCapitalAuditTrail(poolAddress?: string | null, classAddress?: stri
   const leadImpairedAllocation = [...impairedAllocations].sort((left, right) =>
     compareAmountsDesc(left.impairedAmount, right.impairedAmount),
   )[0] ?? null;
-  const leadImpairedSeries = DEVNET_PROTOCOL_FIXTURE_STATE.policySeries.find((series) => series.address === leadImpairedAllocation?.policySeries) ?? null;
+  const leadImpairedSeries = source.policySeries.find((series) => series.address === leadImpairedAllocation?.policySeries) ?? null;
   const linkedPlanCount = new Set(scopedAllocations.map((allocation) => allocation.healthPlan)).size;
   const pendingRedemptions = toBigIntAmount(selectedClass?.pendingRedemptions ?? pool.totalPendingRedemptions);
   const queueScope = selectedClass?.displayName ?? pool.displayName;
@@ -773,24 +795,28 @@ function buildCapitalAuditTrail(poolAddress?: string | null, classAddress?: stri
   ];
 }
 
-function buildPlansAuditTrail(planAddress?: string | null, seriesAddress?: string | null): WorkbenchAuditItem[] {
-  const plan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans.find((candidate) => candidate.address === (planAddress ?? ""))
-    ?? DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]
+function buildPlansAuditTrail(
+  planAddress?: string | null,
+  seriesAddress?: string | null,
+  source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE,
+): WorkbenchAuditItem[] {
+  const plan = source.healthPlans.find((candidate) => candidate.address === (planAddress ?? ""))
+    ?? source.healthPlans[0]
     ?? null;
   if (!plan) return buildOverviewAuditTrail("sponsor");
 
-  const planSeries = DEVNET_PROTOCOL_FIXTURE_STATE.policySeries.filter((series) => series.healthPlan === plan.address);
+  const planSeries = source.policySeries.filter((series) => series.healthPlan === plan.address);
   const selectedSeries = planSeries.find((series) => series.address === (seriesAddress ?? "")) ?? null;
-  const scopedClaims = DEVNET_PROTOCOL_FIXTURE_STATE.claimCases.filter((claim) =>
+  const scopedClaims = source.claimCases.filter((claim) =>
     claim.healthPlan === plan.address && (!selectedSeries || claim.policySeries === selectedSeries.address),
   );
-  const scopedObligations = DEVNET_PROTOCOL_FIXTURE_STATE.obligations.filter((obligation) =>
+  const scopedObligations = source.obligations.filter((obligation) =>
     obligation.healthPlan === plan.address && (!selectedSeries || obligation.policySeries === selectedSeries.address),
   );
-  const scopedMembers = DEVNET_PROTOCOL_FIXTURE_STATE.memberPositions.filter((member) =>
+  const scopedMemberCount = source.memberPositions.filter((member) =>
     member.healthPlan === plan.address && (!selectedSeries || member.policySeries === selectedSeries.address),
-  );
-  const scopedFundingLines = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines.filter((line) =>
+  ).length;
+  const scopedFundingLines = source.fundingLines.filter((line) =>
     line.healthPlan === plan.address && (!selectedSeries || line.policySeries === selectedSeries.address),
   );
   const leadFundingLine = [...scopedFundingLines].sort((left, right) =>
@@ -827,29 +853,33 @@ function buildPlansAuditTrail(planAddress?: string | null, seriesAddress?: strin
       label: selectedSeries ? "Series posture" : "Plan posture",
       tone: selectedSeries ? "verified" : "signal",
       detail: selectedSeries
-        ? `${selectedSeries.displayName} remains ${describeSeriesStatus(selectedSeries.status)} in ${describeSeriesMode(selectedSeries.mode)} mode with ${scopedMembers.length} member positions and ${scopedObligations.length} obligations in scope.`
-        : `${plan.displayName} spans ${planSeries.length} series, ${scopedMembers.length} member positions, and ${formatAuditAmount(outstandingObligations)} in outstanding obligation balance.`,
+        ? `${selectedSeries.displayName} remains ${describeSeriesStatus(selectedSeries.status)} in ${describeSeriesMode(selectedSeries.mode)} mode with ${scopedMemberCount} member positions and ${scopedObligations.length} obligations in scope.`
+        : `${plan.displayName} spans ${planSeries.length} series, ${scopedMemberCount} member positions, and ${formatAuditAmount(outstandingObligations)} in outstanding obligation balance.`,
     }),
   ];
 }
 
-function buildOraclesAuditTrail(poolAddress?: string | null, seriesAddress?: string | null): WorkbenchAuditItem[] {
-  const pool = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools.find((candidate) => candidate.address === (poolAddress ?? ""))
-    ?? DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools[0]
+function buildOraclesAuditTrail(
+  poolAddress?: string | null,
+  seriesAddress?: string | null,
+  source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE,
+): WorkbenchAuditItem[] {
+  const pool = source.liquidityPools.find((candidate) => candidate.address === (poolAddress ?? ""))
+    ?? source.liquidityPools[0]
     ?? null;
   if (!pool) return buildOverviewAuditTrail("governance");
 
-  const boundAllocations = DEVNET_PROTOCOL_FIXTURE_STATE.allocationPositions.filter((allocation) => allocation.liquidityPool === pool.address);
-  const boundSeries = DEVNET_PROTOCOL_FIXTURE_STATE.policySeries.filter((series) =>
+  const boundAllocations = source.allocationPositions.filter((allocation) => allocation.liquidityPool === pool.address);
+  const boundSeries = source.policySeries.filter((series) =>
     boundAllocations.some((allocation) => allocation.policySeries === series.address),
   );
   const selectedSeries = boundSeries.find((series) => series.address === (seriesAddress ?? "")) ?? boundSeries[0] ?? null;
-  const scopedClaims = DEVNET_PROTOCOL_FIXTURE_STATE.claimCases.filter((claim) =>
+  const scopedClaims = source.claimCases.filter((claim) =>
     selectedSeries
       ? claim.policySeries === selectedSeries.address
       : boundSeries.some((series) => series.address === claim.policySeries),
   );
-  const scopedObligations = DEVNET_PROTOCOL_FIXTURE_STATE.obligations.filter((obligation) =>
+  const scopedObligations = source.obligations.filter((obligation) =>
     selectedSeries
       ? obligation.policySeries === selectedSeries.address
       : obligation.liquidityPool === pool.address,
@@ -861,7 +891,7 @@ function buildOraclesAuditTrail(poolAddress?: string | null, seriesAddress?: str
     0n,
   );
   const leadClaim = scopedClaims[0] ?? null;
-  const leadClaimSeries = DEVNET_PROTOCOL_FIXTURE_STATE.policySeries.find((series) => series.address === leadClaim?.policySeries) ?? selectedSeries;
+  const leadClaimSeries = source.policySeries.find((series) => series.address === leadClaim?.policySeries) ?? selectedSeries;
   const scopeLabel = selectedSeries?.displayName ?? pool.displayName;
 
   return [
@@ -941,11 +971,11 @@ function buildGovernanceAuditTrail(
 export function buildAuditTrail(input?: BuildAuditTrailInput): WorkbenchAuditItem[] {
   switch (input?.section) {
     case "capital":
-      return buildCapitalAuditTrail(input.poolAddress, input.classAddress);
+      return buildCapitalAuditTrail(input.poolAddress, input.classAddress, input.source);
     case "plans":
-      return buildPlansAuditTrail(input.planAddress, input.seriesAddress);
+      return buildPlansAuditTrail(input.planAddress, input.seriesAddress, input.source);
     case "oracles":
-      return buildOraclesAuditTrail(input.poolAddress, input.seriesAddress);
+      return buildOraclesAuditTrail(input.poolAddress, input.seriesAddress, input.source);
     case "governance":
       return buildGovernanceAuditTrail(input.queue, input.proposal);
     case "overview":

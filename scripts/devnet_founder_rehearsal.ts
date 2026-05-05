@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Buffer } from "node:buffer";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -167,12 +167,17 @@ function keypairPath(label: string): string {
 function ensureLocalKeypair(label: string, mode: "plan" | "execute"): Keypair {
   assertMaySend(mode);
   const path = keypairPath(label);
-  mkdirSync(dirname(path), { recursive: true });
+  const dir = dirname(path);
+  mkdirSync(dir, { mode: 0o700, recursive: true });
+  chmodSync(dir, 0o700);
   if (existsSync(path)) {
+    chmodSync(path, 0o600);
     return keypairFromFile(path);
   }
   const keypair = Keypair.generate();
-  writeFileSync(path, `${JSON.stringify([...keypair.secretKey])}\n`);
+  writeFileSync(path, `${JSON.stringify([...keypair.secretKey])}\n`, {
+    mode: 0o600,
+  });
   return keypair;
 }
 
@@ -2352,7 +2357,12 @@ async function simulateExpectedFailure(
     encodedTransaction,
     { commitment: "confirmed", encoding: "base64", sigVerify: true },
   ]);
-  const err = response.error ?? response.result?.value?.err;
+  if (response.error) {
+    throw new Error(
+      `simulateTransaction RPC error for negative simulation ${label}: ${JSON.stringify(response.error)}`,
+    );
+  }
+  const err = response.result?.value?.err;
   if (!err) {
     throw new Error(`Negative simulation unexpectedly passed: ${label}`);
   }

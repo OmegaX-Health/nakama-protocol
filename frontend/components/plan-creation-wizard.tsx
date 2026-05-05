@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 
+import { DocumentLinkRow } from "@/components/document-link-row";
 import { MultiOraclePicker, type MultiOracleOption } from "@/components/multi-oracle-picker";
 import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { WizardDetailSheet, WizardDetailTriggerRow, type WizardDetailMetaItem } from "@/components/wizard-detail-sheet";
@@ -2791,10 +2792,16 @@ export function PlanCreationWizard() {
                     </button>
                   </div>
                   {selectedSchema ? (
-                    <p className="wizard-inline-copy">
-                      {selectedSchema.schemaKey} · version {selectedSchema.version}
-                      {selectedSchema.metadataUri ? ` · ${selectedSchema.metadataUri}` : ""}
-                    </p>
+                    <div className="space-y-2">
+                      <p className="wizard-inline-copy">
+                        {selectedSchema.schemaKey} · version {selectedSchema.version}
+                      </p>
+                      {selectedSchema.metadataUri ? (
+                        <div className="plans-review-document-stack">
+                          <DocumentLinkRow href={selectedSchema.metadataUri} label="Schema metadata" />
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
                   {schemaMetadataLoading ? <p className="wizard-inline-copy">Loading selected outcome schema…</p> : null}
                   {schemaWarnings.length > 0 ? (
@@ -3222,7 +3229,9 @@ export function PlanCreationWizard() {
                   </div>
                   <div className="plans-launch-preview-row">
                     <span>Metadata URI</span>
-                    <span className="plans-launch-preview-value">{planMetadataUri}</span>
+                    <div className="plans-review-document-stack">
+                      <DocumentLinkRow href={planMetadataUri} label="Plan metadata" />
+                    </div>
                   </div>
                 </div>
               </article>

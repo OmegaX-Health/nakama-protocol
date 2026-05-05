@@ -282,8 +282,9 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
       section: "capital",
       poolAddress: selectedPool?.address,
       classAddress: selectedClass?.address,
+      source: snapshot,
     }),
-    [selectedClass, selectedPool],
+    [selectedClass, selectedPool, snapshot],
   );
 
   /* ── URL sync ── */

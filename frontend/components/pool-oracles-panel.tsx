@@ -8,6 +8,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { ExternalLink, RefreshCw, ShieldCheck } from "lucide-react";
 
+import { DocumentLinkRow } from "@/components/document-link-row";
 import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { SearchableSelect } from "@/components/searchable-select";
 import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
@@ -556,7 +557,9 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
                   </a>
                 ) : null}
                 {selectedOracle.metadataUri ? (
-                  <p className="field-help break-all">Metadata: {selectedOracle.metadataUri}</p>
+                  <div className="plans-review-document-stack mt-2">
+                    <DocumentLinkRow href={selectedOracle.metadataUri} label="Oracle metadata" />
+                  </div>
                 ) : null}
               </div>
             </article>
@@ -673,7 +676,9 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
                 </div>
 
                 {row.metadataUri ? (
-                  <p className="field-help mt-2 break-all">Metadata: {row.metadataUri}</p>
+                  <div className="plans-review-document-stack mt-2">
+                    <DocumentLinkRow href={row.metadataUri} label="Oracle metadata" />
+                  </div>
                 ) : null}
               </li>
             ))}

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 
+import { DocumentLinkRow } from "@/components/document-link-row";
 import { ProtocolDetailDisclosure } from "@/components/protocol-detail-disclosure";
 import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { SearchableSelect } from "@/components/searchable-select";
@@ -371,8 +372,14 @@ export function PoolSchemasPanel({ poolAddress, onRefresh }: PoolSchemasPanelPro
               <ul className="mt-2 space-y-1 text-sm text-[var(--muted-foreground)]">
                 <li>Tracked dependencies: {selectedDependency?.poolRuleAddresses.length ?? 0}</li>
                 <li>Pool rules using schema: {matchingRules.length}</li>
-                <li>Metadata: {selectedSchema.metadataUri || "n/a"}</li>
               </ul>
+              {selectedSchema.metadataUri ? (
+                <div className="plans-review-document-stack mt-3">
+                  <DocumentLinkRow href={selectedSchema.metadataUri} label="Schema metadata" />
+                </div>
+              ) : (
+                <p className="field-help mt-3">No schema metadata URI is published.</p>
+              )}
             </article>
           </div>
         ) : (

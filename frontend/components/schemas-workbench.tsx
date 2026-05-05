@@ -403,22 +403,22 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
 
         <section className="plans-kpi-strip" aria-label="Schema workspace telemetry">
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">SCHEMAS</span>
+            <span className="plans-kpi-label">Schemas</span>
             <span className="plans-kpi-value">{uniqueSchemaCount}</span>
             <span className="plans-kpi-meta">{verifiedSchemaCount} verified on-chain</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">SERIES</span>
+            <span className="plans-kpi-label">Series</span>
             <span className="plans-kpi-value">{snapshot.policySeries.length}</span>
             <span className="plans-kpi-meta">versioned products</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">PLANS</span>
+            <span className="plans-kpi-label">Plans</span>
             <span className="plans-kpi-value">{uniquePlanCount}</span>
             <span className="plans-kpi-meta">live sponsor roots</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">BOUND_POOLS</span>
+            <span className="plans-kpi-label">Bound pools</span>
             <span className="plans-kpi-value">{uniquePoolCount}</span>
             <span className="plans-kpi-meta">allocation-linked sleeves</span>
           </div>

@@ -493,7 +493,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
         {/* ── KPI strip ─────────────────────── */}
         <section className="plans-kpi-strip" aria-label="Governance workspace telemetry">
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">PROPOSAL_QUEUE</span>
+            <span className="plans-kpi-label">Proposal queue</span>
             <span className="plans-kpi-value" aria-live="polite" aria-label={queueStatus.metricAriaLabel}>
               {showQueueSkeleton ? <span className="governance-queue-skeleton-line governance-queue-skeleton-line-kpi" aria-hidden="true" /> : (
                 <>
@@ -507,17 +507,17 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
             </span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">AUTHORITIES</span>
+            <span className="plans-kpi-label">Authorities</span>
             <span className="plans-kpi-value">{configuredAuthorityWallets.length}</span>
             <span className="plans-kpi-meta">{authorityWallets.length} live lanes</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">TEMPLATES</span>
+            <span className="plans-kpi-label">Templates</span>
             <span className="plans-kpi-value">{GOVERNANCE_TEMPLATE_ROWS.length}</span>
             <span className="plans-kpi-meta">scoped controls</span>
           </div>
           <div className="plans-kpi-metric">
-            <span className="plans-kpi-label">RESERVE_DOMAINS</span>
+            <span className="plans-kpi-label">Reserve domains</span>
             <span className="plans-kpi-value">{reserveDomains.length}</span>
             <span className="plans-kpi-meta">{reserveDomains.filter((domain) => domain.active).length} active</span>
           </div>

@@ -124,7 +124,7 @@ with repository review permission.
 | Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | PASS | `artifacts/localnet-e2e-summary-2026-05-04T16-40-45-011Z.json` |
 | Executable adversarial localnet | included in localnet E2E | PASS: `57 blocked`, `0 unexpectedSuccess`, `0 inconclusive` | `artifacts/localnet-adversarial-matrix-2026-05-04T16-40-45-011Z.json` |
 | Operator drawer simulation | `SOLANA_KEYPAIR=<devnet governance keypair> npm run devnet:operator:drawer:sim` | PASS: `FAIL=0`; expected idempotent collisions and fixture skips only | console output |
-| Mainnet preflight, no sends | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 OMEGAX_LIVE_SETTLEMENT_MINT=4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump npm run protocol:bootstrap:genesis-live -- --plan` | BLOCKER: current operator env is missing `OMEGAX_LIVE_ORACLE_KEYPAIR_PATH`; command failed before send path | console error; no transactions sent |
+| Mainnet preflight, no sends | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 OMEGAX_LIVE_SETTLEMENT_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v npm run protocol:bootstrap:genesis-live -- --plan` | BLOCKER: current operator env is missing `OMEGAX_LIVE_ORACLE_KEYPAIR_PATH`; command failed before send path | console error; no transactions sent |
 | Mainnet unsafe config tests | `npm run verify:public` node suite | PASS | `tests/genesis_live_bootstrap_config.test.ts`, `tests/genesis_live_bootstrap_plan_cli.test.ts` |
 
 ## 6. Dependency Scan
@@ -154,12 +154,12 @@ actual settlement-asset reserve/funding/allocation capacity.
 
 | Field | Value |
 |-------|-------|
-| Devnet bootstrap | PASS for prior canary state, `OMEGAX_DEVNET_ROLE_MIN_LAMPORTS=0 npm run protocol:bootstrap:devnet-live` completed after public RPC 429 retries |
-| Canary seeding | PARTIAL RERUN: public devnet RPC rate-limited the fresh seed command after linked-claim and test-asset steps; strict pen-test verified all required canaries were already live |
-| Strict pen-test | PASS, `npm run devnet:treasury:pen-test -- --strict` |
+| Devnet bootstrap | PASS against merged hardened binary at `BtLPiswEfzwxenWM3GR6hihViZHpXLU6Pygw3nmH3B2s`; `OMEGAX_DEVNET_ROLE_MIN_LAMPORTS=100000000 npm run protocol:bootstrap:devnet-live` |
+| Canary seeding | PASS, all required treasury canaries seeded against the new devnet program |
+| Strict pen-test | PASS, `npm run devnet:treasury:pen-test -- --strict --out-dir artifacts/devnet-security-rehearsal-hardened-2026-05-05` |
 | Strict result | `8 blocked`, `0 vulnerable`, `0 skipped`, `0 inconclusive` |
-| Evidence | `artifacts/devnet-treasury-pen-test-2026-05-04T15-53-44-974Z.json`, `artifacts/devnet-treasury-pen-test-2026-05-04T15-53-44-974Z.md`, tracked summary `docs/security/devnet-treasury-pen-test-2026-05-04.md` |
-| Hardened binary replay | BLOCKER: PR `#55` has not been merged, redeployed to devnet, and strict pen-test has not been rerun against the merged hardened binary |
+| Evidence | `artifacts/devnet-security-rehearsal-hardened-2026-05-05/devnet-treasury-pen-test-2026-05-04T18-49-38-251Z.json`, `artifacts/devnet-security-rehearsal-hardened-2026-05-05/devnet-treasury-pen-test-2026-05-04T18-49-38-251Z.md`, tracked summary `docs/security/devnet-treasury-pen-test-2026-05-05.md` |
+| Hardened binary replay | PASS: merged hardened binary was redeployed, bootstrapped, seeded, and strict-tested on devnet |
 
 ## 9. Mainnet Preflight
 
@@ -175,7 +175,7 @@ oracle keypair path and final role-map inputs.
 |-------|-------|
 | RPC | `https://api.mainnet-beta.solana.com` |
 | Program ID planned | `Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B` |
-| Settlement mint supplied for current replay | `4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump` |
+| Settlement mint supplied for current replay | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` |
 | Governance authority used for plan | `AiNPYZQkbfcTkSh3r9vPKAMgMa3TbU47Jk3TaKTCB4Sg` |
 | Governance config address | `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU` |
 | Reserve domain | `WfQ7PjCTwuTCn3KM4mxUmyjQSw3RvcnyT3Gfdg2WUoq` |
@@ -192,7 +192,7 @@ Current no-send replay:
 
 ```sh
 OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 \
-OMEGAX_LIVE_SETTLEMENT_MINT=4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump \
+OMEGAX_LIVE_SETTLEMENT_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
 npm run protocol:bootstrap:genesis-live -- --plan
 ```
 
@@ -217,7 +217,7 @@ Unsafe config proof:
 | External audit completed for this release | no — no external audit conducted |
 | Bug bounty program | no public bounty recorded in this repo |
 | Third-party review date | none |
-| Internal pen-test report | `docs/security/devnet-treasury-pen-test-2026-05-04.md` |
+| Internal pen-test report | `docs/security/devnet-treasury-pen-test-2026-05-05.md` |
 | Outstanding high/critical internal findings | none known after the strict devnet run; external review still missing |
 | Independent-review packet | `docs/security/mainnet-money-control-review-packet-v0.3.2.md` |
 
