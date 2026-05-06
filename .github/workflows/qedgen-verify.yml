@@ -71,7 +71,8 @@ jobs:
           echo "QEDGEN=/tmp/qedgen-solana-skills/bin/qedgen" >> "$GITHUB_ENV"
 
       - name: Setup QEDGen mathlib
-        run: "$QEDGEN" setup --mathlib
+        run: |
+          "$QEDGEN" setup --mathlib
 
       - name: Check spec
         run: npm run qedgen:check
