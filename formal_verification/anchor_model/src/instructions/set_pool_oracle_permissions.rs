@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::SetPoolOraclePermissions;
+use crate::{SetPoolOraclePermissions, SetPoolOraclePermissionsArgs};
 
 impl<'info> SetPoolOraclePermissions<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "set_pool_oracle_permissions", hash = "d71ef7b35d177edd", spec_hash = "68a9b62315e44241")]

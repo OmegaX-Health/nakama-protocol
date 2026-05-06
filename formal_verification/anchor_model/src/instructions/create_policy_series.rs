@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreatePolicySeries;
+use crate::{CreatePolicySeries, CreatePolicySeriesArgs};
 
 impl<'info> CreatePolicySeries<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_policy_series", hash = "e204fc7f8a73258d", spec_hash = "0bfc4cd18b171823")]

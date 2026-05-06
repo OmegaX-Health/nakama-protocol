@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreateDomainAssetVault;
+use crate::{CreateDomainAssetVault, CreateDomainAssetVaultArgs};
 
 impl<'info> CreateDomainAssetVault<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_domain_asset_vault", hash = "d2851e3b0794b44e", spec_hash = "e85834d2a6ef9889")]

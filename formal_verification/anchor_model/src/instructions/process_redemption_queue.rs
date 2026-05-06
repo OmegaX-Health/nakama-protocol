@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::ProcessRedemptionQueue;
+use crate::{ProcessRedemptionQueue, ProcessRedemptionQueueArgs};
 
 impl<'info> ProcessRedemptionQueue<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "process_redemption_queue", hash = "c50fb5c5d1beae52", spec_hash = "3bebdbfb35818cdd")]

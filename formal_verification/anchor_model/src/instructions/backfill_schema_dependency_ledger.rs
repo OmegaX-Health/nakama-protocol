@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::BackfillSchemaDependencyLedger;
+use crate::{BackfillSchemaDependencyLedger, BackfillSchemaDependencyLedgerArgs};
 
 impl<'info> BackfillSchemaDependencyLedger<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "backfill_schema_dependency_ledger", hash = "6390945597f6be23", spec_hash = "c426c9d10cddc42e")]

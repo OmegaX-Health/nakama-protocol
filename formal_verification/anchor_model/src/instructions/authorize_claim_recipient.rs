@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::AuthorizeClaimRecipient;
+use crate::{AuthorizeClaimRecipient, AuthorizeClaimRecipientArgs};
 
 impl<'info> AuthorizeClaimRecipient<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "authorize_claim_recipient", hash = "e8ddab55b537f47b", spec_hash = "18eb62eb864c938b")]

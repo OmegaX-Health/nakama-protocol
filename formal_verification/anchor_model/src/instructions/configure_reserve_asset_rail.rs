@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::ConfigureReserveAssetRail;
+use crate::{ConfigureReserveAssetRail, ConfigureReserveAssetRailArgs};
 
 impl<'info> ConfigureReserveAssetRail<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "configure_reserve_asset_rail", hash = "ecceeb8f588b7c12", spec_hash = "3e1b103b5725aa93")]

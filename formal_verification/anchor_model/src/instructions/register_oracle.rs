@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::RegisterOracle;
+use crate::{RegisterOracle, RegisterOracleArgs};
 
 impl<'info> RegisterOracle<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "register_oracle", hash = "ec47f9b90b9428d1", spec_hash = "932fec89688b52bc")]

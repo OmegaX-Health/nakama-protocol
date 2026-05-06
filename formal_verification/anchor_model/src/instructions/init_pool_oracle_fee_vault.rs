@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::InitPoolOracleFeeVault;
+use crate::{InitPoolOracleFeeVault, InitPoolOracleFeeVaultArgs};
 
 impl<'info> InitPoolOracleFeeVault<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "init_pool_oracle_fee_vault", hash = "7083cf4bf52947d0", spec_hash = "42e0f56216b5f5fa")]

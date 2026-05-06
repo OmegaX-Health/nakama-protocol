@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::WithdrawPoolTreasurySpl;
+use crate::{WithdrawPoolTreasurySpl, WithdrawArgs};
 
 impl<'info> WithdrawPoolTreasurySpl<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "withdraw_pool_treasury_spl", hash = "885d8f307f04628f", spec_hash = "73893c810f9b8302")]

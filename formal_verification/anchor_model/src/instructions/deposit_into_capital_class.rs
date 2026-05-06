@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::DepositIntoCapitalClass;
+use crate::{DepositIntoCapitalClass, DepositIntoCapitalClassArgs};
 
 impl<'info> DepositIntoCapitalClass<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "deposit_into_capital_class", hash = "9e47af0e79d68f26", spec_hash = "fa43c558ab08f402")]

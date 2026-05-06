@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::SetProtocolEmergencyPause;
+use crate::{SetProtocolEmergencyPause, SetProtocolEmergencyPauseArgs};
 
 impl<'info> SetProtocolEmergencyPause<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "set_protocol_emergency_pause", hash = "07848c5e194ce737", spec_hash = "7c525cb04ab4a2a6")]

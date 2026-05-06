@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::OpenMemberPosition;
+use crate::{OpenMemberPosition, OpenMemberPositionArgs};
 
 impl<'info> OpenMemberPosition<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "open_member_position", hash = "9caf4e68852f7e0c", spec_hash = "b76ccf27958c6a97")]

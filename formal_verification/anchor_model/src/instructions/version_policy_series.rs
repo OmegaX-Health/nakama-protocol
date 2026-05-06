@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::VersionPolicySeries;
+use crate::{VersionPolicySeries, VersionPolicySeriesArgs};
 
 impl<'info> VersionPolicySeries<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "version_policy_series", hash = "f80770b4b58c533d", spec_hash = "f1101c36d4470868")]

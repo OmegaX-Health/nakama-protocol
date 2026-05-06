@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::ReserveObligation;
+use crate::{ReserveObligation, ReserveObligationArgs};
 
 impl<'info> ReserveObligation<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "reserve_obligation", hash = "5422934bdc1bc2c9", spec_hash = "9e50c15008d2c9b7")]

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::UpdateAllocationCaps;
+use crate::{UpdateAllocationCaps, UpdateAllocationCapsArgs};
 
 impl<'info> UpdateAllocationCaps<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_allocation_caps", hash = "249a91df1e5fa879", spec_hash = "f3842f33a7ae7420")]

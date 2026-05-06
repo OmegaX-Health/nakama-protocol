@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::PublishReserveAssetRailPrice;
+use crate::{PublishReserveAssetRailPrice, PublishReserveAssetRailPriceArgs};
 
 impl<'info> PublishReserveAssetRailPrice<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "publish_reserve_asset_rail_price", hash = "b9e2da75463631d5", spec_hash = "555907f3d8cdeccc")]

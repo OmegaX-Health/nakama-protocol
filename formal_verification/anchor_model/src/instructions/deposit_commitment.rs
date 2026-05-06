@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::DepositCommitment;
+use crate::{DepositCommitment, DepositCommitmentArgs};
 
 impl<'info> DepositCommitment<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "deposit_commitment", hash = "a565148caeb38715", spec_hash = "cae17ce22d4d6615")]

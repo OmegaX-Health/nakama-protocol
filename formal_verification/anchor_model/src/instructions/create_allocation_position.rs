@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreateAllocationPosition;
+use crate::{CreateAllocationPosition, CreateAllocationPositionArgs};
 
 impl<'info> CreateAllocationPosition<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_allocation_position", hash = "7764faee6f0fd69b", spec_hash = "3d7fb2051962aec6")]

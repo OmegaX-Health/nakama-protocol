@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::RecordPremiumPayment;
+use crate::{RecordPremiumPayment, RecordPremiumPaymentArgs};
 
 impl<'info> RecordPremiumPayment<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "record_premium_payment", hash = "53ee87c0406b5799", spec_hash = "337ba2b1106d860f")]

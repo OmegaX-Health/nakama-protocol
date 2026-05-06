@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreateCapitalClass;
+use crate::{CreateCapitalClass, CreateCapitalClassArgs};
 
 impl<'info> CreateCapitalClass<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_capital_class", hash = "9980fe381c6ebd48", spec_hash = "6f1a99f7bbacb716")]

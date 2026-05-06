@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::DeallocateCapital;
+use crate::{DeallocateCapital, DeallocateCapitalArgs};
 
 impl<'info> DeallocateCapital<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "deallocate_capital", hash = "075c513b2021aa89", spec_hash = "80a573f528b64499")]

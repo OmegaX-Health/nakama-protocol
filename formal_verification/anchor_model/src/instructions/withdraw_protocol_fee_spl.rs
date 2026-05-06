@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::WithdrawProtocolFeeSpl;
+use crate::{WithdrawProtocolFeeSpl, WithdrawArgs};
 
 impl<'info> WithdrawProtocolFeeSpl<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "withdraw_protocol_fee_spl", hash = "0f417e7577f3afc1", spec_hash = "3d7d8769edd56300")]

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::RefundCommitment;
+use crate::{RefundCommitment, RefundCommitmentArgs};
 
 impl<'info> RefundCommitment<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "refund_commitment", hash = "25c2ccff20b375f0", spec_hash = "d4978f7861b7c340")]

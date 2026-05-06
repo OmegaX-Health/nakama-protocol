@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::SettleClaimCase;
+use crate::{SettleClaimCase, SettleClaimCaseArgs};
 
 impl<'info> SettleClaimCase<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "settle_claim_case", hash = "2ee67da54e202d46", spec_hash = "02720550f54ff44c")]

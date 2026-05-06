@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::InitializeSeriesReserveLedger;
+use crate::{InitializeSeriesReserveLedger, InitializeSeriesReserveLedgerArgs};
 
 impl<'info> InitializeSeriesReserveLedger<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "initialize_series_reserve_ledger", hash = "68e1bf5ac4751717", spec_hash = "5e93b2f75e722b13")]

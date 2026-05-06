@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::SettleObligation;
+use crate::{SettleObligation, SettleObligationArgs};
 
 impl<'info> SettleObligation<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "settle_obligation", hash = "b10f615cb4a4318a", spec_hash = "f67eecabe30658fc")]

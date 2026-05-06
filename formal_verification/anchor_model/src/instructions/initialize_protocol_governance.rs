@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::InitializeProtocolGovernance;
+use crate::{InitializeProtocolGovernance, InitializeProtocolGovernanceArgs};
 
 impl<'info> InitializeProtocolGovernance<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "initialize_protocol_governance", hash = "6acce667bc135c29", spec_hash = "f607c6d3093b5354")]

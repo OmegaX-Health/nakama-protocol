@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreateCommitmentPaymentRail;
+use crate::{CreateCommitmentPaymentRail, CreateCommitmentPaymentRailArgs};
 
 impl<'info> CreateCommitmentPaymentRail<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_commitment_payment_rail", hash = "6e3cd17919889025", spec_hash = "d754bb8bfd7e617a")]

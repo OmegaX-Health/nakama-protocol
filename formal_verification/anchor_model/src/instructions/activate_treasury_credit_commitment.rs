@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::ActivateTreasuryCreditCommitment;
+use crate::{ActivateTreasuryCreditCommitment, ActivateCommitmentArgs};
 
 impl<'info> ActivateTreasuryCreditCommitment<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "activate_treasury_credit_commitment", hash = "08de865b58cbb19d", spec_hash = "c11e7c6a6ef7b50c")]

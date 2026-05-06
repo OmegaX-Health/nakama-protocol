@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreateLiquidityPool;
+use crate::{CreateLiquidityPool, CreateLiquidityPoolArgs};
 
 impl<'info> CreateLiquidityPool<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_liquidity_pool", hash = "173dd366fb25f601", spec_hash = "ebb91b86a86f74f6")]

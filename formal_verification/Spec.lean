@@ -868,12 +868,12 @@ def mark_impairmentTransition (s : State) (signer : Pubkey) (args : MarkImpairme
 
 def register_oracleTransition (s : State) (signer : Pubkey) (args : RegisterOracleArgs) : Option State :=
   if signer = s.admin ∧ s.status = .Live then
-    some { s with active := s.true, status := .Live }
+    some { s with active := true, status := .Live }
   else none
 
 def claim_oracleTransition (s : State) (signer : Pubkey) : Option State :=
   if signer = s.oracle ∧ s.status = .Live then
-    some { s with claimed := s.true, status := .Live }
+    some { s with claimed := true, status := .Live }
   else none
 
 def update_oracle_profileTransition (s : State) (signer : Pubkey) (args : UpdateOracleProfileArgs) : Option State :=
@@ -1063,22 +1063,22 @@ def applyOp (s : State) (signer : Pubkey) : Operation → Option State
 
 /-- Property: abstract_state_progress_nonnegative. -/
 def abstract_state_progress_nonnegative (s : State) : Prop :=
-  audit_nonce ≥ 0
+  s.audit_nonce ≥ 0
 
 /-- Property: protocol_fee_bps_bounded. -/
 def protocol_fee_bps_bounded (s : State) : Prop :=
-  protocol_fee_bps ≤ 9999
+  s.protocol_fee_bps ≤ 9999
 
 /-- Property: claim_payment_bounded. -/
 def claim_payment_bounded (s : State) : Prop :=
-  paid_amount ≤ approved_amount
+  s.paid_amount ≤ s.approved_amount
 
 /-- Property: fee_withdrawals_bounded. -/
 def fee_withdrawals_bounded (s : State) : Prop :=
-  withdrawn_fees ≤ accrued_fees
+  s.withdrawn_fees ≤ s.accrued_fees
 
 /-- Property: allocation_cap_bounded. -/
 def allocation_cap_bounded (s : State) : Prop :=
-  allocated_amount ≤ cap_amount
+  s.allocated_amount ≤ s.cap_amount
 
 end OmegaxProtocol

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::InitPoolTreasuryVault;
+use crate::{InitPoolTreasuryVault, InitPoolTreasuryVaultArgs};
 
 impl<'info> InitPoolTreasuryVault<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "init_pool_treasury_vault", hash = "e8329d4635a05be7", spec_hash = "7761529d9796ff6f")]

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::ActivateDirectPremiumCommitment;
+use crate::{ActivateDirectPremiumCommitment, ActivateCommitmentArgs};
 
 impl<'info> ActivateDirectPremiumCommitment<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "activate_direct_premium_commitment", hash = "eb9bb09153605aa4", spec_hash = "22439c045e497bdb")]

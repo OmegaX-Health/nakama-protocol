@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::UpdateHealthPlanControls;
+use crate::{UpdateHealthPlanControls, UpdateHealthPlanControlsArgs};
 
 impl<'info> UpdateHealthPlanControls<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_health_plan_controls", hash = "ca396cb82d562708", spec_hash = "2be14ac09b0e7aa9")]

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::AttachClaimEvidenceRef;
+use crate::{AttachClaimEvidenceRef, AttachClaimEvidenceRefArgs};
 
 impl<'info> AttachClaimEvidenceRef<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "attach_claim_evidence_ref", hash = "7d05001981864461", spec_hash = "c5e84e4c74695cfb")]

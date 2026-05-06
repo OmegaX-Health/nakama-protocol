@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::FundSponsorBudget;
+use crate::{FundSponsorBudget, FundSponsorBudgetArgs};
 
 impl<'info> FundSponsorBudget<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "fund_sponsor_budget", hash = "19172b59ab0e63bc", spec_hash = "e88cb128fee36d35")]

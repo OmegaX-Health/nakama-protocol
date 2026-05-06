@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::AllocateCapital;
+use crate::{AllocateCapital, AllocateCapitalArgs};
 
 impl<'info> AllocateCapital<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "allocate_capital", hash = "20f45822038685a9", spec_hash = "ddf83107c065738a")]

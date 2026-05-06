@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::WithdrawPoolOracleFeeSpl;
+use crate::{WithdrawPoolOracleFeeSpl, WithdrawArgs};
 
 impl<'info> WithdrawPoolOracleFeeSpl<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "withdraw_pool_oracle_fee_spl", hash = "64d325ac3987b22b", spec_hash = "add3c5b9f674e547")]

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::OpenClaimCase;
+use crate::{OpenClaimCase, OpenClaimCaseArgs};
 
 impl<'info> OpenClaimCase<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "open_claim_case", hash = "ebcaa5b2db72932d", spec_hash = "9bf048207f2195d7")]

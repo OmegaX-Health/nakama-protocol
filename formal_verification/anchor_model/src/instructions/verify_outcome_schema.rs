@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::VerifyOutcomeSchema;
+use crate::{VerifyOutcomeSchema, VerifyOutcomeSchemaArgs};
 
 impl<'info> VerifyOutcomeSchema<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "verify_outcome_schema", hash = "0e8a05ee4b37e42e", spec_hash = "00a88f871b3dff87")]

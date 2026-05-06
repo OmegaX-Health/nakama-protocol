@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreateCommitmentCampaign;
+use crate::{CreateCommitmentCampaign, CreateCommitmentCampaignArgs};
 
 impl<'info> CreateCommitmentCampaign<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_commitment_campaign", hash = "19120e0020efc39b", spec_hash = "23911aa991cd2f1a")]

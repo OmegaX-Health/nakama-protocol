@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::MarkImpairment;
+use crate::{MarkImpairment, MarkImpairmentArgs};
 
 impl<'info> MarkImpairment<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "mark_impairment", hash = "89b12df147ffb503", spec_hash = "79c4462c1097b734")]

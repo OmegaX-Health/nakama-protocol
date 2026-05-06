@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::RotateProtocolGovernanceAuthority;
+use crate::{RotateProtocolGovernanceAuthority, RotateProtocolGovernanceAuthorityArgs};
 
 impl<'info> RotateProtocolGovernanceAuthority<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "rotate_protocol_governance_authority", hash = "95f05868c11cd4d6", spec_hash = "c41f0123c86a7eca")]

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::RequestRedemption;
+use crate::{RequestRedemption, RequestRedemptionArgs};
 
 impl<'info> RequestRedemption<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "request_redemption", hash = "e7471279591ffc6d", spec_hash = "7bb7ef926e7c3a81")]

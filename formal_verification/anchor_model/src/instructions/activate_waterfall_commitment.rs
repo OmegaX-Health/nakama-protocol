@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::ActivateWaterfallCommitment;
+use crate::{ActivateWaterfallCommitment, ActivateCommitmentArgs};
 
 impl<'info> ActivateWaterfallCommitment<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "activate_waterfall_commitment", hash = "d678511be911a583", spec_hash = "124eec41d7004a2b")]

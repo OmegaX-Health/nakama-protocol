@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::UpdateMemberEligibility;
+use crate::{UpdateMemberEligibility, UpdateMemberEligibilityArgs};
 
 impl<'info> UpdateMemberEligibility<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_member_eligibility", hash = "ed0c6f0793fc283b", spec_hash = "696c2474fb454b1b")]

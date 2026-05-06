@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::CreateReserveDomain;
+use crate::{CreateReserveDomain, CreateReserveDomainArgs};
 
 impl<'info> CreateReserveDomain<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_reserve_domain", hash = "79db929c3facd74a", spec_hash = "fc980e1565fc61fa")]

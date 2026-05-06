@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::UpdateOracleProfile;
+use crate::{UpdateOracleProfile, UpdateOracleProfileArgs};
 
 impl<'info> UpdateOracleProfile<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_oracle_profile", hash = "effd18baa14112a5", spec_hash = "f70a8b8ddf967658")]

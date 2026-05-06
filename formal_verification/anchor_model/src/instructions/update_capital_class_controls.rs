@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::UpdateCapitalClassControls;
+use crate::{UpdateCapitalClassControls, UpdateCapitalClassControlsArgs};
 
 impl<'info> UpdateCapitalClassControls<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_capital_class_controls", hash = "0e0b974add8178cd", spec_hash = "bfdb8ba8a65985d2")]

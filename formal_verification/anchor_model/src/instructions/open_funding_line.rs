@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::OpenFundingLine;
+use crate::{OpenFundingLine, OpenFundingLineArgs};
 
 impl<'info> OpenFundingLine<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "open_funding_line", hash = "a3d0582003d20081", spec_hash = "dc2fdf83a47aaae7")]

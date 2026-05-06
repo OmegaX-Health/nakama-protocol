@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::UpdateReserveDomainControls;
+use crate::{UpdateReserveDomainControls, UpdateReserveDomainControlsArgs};
 
 impl<'info> UpdateReserveDomainControls<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_reserve_domain_controls", hash = "cf1f22ddd2eb3177", spec_hash = "69a3f5ade2be9c8c")]

@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::UpdateLpPositionCredentialing;
+use crate::{UpdateLpPositionCredentialing, UpdateLpPositionCredentialingArgs};
 
 impl<'info> UpdateLpPositionCredentialing<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_lp_position_credentialing", hash = "f060083f62eca1ff", spec_hash = "11322ae448760524")]

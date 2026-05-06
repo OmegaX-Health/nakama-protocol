@@ -7,7 +7,7 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::ReleaseReserve;
+use crate::{ReleaseReserve, ReleaseReserveArgs};
 
 impl<'info> ReleaseReserve<'info> {
     #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "release_reserve", hash = "31139d946cb9810f", spec_hash = "9e50c15008d2c9b7")]
