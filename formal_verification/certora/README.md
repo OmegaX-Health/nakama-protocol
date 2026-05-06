@@ -44,15 +44,31 @@ npm run certora:solana:sanity
 ```
 
 The first committed config is a starter sanity lane. It exists to establish the
-repo shape and should be tightened as concrete CVLR rules are added. A passing
-run is internal formal-verification evidence; it is not a third-party audit and
-must not be described publicly as "Certora audited" unless Certora has actually
-performed and published that review.
+repo shape and currently runs the `rule_selected_asset_payout_bounds` CVLR rule
+compiled under the program's `certora` feature. A passing run is internal
+formal-verification evidence; it is not a third-party audit and must not be
+described publicly as "Certora audited" unless Certora has actually performed
+and published that review.
 
 The npm wrapper temporarily rewrites the local `Cargo.lock` metadata version
 from `4` to `3` while Certora builds because the Certora Solana platform-tools
 metadata parser does not yet accept lockfile version 4. It restores the file
 before exiting and does not change dependency resolution.
+
+## Query Latest Manual Run
+
+After a manual submission, query the locally recorded latest job from this repo:
+
+```bash
+npm run certora:solana:status
+```
+
+The status command reads `.certora_internal/.certora_recent_jobs.json`, uses the
+locally recorded anonymous dashboard token, and prints the job state plus rule
+verdicts from the remote output bundle. It does not use `CERTORAKEY` directly
+and does not write run output into tracked files. It redacts the private report
+token by default; pass `-- --show-report-url` only when you intentionally want
+the local terminal to print the dashboard link.
 
 ## Relationship To QEDGen
 

@@ -8,6 +8,8 @@ declare_id!("Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B");
 
 pub mod args;
 pub mod capital;
+#[cfg(feature = "certora")]
+pub mod certora;
 pub mod claims;
 pub mod commitments;
 pub mod constants;
