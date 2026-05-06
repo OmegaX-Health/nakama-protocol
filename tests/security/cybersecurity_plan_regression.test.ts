@@ -28,6 +28,18 @@ test("[CSO-2026-05-04] LP allocation is same-asset only in v1", () => {
   assert.match(extractRustFunctionBody("deallocate_capital"), /AllocationAssetMismatch/);
 });
 
+test("[ALMANAX-d333108a] capital class update keeps pool queue-only policy as a floor", () => {
+  const deriveQueueOnly =
+    /derive_queue_only_redemptions\(\s*args\.pause_flags,\s*ctx\.accounts\.liquidity_pool\.redemption_policy,\s*\)/;
+
+  assert.match(extractRustFunctionBody("create_capital_class"), deriveQueueOnly);
+  assert.match(extractRustFunctionBody("update_capital_class_controls"), deriveQueueOnly);
+  assert.doesNotMatch(
+    extractRustFunctionBody("update_capital_class_controls"),
+    /queue_only_redemptions\s*=\s*args\.queue_only_redemptions/,
+  );
+});
+
 test("[CSO-2026-05-04] allocation and reserve booking require free capacity", () => {
   assert.match(extractRustFunctionBody("allocate_capital"), /require_allocatable_reserve_capacity\(/);
   assert.match(extractRustFunctionBody("reserve_obligation"), /require_obligation_reserve_capacity\(/);

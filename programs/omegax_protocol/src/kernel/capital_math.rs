@@ -25,6 +25,11 @@ pub(crate) fn require_class_access_mode(restriction_mode: u8, credentialed: bool
     }
 }
 
+pub(crate) fn derive_queue_only_redemptions(pause_flags: u32, redemption_policy: u8) -> bool {
+    pause_flags & PAUSE_FLAG_REDEMPTION_QUEUE_ONLY != 0
+        || redemption_policy == REDEMPTION_POLICY_QUEUE_ONLY
+}
+
 pub(crate) fn ensure_lp_position_binding(
     lp_position: &mut LPPosition,
     capital_class: Pubkey,

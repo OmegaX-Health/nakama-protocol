@@ -12,6 +12,19 @@ fn class_access_requires_credential_for_restricted_modes() {
 }
 
 #[test]
+fn queue_only_redemptions_are_floored_by_pool_policy_or_pause_flag() {
+    assert!(!derive_queue_only_redemptions(0, REDEMPTION_POLICY_OPEN));
+    assert!(derive_queue_only_redemptions(
+        0,
+        REDEMPTION_POLICY_QUEUE_ONLY
+    ));
+    assert!(derive_queue_only_redemptions(
+        PAUSE_FLAG_REDEMPTION_QUEUE_ONLY,
+        REDEMPTION_POLICY_OPEN
+    ));
+}
+
+#[test]
 fn lp_credentialing_cannot_revoke_active_position() {
     let mut lp_position = LPPosition {
         capital_class: Pubkey::new_unique(),
