@@ -53,7 +53,15 @@ and published that review.
 The npm wrapper temporarily rewrites the local `Cargo.lock` metadata version
 from `4` to `3` while Certora builds because the Certora Solana platform-tools
 metadata parser does not yet accept lockfile version 4. It restores the file
-before exiting and does not change dependency resolution.
+before exiting and does not change dependency resolution. The wrapper also
+uses an ignored Certora-specific Cargo target directory so platform-tools
+artifacts do not mix with normal local Rust build artifacts.
+
+The starter sanity config passes `-solanaSkipCallRegInst true` because Anchor's
+compiled SBF currently leaves indirect-call instructions that the Solana prover
+cannot encode even after the rule is reduced to scalar accounting logic. Keep
+that flag scoped to this starter lane and reassess it for each future rule; do
+not treat it as a blanket soundness waiver.
 
 ## Query Latest Manual Run
 
