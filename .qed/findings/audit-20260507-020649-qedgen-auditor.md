@@ -12,16 +12,16 @@
 
 ## Commands
 
-- `/Users/dr_sabijan/.codex/skills/qedgen/bin/qedgen probe --spec omegax_protocol.qedspec`
+- `qedgen probe --spec omegax_protocol.qedspec`
   - Result: spec-aware mode, `findings: []`.
 - `npm run qedgen:check`
   - Result: passed with `190 info, 1 warnings, 0 errors`.
   - Accepted warning: `missing_cpi_for_token_context` on `create_domain_asset_vault`.
-- `/Users/dr_sabijan/.codex/skills/qedgen/bin/qedgen verify --probe-repros --json`
+- `qedgen verify --probe-repros --json`
   - Result: no repro files found under `target/qedgen-repros`; no critical/high repros were required.
-- `/Users/dr_sabijan/.codex/skills/qedgen/bin/qedgen probe --bootstrap --root .`
+- `qedgen probe --bootstrap --root .`
   - Result: detected `runtime: qedgen_codegen`, 70 handlers, and emitted `findings: []`.
-- `/Users/dr_sabijan/.codex/skills/qedgen/bin/qedgen check --spec omegax_protocol.qedspec --anchor-project programs/omegax_protocol --coverage --json`
+- `qedgen check --spec omegax_protocol.qedspec --anchor-project programs/omegax_protocol --coverage --json`
   - Result: exited nonzero because two exported governance handoff instructions are not covered by spec handlers.
 - `npm run qedgen:reconcile`
   - Result: no Rust drift and no orphan proofs; 82 Lean proof obligations remain user-owned.
