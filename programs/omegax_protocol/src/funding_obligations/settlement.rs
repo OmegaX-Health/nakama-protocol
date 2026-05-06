@@ -301,6 +301,13 @@ fn resolve_obligation_oracle_fee(
             );
             let claim_case =
                 claim_case.ok_or(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee)?;
+            crate::claims::require_oracle_fee_accounts_canonical(
+                vault,
+                policy,
+                attestation,
+                claim_case.key(),
+                obligation.asset_mint,
+            )?;
             require_keys_eq!(
                 vault.oracle,
                 attestation.oracle,

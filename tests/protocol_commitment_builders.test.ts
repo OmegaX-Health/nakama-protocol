@@ -324,12 +324,13 @@ test("deposit, refund, and pause commitment builders keep commitment custody out
     refundReasonHashHex: "22".repeat(32),
   });
   const refundIx = assertProtocolIxShape(refundTx, "refund_commitment", DEPOSITOR);
-  assert.equal(refundIx.keys.length, 10);
-  assert.equal(refundIx.keys[1]!.pubkey.toBase58(), campaign.toBase58());
-  assert.equal(refundIx.keys[2]!.pubkey.toBase58(), paymentRail.toBase58());
-  assert.equal(refundIx.keys[3]!.pubkey.toBase58(), ledger.toBase58());
-  assert.equal(refundIx.keys[4]!.pubkey.toBase58(), position.toBase58());
-  assert.equal(refundIx.keys[8]!.pubkey.toBase58(), RECIPIENT_TOKEN_ACCOUNT.toBase58());
+  assert.equal(refundIx.keys.length, 11);
+  assert.equal(refundIx.keys[1]!.pubkey.toBase58(), deriveProtocolGovernancePda().toBase58());
+  assert.equal(refundIx.keys[2]!.pubkey.toBase58(), campaign.toBase58());
+  assert.equal(refundIx.keys[3]!.pubkey.toBase58(), paymentRail.toBase58());
+  assert.equal(refundIx.keys[4]!.pubkey.toBase58(), ledger.toBase58());
+  assert.equal(refundIx.keys[5]!.pubkey.toBase58(), position.toBase58());
+  assert.equal(refundIx.keys[9]!.pubkey.toBase58(), RECIPIENT_TOKEN_ACCOUNT.toBase58());
 
   const pauseTx = buildPauseCommitmentCampaignTx({
     authority: AUTHORITY,

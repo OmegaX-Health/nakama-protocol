@@ -122,6 +122,13 @@ test("[ALMANAX-630dbd6a] claim settlement validates canonical oracle-fee PDAs", 
   assert.match(helperBody, /attestation\.bump == expected_attestation_bump/);
 });
 
+test("[ALMANAX-2026-05-06] obligation settlement validates canonical oracle-fee PDAs", () => {
+  assert.match(
+    programSource,
+    /fn resolve_obligation_oracle_fee[\s\S]+require_oracle_fee_accounts_canonical\([\s\S]+claim_case\.key\(\)[\s\S]+obligation\.asset_mint/,
+  );
+});
+
 test("[CSO-2026-05-04] configured fee bps cannot be 100 percent", () => {
   assert.match(programSource, /pub const MAX_CONFIGURED_FEE_BPS: u16 = BASIS_POINTS_DENOMINATOR - 1;/);
   assert.match(

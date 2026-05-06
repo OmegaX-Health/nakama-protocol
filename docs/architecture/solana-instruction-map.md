@@ -62,7 +62,7 @@ All current public instructions remain present in [`programs/omegax_protocol/src
 | `activate_direct_premium_commitment` | move a same-mint pending commitment into premium reserve accounting |
 | `activate_treasury_credit_commitment` | legacy path to lock already posted stable capacity for a treasury-credit commitment |
 | `activate_waterfall_commitment` | activate a commitment into mixed-reserve accounting only when the payment asset rail has enabled reserve capacity |
-| `refund_commitment` | refund a still-pending commitment in the same token amount originally deposited |
+| `refund_commitment` | refund a still-pending commitment in the same token amount originally deposited; blocked by the global emergency pause |
 | `pause_commitment_campaign` | pause, cancel, close, or reactivate a campaign through plan/governance control |
 | `create_obligation` | create a canonical liability unit |
 | `reserve_obligation` | reserve liability against plan-side capital and optionally mirror a linked `ClaimCase` reserve balance |

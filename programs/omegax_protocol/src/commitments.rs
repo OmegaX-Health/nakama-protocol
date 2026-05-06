@@ -709,6 +709,7 @@ pub(crate) fn refund_commitment(
     args: RefundCommitmentArgs,
 ) -> Result<()> {
     let _reason_hash = args.refund_reason_hash;
+    require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
     require_pending_commitment_position(&ctx.accounts.position)?;
     require_matching_payment_rail(
         ctx.accounts.campaign.key(),
@@ -1277,6 +1278,8 @@ pub struct ActivateWaterfallCommitment<'info> {
 pub struct RefundCommitment<'info> {
     #[account(mut)]
     pub depositor: Signer<'info>,
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(mut, seeds = [SEED_COMMITMENT_CAMPAIGN, campaign.health_plan.as_ref(), campaign.campaign_id.as_bytes()], bump = campaign.bump)]
     pub campaign: Box<Account<'info, CommitmentCampaign>>,
     #[account(seeds = [SEED_COMMITMENT_PAYMENT_RAIL, campaign.key().as_ref(), payment_rail.payment_asset_mint.as_ref()], bump = payment_rail.bump)]

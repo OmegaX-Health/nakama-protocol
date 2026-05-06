@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: bf6a87f0e675d424f074985fceef0acc85237195c539f67b050e394010d4c912
+// contract_sha256: bbc279b2262a68505108820b5d7650445069be7a366166bc2ea0fd33a411b97a
 
 export type ProtocolInstructionName =
   | "accept_protocol_governance_authority"
@@ -787,6 +787,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
   ],
   "refund_commitment": [
       { name: "depositor", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "protocol_governance", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
       { name: "campaign", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 111, 109, 109, 105, 116, 109, 101, 110, 116, 95, 99, 97, 109, 112, 97, 105, 103, 110] }, { kind: "account", path: "campaign.health_plan" }, { kind: "account", path: "campaign.campaign_id" }] },
       { name: "payment_rail", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 111, 109, 109, 105, 116, 109, 101, 110, 116, 95, 112, 97, 121, 109, 101, 110, 116, 95, 114, 97, 105, 108] }, { kind: "account", path: "campaign" }, { kind: "account", path: "payment_rail.payment_asset_mint" }] },
       { name: "ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 111, 109, 109, 105, 116, 109, 101, 110, 116, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "campaign" }, { kind: "account", path: "payment_rail.payment_asset_mint" }] },
