@@ -2,7 +2,7 @@
 
 "use client";
 
-import { formatAmount } from "@/lib/canonical-ui";
+import { formatSettlementUnits, rawAmountTitle } from "@/lib/canonical-ui";
 import {
   type GenesisProtectAcuteReserveConsoleModel,
   type GenesisProtectAcuteReserveLaneFilter,
@@ -63,21 +63,26 @@ export function GenesisProtectAcuteReserveConsolePanel(props: GenesisProtectAcut
           <article className="plans-wizard-support-card">
             <p className="plans-card-eyebrow">Claims-paying capital</p>
             <strong className="text-2xl font-semibold text-[var(--foreground)]">
-              {formatAmount(props.model.summary.claimsPayingCapital)}
+              {formatSettlementUnits(props.model.summary.claimsPayingCapital)}
             </strong>
-            <p className="plans-wizard-support-note">Posted premium, sponsor, and liquidity capital visible across Genesis reserve lanes.</p>
+            <p className="plans-wizard-support-note">
+              Recognized posted reserve only; pending commitments and diagnostic lane balances stay excluded until posting rules pass.
+              {props.model.summary.diagnosticLaneFundedAmount !== props.model.summary.claimsPayingCapital
+                ? ` Visible lane funding: ${formatSettlementUnits(props.model.summary.diagnosticLaneFundedAmount)}.`
+                : ""}
+            </p>
           </article>
           <article className="plans-wizard-support-card">
             <p className="plans-card-eyebrow">Reserved amount</p>
             <strong className="text-2xl font-semibold text-[var(--foreground)]">
-              {formatAmount(props.model.summary.reservedAmount)}
+              {formatSettlementUnits(props.model.summary.reservedAmount)}
             </strong>
             <p className="plans-wizard-support-note">Reserve already encumbered against currently visible Genesis liabilities.</p>
           </article>
           <article className="plans-wizard-support-card">
             <p className="plans-card-eyebrow">Payout/liability pending</p>
             <strong className="text-2xl font-semibold text-[var(--foreground)]">
-              {formatAmount(props.model.summary.pendingPayoutAmount)}
+              {formatSettlementUnits(props.model.summary.pendingPayoutAmount)}
             </strong>
             <p className="plans-wizard-support-note">Claimable and payable exposure still waiting for delivery or settlement.</p>
           </article>
@@ -155,7 +160,9 @@ export function GenesisProtectAcuteReserveConsolePanel(props: GenesisProtectAcut
                             {lane.skuDisplayName} · {lane.lineTypeLabel}
                           </span>
                         </div>
-                        <span className="plans-funding-amount">{formatAmount(lane.claimsPayingCapital)}</span>
+                        <span className="plans-funding-amount" title={rawAmountTitle(lane.claimsPayingCapital)}>
+                          {formatSettlementUnits(lane.claimsPayingCapital)}
+                        </span>
                       </div>
                       <div className="plans-rail-bar plans-rail-bar-sm">
                         <div
@@ -174,8 +181,8 @@ export function GenesisProtectAcuteReserveConsolePanel(props: GenesisProtectAcut
                         />
                       </div>
                       <div className="plans-funding-meta">
-                        <span>{formatAmount(lane.reservedAmount)} reserved</span>
-                        <span>{formatAmount(lane.pendingPayoutAmount)} payout</span>
+                        <span title={rawAmountTitle(lane.reservedAmount)}>{formatSettlementUnits(lane.reservedAmount)} reserved</span>
+                        <span title={rawAmountTitle(lane.pendingPayoutAmount)}>{formatSettlementUnits(lane.pendingPayoutAmount)} payout</span>
                         <span>{lane.laneType.toUpperCase()}</span>
                       </div>
                     </button>
@@ -213,31 +220,39 @@ export function GenesisProtectAcuteReserveConsolePanel(props: GenesisProtectAcut
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">AVAILABLE</span>
+                    <span className="plans-settings-label">Available amount</span>
                     <span className="plans-settings-lane">Currently free reserve on this lane</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(selected.availableAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(selected.availableAmount)}>
+                    {formatSettlementUnits(selected.availableAmount)}
+                  </span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">RESERVED</span>
+                    <span className="plans-settings-label">Reserved amount</span>
                     <span className="plans-settings-lane">Still encumbered against linked liabilities</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(selected.reservedAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(selected.reservedAmount)}>
+                    {formatSettlementUnits(selected.reservedAmount)}
+                  </span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
                     <span className="plans-settings-label">Payout/liability pending</span>
                     <span className="plans-settings-lane">Claimable or payable Obligation exposure</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(selected.pendingPayoutAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(selected.pendingPayoutAmount)}>
+                    {formatSettlementUnits(selected.pendingPayoutAmount)}
+                  </span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">IMPAIRED</span>
+                    <span className="plans-settings-label">Impaired amount</span>
                     <span className="plans-settings-lane">Current impairment carried by this lane</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(selected.impairedAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(selected.impairedAmount)}>
+                    {formatSettlementUnits(selected.impairedAmount)}
+                  </span>
                 </div>
                 <div className="plans-settings-row">
                   <div>

@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { DocumentLinkRow } from "@/components/document-link-row";
 import { ProtocolDetailDisclosure } from "@/components/protocol-detail-disclosure";
-import { formatAmount } from "@/lib/canonical-ui";
+import { formatSettlementUnits, rawAmountTitle } from "@/lib/canonical-ui";
 import { buildCanonicalPoolHref } from "@/lib/canonical-routes";
 import {
   type AllocationPositionSnapshot,
@@ -306,8 +306,12 @@ export function PlanCoveragePanel({
                   <tr key={line.address}>
                     <td data-label="Line">{line.displayName}</td>
                     <td data-label="Type">{humanizeFundingLineType(line.lineType)}</td>
-                    <td data-label="Funded">{formatAmount(line.fundedAmount)}</td>
-                    <td data-label="Available">{formatAmount(availableFundingLineBalance(line))}</td>
+                    <td data-label="Funded" title={rawAmountTitle(line.fundedAmount)}>
+                      {formatSettlementUnits(line.fundedAmount)}
+                    </td>
+                    <td data-label="Available" title={rawAmountTitle(availableFundingLineBalance(line))}>
+                      {formatSettlementUnits(availableFundingLineBalance(line))}
+                    </td>
                   </tr>
                 ))}
               </tbody>

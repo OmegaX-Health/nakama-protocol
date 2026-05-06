@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 
-import { formatAmount } from "@/lib/canonical-ui";
+import { formatAmount, formatSettlementUnits, rawAmountTitle } from "@/lib/canonical-ui";
 import type { GenesisProtectAcuteSkuKey } from "@/lib/genesis-protect-acute";
 import {
   GENESIS_PROTECT_ACUTE_FAST_DEMO_SKU,
@@ -60,13 +60,13 @@ function utilizationLabel(bps: bigint | null): string {
 function commitmentModeLabel(mode: number): string {
   switch (mode) {
     case 0:
-      return "DIRECT_PREMIUM";
+      return "Direct premium";
     case 1:
-      return "TREASURY_CREDIT";
+      return "Treasury credit";
     case 2:
-      return "WATERFALL_RESERVE";
+      return "Waterfall reserve";
     default:
-      return `MODE_${mode}`;
+      return `Mode ${mode}`;
   }
 }
 
@@ -180,9 +180,9 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">GENESIS_SETUP_MODE</p>
+            <p className="plans-card-eyebrow">Genesis market setup</p>
             <h2 className="plans-card-title plans-card-title-display">
-              Genesis launch-readiness <em>checklist</em>
+              Launch-readiness <em>checklist</em>
             </h2>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -230,14 +230,18 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
               <span className="plans-settings-label">Reserved amount</span>
               <span className="plans-settings-lane">Current reserve already encumbered across Genesis FundingLine lanes</span>
             </div>
-            <span className="plans-settings-address">{formatAmount(props.model.reservedAmount)}</span>
+            <span className="plans-settings-address" title={rawAmountTitle(props.model.reservedAmount)}>
+              {formatSettlementUnits(props.model.reservedAmount)}
+            </span>
           </div>
           <div className="plans-settings-row">
             <div>
               <span className="plans-settings-label">Payout/liability pending</span>
               <span className="plans-settings-lane">Claimable or payable Obligation exposure visible on the live reserve lanes</span>
             </div>
-            <span className="plans-settings-address">{formatAmount(props.model.pendingPayoutAmount)}</span>
+            <span className="plans-settings-address" title={rawAmountTitle(props.model.pendingPayoutAmount)}>
+              {formatSettlementUnits(props.model.pendingPayoutAmount)}
+            </span>
           </div>
           <div className="plans-settings-row">
             <div>
@@ -251,7 +255,9 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
               <span className="plans-settings-label">Claims-paying capital</span>
               <span className="plans-settings-lane">Premium, sponsor, and LP-backed capital currently posted to Genesis reserve lanes</span>
             </div>
-            <span className="plans-settings-address">{formatAmount(props.model.claimsPayingCapital)}</span>
+            <span className="plans-settings-address" title={rawAmountTitle(props.model.claimsPayingCapital)}>
+              {formatSettlementUnits(props.model.claimsPayingCapital)}
+            </span>
           </div>
           <div className="plans-settings-row">
             <div>
@@ -259,7 +265,7 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
               <span className="plans-settings-lane">Queue-only capital sleeves and impairment stay visible while the bounded launch window remains under operator review</span>
             </div>
             <span className="plans-settings-address">
-              {props.model.impairmentActive ? "IMPAIRMENT" : props.model.queueOnlyRedemptionsActive ? "QUEUE_ONLY" : "CLEAR"}
+              {props.model.impairmentActive ? "Impairment active" : props.model.queueOnlyRedemptionsActive ? "Queue-only exits" : "Clear"}
             </span>
           </div>
         </div>
@@ -311,28 +317,36 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
               <span className="plans-settings-label">Custody pending</span>
               <span className="plans-settings-lane">Deposited token amount still held in the DomainAssetVault commitment lane</span>
             </div>
-            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.pendingCustodyAmount)}</span>
+            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.pendingCustodyAmount)}>
+              {formatSettlementUnits(props.model.founderCommitments.pendingCustodyAmount)}
+            </span>
           </div>
           <div className="plans-settings-row">
             <div>
               <span className="plans-settings-label">Coverage pending</span>
               <span className="plans-settings-lane">Coverage amount represented by pending commitments, not active coverage</span>
             </div>
-            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.pendingCoverageAmount)}</span>
+            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.pendingCoverageAmount)}>
+              {formatSettlementUnits(props.model.founderCommitments.pendingCoverageAmount)}
+            </span>
           </div>
           <div className="plans-settings-row">
             <div>
               <span className="plans-settings-label">Treasury inventory</span>
               <span className="plans-settings-lane">Legacy treasury-credit amount locked as inventory after activation</span>
             </div>
-            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.treasuryInventoryAmount)}</span>
+            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.treasuryInventoryAmount)}>
+              {formatSettlementUnits(props.model.founderCommitments.treasuryInventoryAmount)}
+            </span>
           </div>
           <div className="plans-settings-row">
             <div>
               <span className="plans-settings-label">Pending reserve impact</span>
               <span className="plans-settings-lane">Claims-paying reserve impact from pending commitments</span>
             </div>
-            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.claimsPayingReserveImpact)}</span>
+            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.claimsPayingReserveImpact)}>
+              {formatSettlementUnits(props.model.founderCommitments.claimsPayingReserveImpact)}
+            </span>
           </div>
         </div>
 
@@ -348,13 +362,15 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
                     </p>
                   </div>
                   <span className={`status-pill ${row.status === 1 ? "status-ok" : "status-off"}`}>
-                    status={row.status}
+                    {row.status === 1 ? "Active" : "Inactive"}
                   </span>
                 </div>
                 <div className="plans-settings-grid">
                   <div className="plans-settings-row">
                     <span className="plans-settings-label">Pending</span>
-                    <span className="plans-settings-address">{formatAmount(row.pendingAmount)}</span>
+                    <span className="plans-settings-address" title={rawAmountTitle(row.pendingAmount)}>
+                      {formatSettlementUnits(row.pendingAmount)}
+                    </span>
                   </div>
                   <div className="plans-settings-row">
                     <span className="plans-settings-label">Policy series</span>
@@ -370,11 +386,15 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
                   </div>
                   <div className="plans-settings-row">
                     <span className="plans-settings-label">Activated</span>
-                    <span className="plans-settings-address">{formatAmount(row.activatedAmount)}</span>
+                    <span className="plans-settings-address" title={rawAmountTitle(row.activatedAmount)}>
+                      {formatSettlementUnits(row.activatedAmount)}
+                    </span>
                   </div>
                   <div className="plans-settings-row">
                     <span className="plans-settings-label">Treasury locked</span>
-                    <span className="plans-settings-address">{formatAmount(row.treasuryLockedAmount)}</span>
+                    <span className="plans-settings-address" title={rawAmountTitle(row.treasuryLockedAmount)}>
+                      {formatSettlementUnits(row.treasuryLockedAmount)}
+                    </span>
                   </div>
                   <div className="plans-settings-row">
                     <span className="plans-settings-label">Waterfall rails</span>
@@ -382,7 +402,9 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
                   </div>
                   <div className="plans-settings-row">
                     <span className="plans-settings-label">Refunded</span>
-                    <span className="plans-settings-address">{formatAmount(row.refundedAmount)}</span>
+                    <span className="plans-settings-address" title={rawAmountTitle(row.refundedAmount)}>
+                      {formatSettlementUnits(row.refundedAmount)}
+                    </span>
                   </div>
                 </div>
               </article>
@@ -424,36 +446,40 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
               <div className="plans-settings-grid">
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">COVER_WINDOW</span>
+                    <span className="plans-settings-label">Cover window</span>
                     <span className="plans-settings-lane">Published launch posture</span>
                   </div>
                   <span className="plans-settings-address">{sku.coverWindowDays} days</span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">REIMBURSEMENT_MODE</span>
+                    <span className="plans-settings-label">Reimbursement mode</span>
                     <span className="plans-settings-lane">Member-facing claims posture</span>
                   </div>
                   <span className="plans-settings-address">{sku.reimbursementMode}</span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">CLAIMS_PAYING_CAPITAL</span>
+                    <span className="plans-settings-label">Claims-paying capital</span>
                     <span className="plans-settings-lane">Posted capital currently attributed to this SKU</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(sku.claimsPayingCapital)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(sku.claimsPayingCapital)}>
+                    {formatSettlementUnits(sku.claimsPayingCapital)}
+                  </span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">PENDING_PAYOUT</span>
+                    <span className="plans-settings-label">Pending payout</span>
                     <span className="plans-settings-lane">Claimable or payable exposure for this SKU</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(sku.pendingPayoutAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(sku.pendingPayoutAmount)}>
+                    {formatSettlementUnits(sku.pendingPayoutAmount)}
+                  </span>
                 </div>
               </div>
               <div className="space-y-2">
                 <div>
-                  <p className="plans-card-eyebrow">ISSUE_WHEN</p>
+                  <p className="plans-card-eyebrow">Issue when</p>
                   <ul className="list-disc pl-5 text-sm text-[var(--muted)]">
                     {sku.issueWhen.map((row) => (
                       <li key={row}>{row}</li>
@@ -461,7 +487,7 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
                   </ul>
                 </div>
                 <div>
-                  <p className="plans-card-eyebrow">PAUSE_WHEN</p>
+                  <p className="plans-card-eyebrow">Pause when</p>
                   <ul className="list-disc pl-5 text-sm text-[var(--muted)]">
                     {sku.pauseWhen.map((row) => (
                       <li key={row}>{row}</li>
@@ -503,13 +529,13 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
       <article className="plans-card heavy-glass">
         <div className="plans-card-head">
           <div>
-            <p className="plans-card-eyebrow">CHECKLIST</p>
+            <p className="plans-card-eyebrow">Readiness checklist</p>
             <h2 className="plans-card-title plans-card-title-display">
               Bounded launch <em>items</em>
             </h2>
           </div>
           <span className="plans-card-meta">
-            template={GENESIS_PROTECT_ACUTE_TEMPLATE_KEY}
+            Template {GENESIS_PROTECT_ACUTE_TEMPLATE_KEY}
           </span>
         </div>
         <div className="grid gap-3 lg:grid-cols-2">

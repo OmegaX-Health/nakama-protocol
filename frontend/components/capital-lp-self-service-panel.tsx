@@ -12,6 +12,7 @@ import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast
 import {
   buildDepositIntoCapitalClassTx,
   buildRequestRedemptionTx,
+  CAPITAL_CLASS_RESTRICTION_OPEN,
   type CapitalClassSnapshot,
   type DomainAssetVaultSnapshot,
   type LiquidityPoolSnapshot,
@@ -138,7 +139,21 @@ export function CapitalLpSelfServicePanel(props: CapitalLpSelfServicePanelProps)
     Boolean(publicKey)
     && Boolean(props.selectedPool)
     && Boolean(props.selectedClass)
+    && props.selectedClass?.restrictionMode === CAPITAL_CLASS_RESTRICTION_OPEN
     && Boolean(selectedVault?.vaultTokenAccount);
+  const actionPrerequisite = !publicKey
+    ? "Connect a wallet to enable LP deposits and redemption requests."
+    : !props.selectedPool
+      ? "Choose a pool before LP actions are available."
+      : !props.selectedClass
+        ? "Choose a capital class before LP actions are available."
+        : props.selectedClass.restrictionMode !== CAPITAL_CLASS_RESTRICTION_OPEN
+          ? "This capital class is restricted, so public LP self-service is unavailable for it."
+          : !selectedVault?.vaultTokenAccount
+            ? "The selected pool is missing a visible vault token account."
+            : null;
+  const depositDisabled = !canSubmit || !sourceTokenAccount.trim() || !depositAmount.trim() || busy === "Deposit LP capital";
+  const redemptionDisabled = !canSubmit || !redemptionShares.trim() || busy === "Request LP redemption";
 
   return (
     <article className="plans-card heavy-glass">
@@ -156,7 +171,9 @@ export function CapitalLpSelfServicePanel(props: CapitalLpSelfServicePanelProps)
       <div className="plans-notice liquid-glass" role="status">
         <span className="material-symbols-outlined plans-notice-icon" aria-hidden="true">info</span>
         <p>
-          Public LP deposits and redemption requests are live. Redemption processing stays operator-reviewed and pays the LP owner route enforced on-chain.
+          {props.selectedClass?.restrictionMode === CAPITAL_CLASS_RESTRICTION_OPEN
+            ? "Public LP deposits and redemption requests are available for this open class. Redemption processing stays operator-reviewed and pays the LP owner route enforced on-chain."
+            : "This selected class is visible for audit, but public LP deposits and redemption requests are not available from this class."}
         </p>
       </div>
 
@@ -166,6 +183,13 @@ export function CapitalLpSelfServicePanel(props: CapitalLpSelfServicePanelProps)
             {status.tone === "ok" ? "verified" : "error"}
           </span>
           <p>{status.message}</p>
+        </div>
+      ) : null}
+
+      {actionPrerequisite ? (
+        <div className="plans-notice liquid-glass" role="status" id="capital-lp-action-help">
+          <span className="material-symbols-outlined plans-notice-icon" aria-hidden="true">lock</span>
+          <p>{actionPrerequisite}</p>
         </div>
       ) : null}
 
@@ -188,7 +212,7 @@ export function CapitalLpSelfServicePanel(props: CapitalLpSelfServicePanelProps)
 
       <div className="plans-wizard-row">
         <label className="plans-wizard-field-group">
-          <span className="plans-wizard-field-label">Deposit amount (base units)</span>
+          <span className="plans-wizard-field-label">Deposit amount</span>
           <span className="plans-wizard-field-bar">
             <input
               type="text"
@@ -199,9 +223,10 @@ export function CapitalLpSelfServicePanel(props: CapitalLpSelfServicePanelProps)
               placeholder="0"
             />
           </span>
+          <span className="field-help">Enter the pool deposit asset amount. Advanced transaction review shows the raw protocol units before signing.</span>
         </label>
         <label className="plans-wizard-field-group">
-          <span className="plans-wizard-field-label">Minimum shares</span>
+          <span className="plans-wizard-field-label">Minimum LP shares</span>
           <span className="plans-wizard-field-bar">
             <input
               type="text"
@@ -216,23 +241,25 @@ export function CapitalLpSelfServicePanel(props: CapitalLpSelfServicePanelProps)
       </div>
 
       <label className="plans-wizard-field-group">
-        <span className="plans-wizard-field-label">Source token account</span>
+        <span className="plans-wizard-field-label">Funding token account</span>
         <span className="plans-wizard-field-bar">
           <input
             type="text"
             className="plans-wizard-input"
             value={sourceTokenAccount}
             onChange={(event) => setSourceTokenAccount(event.target.value)}
-            placeholder="Associated token account for the pool mint"
+            placeholder="Auto-filled from the connected wallet when available"
           />
         </span>
+        <span className="field-help">Usually the associated token account for the pool deposit asset.</span>
       </label>
 
       <div className="operator-drawer-actions">
         <button
           type="button"
           className="plans-primary-cta"
-          disabled={!canSubmit || !sourceTokenAccount.trim() || !depositAmount.trim() || busy === "Deposit LP capital"}
+          disabled={depositDisabled}
+          aria-describedby={actionPrerequisite ? "capital-lp-action-help" : undefined}
           onClick={() =>
             run("Deposit LP capital", async () => {
               const { blockhash } = await connection.getLatestBlockhash("confirmed");
@@ -274,7 +301,8 @@ export function CapitalLpSelfServicePanel(props: CapitalLpSelfServicePanelProps)
         <button
           type="button"
           className="plans-secondary-cta"
-          disabled={!canSubmit || !redemptionShares.trim() || busy === "Request LP redemption"}
+          disabled={redemptionDisabled}
+          aria-describedby={actionPrerequisite ? "capital-lp-action-help" : undefined}
           onClick={() =>
             run("Request LP redemption", async () => {
               const { blockhash } = await connection.getLatestBlockhash("confirmed");
