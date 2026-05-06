@@ -725,8 +725,12 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     assert.equal(adjudicateClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), linkedObligation.address);
     assert.equal(reserveObligationTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(releaseReserveTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[13]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(settleObligationFinalTx.instructions[0]!.keys[13]!.pubkey.toBase58(), protectionClaim.address);
+    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[3]!.pubkey.toBase58(), deriveReserveAssetRailPda({
+      reserveDomain: plan.reserveDomain,
+      assetMint: protectionLine.assetMint,
+    }).toBase58());
+    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
+    assert.equal(settleObligationFinalTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(createObligationTx.instructions[0]!.keys[10]!.pubkey.toBase58(), linkedObligation.address);
     assert.equal(updateCredentialingTx.instructions[0]!.keys[4]!.pubkey.toBase58(), deriveLpPositionPda({
       capitalClass: openClass.address,

@@ -20,6 +20,11 @@ pub(crate) fn settle_obligation(
         &ctx.accounts.health_plan,
         obligation,
     )?;
+    if args.next_status == OBLIGATION_STATUS_SETTLED {
+        crate::reserve_waterfall::require_reserve_asset_rail_payout_enabled(
+            &ctx.accounts.reserve_asset_rail,
+        )?;
+    }
     require!(
         amount <= obligation.outstanding_amount,
         OmegaXProtocolError::AmountExceedsOutstandingObligation
@@ -362,6 +367,13 @@ pub struct SettleObligation<'info> {
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[account(
+        seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()],
+        bump = reserve_asset_rail.bump,
+        constraint = reserve_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
+        constraint = reserve_asset_rail.asset_mint == obligation.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
+    )]
+    pub reserve_asset_rail: Box<Account<'info, ReserveAssetRail>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
