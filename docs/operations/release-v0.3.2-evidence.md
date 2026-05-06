@@ -241,10 +241,13 @@ Unsafe config proof:
 | Outstanding high/critical internal findings | none known after the strict devnet run; external review still missing |
 | Independent-review packet | `docs/security/mainnet-money-control-review-packet-v0.3.2.md` |
 
-Public messaging must not claim audited, fully decentralized claims, uncapped
-solvency, or mixed-asset settlement. Other reserve assets may be shown as
-reserve context only; they do not settle USDC claims without an explicit
-priced/haircut/conversion or funding action.
+Public messaging must not claim audited, fully decentralized claims, or uncapped
+solvency. Multi-asset payout support is explicit selected-asset settlement:
+the router/oracle service chooses an approved payout asset before settlement,
+and the on-chain settlement path requires that asset's active, payout-enabled,
+fresh-priced `ReserveAssetRail`. The program does not silently mutate a USDC
+claim ledger while draining a WBTC/SOL/WETH vault and does not perform DEX
+swaps in this pass.
 
 ## 11. Liability-State Hardening Addendum
 

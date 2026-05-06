@@ -21,6 +21,7 @@ const {
   buildSettleClaimCaseTx,
   buildSettleObligationTx,
   deriveProtocolFeeVaultPda,
+  deriveReserveAssetRailPda,
   listProtocolInstructionAccounts,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
 
@@ -64,6 +65,17 @@ test("[CSO-2026-05-04] claim settlement rejects zero-net fee outcomes", () => {
   assert.match(body, /total_fee < amount[\s\S]+FeeVaultBpsMisconfigured/);
   assert.match(body, /let net_to_recipient = checked_sub\(amount, total_fee\)\?/);
   assert.match(body, /require_positive_amount\(net_to_recipient\)\?/);
+});
+
+test("[CSO-2026-05-06] claim and obligation settlement require payout-enabled reserve rails", () => {
+  const claimBody = extractInstructionBody("settle_claim_case");
+  const obligationBody = extractInstructionBody("settle_obligation");
+
+  assert.match(claimBody, /require_reserve_asset_rail_payout_enabled/);
+  assert.match(obligationBody, /require_reserve_asset_rail_payout_enabled/);
+  assert.match(programSource, /pub\(crate\) fn require_reserve_asset_rail_payout_enabled/);
+  assert.match(programSource, /ReserveAssetRailPayoutDisabled/);
+  assert.match(programSource, /require_fresh_reserve_asset_price/);
 });
 
 test("[CSO-2026-05-04] redemption settlement rejects zero-net LP payouts", () => {
@@ -119,15 +131,22 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
   });
   assertAccountCount("settle_claim_case", settleClaim.instructions[0]!.keys.length);
   assert.equal(
-    settleClaim.instructions[0]!.keys[14]!.pubkey.toBase58(),
+    settleClaim.instructions[0]!.keys[3]!.pubkey.toBase58(),
+    deriveReserveAssetRailPda({
+      reserveDomain: claim.reserveDomain,
+      assetMint: fundingLine.assetMint,
+    }).toBase58(),
+  );
+  assert.equal(
+    settleClaim.instructions[0]!.keys[15]!.pubkey.toBase58(),
     deriveProtocolFeeVaultPda({
       reserveDomain: claim.reserveDomain,
       assetMint: fundingLine.assetMint,
     }).toBase58(),
   );
-  assert.equal(settleClaim.instructions[0]!.keys[18]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(settleClaim.instructions[0]!.keys[20]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(settleClaim.instructions[0]!.keys[21]!.pubkey.toBase58(), recipientTokenAccount);
+  assert.equal(settleClaim.instructions[0]!.keys[19]!.pubkey.toBase58(), claim.memberPosition);
+  assert.equal(settleClaim.instructions[0]!.keys[21]!.pubkey.toBase58(), vaultTokenAccount);
+  assert.equal(settleClaim.instructions[0]!.keys[22]!.pubkey.toBase58(), recipientTokenAccount);
 
   const settleObligation = buildSettleObligationTx({
     authority: DEVNET_PROTOCOL_FIXTURE_STATE.wallets[0]!.address,
@@ -149,7 +168,14 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
     recipientTokenAccountAddress: recipientTokenAccount,
   });
   assertAccountCount("settle_obligation", settleObligation.instructions[0]!.keys.length);
-  assert.equal(settleObligation.instructions[0]!.keys[14]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(settleObligation.instructions[0]!.keys[16]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(settleObligation.instructions[0]!.keys[17]!.pubkey.toBase58(), recipientTokenAccount);
+  assert.equal(
+    settleObligation.instructions[0]!.keys[3]!.pubkey.toBase58(),
+    deriveReserveAssetRailPda({
+      reserveDomain: obligation.reserveDomain,
+      assetMint: obligation.assetMint,
+    }).toBase58(),
+  );
+  assert.equal(settleObligation.instructions[0]!.keys[15]!.pubkey.toBase58(), claim.memberPosition);
+  assert.equal(settleObligation.instructions[0]!.keys[17]!.pubkey.toBase58(), vaultTokenAccount);
+  assert.equal(settleObligation.instructions[0]!.keys[18]!.pubkey.toBase58(), recipientTokenAccount);
 });

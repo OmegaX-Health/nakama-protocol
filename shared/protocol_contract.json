@@ -12053,6 +12053,49 @@
           }
         },
         {
+          "name": "reserve_asset_rail",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  114,
+                  97,
+                  105,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "funding_line.asset_mint",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
           "name": "domain_asset_vault",
           "writable": true,
           "signer": false,
@@ -12513,6 +12556,49 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve_asset_rail",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  114,
+                  97,
+                  105,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "obligation.asset_mint",
+                "account": "Obligation"
               }
             ]
           }

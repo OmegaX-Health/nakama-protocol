@@ -2042,7 +2042,7 @@ export function buildClaimFundingReadiness(params: ClaimFundingReadinessInput): 
         ? null
         : (estimatedValueUsd1e8 * BigInt(Math.max(0, 10_000 - haircutBps))) / 10_000n;
       const assetWarnings: string[] = [
-        "Non-settlement reserve asset; explicit conversion or funding action is required before settlement-mint payout.",
+        "Non-preferred reserve asset; it can only settle claims when the router selects this asset and the payout rail is enabled with a fresh price.",
       ];
       if (!rail) {
         assetWarnings.push("No reserve asset rail exists for this asset.");
@@ -2084,7 +2084,7 @@ export function buildClaimFundingReadiness(params: ClaimFundingReadinessInput): 
     warnings.push("Settlement-mint capacity is below the requested amount.");
   }
   if (otherReserveAssets.some((asset) => asset.freeAmountRaw > 0n)) {
-    warnings.push("Other reserve assets are valuation context only; they do not increase immediately-settleable settlement-mint capacity.");
+    warnings.push("Other reserve assets do not increase preferred settlement-mint capacity; they require selected-asset payout or conversion before use.");
   }
   if (shortfallAmount > 0n && shortfallUsd1e8 === null && otherReserveHaircutValueUsd1e8 > 0n) {
     warnings.push("Settlement-mint shortfall cannot be compared to other assets without a fresh settlement asset price.");
@@ -6018,6 +6018,12 @@ function buildObligationFlowTx(params: {
       { pubkey: authority, isSigner: true },
       { pubkey: deriveProtocolGovernancePda() },
       { pubkey: params.healthPlanAddress },
+      ...(params.instructionName === "settle_obligation" ? [{
+        pubkey: deriveReserveAssetRailPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+      }] : []),
       ...(params.includeVault ? [{
         pubkey: deriveDomainAssetVaultPda({
           reserveDomain: params.reserveDomainAddress,
@@ -6182,6 +6188,12 @@ export function buildSettleClaimCaseTx(params: {
       { pubkey: authority, isSigner: true },
       { pubkey: deriveProtocolGovernancePda() },
       { pubkey: params.healthPlanAddress },
+      {
+        pubkey: deriveReserveAssetRailPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+      },
       {
         pubkey: deriveDomainAssetVaultPda({
           reserveDomain: params.reserveDomainAddress,

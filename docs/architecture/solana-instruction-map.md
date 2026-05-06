@@ -66,13 +66,13 @@ All current public instructions remain present in [`programs/omegax_protocol/src
 | `pause_commitment_campaign` | pause, cancel, close, or reactivate a campaign through plan/governance control |
 | `create_obligation` | create a canonical liability unit |
 | `reserve_obligation` | reserve liability against plan-side capital and optionally mirror a linked `ClaimCase` reserve balance |
-| `settle_obligation` | move an obligation into claimable, payable, settled, or canceled states and mirror linked protection-claim settlement state |
+| `settle_obligation` | move an obligation into claimable, payable, settled, or canceled states and mirror linked protection-claim settlement state; settlement requires the selected payout asset's active, payout-enabled, fresh-priced `ReserveAssetRail` |
 | `release_reserve` | release reserved liability back to free capital and mirror linked protection-claim reserve state |
 | `open_claim_case` | open an explicit claim lifecycle from the enrolled member wallet or a plan claim/operator path |
 | `attach_claim_evidence_ref` | attach evidence and decision-support references |
 | `attest_claim_case` | anchor a verified-schema oracle attestation against the claim's locked evidence hash; non-LP claims require the plan oracle authority, while LP-allocation claims require pool oracle approval and `ATTEST_CLAIM` permission |
 | `adjudicate_claim_case` | approve or deny a claim case and optionally bind it to the matching `Obligation` |
-| `settle_claim_case` | settle approved claim payouts through the reserve kernel only when no linked `Obligation` exists; fee carve-outs must leave a positive net payout and oracle-fee accrual must bind to the attesting `ClaimAttestation` |
+| `settle_claim_case` | settle approved claim payouts through the reserve kernel only when no linked `Obligation` exists; the selected payout asset must have an active, payout-enabled, fresh-priced `ReserveAssetRail`; fee carve-outs must leave a positive net payout and oracle-fee accrual must bind to the attesting `ClaimAttestation` |
 | `mark_impairment` | record impairment against the affected ledgers and optional obligation |
 
 ## Capital Surface

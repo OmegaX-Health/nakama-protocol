@@ -169,6 +169,19 @@ pub(crate) fn require_reserve_asset_rail_capacity_enabled(rail: &ReserveAssetRai
         rail.capacity_enabled,
         OmegaXProtocolError::ReserveAssetRailCapacityDisabled
     );
+    require_fresh_reserve_asset_price(rail)
+}
+
+pub(crate) fn require_reserve_asset_rail_payout_enabled(rail: &ReserveAssetRail) -> Result<()> {
+    require_reserve_asset_rail_active(rail)?;
+    require!(
+        rail.payout_enabled,
+        OmegaXProtocolError::ReserveAssetRailPayoutDisabled
+    );
+    require_fresh_reserve_asset_price(rail)
+}
+
+pub(crate) fn require_fresh_reserve_asset_price(rail: &ReserveAssetRail) -> Result<()> {
     require!(
         rail.last_price_usd_1e8 > 0,
         OmegaXProtocolError::ReserveAssetPriceInvalid

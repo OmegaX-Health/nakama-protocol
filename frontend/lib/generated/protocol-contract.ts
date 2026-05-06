@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: 14157588296844e66f7618fd96e46a5031c53e3c0207b6e6de193d8d96aa0082
+// contract_sha256: 6d33f9edc6649ade5187ff585fd488688ed3e46121a59f2092e22107aba1f05e
 
 export type ProtocolInstructionName =
   | "activate_direct_premium_commitment"
@@ -856,6 +856,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
       { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "protocol_governance", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
       { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
+      { name: "reserve_asset_rail", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [114, 101, 115, 101, 114, 118, 101, 95, 97, 115, 115, 101, 116, 95, 114, 97, 105, 108] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "funding_line.asset_mint" }] },
       { name: "domain_asset_vault", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 118, 97, 117, 108, 116] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "funding_line.asset_mint" }] },
       { name: "domain_asset_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "funding_line.asset_mint" }] },
       { name: "funding_line", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [102, 117, 110, 100, 105, 110, 103, 95, 108, 105, 110, 101] }, { kind: "account", path: "health_plan" }, { kind: "account", path: "funding_line.line_id" }] },
@@ -881,6 +882,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
       { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "protocol_governance", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
       { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
+      { name: "reserve_asset_rail", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [114, 101, 115, 101, 114, 118, 101, 95, 97, 115, 115, 101, 116, 95, 114, 97, 105, 108] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "obligation.asset_mint" }] },
       { name: "domain_asset_vault", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 118, 97, 117, 108, 116] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "obligation.asset_mint" }] },
       { name: "domain_asset_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "obligation.asset_mint" }] },
       { name: "funding_line", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [102, 117, 110, 100, 105, 110, 103, 95, 108, 105, 110, 101] }, { kind: "account", path: "health_plan" }, { kind: "account", path: "funding_line.line_id" }] },

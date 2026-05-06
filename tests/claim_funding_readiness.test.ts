@@ -155,7 +155,7 @@ test("claim funding readiness shows other priced assets without treating them as
   assert.equal(model.otherReserveAssets.length, 1);
   assert.equal(model.otherReserveAssets[0]!.assetMint, wbtcMint);
   assert.equal(model.otherReserveAssets[0]!.immediatelySettleable, false);
-  assert(model.warnings.some((warning) => warning.includes("valuation context only")));
+  assert(model.warnings.some((warning) => warning.includes("selected-asset payout")));
 });
 
 test("claim funding readiness refuses to count non-settlement assets without a fresh price", () => {
