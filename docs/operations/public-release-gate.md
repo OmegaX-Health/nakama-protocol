@@ -62,7 +62,9 @@ npm run certora:solana:sanity
 
 This lane requires a local `CERTORAKEY` and submits a remote prover job to
 Certora. Treat it as optional formal-verification evidence, not baseline CI and
-not proof that a third-party Certora audit was performed.
+not proof that a third-party Certora audit was performed. The current sanity
+lane is limited to constrained kernel/scalar CVLR rules for selected accounting
+and binding invariants; it is not a full Anchor handler or account-flow proof.
 
 ## Main-branch prep
 
