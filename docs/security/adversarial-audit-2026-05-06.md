@@ -4,7 +4,7 @@
 
 Current posture after this implementation pass: no unauthenticated or attacker-recipient money-out path was found in the patched tree. The fastest real money-loss path before the earlier pass was scoped authority/account confusion around allocator-controlled surfaces; that remains closed for `update_allocation_caps` and hardened for optional reserve/allocation accounts.
 
-The remaining exploitable edge is operational rather than a newly observed vault-drain path: compromised governance/curator/operator keys, a bad bootstrap authority split, or a launch environment that does not match the evidence packet. Mistaken governance authority rotation is now materially reduced by a proposal/accept/cancel handoff, but mainnet funding still depends on proving the intended multisig and devnet signer evidence.
+The remaining exploitable edge is operational rather than a newly observed vault-drain path: compromised governance/curator/operator keys, a bad bootstrap authority split, or a launch environment that does not match the evidence packet. Mistaken governance authority rotation is now materially reduced by a proposal/accept/cancel handoff, and the devnet operator drawer simulation has been rerun with the canonical governance signer; mainnet funding still depends on proving the intended multisig.
 
 What destroys trust fastest is a public commitment/reserve story that implies pending or haircut-adjusted assets are active claims-paying reserve. The code, docs, and UI copy now describe rail caps as optional commitment intake limits only; pending commitments remain separate from active cover and claims-paying reserve.
 
@@ -30,7 +30,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 | Capital and LP | deposits, allocation caps, redemption queue, impairments | LP capital, NAV, allocation ledgers | Pool curator/allocator, LP owner, queue processor | Pool binding for allocation-cap updates, canonical ledgers, LP recipient pinning, FIFO sequence enforcement | Partial processing does not advance the queue head. |
 | Founder commitments | campaign, payment rails, deposits, activation, refunds | Pending commitment custody and active reserve capacity | Depositor, activation authority, reserve rails | Pending not counted as reserve; same-asset waterfall docs/builders; refund only to depositor; per-rail intake limit with zero uncapped | No aggregate campaign cap or claims-reserve cap was added. |
 | Frontend builders | `frontend/lib/protocol.ts` | Serialized tx accounts and user signing intent | Wallet adapter and generated contract | 26/26 pre-sign review callsites covered; generated contract parity | Governance init builders now include program/programdata accounts. |
-| Release chain | IDL, generated contract, public gate, localnet matrix | Public protocol surface integrity | Maintainers, CI, local toolchain | `verify:public`, localnet e2e, QEDGen, Certora prereq checks | Devnet operator sim blocked by local signer mismatch in this environment. |
+| Release chain | IDL, generated contract, public gate, localnet matrix | Public protocol surface integrity | Maintainers, CI, local toolchain | `verify:public`, localnet e2e, QEDGen, Certora prereq checks, devnet operator drawer simulation | No mainnet send path was executed. |
 | Formal lanes | QEDGen, Certora Solana | Regression evidence | Local specs vs actual handler behavior | QEDGen passes with one accepted warning; Certora local prerequisites pass | Certora check submits no remote job. |
 
 ## 4. Attack Story Cards
@@ -150,7 +150,6 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 | Hypothesis | Why It Matters | Current Evidence | Probe Needed | Priority |
 | --- | --- | --- | --- | --- |
 | Certora lane is useful but not a full handler proof | Prevents overstating formal verification in investor/release material | `npm run certora:solana:check` verifies local prerequisites only and submits no remote job | Add deeper handler-level models when Solana prover support is deterministic enough | P3 |
-| Devnet operator drawer sign-off depends on local signer parity | Simulate-only gate cannot run if local env points to the wrong governance key | Command failed before simulation because local signer `BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez` did not match configured governance `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU` | Run with the canonical devnet governance signer or update devnet fixture env | P2 |
 | Mainnet funding still depends on multisig evidence | Two-step transfer reduces mistakes but does not make a raw keypair operationally safe | Mainnet docs require Squads/equivalent multisig; no mainnet send was performed in this pass | Prove Squads V4 2-of-3 and record no-send mainnet plan in RC evidence | P1 before funding |
 
 ## 7. Hard Invariants
@@ -219,6 +218,9 @@ Passed:
 - `npm run qedgen:check`
   - `190 info`, `1 warning`, `0 errors`.
   - Accepted warning: `missing_cpi_for_token_context` on `create_domain_asset_vault` because the handler has `token_program` in accounts but no `transfers` block.
+- `SOLANA_KEYPAIR=<canonical devnet governance keypair> npm run devnet:operator:drawer:sim`
+  - `PASS=7`, `EXPECTED_COLLISION=4`, `BUILDER_OK=5`, `SKIP=5`, `FAIL=0`.
+  - Builder health: 16/16 attempted flows reached the program cleanly.
 - Focused tests:
   - Rust governance transfer and FIFO redemption unit coverage.
   - Commitment intake capacity unit coverage for zero-uncapped and per-rail semantics.
@@ -227,8 +229,7 @@ Passed:
 
 Failed / environment-blocked:
 
-- `npm run devnet:operator:drawer:sim`
-  - Failed before simulation because local signer `BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez` did not match configured devnet governance wallet `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU`. No send path executed.
+- None remaining in this pass.
 
 Repository state at report time:
 
@@ -239,5 +240,4 @@ Repository state at report time:
 ## 9. Recommended Next Moves
 
 1. Do not mainnet-fund from this state until Squads/equivalent governance and upgrade posture are proven in release-candidate evidence.
-2. Re-run `npm run devnet:operator:drawer:sim` with the canonical devnet governance signer and record the result.
-3. If this becomes a release candidate, push only after deciding whether the existing local `main` commits bundled into this branch should land together, because pushing will trigger the public repo workflow.
+2. If this becomes a release candidate, push only after deciding whether the existing local `main` commits bundled into this branch should land together, because pushing will trigger the public repo workflow.
