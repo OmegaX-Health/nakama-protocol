@@ -3,62 +3,129 @@ use anchor_lang::prelude::*;
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct ActivateCommitmentArgs {
+pub struct InitializeProtocolGovernanceArgs {
+    pub protocol_fee_bps: u16,
+    pub emergency_pause: bool,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct AdjudicateClaimCaseArgs {
-    pub review_state: u8,
-    pub approved_amount: u64,
-    pub denied_amount: u64,
-    pub reserve_amount: u64,
+pub struct SetProtocolEmergencyPauseArgs {
+    pub emergency_pause: bool,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct AllocateCapitalArgs {
-    pub amount: u64,
+pub struct RotateProtocolGovernanceAuthorityArgs {
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct AttachClaimEvidenceRefArgs {
+pub struct CreateReserveDomainArgs {
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct AttestClaimCaseArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct AuthorizeClaimRecipientArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct BackfillSchemaDependencyLedgerArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct ConfigureReserveAssetRailArgs {
+pub struct UpdateReserveDomainControlsArgs {
+    pub allowed_rail_mask: u16,
+    pub pause_flags: u32,
     pub active: bool,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct CreateAllocationPositionArgs {
-    pub cap_amount: u64,
-    pub weight_bps: u16,
+pub struct CreateDomainAssetVaultArgs {
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct CreateCapitalClassArgs {
-    pub fee_bps: u16,
-    pub pause_flags: u32,
+pub struct ConfigureReserveAssetRailArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct PublishReserveAssetRailPriceArgs {
+    pub price_usd_1e8: u64,
+    pub confidence_bps: u16,
+    pub published_at_ts: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct InitProtocolFeeVaultArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct InitPoolTreasuryVaultArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct InitPoolOracleFeeVaultArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct WithdrawArgs {
+    pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct CreateHealthPlanArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct UpdateHealthPlanControlsArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct CreatePolicySeriesArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct InitializeSeriesReserveLedgerArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct VersionPolicySeriesArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct OpenMemberPositionArgs {
+    pub eligibility_status: u8,
+    pub delegated_rights: u32,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct UpdateMemberEligibilityArgs {
+    pub eligibility_status: u8,
+    pub delegated_rights: u32,
+    pub active: bool,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct OpenFundingLineArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct FundSponsorBudgetArgs {
+    pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct RecordPremiumPaymentArgs {
+    pub amount: u64,
 }
 
 #[repr(C)]
@@ -77,21 +144,22 @@ pub struct CreateCommitmentPaymentRailArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct CreateDomainAssetVaultArgs {
+pub struct DepositCommitmentArgs {
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct CreateHealthPlanArgs {
-    pub allowed_rail_mask: u16,
-    pub pause_flags: u32,
+pub struct ActivateCommitmentArgs {
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct CreateLiquidityPoolArgs {
-    pub fee_bps: u16,
-    pub pause_flags: u32,
+pub struct RefundCommitmentArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct PauseCommitmentCampaignArgs {
 }
 
 #[repr(C)]
@@ -102,71 +170,25 @@ pub struct CreateObligationArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct CreatePolicySeriesArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct CreateReserveDomainArgs {
-    pub allowed_rail_mask: u16,
-    pub pause_flags: u32,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct DeallocateCapitalArgs {
+pub struct ReserveObligationArgs {
     pub amount: u64,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct DepositCommitmentArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct DepositIntoCapitalClassArgs {
-    pub amount: u64,
-    pub shares: u64,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct FundSponsorBudgetArgs {
+pub struct SettleObligationArgs {
     pub amount: u64,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct InitPoolOracleFeeVaultArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct InitPoolTreasuryVaultArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct InitProtocolFeeVaultArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct InitializeProtocolGovernanceArgs {
-    pub protocol_fee_bps: u16,
-    pub emergency_pause: bool,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct InitializeSeriesReserveLedgerArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct MarkImpairmentArgs {
+pub struct ReleaseReserveArgs {
     pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct AuthorizeClaimRecipientArgs {
 }
 
 #[repr(C)]
@@ -176,59 +198,66 @@ pub struct OpenClaimCaseArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct OpenFundingLineArgs {
+pub struct AttachClaimEvidenceRefArgs {
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct OpenMemberPositionArgs {
-    pub eligibility_status: u8,
-    pub delegated_rights: u32,
+pub struct AttestClaimCaseArgs {
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct PauseCommitmentCampaignArgs {
+pub struct AdjudicateClaimCaseArgs {
+    pub review_state: u8,
+    pub approved_amount: u64,
+    pub denied_amount: u64,
+    pub reserve_amount: u64,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct ProcessRedemptionQueueArgs {
-    pub shares: u64,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct PublishReserveAssetRailPriceArgs {
-    pub price_usd_1e8: u64,
-    pub confidence_bps: u16,
-    pub published_at_ts: u64,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct RecordPremiumPaymentArgs {
+pub struct SettleClaimCaseArgs {
     pub amount: u64,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct RefundCommitmentArgs {
+pub struct SettleClaimCaseSelectedAssetArgs {
+    pub claim_credit_amount: u64,
+    pub payout_amount: u64,
+    pub max_overpay_bps: u16,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct RegisterOracleArgs {
+pub struct CreateLiquidityPoolArgs {
+    pub fee_bps: u16,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct RegisterOutcomeSchemaArgs {
+pub struct CreateCapitalClassArgs {
+    pub fee_bps: u16,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct ReleaseReserveArgs {
+pub struct UpdateCapitalClassControlsArgs {
+    pub pause_flags: u32,
+    pub queue_only_redemptions: bool,
+    pub active: bool,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct UpdateLpPositionCredentialingArgs {
+    pub credentialed: bool,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct DepositIntoCapitalClassArgs {
     pub amount: u64,
 }
 
@@ -240,13 +269,50 @@ pub struct RequestRedemptionArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct ReserveObligationArgs {
+pub struct ProcessRedemptionQueueArgs {
+    pub shares: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct CreateAllocationPositionArgs {
+    pub cap_amount: u64,
+    pub weight_bps: u16,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct UpdateAllocationCapsArgs {
+    pub cap_amount: u64,
+    pub weight_bps: u16,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct AllocateCapitalArgs {
     pub amount: u64,
 }
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct RotateProtocolGovernanceAuthorityArgs {
+pub struct DeallocateCapitalArgs {
+    pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct MarkImpairmentArgs {
+    pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct RegisterOracleArgs {
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct UpdateOracleProfileArgs {
 }
 
 #[repr(C)]
@@ -270,79 +336,7 @@ pub struct SetPoolOraclePolicyArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct SetProtocolEmergencyPauseArgs {
-    pub emergency_pause: bool,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct SettleClaimCaseArgs {
-    pub amount: u64,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct SettleClaimCaseSelectedAssetArgs {
-    pub claim_credit_amount: u64,
-    pub payout_amount: u64,
-    pub max_overpay_bps: u16,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct SettleObligationArgs {
-    pub amount: u64,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct UpdateAllocationCapsArgs {
-    pub cap_amount: u64,
-    pub weight_bps: u16,
-    pub active: bool,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct UpdateCapitalClassControlsArgs {
-    pub pause_flags: u32,
-    pub queue_only_redemptions: bool,
-    pub active: bool,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct UpdateHealthPlanControlsArgs {
-    pub allowed_rail_mask: u16,
-    pub pause_flags: u32,
-    pub active: bool,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct UpdateLpPositionCredentialingArgs {
-    pub credentialed: bool,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct UpdateMemberEligibilityArgs {
-    pub eligibility_status: u8,
-    pub delegated_rights: u32,
-    pub active: bool,
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct UpdateOracleProfileArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct UpdateReserveDomainControlsArgs {
-    pub allowed_rail_mask: u16,
-    pub pause_flags: u32,
-    pub active: bool,
+pub struct RegisterOutcomeSchemaArgs {
 }
 
 #[repr(C)]
@@ -353,13 +347,7 @@ pub struct VerifyOutcomeSchemaArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct VersionPolicySeriesArgs {
-}
-
-#[repr(C)]
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
-pub struct WithdrawArgs {
-    pub amount: u64,
+pub struct BackfillSchemaDependencyLedgerArgs {
 }
 
 #[account]

@@ -19,6 +19,7 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 custom-heap = []
 custom-panic = []
 anchor-debug = []
+certora = []
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }

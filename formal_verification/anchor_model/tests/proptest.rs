@@ -18,33 +18,56 @@ const MAX_CONFIGURED_FEE_BPS: u16 = 9999;
 const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS: u8 = 50;
 
 #[derive(Debug, Clone, Copy)]
-struct AdjudicateClaimCaseArgs {
-    review_state: u8,
-    approved_amount: u64,
-    denied_amount: u64,
-    reserve_amount: u64,
+struct InitializeProtocolGovernanceArgs {
+    protocol_fee_bps: u16,
+    emergency_pause: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct AllocateCapitalArgs {
-    amount: u64,
+struct SetProtocolEmergencyPauseArgs {
+    emergency_pause: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct ConfigureReserveAssetRailArgs {
+struct UpdateReserveDomainControlsArgs {
+    allowed_rail_mask: u16,
+    pause_flags: u32,
     active: bool,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct CreateAllocationPositionArgs {
-    cap_amount: u64,
-    weight_bps: u16,
+struct PublishReserveAssetRailPriceArgs {
+    price_usd_1e8: u64,
+    confidence_bps: u16,
+    published_at_ts: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct CreateCapitalClassArgs {
-    fee_bps: u16,
-    pause_flags: u32,
+struct WithdrawArgs {
+    amount: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct OpenMemberPositionArgs {
+    eligibility_status: u8,
+    delegated_rights: u32,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct UpdateMemberEligibilityArgs {
+    eligibility_status: u8,
+    delegated_rights: u32,
+    active: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct FundSponsorBudgetArgs {
+    amount: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct RecordPremiumPaymentArgs {
+    amount: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -60,75 +83,17 @@ struct CreateCommitmentPaymentRailArgs {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct CreateHealthPlanArgs {
-    allowed_rail_mask: u16,
-    pause_flags: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct CreateLiquidityPoolArgs {
-    fee_bps: u16,
-    pause_flags: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
 struct CreateObligationArgs {
     amount: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct CreateReserveDomainArgs {
-    allowed_rail_mask: u16,
-    pause_flags: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct DeallocateCapitalArgs {
+struct ReserveObligationArgs {
     amount: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct DepositIntoCapitalClassArgs {
-    amount: u64,
-    shares: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct FundSponsorBudgetArgs {
-    amount: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct InitializeProtocolGovernanceArgs {
-    protocol_fee_bps: u16,
-    emergency_pause: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct MarkImpairmentArgs {
-    amount: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct OpenMemberPositionArgs {
-    eligibility_status: u8,
-    delegated_rights: u32,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct ProcessRedemptionQueueArgs {
-    shares: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct PublishReserveAssetRailPriceArgs {
-    price_usd_1e8: u64,
-    confidence_bps: u16,
-    published_at_ts: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct RecordPremiumPaymentArgs {
+struct SettleObligationArgs {
     amount: u64,
 }
 
@@ -138,12 +103,86 @@ struct ReleaseReserveArgs {
 }
 
 #[derive(Debug, Clone, Copy)]
+struct AdjudicateClaimCaseArgs {
+    review_state: u8,
+    approved_amount: u64,
+    denied_amount: u64,
+    reserve_amount: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct SettleClaimCaseArgs {
+    amount: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct SettleClaimCaseSelectedAssetArgs {
+    claim_credit_amount: u64,
+    payout_amount: u64,
+    max_overpay_bps: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct CreateLiquidityPoolArgs {
+    fee_bps: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct CreateCapitalClassArgs {
+    fee_bps: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct UpdateCapitalClassControlsArgs {
+    pause_flags: u32,
+    queue_only_redemptions: bool,
+    active: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct UpdateLpPositionCredentialingArgs {
+    credentialed: bool,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct DepositIntoCapitalClassArgs {
+    amount: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
 struct RequestRedemptionArgs {
     shares: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
-struct ReserveObligationArgs {
+struct ProcessRedemptionQueueArgs {
+    shares: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct CreateAllocationPositionArgs {
+    cap_amount: u64,
+    weight_bps: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct UpdateAllocationCapsArgs {
+    cap_amount: u64,
+    weight_bps: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct AllocateCapitalArgs {
+    amount: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct DeallocateCapitalArgs {
+    amount: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct MarkImpairmentArgs {
     amount: u64,
 }
 
@@ -160,75 +199,8 @@ struct SetPoolOraclePolicyArgs {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct SetProtocolEmergencyPauseArgs {
-    emergency_pause: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct SettleClaimCaseArgs {
-    amount: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct SettleClaimCaseSelectedAssetArgs {
-    claim_credit_amount: u64,
-    payout_amount: u64,
-    max_overpay_bps: u16,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct SettleObligationArgs {
-    amount: u64,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct UpdateAllocationCapsArgs {
-    cap_amount: u64,
-    weight_bps: u16,
-    active: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct UpdateCapitalClassControlsArgs {
-    pause_flags: u32,
-    queue_only_redemptions: bool,
-    active: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct UpdateHealthPlanControlsArgs {
-    allowed_rail_mask: u16,
-    pause_flags: u32,
-    active: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct UpdateLpPositionCredentialingArgs {
-    credentialed: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct UpdateMemberEligibilityArgs {
-    eligibility_status: u8,
-    delegated_rights: u32,
-    active: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct UpdateReserveDomainControlsArgs {
-    allowed_rail_mask: u16,
-    pause_flags: u32,
-    active: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
 struct VerifyOutcomeSchemaArgs {
     verified: bool,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct WithdrawArgs {
-    amount: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -238,46 +210,81 @@ enum Status {
 }
 
 prop_compose! {
-    fn arb_AdjudicateClaimCaseArgs()(review_state in 0u8..=255u8, approved_amount in 0u64..=u64::MAX, denied_amount in 0u64..=u64::MAX, reserve_amount in 0u64..=u64::MAX) -> AdjudicateClaimCaseArgs {
-        AdjudicateClaimCaseArgs {
-            review_state,
-            approved_amount,
-            denied_amount,
-            reserve_amount,
+    fn arb_InitializeProtocolGovernanceArgs()(protocol_fee_bps in 0u16..=u16::MAX, emergency_pause in any::<bool>()) -> InitializeProtocolGovernanceArgs {
+        InitializeProtocolGovernanceArgs {
+            protocol_fee_bps,
+            emergency_pause,
         }
     }
 }
 
 prop_compose! {
-    fn arb_AllocateCapitalArgs()(amount in 0u64..=u64::MAX) -> AllocateCapitalArgs {
-        AllocateCapitalArgs {
-            amount,
+    fn arb_SetProtocolEmergencyPauseArgs()(emergency_pause in any::<bool>()) -> SetProtocolEmergencyPauseArgs {
+        SetProtocolEmergencyPauseArgs {
+            emergency_pause,
         }
     }
 }
 
 prop_compose! {
-    fn arb_ConfigureReserveAssetRailArgs()(active in any::<bool>()) -> ConfigureReserveAssetRailArgs {
-        ConfigureReserveAssetRailArgs {
+    fn arb_UpdateReserveDomainControlsArgs()(allowed_rail_mask in 0u16..=u16::MAX, pause_flags in 0u32..=u32::MAX, active in any::<bool>()) -> UpdateReserveDomainControlsArgs {
+        UpdateReserveDomainControlsArgs {
+            allowed_rail_mask,
+            pause_flags,
             active,
         }
     }
 }
 
 prop_compose! {
-    fn arb_CreateAllocationPositionArgs()(cap_amount in 0u64..=u64::MAX, weight_bps in 0u16..=u16::MAX) -> CreateAllocationPositionArgs {
-        CreateAllocationPositionArgs {
-            cap_amount,
-            weight_bps,
+    fn arb_PublishReserveAssetRailPriceArgs()(price_usd_1e8 in 0u64..=u64::MAX, confidence_bps in 0u16..=u16::MAX, published_at_ts in 0u64..=u64::MAX) -> PublishReserveAssetRailPriceArgs {
+        PublishReserveAssetRailPriceArgs {
+            price_usd_1e8,
+            confidence_bps,
+            published_at_ts,
         }
     }
 }
 
 prop_compose! {
-    fn arb_CreateCapitalClassArgs()(fee_bps in 0u16..=u16::MAX, pause_flags in 0u32..=u32::MAX) -> CreateCapitalClassArgs {
-        CreateCapitalClassArgs {
-            fee_bps,
-            pause_flags,
+    fn arb_WithdrawArgs()(amount in 0u64..=u64::MAX) -> WithdrawArgs {
+        WithdrawArgs {
+            amount,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_OpenMemberPositionArgs()(eligibility_status in 0u8..=255u8, delegated_rights in 0u32..=u32::MAX) -> OpenMemberPositionArgs {
+        OpenMemberPositionArgs {
+            eligibility_status,
+            delegated_rights,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_UpdateMemberEligibilityArgs()(eligibility_status in 0u8..=255u8, delegated_rights in 0u32..=u32::MAX, active in any::<bool>()) -> UpdateMemberEligibilityArgs {
+        UpdateMemberEligibilityArgs {
+            eligibility_status,
+            delegated_rights,
+            active,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_FundSponsorBudgetArgs()(amount in 0u64..=u64::MAX) -> FundSponsorBudgetArgs {
+        FundSponsorBudgetArgs {
+            amount,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_RecordPremiumPaymentArgs()(amount in 0u64..=u64::MAX) -> RecordPremiumPaymentArgs {
+        RecordPremiumPaymentArgs {
+            amount,
         }
     }
 }
@@ -301,24 +308,6 @@ prop_compose! {
 }
 
 prop_compose! {
-    fn arb_CreateHealthPlanArgs()(allowed_rail_mask in 0u16..=u16::MAX, pause_flags in 0u32..=u32::MAX) -> CreateHealthPlanArgs {
-        CreateHealthPlanArgs {
-            allowed_rail_mask,
-            pause_flags,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_CreateLiquidityPoolArgs()(fee_bps in 0u16..=u16::MAX, pause_flags in 0u32..=u32::MAX) -> CreateLiquidityPoolArgs {
-        CreateLiquidityPoolArgs {
-            fee_bps,
-            pause_flags,
-        }
-    }
-}
-
-prop_compose! {
     fn arb_CreateObligationArgs()(amount in 0u64..=u64::MAX) -> CreateObligationArgs {
         CreateObligationArgs {
             amount,
@@ -327,86 +316,16 @@ prop_compose! {
 }
 
 prop_compose! {
-    fn arb_CreateReserveDomainArgs()(allowed_rail_mask in 0u16..=u16::MAX, pause_flags in 0u32..=u32::MAX) -> CreateReserveDomainArgs {
-        CreateReserveDomainArgs {
-            allowed_rail_mask,
-            pause_flags,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_DeallocateCapitalArgs()(amount in 0u64..=u64::MAX) -> DeallocateCapitalArgs {
-        DeallocateCapitalArgs {
+    fn arb_ReserveObligationArgs()(amount in 0u64..=u64::MAX) -> ReserveObligationArgs {
+        ReserveObligationArgs {
             amount,
         }
     }
 }
 
 prop_compose! {
-    fn arb_DepositIntoCapitalClassArgs()(amount in 0u64..=u64::MAX, shares in 0u64..=u64::MAX) -> DepositIntoCapitalClassArgs {
-        DepositIntoCapitalClassArgs {
-            amount,
-            shares,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_FundSponsorBudgetArgs()(amount in 0u64..=u64::MAX) -> FundSponsorBudgetArgs {
-        FundSponsorBudgetArgs {
-            amount,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_InitializeProtocolGovernanceArgs()(protocol_fee_bps in 0u16..=u16::MAX, emergency_pause in any::<bool>()) -> InitializeProtocolGovernanceArgs {
-        InitializeProtocolGovernanceArgs {
-            protocol_fee_bps,
-            emergency_pause,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_MarkImpairmentArgs()(amount in 0u64..=u64::MAX) -> MarkImpairmentArgs {
-        MarkImpairmentArgs {
-            amount,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_OpenMemberPositionArgs()(eligibility_status in 0u8..=255u8, delegated_rights in 0u32..=u32::MAX) -> OpenMemberPositionArgs {
-        OpenMemberPositionArgs {
-            eligibility_status,
-            delegated_rights,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_ProcessRedemptionQueueArgs()(shares in 0u64..=u64::MAX) -> ProcessRedemptionQueueArgs {
-        ProcessRedemptionQueueArgs {
-            shares,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_PublishReserveAssetRailPriceArgs()(price_usd_1e8 in 0u64..=u64::MAX, confidence_bps in 0u16..=u16::MAX, published_at_ts in 0u64..=u64::MAX) -> PublishReserveAssetRailPriceArgs {
-        PublishReserveAssetRailPriceArgs {
-            price_usd_1e8,
-            confidence_bps,
-            published_at_ts,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_RecordPremiumPaymentArgs()(amount in 0u64..=u64::MAX) -> RecordPremiumPaymentArgs {
-        RecordPremiumPaymentArgs {
+    fn arb_SettleObligationArgs()(amount in 0u64..=u64::MAX) -> SettleObligationArgs {
+        SettleObligationArgs {
             amount,
         }
     }
@@ -421,6 +340,77 @@ prop_compose! {
 }
 
 prop_compose! {
+    fn arb_AdjudicateClaimCaseArgs()(review_state in 0u8..=255u8, approved_amount in 0u64..=u64::MAX, denied_amount in 0u64..=u64::MAX, reserve_amount in 0u64..=u64::MAX) -> AdjudicateClaimCaseArgs {
+        AdjudicateClaimCaseArgs {
+            review_state,
+            approved_amount,
+            denied_amount,
+            reserve_amount,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_SettleClaimCaseArgs()(amount in 0u64..=u64::MAX) -> SettleClaimCaseArgs {
+        SettleClaimCaseArgs {
+            amount,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_SettleClaimCaseSelectedAssetArgs()(claim_credit_amount in 0u64..=u64::MAX, payout_amount in 0u64..=u64::MAX, max_overpay_bps in 0u16..=u16::MAX) -> SettleClaimCaseSelectedAssetArgs {
+        SettleClaimCaseSelectedAssetArgs {
+            claim_credit_amount,
+            payout_amount,
+            max_overpay_bps,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_CreateLiquidityPoolArgs()(fee_bps in 0u16..=u16::MAX) -> CreateLiquidityPoolArgs {
+        CreateLiquidityPoolArgs {
+            fee_bps,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_CreateCapitalClassArgs()(fee_bps in 0u16..=u16::MAX) -> CreateCapitalClassArgs {
+        CreateCapitalClassArgs {
+            fee_bps,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_UpdateCapitalClassControlsArgs()(pause_flags in 0u32..=u32::MAX, queue_only_redemptions in any::<bool>(), active in any::<bool>()) -> UpdateCapitalClassControlsArgs {
+        UpdateCapitalClassControlsArgs {
+            pause_flags,
+            queue_only_redemptions,
+            active,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_UpdateLpPositionCredentialingArgs()(credentialed in any::<bool>()) -> UpdateLpPositionCredentialingArgs {
+        UpdateLpPositionCredentialingArgs {
+            credentialed,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_DepositIntoCapitalClassArgs()(amount in 0u64..=u64::MAX) -> DepositIntoCapitalClassArgs {
+        DepositIntoCapitalClassArgs {
+            amount,
+        }
+    }
+}
+
+prop_compose! {
     fn arb_RequestRedemptionArgs()(shares in 0u64..=u64::MAX) -> RequestRedemptionArgs {
         RequestRedemptionArgs {
             shares,
@@ -429,8 +419,50 @@ prop_compose! {
 }
 
 prop_compose! {
-    fn arb_ReserveObligationArgs()(amount in 0u64..=u64::MAX) -> ReserveObligationArgs {
-        ReserveObligationArgs {
+    fn arb_ProcessRedemptionQueueArgs()(shares in 0u64..=u64::MAX) -> ProcessRedemptionQueueArgs {
+        ProcessRedemptionQueueArgs {
+            shares,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_CreateAllocationPositionArgs()(cap_amount in 0u64..=u64::MAX, weight_bps in 0u16..=u16::MAX) -> CreateAllocationPositionArgs {
+        CreateAllocationPositionArgs {
+            cap_amount,
+            weight_bps,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_UpdateAllocationCapsArgs()(cap_amount in 0u64..=u64::MAX, weight_bps in 0u16..=u16::MAX) -> UpdateAllocationCapsArgs {
+        UpdateAllocationCapsArgs {
+            cap_amount,
+            weight_bps,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_AllocateCapitalArgs()(amount in 0u64..=u64::MAX) -> AllocateCapitalArgs {
+        AllocateCapitalArgs {
+            amount,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_DeallocateCapitalArgs()(amount in 0u64..=u64::MAX) -> DeallocateCapitalArgs {
+        DeallocateCapitalArgs {
+            amount,
+        }
+    }
+}
+
+prop_compose! {
+    fn arb_MarkImpairmentArgs()(amount in 0u64..=u64::MAX) -> MarkImpairmentArgs {
+        MarkImpairmentArgs {
             amount,
         }
     }
@@ -455,109 +487,9 @@ prop_compose! {
 }
 
 prop_compose! {
-    fn arb_SetProtocolEmergencyPauseArgs()(emergency_pause in any::<bool>()) -> SetProtocolEmergencyPauseArgs {
-        SetProtocolEmergencyPauseArgs {
-            emergency_pause,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_SettleClaimCaseArgs()(amount in 0u64..=u64::MAX) -> SettleClaimCaseArgs {
-        SettleClaimCaseArgs {
-            amount,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_SettleClaimCaseSelectedAssetArgs()(claim_credit_amount in 0u64..=u64::MAX, payout_amount in 0u64..=u64::MAX, max_overpay_bps in 0u16..=u16::MAX) -> SettleClaimCaseSelectedAssetArgs {
-        SettleClaimCaseSelectedAssetArgs {
-            claim_credit_amount,
-            payout_amount,
-            max_overpay_bps,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_SettleObligationArgs()(amount in 0u64..=u64::MAX) -> SettleObligationArgs {
-        SettleObligationArgs {
-            amount,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_UpdateAllocationCapsArgs()(cap_amount in 0u64..=u64::MAX, weight_bps in 0u16..=u16::MAX, active in any::<bool>()) -> UpdateAllocationCapsArgs {
-        UpdateAllocationCapsArgs {
-            cap_amount,
-            weight_bps,
-            active,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_UpdateCapitalClassControlsArgs()(pause_flags in 0u32..=u32::MAX, queue_only_redemptions in any::<bool>(), active in any::<bool>()) -> UpdateCapitalClassControlsArgs {
-        UpdateCapitalClassControlsArgs {
-            pause_flags,
-            queue_only_redemptions,
-            active,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_UpdateHealthPlanControlsArgs()(allowed_rail_mask in 0u16..=u16::MAX, pause_flags in 0u32..=u32::MAX, active in any::<bool>()) -> UpdateHealthPlanControlsArgs {
-        UpdateHealthPlanControlsArgs {
-            allowed_rail_mask,
-            pause_flags,
-            active,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_UpdateLpPositionCredentialingArgs()(credentialed in any::<bool>()) -> UpdateLpPositionCredentialingArgs {
-        UpdateLpPositionCredentialingArgs {
-            credentialed,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_UpdateMemberEligibilityArgs()(eligibility_status in 0u8..=255u8, delegated_rights in 0u32..=u32::MAX, active in any::<bool>()) -> UpdateMemberEligibilityArgs {
-        UpdateMemberEligibilityArgs {
-            eligibility_status,
-            delegated_rights,
-            active,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_UpdateReserveDomainControlsArgs()(allowed_rail_mask in 0u16..=u16::MAX, pause_flags in 0u32..=u32::MAX, active in any::<bool>()) -> UpdateReserveDomainControlsArgs {
-        UpdateReserveDomainControlsArgs {
-            allowed_rail_mask,
-            pause_flags,
-            active,
-        }
-    }
-}
-
-prop_compose! {
     fn arb_VerifyOutcomeSchemaArgs()(verified in any::<bool>()) -> VerifyOutcomeSchemaArgs {
         VerifyOutcomeSchemaArgs {
             verified,
-        }
-    }
-}
-
-prop_compose! {
-    fn arb_WithdrawArgs()(amount in 0u64..=u64::MAX) -> WithdrawArgs {
-        WithdrawArgs {
-            amount,
         }
     }
 }
@@ -903,6 +835,11 @@ fn arb_boundary_state() -> impl Strategy<Value = State> {
         bump,
         status,
     })
+}
+
+/// abstract_state_progress_nonnegative: audit_nonce ≥ 0
+fn abstract_state_progress_nonnegative(s: &State) -> bool {
+    audit_nonce >= 0
 }
 
 /// abstract_state_progress_nonnegative: audit_nonce ≥ 0
@@ -1842,6 +1779,7 @@ proptest! {
     fn set_protocol_emergency_pause_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetProtocolEmergencyPauseArgs..=SetProtocolEmergencyPauseArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -1858,6 +1796,7 @@ proptest! {
     #[test]
     fn rotate_protocol_governance_authority_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RotateProtocolGovernanceAuthorityArgs..=RotateProtocolGovernanceAuthorityArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -1876,6 +1815,7 @@ proptest! {
     fn create_reserve_domain_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateReserveDomainArgs..=CreateReserveDomainArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -1892,6 +1832,7 @@ proptest! {
     #[test]
     fn update_reserve_domain_controls_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateReserveDomainControlsArgs..=UpdateReserveDomainControlsArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -1910,6 +1851,7 @@ proptest! {
     fn create_domain_asset_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateDomainAssetVaultArgs..=CreateDomainAssetVaultArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -1926,6 +1868,7 @@ proptest! {
     #[test]
     fn configure_reserve_asset_rail_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ConfigureReserveAssetRailArgs..=ConfigureReserveAssetRailArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -1944,6 +1887,7 @@ proptest! {
     fn publish_reserve_asset_rail_price_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0PublishReserveAssetRailPriceArgs..=PublishReserveAssetRailPriceArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -1960,6 +1904,7 @@ proptest! {
     #[test]
     fn init_protocol_fee_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitProtocolFeeVaultArgs..=InitProtocolFeeVaultArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -1978,6 +1923,7 @@ proptest! {
     fn init_pool_treasury_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitPoolTreasuryVaultArgs..=InitPoolTreasuryVaultArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -1994,6 +1940,7 @@ proptest! {
     #[test]
     fn init_pool_oracle_fee_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitPoolOracleFeeVaultArgs..=InitPoolOracleFeeVaultArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2012,6 +1959,7 @@ proptest! {
     fn create_health_plan_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateHealthPlanArgs..=CreateHealthPlanArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2028,6 +1976,7 @@ proptest! {
     #[test]
     fn update_health_plan_controls_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateHealthPlanControlsArgs..=UpdateHealthPlanControlsArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2046,6 +1995,7 @@ proptest! {
     fn create_policy_series_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreatePolicySeriesArgs..=CreatePolicySeriesArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2062,6 +2012,7 @@ proptest! {
     #[test]
     fn initialize_series_reserve_ledger_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitializeSeriesReserveLedgerArgs..=InitializeSeriesReserveLedgerArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2080,6 +2031,7 @@ proptest! {
     fn version_policy_series_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0VersionPolicySeriesArgs..=VersionPolicySeriesArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2096,6 +2048,7 @@ proptest! {
     #[test]
     fn open_member_position_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0OpenMemberPositionArgs..=OpenMemberPositionArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2114,6 +2067,7 @@ proptest! {
     fn update_member_eligibility_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateMemberEligibilityArgs..=UpdateMemberEligibilityArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2130,6 +2084,7 @@ proptest! {
     #[test]
     fn open_funding_line_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0OpenFundingLineArgs..=OpenFundingLineArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2148,6 +2103,7 @@ proptest! {
     fn fund_sponsor_budget_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0FundSponsorBudgetArgs..=FundSponsorBudgetArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2164,6 +2120,7 @@ proptest! {
     #[test]
     fn record_premium_payment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RecordPremiumPaymentArgs..=RecordPremiumPaymentArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2182,6 +2139,7 @@ proptest! {
     fn create_commitment_campaign_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateCommitmentCampaignArgs..=CreateCommitmentCampaignArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2198,6 +2156,7 @@ proptest! {
     #[test]
     fn create_commitment_payment_rail_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateCommitmentPaymentRailArgs..=CreateCommitmentPaymentRailArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2216,6 +2175,7 @@ proptest! {
     fn deposit_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0DepositCommitmentArgs..=DepositCommitmentArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2232,6 +2192,7 @@ proptest! {
     #[test]
     fn activate_direct_premium_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ActivateCommitmentArgs..=ActivateCommitmentArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2250,6 +2211,7 @@ proptest! {
     fn activate_treasury_credit_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ActivateCommitmentArgs..=ActivateCommitmentArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2266,6 +2228,7 @@ proptest! {
     #[test]
     fn activate_waterfall_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ActivateCommitmentArgs..=ActivateCommitmentArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2284,6 +2247,7 @@ proptest! {
     fn refund_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RefundCommitmentArgs..=RefundCommitmentArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2300,6 +2264,7 @@ proptest! {
     #[test]
     fn pause_commitment_campaign_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0PauseCommitmentCampaignArgs..=PauseCommitmentCampaignArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2318,6 +2283,7 @@ proptest! {
     fn create_obligation_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateObligationArgs..=CreateObligationArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2334,6 +2300,7 @@ proptest! {
     #[test]
     fn reserve_obligation_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ReserveObligationArgs..=ReserveObligationArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2352,6 +2319,7 @@ proptest! {
     fn settle_obligation_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SettleObligationArgs..=SettleObligationArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2368,6 +2336,7 @@ proptest! {
     #[test]
     fn release_reserve_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ReleaseReserveArgs..=ReleaseReserveArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2386,6 +2355,7 @@ proptest! {
     fn open_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0OpenClaimCaseArgs..=OpenClaimCaseArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2402,6 +2372,7 @@ proptest! {
     #[test]
     fn authorize_claim_recipient_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AuthorizeClaimRecipientArgs..=AuthorizeClaimRecipientArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2420,6 +2391,7 @@ proptest! {
     fn attach_claim_evidence_ref_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AttachClaimEvidenceRefArgs..=AttachClaimEvidenceRefArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2436,6 +2408,7 @@ proptest! {
     #[test]
     fn adjudicate_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AdjudicateClaimCaseArgs..=AdjudicateClaimCaseArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2454,6 +2427,7 @@ proptest! {
     fn settle_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SettleClaimCaseArgs..=SettleClaimCaseArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2470,6 +2444,7 @@ proptest! {
     #[test]
     fn settle_claim_case_selected_asset_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SettleClaimCaseSelectedAssetArgs..=SettleClaimCaseSelectedAssetArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2488,6 +2463,7 @@ proptest! {
     fn create_liquidity_pool_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateLiquidityPoolArgs..=CreateLiquidityPoolArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2504,6 +2480,7 @@ proptest! {
     #[test]
     fn create_capital_class_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateCapitalClassArgs..=CreateCapitalClassArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2522,6 +2499,7 @@ proptest! {
     fn update_capital_class_controls_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateCapitalClassControlsArgs..=UpdateCapitalClassControlsArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2538,6 +2516,7 @@ proptest! {
     #[test]
     fn update_lp_position_credentialing_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateLpPositionCredentialingArgs..=UpdateLpPositionCredentialingArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2556,6 +2535,7 @@ proptest! {
     fn deposit_into_capital_class_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0DepositIntoCapitalClassArgs..=DepositIntoCapitalClassArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2572,6 +2552,7 @@ proptest! {
     #[test]
     fn request_redemption_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RequestRedemptionArgs..=RequestRedemptionArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2590,6 +2571,7 @@ proptest! {
     fn process_redemption_queue_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ProcessRedemptionQueueArgs..=ProcessRedemptionQueueArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2606,6 +2588,7 @@ proptest! {
     #[test]
     fn withdraw_protocol_fee_spl_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2624,6 +2607,7 @@ proptest! {
     fn withdraw_protocol_fee_sol_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2640,6 +2624,7 @@ proptest! {
     #[test]
     fn withdraw_pool_treasury_spl_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2658,6 +2643,7 @@ proptest! {
     fn withdraw_pool_treasury_sol_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2674,6 +2660,7 @@ proptest! {
     #[test]
     fn withdraw_pool_oracle_fee_spl_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2692,6 +2679,7 @@ proptest! {
     fn withdraw_pool_oracle_fee_sol_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2708,6 +2696,7 @@ proptest! {
     #[test]
     fn create_allocation_position_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateAllocationPositionArgs..=CreateAllocationPositionArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2726,6 +2715,7 @@ proptest! {
     fn update_allocation_caps_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateAllocationCapsArgs..=UpdateAllocationCapsArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2742,6 +2732,7 @@ proptest! {
     #[test]
     fn allocate_capital_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AllocateCapitalArgs..=AllocateCapitalArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2760,6 +2751,7 @@ proptest! {
     fn deallocate_capital_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0DeallocateCapitalArgs..=DeallocateCapitalArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2776,6 +2768,7 @@ proptest! {
     #[test]
     fn mark_impairment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0MarkImpairmentArgs..=MarkImpairmentArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2794,6 +2787,7 @@ proptest! {
     fn register_oracle_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RegisterOracleArgs..=RegisterOracleArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2810,6 +2804,7 @@ proptest! {
     #[test]
     fn claim_oracle_preserves_abstract_state_progress_nonnegative(s in arb_state()) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2828,6 +2823,7 @@ proptest! {
     fn update_oracle_profile_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateOracleProfileArgs..=UpdateOracleProfileArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2844,6 +2840,7 @@ proptest! {
     #[test]
     fn set_pool_oracle_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetPoolOracleArgs..=SetPoolOracleArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2862,6 +2859,7 @@ proptest! {
     fn set_pool_oracle_permissions_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetPoolOraclePermissionsArgs..=SetPoolOraclePermissionsArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2878,6 +2876,7 @@ proptest! {
     #[test]
     fn set_pool_oracle_policy_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetPoolOraclePolicyArgs..=SetPoolOraclePolicyArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2896,6 +2895,7 @@ proptest! {
     fn register_outcome_schema_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RegisterOutcomeSchemaArgs..=RegisterOutcomeSchemaArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2912,6 +2912,7 @@ proptest! {
     #[test]
     fn verify_outcome_schema_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0VerifyOutcomeSchemaArgs..=VerifyOutcomeSchemaArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -2930,6 +2931,7 @@ proptest! {
     fn backfill_schema_dependency_ledger_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0BackfillSchemaDependencyLedgerArgs..=BackfillSchemaDependencyLedgerArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2947,6 +2949,7 @@ proptest! {
     fn close_outcome_schema_preserves_abstract_state_progress_nonnegative(s in arb_state()) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -2963,6 +2966,1290 @@ proptest! {
     #[test]
     fn attest_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AttestClaimCaseArgs..=AttestClaimCaseArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if attest_claim_case(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after attest_claim_case");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn initialize_protocol_governance_preserves_abstract_state_progress_nonnegative(args in 0InitializeProtocolGovernanceArgs..=InitializeProtocolGovernanceArgs::MAX) {
+        let mut s = State {
+            audit_nonce: 0,
+            protocol_fee_bps: 0,
+            emergency_pause: 0,
+            allowed_rail_mask: 0,
+            pause_flags: 0,
+            active: 0,
+            total_assets: 0,
+            last_price_usd_1e8: 0,
+            last_price_confidence_bps: 0,
+            last_price_published_at_ts: 0,
+            accrued_fees: 0,
+            withdrawn_fees: 0,
+            membership_mode: 0,
+            eligibility_status: 0,
+            delegated_rights: 0,
+            funded_amount: 0,
+            spent_amount: 0,
+            reserved_amount: 0,
+            paid_amount: 0,
+            approved_amount: 0,
+            denied_amount: 0,
+            pending_amount: 0,
+            activated_amount: 0,
+            treasury_locked_amount: 0,
+            refunded_amount: 0,
+            canceled_amount: 0,
+            next_queue_index: 0,
+            refunded_at: 0,
+            intake_status: 0,
+            review_state: 0,
+            recovered_amount: 0,
+            appeal_count: 0,
+            attestation_count: 0,
+            supported_schema_count: 0,
+            updated_at_ts: 0,
+            updated_at: 0,
+            created_at_ts: 0,
+            closed_at: 0,
+            oracle_fee_bps: 0,
+            quorum_m: 0,
+            quorum_n: 0,
+            challenge_window_secs: 0,
+            cap_amount: 0,
+            weight_bps: 0,
+            allocated_amount: 0,
+            allocated_assets: 0,
+            total_allocated: 0,
+            pending_redemption_shares: 0,
+            pending_redemption_assets: 0,
+            pending_redemptions: 0,
+            total_shares: 0,
+            nav_assets: 0,
+            queue_only_redemptions: 0,
+            credentialed: 0,
+            claimed: 0,
+            verified: 0,
+            closed_outcome_schema_count: 0,
+            commitment_deposit_amount: 0,
+            refund_amount: 0,
+            settlement_net_payout_amount: 0,
+            claim_net_payout_amount: 0,
+            redemption_net_payout_amount: 0,
+            fee_withdrawal_amount: 0,
+            bump: 0,
+        };
+        if initialize_protocol_governance(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after initialize_protocol_governance");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn set_protocol_emergency_pause_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetProtocolEmergencyPauseArgs..=SetProtocolEmergencyPauseArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if set_protocol_emergency_pause(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after set_protocol_emergency_pause");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn rotate_protocol_governance_authority_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RotateProtocolGovernanceAuthorityArgs..=RotateProtocolGovernanceAuthorityArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if rotate_protocol_governance_authority(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after rotate_protocol_governance_authority");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_reserve_domain_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateReserveDomainArgs..=CreateReserveDomainArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_reserve_domain(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_reserve_domain");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn update_reserve_domain_controls_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateReserveDomainControlsArgs..=UpdateReserveDomainControlsArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if update_reserve_domain_controls(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after update_reserve_domain_controls");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_domain_asset_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateDomainAssetVaultArgs..=CreateDomainAssetVaultArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_domain_asset_vault(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_domain_asset_vault");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn configure_reserve_asset_rail_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ConfigureReserveAssetRailArgs..=ConfigureReserveAssetRailArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if configure_reserve_asset_rail(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after configure_reserve_asset_rail");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn publish_reserve_asset_rail_price_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0PublishReserveAssetRailPriceArgs..=PublishReserveAssetRailPriceArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if publish_reserve_asset_rail_price(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after publish_reserve_asset_rail_price");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn init_protocol_fee_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitProtocolFeeVaultArgs..=InitProtocolFeeVaultArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if init_protocol_fee_vault(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after init_protocol_fee_vault");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn init_pool_treasury_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitPoolTreasuryVaultArgs..=InitPoolTreasuryVaultArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if init_pool_treasury_vault(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after init_pool_treasury_vault");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn init_pool_oracle_fee_vault_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitPoolOracleFeeVaultArgs..=InitPoolOracleFeeVaultArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if init_pool_oracle_fee_vault(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after init_pool_oracle_fee_vault");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_health_plan_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateHealthPlanArgs..=CreateHealthPlanArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_health_plan(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_health_plan");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn update_health_plan_controls_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateHealthPlanControlsArgs..=UpdateHealthPlanControlsArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if update_health_plan_controls(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after update_health_plan_controls");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_policy_series_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreatePolicySeriesArgs..=CreatePolicySeriesArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_policy_series(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_policy_series");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn initialize_series_reserve_ledger_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0InitializeSeriesReserveLedgerArgs..=InitializeSeriesReserveLedgerArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if initialize_series_reserve_ledger(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after initialize_series_reserve_ledger");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn version_policy_series_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0VersionPolicySeriesArgs..=VersionPolicySeriesArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if version_policy_series(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after version_policy_series");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn open_member_position_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0OpenMemberPositionArgs..=OpenMemberPositionArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if open_member_position(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after open_member_position");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn update_member_eligibility_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateMemberEligibilityArgs..=UpdateMemberEligibilityArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if update_member_eligibility(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after update_member_eligibility");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn open_funding_line_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0OpenFundingLineArgs..=OpenFundingLineArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if open_funding_line(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after open_funding_line");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn fund_sponsor_budget_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0FundSponsorBudgetArgs..=FundSponsorBudgetArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if fund_sponsor_budget(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after fund_sponsor_budget");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn record_premium_payment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RecordPremiumPaymentArgs..=RecordPremiumPaymentArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if record_premium_payment(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after record_premium_payment");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_commitment_campaign_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateCommitmentCampaignArgs..=CreateCommitmentCampaignArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_commitment_campaign(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_commitment_campaign");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_commitment_payment_rail_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateCommitmentPaymentRailArgs..=CreateCommitmentPaymentRailArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_commitment_payment_rail(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_commitment_payment_rail");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn deposit_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0DepositCommitmentArgs..=DepositCommitmentArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if deposit_commitment(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after deposit_commitment");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn activate_direct_premium_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ActivateCommitmentArgs..=ActivateCommitmentArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if activate_direct_premium_commitment(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after activate_direct_premium_commitment");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn activate_treasury_credit_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ActivateCommitmentArgs..=ActivateCommitmentArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if activate_treasury_credit_commitment(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after activate_treasury_credit_commitment");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn activate_waterfall_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ActivateCommitmentArgs..=ActivateCommitmentArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if activate_waterfall_commitment(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after activate_waterfall_commitment");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn refund_commitment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RefundCommitmentArgs..=RefundCommitmentArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if refund_commitment(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after refund_commitment");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn pause_commitment_campaign_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0PauseCommitmentCampaignArgs..=PauseCommitmentCampaignArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if pause_commitment_campaign(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after pause_commitment_campaign");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_obligation_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateObligationArgs..=CreateObligationArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_obligation(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_obligation");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn reserve_obligation_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ReserveObligationArgs..=ReserveObligationArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if reserve_obligation(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after reserve_obligation");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn settle_obligation_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SettleObligationArgs..=SettleObligationArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if settle_obligation(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after settle_obligation");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn release_reserve_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ReleaseReserveArgs..=ReleaseReserveArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if release_reserve(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after release_reserve");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn open_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0OpenClaimCaseArgs..=OpenClaimCaseArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if open_claim_case(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after open_claim_case");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn authorize_claim_recipient_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AuthorizeClaimRecipientArgs..=AuthorizeClaimRecipientArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if authorize_claim_recipient(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after authorize_claim_recipient");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn attach_claim_evidence_ref_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AttachClaimEvidenceRefArgs..=AttachClaimEvidenceRefArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if attach_claim_evidence_ref(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after attach_claim_evidence_ref");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn adjudicate_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AdjudicateClaimCaseArgs..=AdjudicateClaimCaseArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if adjudicate_claim_case(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after adjudicate_claim_case");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn settle_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SettleClaimCaseArgs..=SettleClaimCaseArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if settle_claim_case(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after settle_claim_case");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn settle_claim_case_selected_asset_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SettleClaimCaseSelectedAssetArgs..=SettleClaimCaseSelectedAssetArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if settle_claim_case_selected_asset(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after settle_claim_case_selected_asset");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_liquidity_pool_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateLiquidityPoolArgs..=CreateLiquidityPoolArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_liquidity_pool(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_liquidity_pool");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_capital_class_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateCapitalClassArgs..=CreateCapitalClassArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_capital_class(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_capital_class");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn update_capital_class_controls_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateCapitalClassControlsArgs..=UpdateCapitalClassControlsArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if update_capital_class_controls(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after update_capital_class_controls");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn update_lp_position_credentialing_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateLpPositionCredentialingArgs..=UpdateLpPositionCredentialingArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if update_lp_position_credentialing(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after update_lp_position_credentialing");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn deposit_into_capital_class_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0DepositIntoCapitalClassArgs..=DepositIntoCapitalClassArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if deposit_into_capital_class(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after deposit_into_capital_class");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn request_redemption_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RequestRedemptionArgs..=RequestRedemptionArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if request_redemption(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after request_redemption");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn process_redemption_queue_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0ProcessRedemptionQueueArgs..=ProcessRedemptionQueueArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if process_redemption_queue(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after process_redemption_queue");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn withdraw_protocol_fee_spl_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if withdraw_protocol_fee_spl(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after withdraw_protocol_fee_spl");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn withdraw_protocol_fee_sol_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if withdraw_protocol_fee_sol(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after withdraw_protocol_fee_sol");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn withdraw_pool_treasury_spl_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if withdraw_pool_treasury_spl(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after withdraw_pool_treasury_spl");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn withdraw_pool_treasury_sol_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if withdraw_pool_treasury_sol(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after withdraw_pool_treasury_sol");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn withdraw_pool_oracle_fee_spl_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if withdraw_pool_oracle_fee_spl(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after withdraw_pool_oracle_fee_spl");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn withdraw_pool_oracle_fee_sol_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if withdraw_pool_oracle_fee_sol(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after withdraw_pool_oracle_fee_sol");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn create_allocation_position_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0CreateAllocationPositionArgs..=CreateAllocationPositionArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if create_allocation_position(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after create_allocation_position");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn update_allocation_caps_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateAllocationCapsArgs..=UpdateAllocationCapsArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if update_allocation_caps(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after update_allocation_caps");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn allocate_capital_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AllocateCapitalArgs..=AllocateCapitalArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if allocate_capital(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after allocate_capital");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn deallocate_capital_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0DeallocateCapitalArgs..=DeallocateCapitalArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if deallocate_capital(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after deallocate_capital");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn mark_impairment_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0MarkImpairmentArgs..=MarkImpairmentArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if mark_impairment(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after mark_impairment");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn register_oracle_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RegisterOracleArgs..=RegisterOracleArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if register_oracle(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after register_oracle");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn claim_oracle_preserves_abstract_state_progress_nonnegative(s in arb_state()) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if claim_oracle(&mut s) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after claim_oracle");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn update_oracle_profile_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0UpdateOracleProfileArgs..=UpdateOracleProfileArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if update_oracle_profile(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after update_oracle_profile");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn set_pool_oracle_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetPoolOracleArgs..=SetPoolOracleArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if set_pool_oracle(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after set_pool_oracle");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn set_pool_oracle_permissions_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetPoolOraclePermissionsArgs..=SetPoolOraclePermissionsArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if set_pool_oracle_permissions(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after set_pool_oracle_permissions");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn set_pool_oracle_policy_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0SetPoolOraclePolicyArgs..=SetPoolOraclePolicyArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if set_pool_oracle_policy(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after set_pool_oracle_policy");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn register_outcome_schema_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0RegisterOutcomeSchemaArgs..=RegisterOutcomeSchemaArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if register_outcome_schema(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after register_outcome_schema");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn verify_outcome_schema_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0VerifyOutcomeSchemaArgs..=VerifyOutcomeSchemaArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if verify_outcome_schema(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after verify_outcome_schema");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn backfill_schema_dependency_ledger_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0BackfillSchemaDependencyLedgerArgs..=BackfillSchemaDependencyLedgerArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if backfill_schema_dependency_ledger(&mut s, args) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after backfill_schema_dependency_ledger");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn close_outcome_schema_preserves_abstract_state_progress_nonnegative(s in arb_state()) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(protocol_fee_bps_bounded(&s));
+        prop_assume!(claim_payment_bounded(&s));
+        prop_assume!(fee_withdrawals_bounded(&s));
+        prop_assume!(allocation_cap_bounded(&s));
+        if close_outcome_schema(&mut s) {
+            prop_assert!(abstract_state_progress_nonnegative(&s),
+                "abstract_state_progress_nonnegative must hold after close_outcome_schema");
+        }
+    }
+}
+
+proptest! {
+    #![proptest_config(ProptestConfig { max_global_rejects: 65536, ..ProptestConfig::with_cases(256) })]
+    #[test]
+    fn attest_claim_case_preserves_abstract_state_progress_nonnegative(s in arb_state(), args in 0AttestClaimCaseArgs..=AttestClaimCaseArgs::MAX) {
+        let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -3058,6 +4345,7 @@ proptest! {
     fn adjudicate_claim_case_preserves_claim_payment_bounded(s in arb_state(), args in 0AdjudicateClaimCaseArgs..=AdjudicateClaimCaseArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -3074,6 +4362,7 @@ proptest! {
     #[test]
     fn settle_claim_case_preserves_claim_payment_bounded(s in arb_state(), args in 0SettleClaimCaseArgs..=SettleClaimCaseArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -3092,6 +4381,7 @@ proptest! {
     fn settle_claim_case_selected_asset_preserves_claim_payment_bounded(s in arb_state(), args in 0SettleClaimCaseSelectedAssetArgs..=SettleClaimCaseSelectedAssetArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -3108,6 +4398,7 @@ proptest! {
     #[test]
     fn withdraw_protocol_fee_spl_preserves_fee_withdrawals_bounded(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -3126,6 +4417,7 @@ proptest! {
     fn withdraw_protocol_fee_sol_preserves_fee_withdrawals_bounded(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -3142,6 +4434,7 @@ proptest! {
     #[test]
     fn withdraw_pool_treasury_spl_preserves_fee_withdrawals_bounded(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -3160,6 +4453,7 @@ proptest! {
     fn withdraw_pool_treasury_sol_preserves_fee_withdrawals_bounded(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -3176,6 +4470,7 @@ proptest! {
     #[test]
     fn withdraw_pool_oracle_fee_spl_preserves_fee_withdrawals_bounded(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -3194,6 +4489,7 @@ proptest! {
     fn withdraw_pool_oracle_fee_sol_preserves_fee_withdrawals_bounded(s in arb_state(), args in 0WithdrawArgs..=WithdrawArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -3210,6 +4506,7 @@ proptest! {
     #[test]
     fn create_allocation_position_preserves_allocation_cap_bounded(s in arb_state(), args in 0CreateAllocationPositionArgs..=CreateAllocationPositionArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -3228,6 +4525,7 @@ proptest! {
     fn update_allocation_caps_preserves_allocation_cap_bounded(s in arb_state(), args in 0UpdateAllocationCapsArgs..=UpdateAllocationCapsArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -3245,6 +4543,7 @@ proptest! {
     fn allocate_capital_preserves_allocation_cap_bounded(s in arb_state(), args in 0AllocateCapitalArgs..=AllocateCapitalArgs::MAX) {
         let mut s = s;
         prop_assume!(abstract_state_progress_nonnegative(&s));
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
         prop_assume!(fee_withdrawals_bounded(&s));
@@ -3261,6 +4560,7 @@ proptest! {
     #[test]
     fn deallocate_capital_preserves_allocation_cap_bounded(s in arb_state(), args in 0DeallocateCapitalArgs..=DeallocateCapitalArgs::MAX) {
         let mut s = s;
+        prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(abstract_state_progress_nonnegative(&s));
         prop_assume!(protocol_fee_bps_bounded(&s));
         prop_assume!(claim_payment_bounded(&s));
@@ -3900,6 +5200,7 @@ fn apply_op(s: &mut State, op: &Op) -> bool {
 
 fn assert_all_properties(s: &State, context: &str) {
     assert!(abstract_state_progress_nonnegative(s), "{} violated: abstract_state_progress_nonnegative", context);
+    assert!(abstract_state_progress_nonnegative(s), "{} violated: abstract_state_progress_nonnegative", context);
     assert!(protocol_fee_bps_bounded(s), "{} violated: protocol_fee_bps_bounded", context);
     assert!(claim_payment_bounded(s), "{} violated: claim_payment_bounded", context);
     assert!(fee_withdrawals_bounded(s), "{} violated: fee_withdrawals_bounded", context);
@@ -4072,6 +5373,8 @@ proptest! {
                     continue; // skip property checks on init transition
                 }
                 // Check all properties after each successful transition
+                prop_assert!(abstract_state_progress_nonnegative(&s),
+                    "abstract_state_progress_nonnegative violated after op {:?} (step {})", op, i);
                 prop_assert!(abstract_state_progress_nonnegative(&s),
                     "abstract_state_progress_nonnegative violated after op {:?} (step {})", op, i);
                 prop_assert!(protocol_fee_bps_bounded(&s),

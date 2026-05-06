@@ -1,4 +1,10 @@
-import { accessSync, constants, existsSync } from 'node:fs';
+import {
+  accessSync,
+  constants,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -49,10 +55,8 @@ function resolveQedgen() {
       continue;
     }
 
-    if (existsSync(candidate)) {
-      if (candidate === 'qedgen' || isExecutable(candidate)) {
-        return candidate;
-      }
+    if (existsSync(candidate) && isExecutable(candidate)) {
+      return candidate;
     }
   }
 
@@ -213,6 +217,38 @@ function runCheck(qedgen) {
   return 0;
 }
 
+function postprocessLeanSpec() {
+  if (!existsSync(LEAN_SPEC)) {
+    return;
+  }
+
+  let text = readFileSync(LEAN_SPEC, 'utf8');
+  text = text.replace(/s\.args\./g, 'args.');
+
+  const stateMatch = text.match(/structure State where\n([\s\S]*?)\n\s*status : Status/);
+  const stateFields = stateMatch
+    ? [...stateMatch[1].matchAll(/^\s{2}(\w+)\s*:/gm)].map((match) => match[1])
+    : [];
+
+  if (stateFields.length > 0) {
+    const fieldPattern = new RegExp(
+      `(?<![\\w.])(${stateFields.join('|')})(?![\\w])`,
+      'g',
+    );
+    text = text
+      .split('\n')
+      .map((line) => {
+        if (!line.trimStart().startsWith('if ')) {
+          return line;
+        }
+        return line.replace(fieldPattern, 's.$1');
+      })
+      .join('\n');
+  }
+
+  writeFileSync(LEAN_SPEC, text);
+}
+
 const qedgen = resolveQedgen();
 if (command === 'check') {
   process.exit(runCheck(qedgen));
@@ -221,11 +257,20 @@ if (command === 'check') {
 const result = spawnSync(qedgen, [...argsFor(command), ...extraArgs], {
   cwd: process.cwd(),
   stdio: 'inherit',
+  env: {
+    ...process.env,
+    CARGO_NET_GIT_FETCH_WITH_CLI: 'true',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+  },
   shell: false,
 });
 
 if (result.error) {
   throw result.error;
+}
+
+if (result.status === 0 && command === 'codegen') {
+  postprocessLeanSpec();
 }
 
 process.exit(result.status ?? 1);

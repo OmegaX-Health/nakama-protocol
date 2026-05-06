@@ -583,12 +583,12 @@ structure State where
 
 def initialize_protocol_governanceTransition (s : State) (signer : Pubkey) (args : InitializeProtocolGovernanceArgs) : Option State :=
   if signer = s.governance_authority ∧ s.status = .Uninitialized ∧ (args.protocol_fee_bps ≤ 9999) then
-    some { s with protocol_fee_bps := s.args.protocol_fee_bps, emergency_pause := s.args.emergency_pause, audit_nonce := 0, status := .Live }
+    some { s with protocol_fee_bps := args.protocol_fee_bps, emergency_pause := args.emergency_pause, audit_nonce := 0, status := .Live }
   else none
 
 def set_protocol_emergency_pauseTransition (s : State) (signer : Pubkey) (args : SetProtocolEmergencyPauseArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with emergency_pause := s.args.emergency_pause, status := .Live }
+    some { s with emergency_pause := args.emergency_pause, status := .Live }
   else none
 
 def rotate_protocol_governance_authorityTransition (s : State) (signer : Pubkey) (args : RotateProtocolGovernanceAuthorityArgs) : Option State :=
@@ -603,7 +603,7 @@ def create_reserve_domainTransition (s : State) (signer : Pubkey) (args : Create
 
 def update_reserve_domain_controlsTransition (s : State) (signer : Pubkey) (args : UpdateReserveDomainControlsArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with allowed_rail_mask := s.args.allowed_rail_mask, pause_flags := s.args.pause_flags, active := s.args.active, status := .Live }
+    some { s with allowed_rail_mask := args.allowed_rail_mask, pause_flags := args.pause_flags, active := args.active, status := .Live }
   else none
 
 def create_domain_asset_vaultTransition (s : State) (signer : Pubkey) (args : CreateDomainAssetVaultArgs) : Option State :=
@@ -612,13 +612,13 @@ def create_domain_asset_vaultTransition (s : State) (signer : Pubkey) (args : Cr
   else none
 
 def configure_reserve_asset_railTransition (s : State) (signer : Pubkey) (args : ConfigureReserveAssetRailArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
 def publish_reserve_asset_rail_priceTransition (s : State) (signer : Pubkey) (args : PublishReserveAssetRailPriceArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.price_usd_1e8 > 0) then
-    some { s with last_price_usd_1e8 := s.args.price_usd_1e8, last_price_confidence_bps := s.args.confidence_bps, last_price_published_at_ts := s.args.published_at_ts, status := .Live }
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.price_usd_1e8 > 0) then
+    some { s with last_price_usd_1e8 := args.price_usd_1e8, last_price_confidence_bps := args.confidence_bps, last_price_published_at_ts := args.published_at_ts, status := .Live }
   else none
 
 def init_protocol_fee_vaultTransition (s : State) (signer : Pubkey) (args : InitProtocolFeeVaultArgs) : Option State :=
@@ -663,12 +663,12 @@ def version_policy_seriesTransition (s : State) (signer : Pubkey) (args : Versio
 
 def open_member_positionTransition (s : State) (signer : Pubkey) (args : OpenMemberPositionArgs) : Option State :=
   if signer = s.wallet ∧ s.status = .Live then
-    some { s with eligibility_status := s.args.eligibility_status, delegated_rights := s.args.delegated_rights, status := .Live }
+    some { s with eligibility_status := args.eligibility_status, delegated_rights := args.delegated_rights, status := .Live }
   else none
 
 def update_member_eligibilityTransition (s : State) (signer : Pubkey) (args : UpdateMemberEligibilityArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with eligibility_status := s.args.eligibility_status, delegated_rights := s.args.delegated_rights, active := s.args.active, status := .Live }
+    some { s with eligibility_status := args.eligibility_status, delegated_rights := args.delegated_rights, active := args.active, status := .Live }
   else none
 
 def open_funding_lineTransition (s : State) (signer : Pubkey) (args : OpenFundingLineArgs) : Option State :=
@@ -677,42 +677,42 @@ def open_funding_lineTransition (s : State) (signer : Pubkey) (args : OpenFundin
   else none
 
 def fund_sponsor_budgetTransition (s : State) (signer : Pubkey) (args : FundSponsorBudgetArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def record_premium_paymentTransition (s : State) (signer : Pubkey) (args : RecordPremiumPaymentArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def create_commitment_campaignTransition (s : State) (signer : Pubkey) (args : CreateCommitmentCampaignArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.deposit_amount > 0) ∧ (args.coverage_amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.deposit_amount > 0) ∧ (args.coverage_amount > 0) then
     some { s with status := .Live }
   else none
 
 def create_commitment_payment_railTransition (s : State) (signer : Pubkey) (args : CreateCommitmentPaymentRailArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.deposit_amount > 0) ∧ (args.coverage_amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.deposit_amount > 0) ∧ (args.coverage_amount > 0) then
     some { s with status := .Live }
   else none
 
 def deposit_commitmentTransition (s : State) (signer : Pubkey) (args : DepositCommitmentArgs) : Option State :=
-  if signer = s.depositor ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.depositor ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
 def activate_direct_premium_commitmentTransition (s : State) (signer : Pubkey) (args : ActivateCommitmentArgs) : Option State :=
-  if signer = s.activation_authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.activation_authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
 def activate_treasury_credit_commitmentTransition (s : State) (signer : Pubkey) (args : ActivateCommitmentArgs) : Option State :=
-  if signer = s.activation_authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.activation_authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
 def activate_waterfall_commitmentTransition (s : State) (signer : Pubkey) (args : ActivateCommitmentArgs) : Option State :=
-  if signer = s.activation_authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.activation_authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
@@ -722,57 +722,57 @@ def refund_commitmentTransition (s : State) (signer : Pubkey) (args : RefundComm
   else none
 
 def pause_commitment_campaignTransition (s : State) (signer : Pubkey) (args : PauseCommitmentCampaignArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
 def create_obligationTransition (s : State) (signer : Pubkey) (args : CreateObligationArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def reserve_obligationTransition (s : State) (signer : Pubkey) (args : ReserveObligationArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def settle_obligationTransition (s : State) (signer : Pubkey) (args : SettleObligationArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def release_reserveTransition (s : State) (signer : Pubkey) (args : ReleaseReserveArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def open_claim_caseTransition (s : State) (signer : Pubkey) (args : OpenClaimCaseArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with review_state := 0, status := .Live }
   else none
 
 def authorize_claim_recipientTransition (s : State) (signer : Pubkey) (args : AuthorizeClaimRecipientArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
 def attach_claim_evidence_refTransition (s : State) (signer : Pubkey) (args : AttachClaimEvidenceRefArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
 def adjudicate_claim_caseTransition (s : State) (signer : Pubkey) (args : AdjudicateClaimCaseArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.reserve_amount ≤ args.approved_amount) then
-    some { s with review_state := s.args.review_state, approved_amount := s.args.approved_amount, denied_amount := s.args.denied_amount, status := .Live }
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.reserve_amount ≤ args.approved_amount) then
+    some { s with review_state := args.review_state, approved_amount := args.approved_amount, denied_amount := args.denied_amount, status := .Live }
   else none
 
 def settle_claim_caseTransition (s : State) (signer : Pubkey) (args : SettleClaimCaseArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) ∧ (paid_amount + args.amount ≤ approved_amount) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) ∧ (s.paid_amount + args.amount ≤ s.approved_amount) then
     some { s with status := .Live }
   else none
 
 def settle_claim_case_selected_assetTransition (s : State) (signer : Pubkey) (args : SettleClaimCaseSelectedAssetArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.claim_credit_amount > 0) ∧ (args.payout_amount > 0) ∧ (args.max_overpay_bps ≤ 50) ∧ (paid_amount + args.claim_credit_amount ≤ approved_amount) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.claim_credit_amount > 0) ∧ (args.payout_amount > 0) ∧ (args.max_overpay_bps ≤ 50) ∧ (s.paid_amount + args.claim_credit_amount ≤ s.approved_amount) then
     some { s with status := .Live }
   else none
 
@@ -788,81 +788,81 @@ def create_capital_classTransition (s : State) (signer : Pubkey) (args : CreateC
 
 def update_capital_class_controlsTransition (s : State) (signer : Pubkey) (args : UpdateCapitalClassControlsArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with pause_flags := s.args.pause_flags, queue_only_redemptions := s.args.queue_only_redemptions, active := s.args.active, status := .Live }
+    some { s with pause_flags := args.pause_flags, queue_only_redemptions := args.queue_only_redemptions, active := args.active, status := .Live }
   else none
 
 def update_lp_position_credentialingTransition (s : State) (signer : Pubkey) (args : UpdateLpPositionCredentialingArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with credentialed := s.args.credentialed, status := .Live }
+    some { s with credentialed := args.credentialed, status := .Live }
   else none
 
 def deposit_into_capital_classTransition (s : State) (signer : Pubkey) (args : DepositIntoCapitalClassArgs) : Option State :=
-  if signer = s.owner ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def request_redemptionTransition (s : State) (signer : Pubkey) (args : RequestRedemptionArgs) : Option State :=
-  if signer = s.owner ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.shares > 0) then
+  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.shares > 0) then
     some { s with status := .Live }
   else none
 
 def process_redemption_queueTransition (s : State) (signer : Pubkey) (args : ProcessRedemptionQueueArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.shares > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.shares > 0) then
     some { s with status := .Live }
   else none
 
 def withdraw_protocol_fee_splTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (withdrawn_fees + args.amount ≤ accrued_fees) then
+  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
     some { s with status := .Live }
   else none
 
 def withdraw_protocol_fee_solTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (withdrawn_fees + args.amount ≤ accrued_fees) then
+  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
     some { s with status := .Live }
   else none
 
 def withdraw_pool_treasury_splTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (withdrawn_fees + args.amount ≤ accrued_fees) then
+  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
     some { s with status := .Live }
   else none
 
 def withdraw_pool_treasury_solTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (withdrawn_fees + args.amount ≤ accrued_fees) then
+  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
     some { s with status := .Live }
   else none
 
 def withdraw_pool_oracle_fee_splTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (withdrawn_fees + args.amount ≤ accrued_fees) then
+  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
     some { s with status := .Live }
   else none
 
 def withdraw_pool_oracle_fee_solTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (withdrawn_fees + args.amount ≤ accrued_fees) then
+  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
     some { s with status := .Live }
   else none
 
 def create_allocation_positionTransition (s : State) (signer : Pubkey) (args : CreateAllocationPositionArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with cap_amount := s.args.cap_amount, weight_bps := s.args.weight_bps, status := .Live }
+    some { s with cap_amount := args.cap_amount, weight_bps := args.weight_bps, status := .Live }
   else none
 
 def update_allocation_capsTransition (s : State) (signer : Pubkey) (args : UpdateAllocationCapsArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with cap_amount := s.args.cap_amount, weight_bps := s.args.weight_bps, status := .Live }
+    some { s with cap_amount := args.cap_amount, weight_bps := args.weight_bps, status := .Live }
   else none
 
 def allocate_capitalTransition (s : State) (signer : Pubkey) (args : AllocateCapitalArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def deallocate_capitalTransition (s : State) (signer : Pubkey) (args : DeallocateCapitalArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
 def mark_impairmentTransition (s : State) (signer : Pubkey) (args : MarkImpairmentArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
 
@@ -883,7 +883,7 @@ def update_oracle_profileTransition (s : State) (signer : Pubkey) (args : Update
 
 def set_pool_oracleTransition (s : State) (signer : Pubkey) (args : SetPoolOracleArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with active := s.args.active, status := .Live }
+    some { s with active := args.active, status := .Live }
   else none
 
 def set_pool_oracle_permissionsTransition (s : State) (signer : Pubkey) (args : SetPoolOraclePermissionsArgs) : Option State :=
@@ -893,7 +893,7 @@ def set_pool_oracle_permissionsTransition (s : State) (signer : Pubkey) (args : 
 
 def set_pool_oracle_policyTransition (s : State) (signer : Pubkey) (args : SetPoolOraclePolicyArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live ∧ (args.oracle_fee_bps ≤ 9999) then
-    some { s with quorum_m := s.args.quorum_m, quorum_n := s.args.quorum_n, status := .Live }
+    some { s with quorum_m := args.quorum_m, quorum_n := args.quorum_n, status := .Live }
   else none
 
 def register_outcome_schemaTransition (s : State) (signer : Pubkey) (args : RegisterOutcomeSchemaArgs) : Option State :=
@@ -903,7 +903,7 @@ def register_outcome_schemaTransition (s : State) (signer : Pubkey) (args : Regi
 
 def verify_outcome_schemaTransition (s : State) (signer : Pubkey) (args : VerifyOutcomeSchemaArgs) : Option State :=
   if signer = s.governance_authority ∧ s.status = .Live then
-    some { s with verified := s.args.verified, status := .Live }
+    some { s with verified := args.verified, status := .Live }
   else none
 
 def backfill_schema_dependency_ledgerTransition (s : State) (signer : Pubkey) (args : BackfillSchemaDependencyLedgerArgs) : Option State :=
