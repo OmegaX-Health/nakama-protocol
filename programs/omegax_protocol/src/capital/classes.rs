@@ -18,6 +18,10 @@ pub(crate) fn create_capital_class(
         args.fee_bps <= MAX_CONFIGURED_FEE_BPS,
         OmegaXProtocolError::InvalidBps
     );
+    require!(
+        args.min_lockup_seconds >= 0,
+        OmegaXProtocolError::InvalidLockupSeconds
+    );
 
     let capital_class = &mut ctx.accounts.capital_class;
     capital_class.reserve_domain = ctx.accounts.liquidity_pool.reserve_domain;

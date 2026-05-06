@@ -40,6 +40,15 @@ test("[ALMANAX-d333108a] capital class update keeps pool queue-only policy as a 
   );
 });
 
+test("[ALMANAX-e529c167] capital class lockups cannot be negative", () => {
+  const createBody = extractRustFunctionBody("create_capital_class");
+  const depositBody = extractRustFunctionBody("apply_lp_position_deposit");
+
+  assert.match(createBody, /args\.min_lockup_seconds >= 0[\s\S]+InvalidLockupSeconds/);
+  assert.match(depositBody, /min_lockup_seconds >= 0[\s\S]+InvalidLockupSeconds/);
+  assert.ok(idl.errors?.some((error) => error.name === "InvalidLockupSeconds"));
+});
+
 test("[ALMANAX-0bc4e15d] impairment PnL debits avoid lossy u64 to i64 casts", () => {
   const body = extractRustFunctionBody("mark_impairment");
 

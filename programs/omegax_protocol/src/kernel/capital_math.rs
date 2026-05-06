@@ -99,6 +99,10 @@ pub(crate) fn apply_lp_position_deposit(
     min_lockup_seconds: i64,
     now_ts: i64,
 ) -> Result<()> {
+    require!(
+        min_lockup_seconds >= 0,
+        OmegaXProtocolError::InvalidLockupSeconds
+    );
     lp_position.shares = checked_add(lp_position.shares, shares)?;
     lp_position.subscription_basis = checked_add(lp_position.subscription_basis, amount)?;
     lp_position.lockup_ends_at = now_ts

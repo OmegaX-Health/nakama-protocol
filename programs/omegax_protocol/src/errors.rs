@@ -56,6 +56,8 @@ pub enum OmegaXProtocolError {
     FundingLineMismatch,
     #[msg("Funding line type mismatch")]
     FundingLineTypeMismatch,
+    #[msg("Obligation account mismatch")]
+    ObligationMismatch,
     #[msg("Invalid obligation state transition")]
     InvalidObligationStateTransition,
     #[msg("Amount exceeds outstanding obligation")]
@@ -92,6 +94,8 @@ pub enum OmegaXProtocolError {
     LPPositionHasActiveCapital,
     #[msg("Capital class lockup is still active")]
     LockupActive,
+    #[msg("Capital class lockup seconds cannot be negative")]
+    InvalidLockupSeconds,
     #[msg("Allocation cap exceeded")]
     AllocationCapExceeded,
     #[msg("Allocation position mismatch")]

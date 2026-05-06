@@ -121,6 +121,64 @@ fn lp_deposit_top_up_preserves_existing_state() {
 }
 
 #[test]
+fn lp_deposit_accepts_zero_lockup() {
+    let mut lp_position = LPPosition {
+        capital_class: Pubkey::new_unique(),
+        owner: Pubkey::new_unique(),
+        shares: 0,
+        subscription_basis: 0,
+        pending_redemption_shares: 0,
+        pending_redemption_assets: 0,
+        realized_distributions: 0,
+        impaired_principal: 0,
+        lockup_ends_at: 0,
+        credentialed: true,
+        queue_status: LP_QUEUE_STATUS_NONE,
+        redemption_sequence: 0,
+        redemption_requested_at: 0,
+        bump: 4,
+    };
+
+    apply_lp_position_deposit(&mut lp_position, 25, 30, 0, 1_000).unwrap();
+
+    assert_eq!(lp_position.shares, 30);
+    assert_eq!(lp_position.subscription_basis, 25);
+    assert_eq!(lp_position.lockup_ends_at, 1_000);
+}
+
+#[test]
+fn lp_deposit_rejects_negative_lockup_without_mutation() {
+    let mut lp_position = LPPosition {
+        capital_class: Pubkey::new_unique(),
+        owner: Pubkey::new_unique(),
+        shares: 100,
+        subscription_basis: 90,
+        pending_redemption_shares: 12,
+        pending_redemption_assets: 18,
+        realized_distributions: 7,
+        impaired_principal: 3,
+        lockup_ends_at: 50,
+        credentialed: true,
+        queue_status: LP_QUEUE_STATUS_PENDING,
+        redemption_sequence: 3,
+        redemption_requested_at: 40,
+        bump: 4,
+    };
+
+    let original_shares = lp_position.shares;
+    let original_subscription_basis = lp_position.subscription_basis;
+    let original_lockup_ends_at = lp_position.lockup_ends_at;
+    let error = apply_lp_position_deposit(&mut lp_position, 25, 30, -1, 1_000).unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("Capital class lockup seconds cannot be negative"));
+    assert_eq!(lp_position.shares, original_shares);
+    assert_eq!(lp_position.subscription_basis, original_subscription_basis);
+    assert_eq!(lp_position.lockup_ends_at, original_lockup_ends_at);
+}
+
+#[test]
 fn redemption_assets_are_derived_from_nav() {
     assert_eq!(redeemable_assets_for_shares(25, 100, 1_000).unwrap(), 250);
     assert_eq!(redeemable_assets_for_shares(3, 7, 700).unwrap(), 300);

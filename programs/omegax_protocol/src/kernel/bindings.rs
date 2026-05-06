@@ -224,6 +224,58 @@ pub(crate) fn validate_optional_allocation_ledger(
     Ok(())
 }
 
+pub(crate) fn validate_obligation_binding(
+    obligation: &Account<Obligation>,
+    expected_funding_line: Pubkey,
+    funding_line: &FundingLine,
+) -> Result<()> {
+    require_keys_eq!(
+        obligation.funding_line,
+        expected_funding_line,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+    require_keys_eq!(
+        obligation.asset_mint,
+        funding_line.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        obligation.reserve_domain,
+        funding_line.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        obligation.health_plan,
+        funding_line.health_plan,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        obligation.policy_series,
+        funding_line.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+
+    let (expected_obligation, expected_bump) = Pubkey::find_program_address(
+        &[
+            SEED_OBLIGATION,
+            expected_funding_line.as_ref(),
+            obligation.obligation_id.as_bytes(),
+        ],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        obligation.key(),
+        expected_obligation,
+        OmegaXProtocolError::ObligationMismatch
+    );
+    require!(
+        obligation.bump == expected_bump,
+        OmegaXProtocolError::ObligationMismatch
+    );
+
+    Ok(())
+}
+
 pub(crate) fn validate_treasury_mutation_bindings(
     series_ledger: Option<&Account<SeriesReserveLedger>>,
     pool_class_ledger: Option<&Account<PoolClassLedger>>,
@@ -349,6 +401,7 @@ pub(crate) fn validate_impairment_bindings(
     )?;
 
     if let Some(obligation) = obligation {
+        validate_obligation_binding(obligation, funding_line_key, funding_line)?;
         return validate_treasury_mutation_bindings(
             series_ledger,
             pool_class_ledger,

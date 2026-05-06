@@ -49,6 +49,26 @@ test("[CSO-2026-05-06] optional reserve and allocation accounts must be canonica
   assert.match(allocationLedgerBody, /ledger\.bump == expected_bump/);
 });
 
+test("[ALMANAX-059d57e3] impairment obligation accounts must be canonical and coherent", () => {
+  const helperBody = extractRustFunctionBody("validate_obligation_binding");
+
+  assert.match(helperBody, /Pubkey::find_program_address/);
+  assert.match(helperBody, /SEED_OBLIGATION/);
+  assert.match(helperBody, /expected_funding_line\.as_ref\(\)/);
+  assert.match(helperBody, /obligation\.obligation_id\.as_bytes\(\)/);
+  assert.match(helperBody, /obligation\.key\(\)[\s\S]+expected_obligation/);
+  assert.match(helperBody, /obligation\.bump == expected_bump/);
+  assert.match(helperBody, /obligation\.funding_line[\s\S]+expected_funding_line[\s\S]+FundingLineMismatch/);
+  assert.match(helperBody, /obligation\.asset_mint[\s\S]+funding_line\.asset_mint[\s\S]+AssetMintMismatch/);
+  assert.match(helperBody, /obligation\.reserve_domain[\s\S]+funding_line\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(helperBody, /obligation\.health_plan[\s\S]+funding_line\.health_plan[\s\S]+HealthPlanMismatch/);
+  assert.match(helperBody, /obligation\.policy_series[\s\S]+funding_line\.policy_series[\s\S]+PolicySeriesMismatch/);
+  assert.match(
+    extractRustFunctionBody("validate_impairment_bindings"),
+    /validate_obligation_binding\(obligation,\s*funding_line_key,\s*funding_line\)\?/,
+  );
+});
+
 test("[CSO-2026-05-04] reserve, release, and settlement share the strict binding gate", () => {
   assert.match(extractRustFunctionBody("reserve_obligation"), /validate_treasury_mutation_bindings\(/);
   assert.match(extractRustFunctionBody("release_reserve"), /validate_treasury_mutation_bindings\(/);
