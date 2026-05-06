@@ -204,6 +204,18 @@ test("canonical contract exposes the health-capital-markets surface", () => {
       `settle_claim_case_selected_asset missing ${accountName}`,
     );
   }
+  for (const accountName of [
+    "liquidity_pool",
+    "capital_class",
+    "pool_class_ledger",
+    "allocation_position",
+    "allocation_ledger",
+  ]) {
+    assert(
+      PROTOCOL_INSTRUCTION_ACCOUNTS.create_obligation.some((account) => account.name === accountName),
+      `create_obligation missing ${accountName}`,
+    );
+  }
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.reserve_obligation.find((account) => account.name === "claim_case")?.pdaSeeds);
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.release_reserve.find((account) => account.name === "claim_case")?.pdaSeeds);
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.find((account) => account.name === "claim_case")?.pdaSeeds);

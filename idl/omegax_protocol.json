@@ -4848,8 +4848,20 @@
           "optional": true
         },
         {
+          "name": "liquidity_pool",
+          "optional": true
+        },
+        {
+          "name": "capital_class",
+          "optional": true
+        },
+        {
           "name": "pool_class_ledger",
           "writable": true,
+          "optional": true
+        },
+        {
+          "name": "allocation_position",
           "optional": true
         },
         {

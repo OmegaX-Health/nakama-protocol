@@ -5223,8 +5223,26 @@
           "optional": true
         },
         {
+          "name": "liquidity_pool",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
+          "name": "capital_class",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
           "name": "pool_class_ledger",
           "writable": true,
+          "signer": false,
+          "optional": true
+        },
+        {
+          "name": "allocation_position",
+          "writable": false,
           "signer": false,
           "optional": true
         },

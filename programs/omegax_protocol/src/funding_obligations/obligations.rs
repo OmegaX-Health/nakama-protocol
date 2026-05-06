@@ -34,15 +34,18 @@ pub(crate) fn create_obligation(
         args.policy_series,
         args.asset_mint,
     )?;
-    validate_optional_pool_class_ledger(
+    validate_obligation_creation_scope(
+        ctx.accounts.liquidity_pool.as_deref(),
+        ctx.accounts.capital_class.as_deref(),
+        ctx.accounts.allocation_position.as_deref(),
         ctx.accounts.pool_class_ledger.as_deref(),
-        args.capital_class,
-        args.asset_mint,
-    )?;
-    validate_optional_allocation_ledger(
         ctx.accounts.allocation_ledger.as_deref(),
+        &ctx.accounts.health_plan,
+        ctx.accounts.funding_line.key(),
+        &ctx.accounts.funding_line,
+        args.liquidity_pool,
+        args.capital_class,
         args.allocation_position,
-        args.asset_mint,
     )?;
     require_supported_obligation_delivery_mode(args.delivery_mode)?;
 
@@ -120,8 +123,11 @@ pub struct CreateObligation<'info> {
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    pub liquidity_pool: Option<Box<Account<'info, LiquidityPool>>>,
+    pub capital_class: Option<Box<Account<'info, CapitalClass>>>,
     #[account(mut)]
     pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
+    pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
     #[account(mut)]
     pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
     #[account(

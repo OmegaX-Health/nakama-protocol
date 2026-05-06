@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: bbc279b2262a68505108820b5d7650445069be7a366166bc2ea0fd33a411b97a
+// contract_sha256: 4a3f6446bcaf2bffe36a364606077ead0f1dc2d087bf90e83c7045cda56dfbd0
 
 export type ProtocolInstructionName =
   | "accept_protocol_governance_authority"
@@ -580,7 +580,10 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
       { name: "funding_line_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [102, 117, 110, 100, 105, 110, 103, 95, 108, 105, 110, 101, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "funding_line" }, { kind: "account", path: "funding_line.asset_mint" }] },
       { name: "plan_reserve_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 108, 97, 110, 95, 114, 101, 115, 101, 114, 118, 101, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "health_plan" }, { kind: "arg", path: "args.asset_mint" }] },
       { name: "series_reserve_ledger", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
+      { name: "liquidity_pool", writable: false, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
+      { name: "capital_class", writable: false, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
       { name: "pool_class_ledger", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
+      { name: "allocation_position", writable: false, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
       { name: "allocation_ledger", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
       { name: "obligation", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [111, 98, 108, 105, 103, 97, 116, 105, 111, 110] }, { kind: "account", path: "funding_line" }, { kind: "arg", path: "args.obligation_id" }] },
       { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },

@@ -224,6 +224,178 @@ pub(crate) fn validate_optional_allocation_ledger(
     Ok(())
 }
 
+pub(crate) fn validate_obligation_creation_scope(
+    liquidity_pool: Option<&Account<LiquidityPool>>,
+    capital_class: Option<&Account<CapitalClass>>,
+    allocation_position: Option<&Account<AllocationPosition>>,
+    pool_class_ledger: Option<&Account<PoolClassLedger>>,
+    allocation_ledger: Option<&Account<AllocationLedger>>,
+    health_plan: &Account<HealthPlan>,
+    funding_line_key: Pubkey,
+    funding_line: &FundingLine,
+    expected_liquidity_pool: Pubkey,
+    expected_capital_class: Pubkey,
+    expected_allocation_position: Pubkey,
+) -> Result<()> {
+    let scope_requested = expected_liquidity_pool != ZERO_PUBKEY
+        || expected_capital_class != ZERO_PUBKEY
+        || expected_allocation_position != ZERO_PUBKEY
+        || liquidity_pool.is_some()
+        || capital_class.is_some()
+        || allocation_position.is_some()
+        || pool_class_ledger.is_some()
+        || allocation_ledger.is_some();
+
+    require_keys_eq!(
+        funding_line.reserve_domain,
+        health_plan.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        funding_line.health_plan,
+        health_plan.key(),
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+
+    if funding_line.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION {
+        require!(
+            !scope_requested,
+            OmegaXProtocolError::FundingLineTypeMismatch
+        );
+        return Ok(());
+    }
+
+    require!(
+        expected_liquidity_pool != ZERO_PUBKEY
+            && expected_capital_class != ZERO_PUBKEY
+            && expected_allocation_position != ZERO_PUBKEY,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+
+    let pool = liquidity_pool.ok_or(OmegaXProtocolError::LiquidityPoolMismatch)?;
+    let class = capital_class.ok_or(OmegaXProtocolError::CapitalClassMismatch)?;
+    let position = allocation_position.ok_or(OmegaXProtocolError::AllocationPositionMismatch)?;
+    require!(
+        pool_class_ledger.is_some(),
+        OmegaXProtocolError::CapitalClassMismatch
+    );
+    require!(
+        allocation_ledger.is_some(),
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+
+    require_keys_eq!(
+        pool.key(),
+        expected_liquidity_pool,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        pool.reserve_domain,
+        health_plan.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        pool.deposit_asset_mint,
+        funding_line.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    let (expected_pool_pda, expected_pool_bump) = Pubkey::find_program_address(
+        &[
+            SEED_LIQUIDITY_POOL,
+            health_plan.reserve_domain.as_ref(),
+            pool.pool_id.as_bytes(),
+        ],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        pool.key(),
+        expected_pool_pda,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require!(
+        pool.bump == expected_pool_bump,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+
+    require_keys_eq!(
+        class.key(),
+        expected_capital_class,
+        OmegaXProtocolError::CapitalClassMismatch
+    );
+    require_keys_eq!(
+        class.reserve_domain,
+        health_plan.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        class.liquidity_pool,
+        pool.key(),
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    let (expected_class_pda, expected_class_bump) = Pubkey::find_program_address(
+        &[
+            SEED_CAPITAL_CLASS,
+            pool.key().as_ref(),
+            class.class_id.as_bytes(),
+        ],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        class.key(),
+        expected_class_pda,
+        OmegaXProtocolError::CapitalClassMismatch
+    );
+    require!(
+        class.bump == expected_class_bump,
+        OmegaXProtocolError::CapitalClassMismatch
+    );
+
+    validate_optional_pool_class_ledger(
+        pool_class_ledger,
+        expected_capital_class,
+        funding_line.asset_mint,
+    )?;
+    validate_optional_allocation_position(
+        Some(position),
+        expected_allocation_position,
+        funding_line_key,
+    )?;
+    require_keys_eq!(
+        position.reserve_domain,
+        health_plan.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        position.health_plan,
+        funding_line.health_plan,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        position.policy_series,
+        funding_line.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require_keys_eq!(
+        position.liquidity_pool,
+        pool.key(),
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        position.capital_class,
+        class.key(),
+        OmegaXProtocolError::CapitalClassMismatch
+    );
+    require!(
+        position.active,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    validate_optional_allocation_ledger(
+        allocation_ledger,
+        expected_allocation_position,
+        funding_line.asset_mint,
+    )
+}
+
 pub(crate) fn validate_obligation_binding(
     obligation: &Account<Obligation>,
     expected_funding_line: Pubkey,
