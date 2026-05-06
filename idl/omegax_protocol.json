@@ -8,6 +8,58 @@
   },
   "instructions": [
     {
+      "name": "accept_protocol_governance_authority",
+      "discriminator": [
+        202,
+        235,
+        28,
+        119,
+        167,
+        24,
+        81,
+        85
+      ],
+      "accounts": [
+        {
+          "name": "pending_authority",
+          "signer": true
+        },
+        {
+          "name": "protocol_governance",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "activate_direct_premium_commitment",
       "discriminator": [
         94,
@@ -2421,6 +2473,58 @@
           }
         }
       ]
+    },
+    {
+      "name": "cancel_protocol_governance_authority_transfer",
+      "discriminator": [
+        113,
+        25,
+        246,
+        12,
+        38,
+        35,
+        223,
+        114
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true
+        },
+        {
+          "name": "protocol_governance",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
     },
     {
       "name": "claim_oracle",
@@ -15755,6 +15859,32 @@
       ]
     },
     {
+      "name": "ProtocolGovernanceAuthorityTransferCanceledEvent",
+      "discriminator": [
+        159,
+        189,
+        24,
+        31,
+        242,
+        105,
+        166,
+        146
+      ]
+    },
+    {
+      "name": "ProtocolGovernanceAuthorityTransferProposedEvent",
+      "discriminator": [
+        255,
+        93,
+        25,
+        129,
+        137,
+        23,
+        184,
+        130
+      ]
+    },
+    {
       "name": "ProtocolGovernanceInitializedEvent",
       "discriminator": [
         89,
@@ -15859,571 +15989,586 @@
     },
     {
       "code": 6002,
+      "name": "GovernanceAuthorityTransferMissing",
+      "msg": "Governance authority transfer is missing"
+    },
+    {
+      "code": 6003,
+      "name": "GovernanceAuthorityTransferExpired",
+      "msg": "Governance authority transfer has expired"
+    },
+    {
+      "code": 6004,
       "name": "ProtocolEmergencyPaused",
       "msg": "Protocol governance is emergency paused"
     },
     {
-      "code": 6003,
+      "code": 6005,
       "name": "ReserveDomainInactive",
       "msg": "Reserve domain is inactive"
     },
     {
-      "code": 6004,
+      "code": 6006,
       "name": "VaultTokenAccountInvalid",
       "msg": "Domain asset vault token account is missing or invalid"
     },
     {
-      "code": 6005,
+      "code": 6007,
       "name": "HealthPlanPaused",
       "msg": "Health plan is paused"
     },
     {
-      "code": 6006,
+      "code": 6008,
       "name": "ClaimIntakePaused",
       "msg": "Claim intake is paused"
     },
     {
-      "code": 6007,
+      "code": 6009,
       "name": "CapitalSubscriptionsPaused",
       "msg": "Capital subscriptions are paused"
     },
     {
-      "code": 6008,
+      "code": 6010,
       "name": "InvalidBps",
       "msg": "Invalid basis points value"
     },
     {
-      "code": 6009,
+      "code": 6011,
       "name": "IdentifierTooLong",
       "msg": "Identifier length exceeds the canonical maximum"
     },
     {
-      "code": 6010,
+      "code": 6012,
       "name": "HealthPlanMismatch",
       "msg": "Health plan mismatch"
     },
     {
-      "code": 6011,
+      "code": 6013,
       "name": "PolicySeriesMismatch",
       "msg": "Policy series mismatch"
     },
     {
-      "code": 6012,
+      "code": 6014,
       "name": "PolicySeriesMissing",
       "msg": "Policy series is missing where one is required"
     },
     {
-      "code": 6013,
+      "code": 6015,
       "name": "SeriesLedgerUnexpected",
       "msg": "Unexpected series ledger was provided"
     },
     {
-      "code": 6014,
+      "code": 6016,
       "name": "AssetMintMismatch",
       "msg": "Asset mint mismatch"
     },
     {
-      "code": 6015,
+      "code": 6017,
       "name": "TokenAccountOwnerMismatch",
       "msg": "Source token account owner does not match the signer"
     },
     {
-      "code": 6016,
+      "code": 6018,
       "name": "TokenAccountSelfTransferInvalid",
       "msg": "Source and vault token accounts must be different accounts"
     },
     {
-      "code": 6017,
+      "code": 6019,
       "name": "VaultTokenAccountMismatch",
       "msg": "Vault token account does not match the domain asset vault"
     },
     {
-      "code": 6018,
+      "code": 6020,
       "name": "Token2022NotSupported",
       "msg": "Token-2022 custody rails are not supported by this protocol version"
     },
     {
-      "code": 6019,
+      "code": 6021,
       "name": "FeeRecipientInvalid",
       "msg": "Configured fee recipient is missing or invalid"
     },
     {
-      "code": 6020,
+      "code": 6022,
       "name": "FeeRecipientMismatch",
       "msg": "Fee withdrawal recipient does not match the configured fee recipient"
     },
     {
-      "code": 6021,
+      "code": 6023,
       "name": "FundingLineMismatch",
       "msg": "Funding line mismatch"
     },
     {
-      "code": 6022,
+      "code": 6024,
       "name": "FundingLineTypeMismatch",
       "msg": "Funding line type mismatch"
     },
     {
-      "code": 6023,
+      "code": 6025,
       "name": "InvalidObligationStateTransition",
       "msg": "Invalid obligation state transition"
     },
     {
-      "code": 6024,
+      "code": 6026,
       "name": "AmountExceedsOutstandingObligation",
       "msg": "Amount exceeds outstanding obligation"
     },
     {
-      "code": 6025,
+      "code": 6027,
       "name": "AmountExceedsReservedBalance",
       "msg": "Amount exceeds reserved balance"
     },
     {
-      "code": 6026,
+      "code": 6028,
       "name": "AmountExceedsApprovedClaim",
       "msg": "Amount exceeds approved claim"
     },
     {
-      "code": 6027,
+      "code": 6029,
       "name": "AmountMustBePositive",
       "msg": "Amount must be greater than zero"
     },
     {
-      "code": 6028,
+      "code": 6030,
       "name": "ClaimCaseLinkMismatch",
       "msg": "Claim case linkage mismatch"
     },
     {
-      "code": 6029,
+      "code": 6031,
       "name": "LinkedClaimMustSettleThroughObligation",
       "msg": "Linked claims must settle through the obligation path"
     },
     {
-      "code": 6030,
+      "code": 6032,
       "name": "AmountExceedsAvailableShares",
       "msg": "Amount exceeds available shares"
     },
     {
-      "code": 6031,
+      "code": 6033,
       "name": "AmountExceedsPendingRedemption",
       "msg": "Amount exceeds pending redemption"
     },
     {
-      "code": 6032,
+      "code": 6034,
       "name": "InvalidRedemptionAmount",
       "msg": "Redemption amount cannot be derived from the queued share state"
     },
     {
-      "code": 6033,
+      "code": 6035,
+      "name": "RedemptionQueueOutOfOrder",
+      "msg": "Redemption request is not at the head of the FIFO queue"
+    },
+    {
+      "code": 6036,
       "name": "InvalidCapitalShareState",
       "msg": "Deposit shares cannot be derived from the capital class NAV state"
     },
     {
-      "code": 6034,
+      "code": 6037,
       "name": "InvalidDepositShares",
       "msg": "Deposit would mint zero shares"
     },
     {
-      "code": 6035,
+      "code": 6038,
       "name": "MinimumSharesOutNotMet",
       "msg": "Computed deposit shares are below the requested minimum"
     },
     {
-      "code": 6036,
+      "code": 6039,
       "name": "RestrictedCapitalClass",
       "msg": "Restricted capital class access failed"
     },
     {
-      "code": 6037,
+      "code": 6040,
       "name": "CapitalClassMismatch",
       "msg": "Capital class ledger mismatch"
     },
     {
-      "code": 6038,
+      "code": 6041,
       "name": "LPPositionHasActiveCapital",
       "msg": "LP position with active capital cannot be decredentialed"
     },
     {
-      "code": 6039,
+      "code": 6042,
       "name": "LockupActive",
       "msg": "Capital class lockup is still active"
     },
     {
-      "code": 6040,
+      "code": 6043,
       "name": "AllocationCapExceeded",
       "msg": "Allocation cap exceeded"
     },
     {
-      "code": 6041,
+      "code": 6044,
       "name": "AllocationPositionMismatch",
       "msg": "Allocation position mismatch"
     },
     {
-      "code": 6042,
+      "code": 6045,
       "name": "AllocationAssetMismatch",
       "msg": "LP allocation asset mint must match the pool deposit asset mint"
     },
     {
-      "code": 6043,
+      "code": 6046,
       "name": "InsufficientFreeAllocationCapacity",
       "msg": "Insufficient free allocation capacity"
     },
     {
-      "code": 6044,
+      "code": 6047,
       "name": "InsufficientFreeReserveCapacity",
       "msg": "Insufficient free reserve capacity"
     },
     {
-      "code": 6045,
+      "code": 6048,
       "name": "ArithmeticError",
       "msg": "Arithmetic overflow or underflow"
     },
     {
-      "code": 6046,
+      "code": 6049,
       "name": "MembershipGateConfigurationInvalid",
       "msg": "Membership gate configuration is invalid"
     },
     {
-      "code": 6047,
+      "code": 6050,
       "name": "MembershipProofModeMismatch",
       "msg": "Membership proof mode does not match the configured plan posture"
     },
     {
-      "code": 6048,
+      "code": 6051,
       "name": "MembershipInviteAuthorityInvalid",
       "msg": "Invite authority is missing or invalid for this plan"
     },
     {
-      "code": 6049,
+      "code": 6052,
       "name": "MembershipInvitePermitExpired",
       "msg": "Invite permit is expired"
     },
     {
-      "code": 6050,
+      "code": 6053,
       "name": "MembershipTokenGateAccountMissing",
       "msg": "Token-gate proof account is missing"
     },
     {
-      "code": 6051,
+      "code": 6054,
       "name": "MembershipTokenGateOwnerMismatch",
       "msg": "Token-gate proof account owner does not match the enrolling wallet"
     },
     {
-      "code": 6052,
+      "code": 6055,
       "name": "MembershipTokenGateMintMismatch",
       "msg": "Token-gate proof account mint does not match the configured gate mint"
     },
     {
-      "code": 6053,
+      "code": 6056,
       "name": "MembershipTokenGateAmountTooLow",
       "msg": "Token-gate proof amount is below the configured minimum"
     },
     {
-      "code": 6054,
+      "code": 6057,
       "name": "MembershipAnchorSeatRequired",
       "msg": "Anchor-backed membership requires an anchor seat account"
     },
     {
-      "code": 6055,
+      "code": 6058,
       "name": "MembershipAnchorSeatAlreadyActive",
       "msg": "Anchor-backed membership seat is already active"
     },
     {
-      "code": 6056,
+      "code": 6059,
       "name": "MembershipAnchorSeatMismatch",
       "msg": "Anchor-backed membership seat does not match the provided anchor reference"
     },
     {
-      "code": 6057,
+      "code": 6060,
       "name": "MembershipAnchorReferenceMissing",
       "msg": "Anchor-backed membership requires a non-zero anchor reference"
     },
     {
-      "code": 6058,
+      "code": 6061,
       "name": "StringTooLong",
       "msg": "Bounded string field exceeds the canonical maximum"
     },
     {
-      "code": 6059,
+      "code": 6062,
       "name": "InvalidOracleQuorum",
       "msg": "Oracle quorum configuration is invalid"
     },
     {
-      "code": 6060,
+      "code": 6063,
       "name": "TooManyOracleSupportedSchemas",
       "msg": "Too many supported schema hashes were provided for one oracle profile"
     },
     {
-      "code": 6061,
+      "code": 6064,
       "name": "PoolOracleApprovalRequired",
       "msg": "Pool oracle approval is required before permissions can be granted"
     },
     {
-      "code": 6062,
+      "code": 6065,
       "name": "PoolOraclePermissionRequired",
       "msg": "Pool oracle permission is required for this claim attestation"
     },
     {
-      "code": 6063,
+      "code": 6066,
       "name": "OracleProfileInactive",
       "msg": "Oracle profile is inactive"
     },
     {
-      "code": 6064,
+      "code": 6067,
       "name": "OracleProfileUnclaimed",
       "msg": "Oracle profile has not been claimed by its signing key"
     },
     {
-      "code": 6065,
+      "code": 6068,
       "name": "InvalidClaimAttestationDecision",
       "msg": "Claim attestation decision is not a recognized value"
     },
     {
-      "code": 6066,
+      "code": 6069,
       "name": "ClaimAttestationSchemaRequired",
       "msg": "Claim attestation must reference a registered schema key hash"
     },
     {
-      "code": 6067,
+      "code": 6070,
       "name": "ClaimAttestationSchemaUnsupported",
       "msg": "Oracle profile does not advertise support for the selected claim-attestation schema"
     },
     {
-      "code": 6068,
+      "code": 6071,
       "name": "OutcomeSchemaUnverified",
       "msg": "Claim attestation schema must be governance verified"
     },
     {
-      "code": 6069,
+      "code": 6072,
       "name": "ClaimEvidenceRequired",
       "msg": "Claim attestation requires a locked evidence reference"
     },
     {
-      "code": 6070,
+      "code": 6073,
       "name": "ClaimEvidenceMismatch",
       "msg": "Claim attestation evidence reference does not match the claim case"
     },
     {
-      "code": 6071,
+      "code": 6074,
       "name": "ClaimEvidenceLocked",
       "msg": "Claim evidence cannot be changed after attestations begin"
     },
     {
-      "code": 6072,
+      "code": 6075,
       "name": "ClaimRecipientLocked",
       "msg": "Claim settlement recipient is locked after approval or payout"
     },
     {
-      "code": 6073,
+      "code": 6076,
       "name": "OracleFinalityHeld",
       "msg": "Health plan has paused oracle finality"
     },
     {
-      "code": 6074,
+      "code": 6077,
       "name": "TooManySchemaDependencies",
       "msg": "Too many schema dependency addresses were provided"
     },
     {
-      "code": 6075,
+      "code": 6078,
       "name": "DomainAssetVaultRequired",
       "msg": "Fee vault initialization requires the matching domain asset vault to exist"
     },
     {
-      "code": 6076,
+      "code": 6079,
       "name": "LiquidityPoolMismatch",
       "msg": "Liquidity pool reference does not match the supplied account"
     },
     {
-      "code": 6077,
+      "code": 6080,
       "name": "OracleProfileMismatch",
       "msg": "Oracle profile reference does not match the supplied account"
     },
     {
-      "code": 6078,
+      "code": 6081,
       "name": "FeeVaultMismatch",
       "msg": "Fee vault account does not match the expected scope"
     },
     {
-      "code": 6079,
+      "code": 6082,
       "name": "FeeVaultInsufficientBalance",
       "msg": "Fee vault has insufficient accrued balance for this withdrawal"
     },
     {
-      "code": 6080,
+      "code": 6083,
       "name": "FeeVaultRentExemptionBreach",
       "msg": "Fee vault withdrawal would breach the rent-exempt minimum balance"
     },
     {
-      "code": 6081,
+      "code": 6084,
       "name": "FeeVaultRailMismatch",
       "msg": "Fee vault rail and asset mint disagree (SOL vault used on SPL path or vice versa)"
     },
     {
-      "code": 6082,
+      "code": 6085,
       "name": "FeeVaultBpsMisconfigured",
       "msg": "Fee vault basis-points configuration is out of range"
     },
     {
-      "code": 6083,
+      "code": 6086,
       "name": "SettlementOutflowAccountsRequired",
       "msg": "Linked claim settlement requires the member, mint, vault token, recipient token, and token program accounts"
     },
     {
-      "code": 6084,
+      "code": 6087,
       "name": "FeeVaultRequiredForConfiguredFee",
       "msg": "Configured fee basis points require the matching fee vault account"
     },
     {
-      "code": 6085,
+      "code": 6088,
       "name": "ClaimAttestationRequiredForOracleFee",
       "msg": "Oracle fee accrual requires a matching claim attestation account"
     },
     {
-      "code": 6086,
+      "code": 6089,
       "name": "InvalidCommitmentCampaignMode",
       "msg": "Commitment campaign mode is invalid"
     },
     {
-      "code": 6087,
+      "code": 6090,
       "name": "InvalidCommitmentCampaignStatus",
       "msg": "Commitment campaign status is invalid"
     },
     {
-      "code": 6088,
+      "code": 6091,
       "name": "CommitmentCampaignInactive",
       "msg": "Commitment campaign is not active"
     },
     {
-      "code": 6089,
+      "code": 6092,
       "name": "CommitmentNotRefundable",
       "msg": "Commitment campaign is not refundable yet"
     },
     {
-      "code": 6090,
+      "code": 6093,
       "name": "CommitmentPositionNotPending",
       "msg": "Commitment position is not pending"
     },
     {
-      "code": 6091,
+      "code": 6094,
       "name": "CommitmentTermsMismatch",
       "msg": "Commitment terms hash mismatch"
     },
     {
-      "code": 6092,
+      "code": 6095,
       "name": "CommitmentCapExceeded",
       "msg": "Commitment cap exceeded"
     },
     {
-      "code": 6093,
+      "code": 6096,
       "name": "CommitmentActivationAuthorityMismatch",
       "msg": "Commitment activation authority mismatch"
     },
     {
-      "code": 6094,
+      "code": 6097,
       "name": "InsufficientStableCoverageCapacity",
       "msg": "Stable coverage capacity is insufficient"
     },
     {
-      "code": 6095,
+      "code": 6098,
       "name": "TreasuryCreditAssetMismatch",
       "msg": "Treasury-credit commitments require distinct payment and coverage assets"
     },
     {
-      "code": 6096,
+      "code": 6099,
       "name": "InvalidReserveAssetRole",
       "msg": "Reserve asset role is invalid"
     },
     {
-      "code": 6097,
+      "code": 6100,
       "name": "InvalidReserveOracleSource",
       "msg": "Reserve asset oracle source is invalid"
     },
     {
-      "code": 6098,
+      "code": 6101,
       "name": "ReserveAssetRailMismatch",
       "msg": "Reserve asset rail mismatch"
     },
     {
-      "code": 6099,
+      "code": 6102,
       "name": "ReserveDomainMismatch",
       "msg": "Reserve domain mismatch"
     },
     {
-      "code": 6100,
+      "code": 6103,
       "name": "ReserveAssetRailInactive",
       "msg": "Reserve asset rail is inactive"
     },
     {
-      "code": 6101,
+      "code": 6104,
       "name": "ReserveAssetRailDepositDisabled",
       "msg": "Reserve asset rail does not allow deposits"
     },
     {
-      "code": 6102,
+      "code": 6105,
       "name": "ReserveAssetRailPayoutDisabled",
       "msg": "Reserve asset rail does not allow claims payout"
     },
     {
-      "code": 6103,
+      "code": 6106,
       "name": "ReserveAssetRailCapacityDisabled",
       "msg": "Reserve asset rail cannot count toward claims capacity"
     },
     {
-      "code": 6104,
+      "code": 6107,
       "name": "ReserveAssetPriceStale",
       "msg": "Reserve asset oracle price is stale or missing"
     },
     {
-      "code": 6105,
+      "code": 6108,
       "name": "ReserveAssetPriceInvalid",
       "msg": "Reserve asset oracle price is invalid"
     },
     {
-      "code": 6106,
+      "code": 6109,
       "name": "CommitmentPaymentRailMismatch",
       "msg": "Commitment payment rail mismatch"
     },
     {
-      "code": 6107,
+      "code": 6110,
       "name": "CommitmentPaymentRailInactive",
       "msg": "Commitment payment rail is inactive"
     },
     {
-      "code": 6108,
+      "code": 6111,
       "name": "PartialObligationTransitionUnsupported",
       "msg": "Partial obligation lifecycle transitions are not supported"
     },
     {
-      "code": 6109,
+      "code": 6112,
       "name": "InvalidObligationDeliveryMode",
       "msg": "Invalid obligation delivery mode"
     },
     {
-      "code": 6110,
+      "code": 6113,
       "name": "ClaimAdjudicationLocked",
       "msg": "Claim adjudication is locked after payout or terminal state"
     },
     {
-      "code": 6111,
+      "code": 6114,
       "name": "SelectedAssetPayoutSameMint",
       "msg": "Selected-asset claim payout must use a different mint from the claim denomination"
     },
     {
-      "code": 6112,
+      "code": 6115,
       "name": "SelectedAssetPayoutUnderpaid",
       "msg": "Selected-asset claim payout value is below the credited claim amount"
     },
     {
-      "code": 6113,
+      "code": 6116,
       "name": "SelectedAssetPayoutOverpaid",
       "msg": "Selected-asset claim payout value exceeds the configured overpay tolerance"
     },
     {
-      "code": 6114,
+      "code": 6117,
       "name": "SelectedAssetOverpayBpsTooHigh",
       "msg": "Selected-asset claim payout overpay bps exceeds the protocol maximum"
     },
     {
-      "code": 6115,
+      "code": 6118,
       "name": "ReserveAssetMintDecimalsUnsupported",
       "msg": "Reserve asset mint decimals are unsupported"
     }
@@ -16824,6 +16969,14 @@
           },
           {
             "name": "pending_redemptions",
+            "type": "u64"
+          },
+          {
+            "name": "next_redemption_sequence",
+            "type": "u64"
+          },
+          {
+            "name": "next_redemption_to_process",
             "type": "u64"
           },
           {
@@ -17282,6 +17435,9 @@
           },
           {
             "name": "hard_cap_amount",
+            "docs": [
+              "Optional per-payment-rail commitment intake limit. Zero means uncapped."
+            ],
             "type": "u64"
           },
           {
@@ -17500,6 +17656,9 @@
           },
           {
             "name": "hard_cap_amount",
+            "docs": [
+              "Optional per-payment-rail commitment intake limit. Zero means uncapped."
+            ],
             "type": "u64"
           },
           {
@@ -17857,6 +18016,9 @@
           },
           {
             "name": "hard_cap_amount",
+            "docs": [
+              "Optional per-payment-rail commitment intake limit. Zero means uncapped."
+            ],
             "type": "u64"
           },
           {
@@ -17918,6 +18080,9 @@
           },
           {
             "name": "hard_cap_amount",
+            "docs": [
+              "Optional per-payment-rail commitment intake limit. Zero means uncapped."
+            ],
             "type": "u64"
           }
         ]
@@ -19000,6 +19165,14 @@
           {
             "name": "queue_status",
             "type": "u8"
+          },
+          {
+            "name": "redemption_sequence",
+            "type": "u64"
+          },
+          {
+            "name": "redemption_requested_at",
+            "type": "i64"
           },
           {
             "name": "bump",
@@ -20482,6 +20655,18 @@
             "type": "pubkey"
           },
           {
+            "name": "pending_governance_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_governance_proposed_at",
+            "type": "i64"
+          },
+          {
+            "name": "pending_governance_expires_at",
+            "type": "i64"
+          },
+          {
             "name": "protocol_fee_bps",
             "type": "u16"
           },
@@ -20516,6 +20701,62 @@
           {
             "name": "authority",
             "type": "pubkey"
+          },
+          {
+            "name": "audit_nonce",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolGovernanceAuthorityTransferCanceledEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "governance_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "canceled_governance_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "audit_nonce",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolGovernanceAuthorityTransferProposedEvent",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "current_governance_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_governance_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "proposed_at_ts",
+            "type": "i64"
+          },
+          {
+            "name": "expires_at_ts",
+            "type": "i64"
           },
           {
             "name": "audit_nonce",
@@ -20605,6 +20846,14 @@
           {
             "name": "asset_amount",
             "type": "u64"
+          },
+          {
+            "name": "redemption_sequence",
+            "type": "u64"
+          },
+          {
+            "name": "requested_at_ts",
+            "type": "i64"
           }
         ]
       }

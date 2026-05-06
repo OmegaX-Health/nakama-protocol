@@ -289,8 +289,8 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
         <div className="plans-settings-grid">
           <div className="plans-settings-row">
             <div>
-              <span className="plans-settings-label">Founder campaigns</span>
-              <span className="plans-settings-lane">Read-only campaign status linked to this plan and policy series</span>
+              <span className="plans-settings-label">Commitment intake</span>
+              <span className="plans-settings-lane">Read-only pending commitment status linked to this plan and policy series</span>
             </div>
             <span className="plans-settings-address">
               {props.model.founderCommitments.activeCampaignCount}/{props.model.founderCommitments.campaignCount} active
@@ -299,7 +299,7 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
           <div className="plans-settings-row">
             <div>
               <span className="plans-settings-label">Payment rails</span>
-              <span className="plans-settings-lane">Accepted same-asset waterfall rails under the same Founder campaign</span>
+              <span className="plans-settings-lane">Accepted payment rails for optional pre-activation commitment deposits</span>
             </div>
             <span className="plans-settings-address">
               {props.model.founderCommitments.waterfallRailCount}/{props.model.founderCommitments.paymentRailCount} waterfall

@@ -2081,7 +2081,7 @@ async function main() {
         protocol,
         connection,
         feePayer: governance,
-        label: "rotate_protocol_governance_authority",
+        label: "rotate_protocol_governance_authority:propose",
         instructionName: "rotate_protocol_governance_authority",
         args: {
           new_governance_authority: new PublicKey(configuredGovernanceControl),
@@ -2091,6 +2091,15 @@ async function main() {
           { pubkey: governanceAddress, isWritable: true },
         ],
       });
+      const pendingConfig = await protocol.fetchProtocolConfig({ connection });
+      if (pendingConfig?.pendingGovernanceAuthority !== configuredGovernanceControl) {
+        throw new Error(
+          `Protocol governance transfer proposal did not persist. Pending authority is ${pendingConfig?.pendingGovernanceAuthority ?? "unset"}.`,
+        );
+      }
+      console.log(
+        `[bootstrap] proposed protocol governance authority transfer to ${configuredGovernanceControl}; execute accept_protocol_governance_authority from that authority before treating the handoff as complete.`,
+      );
     }
   }
 
@@ -2102,6 +2111,7 @@ async function main() {
     JSON.stringify(
       {
         protocolGovernance: finalSnapshot.protocolGovernance?.address ?? null,
+        pendingGovernanceAuthority: finalSnapshot.protocolGovernance?.pendingGovernanceAuthority ?? null,
         reserveDomains: finalSnapshot.reserveDomains.length,
         domainAssetLedgers: finalSnapshot.domainAssetLedgers.length,
         healthPlans: finalSnapshot.healthPlans.length,

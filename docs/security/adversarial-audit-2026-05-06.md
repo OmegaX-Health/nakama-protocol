@@ -2,19 +2,19 @@
 
 ## 1. Verdict
 
-Current posture after this pass: no unauthenticated or attacker-recipient money-out path was found in the patched tree. The fastest real money-loss path before this pass was scoped authority/account confusion around allocator-controlled surfaces; that has been closed for `update_allocation_caps` and hardened for optional reserve/allocation accounts.
+Current posture after this implementation pass: no unauthenticated or attacker-recipient money-out path was found in the patched tree. The fastest real money-loss path before the earlier pass was scoped authority/account confusion around allocator-controlled surfaces; that remains closed for `update_allocation_caps` and hardened for optional reserve/allocation accounts.
 
-What still gets exploited first is not a raw vault drain; it is privileged-control failure: compromised governance/curator/operator keys, a mistaken governance rotation, a bad bootstrap authority split, or a launch environment that does not match the evidence packet.
+The remaining exploitable edge is operational rather than a newly observed vault-drain path: compromised governance/curator/operator keys, a bad bootstrap authority split, or a launch environment that does not match the evidence packet. Mistaken governance authority rotation is now materially reduced by a proposal/accept/cancel handoff, but mainnet funding still depends on proving the intended multisig and devnet signer evidence.
 
-What destroys trust fastest is a public commitment/reserve story that implies pending or haircut-adjusted assets are active claims-paying reserve. The code and docs are now much tighter about same-asset waterfall rails and pending-vs-active reserve, but launch copy and operator dashboards must keep that separation visible.
+What destroys trust fastest is a public commitment/reserve story that implies pending or haircut-adjusted assets are active claims-paying reserve. The code, docs, and UI copy now describe rail caps as optional commitment intake limits only; pending commitments remain separate from active cover and claims-paying reserve.
 
-What is probably fine now because current code and tests prove it: classic-SPL-only custody, fee-recipient binding, claim-recipient binding, selected-asset payout value bounds, direct claim settlement rejecting allocation scope, LP allocation settlement using allocation capacity rather than pretending it is funded custody, frontend pre-sign review coverage, generated IDL/contract parity, and localnet adversarial money/control probes.
+What is probably fine now because current code and tests prove it: classic-SPL-only custody, fee-recipient binding, claim-recipient binding, selected-asset payout value bounds, direct claim settlement rejecting allocation scope, LP allocation settlement using allocation capacity rather than pretending it is funded custody, two-step governance authority transfer, on-chain FIFO redemption processing, frontend pre-sign review coverage, generated IDL/contract parity, and localnet adversarial money/control probes.
 
 ## 2. Scope And Assumptions
 
 - Date: 2026-05-06.
-- Branch: `main`.
-- Source snapshot audited: local commits through `d741604` plus the clean working tree at report write time.
+- Branch: `codex/fix-adversarial-findings-20260506`.
+- Source snapshot audited: implementation branch at report write time, after generated IDL/contract refresh.
 - In scope: `programs/omegax_protocol/`, `frontend/lib/protocol.ts`, generated IDL/contract artifacts, localnet/e2e matrices, public security docs, release-gate docs, bootstrap scripts, QEDGen and Certora local lanes.
 - Read-only/out of scope: mainnet sends, production funding, private key material, external private services, and live devnet mutation beyond the simulate-only operator command.
 - Assumption: governance and high-value roles are intended to be multisig-backed before real-money launch. If raw keypairs are used for mainnet, severity on privileged-role findings increases.
@@ -23,15 +23,15 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 
 | Surface | Entrypoints | Assets | Trust Boundary | Existing Controls | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Governance | `initialize_protocol_governance`, `rotate_protocol_governance_authority`, pause | Entire protocol control plane | Upgrade authority, governance signer, release operator | Init now requires ProgramData upgrade authority; pause guard; DCO docs | Rotation is still one-step. |
+| Governance | `initialize_protocol_governance`, `rotate_protocol_governance_authority`, `accept_protocol_governance_authority`, `cancel_protocol_governance_authority_transfer`, pause | Entire protocol control plane | Upgrade authority, governance signer, release operator | Init requires ProgramData upgrade authority; rotation is proposal/accept/cancel with expiry; pause guard; DCO docs | Acceptance requires the pending authority signer. |
 | Reserve custody | domain vault setup, SPL inflow/outflow helpers | SPL token custody and accounting sheets | Token program, vault PDA, mint, recipient | Classic SPL guard, PDA-signed outflows, vault/mint checks | No Token-2022 acceptance found. |
 | Claims | claim intake, evidence, attestation, settlement | Approved claim value and member payout | Member, operator, oracle, funding line, settlement recipient | Claimant binding, recipient lock, evidence lock, payout rail pricing | Direct claim settlement rejects LP allocation accounts. |
 | Obligations | reserve, release, settle, cancel | Reserved/payable/claimable obligations | Plan authority, claim operator, optional scoped accounts | Full-transition guards, outflow-required settlement, canonical optional PDA hardening | Linked claims require claim/member context. |
-| Capital and LP | deposits, allocation caps, redemption queue, impairments | LP capital, NAV, allocation ledgers | Pool curator/allocator, LP owner, queue processor | Pool binding for allocation-cap updates, canonical ledgers, LP recipient pinning | Redemption ordering remains curator-mediated. |
-| Founder commitments | campaign, payment rails, deposits, activation, refunds | Pending commitment custody and active reserve capacity | Depositor, activation authority, reserve rails | Pending not counted as reserve; same-asset waterfall docs/builders; refund only to depositor | Campaign cap semantics should stay explicit per rail vs aggregate. |
+| Capital and LP | deposits, allocation caps, redemption queue, impairments | LP capital, NAV, allocation ledgers | Pool curator/allocator, LP owner, queue processor | Pool binding for allocation-cap updates, canonical ledgers, LP recipient pinning, FIFO sequence enforcement | Partial processing does not advance the queue head. |
+| Founder commitments | campaign, payment rails, deposits, activation, refunds | Pending commitment custody and active reserve capacity | Depositor, activation authority, reserve rails | Pending not counted as reserve; same-asset waterfall docs/builders; refund only to depositor; per-rail intake limit with zero uncapped | No aggregate campaign cap or claims-reserve cap was added. |
 | Frontend builders | `frontend/lib/protocol.ts` | Serialized tx accounts and user signing intent | Wallet adapter and generated contract | 26/26 pre-sign review callsites covered; generated contract parity | Governance init builders now include program/programdata accounts. |
 | Release chain | IDL, generated contract, public gate, localnet matrix | Public protocol surface integrity | Maintainers, CI, local toolchain | `verify:public`, localnet e2e, QEDGen, Certora prereq checks | Devnet operator sim blocked by local signer mismatch in this environment. |
-| Formal lanes | QEDGen, Certora Solana | Regression evidence | Local specs vs actual handler behavior | QEDGen accepted warning only; Certora prereqs pass | Certora rules are constrained scalar/kernel models, not full handler proofs. |
+| Formal lanes | QEDGen, Certora Solana | Regression evidence | Local specs vs actual handler behavior | Certora local prerequisites pass | QEDGen is blocked in this environment because no `qedgen` binary or QEDGen skill is installed. |
 
 ## 4. Attack Story Cards
 
@@ -82,7 +82,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 - Target asset: LP liquidity timing and fairness.
 - Technical path: process friendly LP redemptions first or stall unfriendly LPs.
 - Existing controls: payout recipient is pinned to the LP owner and fee accounting is bounded.
-- Remaining gap: no on-chain FIFO, queue index, or minimum delay enforcement. This is not a direct recipient diversion bug, but it is still a fairness and trust risk.
+- Fix added: each first pending redemption request receives a FIFO sequence; top-ups preserve the original sequence; processing must target the current queue head; partial processing leaves the queue head pinned until that LP position is fully cleared.
 
 ## 5. Confirmed Findings
 
@@ -121,39 +121,38 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 - Fix: frontend and bootstrap builders now include `getProgramId()` and `deriveProgramDataAddress()`.
 - Regression test: `tests/security/settlement_fee_guards_regression.test.ts` `ALAMANX-509b8643`.
 
-### [Medium, Open] Governance Rotation Is Still One-Step
+### [Medium, Fixed] Governance Rotation Was One-Step
 
 - Confidence: high.
 - Attack goal: brick or silently transfer governance by rotating to a wrong/dead key.
 - Impacted asset: protocol governance authority.
 - Preconditions: current governance authority signs a mistaken or compromised rotation.
-- Concrete path: `rotate_protocol_governance_authority_state` immediately writes `governance.governance_authority = new_governance_authority`; only zero pubkey is rejected.
+- Concrete path before this fix: `rotate_protocol_governance_authority_state` immediately wrote `governance.governance_authority = new_governance_authority`; only zero pubkey was rejected.
 - Violated invariant: high-value ownership transfer should require proposal plus acceptance by the new authority.
-- Evidence: `programs/omegax_protocol/src/kernel/auth.rs` and historical `docs/security/codex-challenge-2026-04-29.md`.
-- Existing controls: operational multisig requirement in `docs/security/mainnet-privileged-role-controls.md`.
-- Why controls are not enough: multisig reduces compromise risk but does not prove the target authority can accept or recover.
-- Fix: add pending authority, accept, cancel, and optional timeout semantics before mainnet funding.
-- Regression test needed: rotation proposal cannot activate until the new authority signs acceptance.
+- Evidence: `ProtocolGovernance` now stores pending authority/proposed/expires fields; `rotate_protocol_governance_authority` proposes only; `accept_protocol_governance_authority` requires the pending authority signer; current governance can cancel before acceptance.
+- Fix: add pending authority, accept, cancel, and 7-day expiry semantics.
+- Regression tests: Rust unit coverage for propose/accept/cancel/expired/missing pending authority, plus Node builder coverage for proposal, acceptance, and cancellation.
 
-### [Low/Medium, Open] Redemption Processing Is Curator-Mediated Without FIFO
+### [Low/Medium, Fixed] Redemption Processing Was Curator-Mediated Without FIFO
 
 - Confidence: high.
 - Attack goal: reorder, delay, or selectively process LP redemptions.
 - Impacted asset: LP fairness and liquidity timing.
 - Preconditions: pool curator/governance controls `process_redemption_queue`.
-- Concrete path: the handler processes a supplied LP position and share amount; it enforces owner recipient and fee bounds but not queue order or age.
+- Concrete path before this fix: the handler processed a supplied LP position and share amount; it enforced owner recipient and fee bounds but not queue order or age.
 - Violated invariant: if marketed as a fair queue, processing order must be enforceable.
-- Existing controls: recipient cannot be redirected; amount is derived from pending assets/shares.
-- Fix: either encode queue sequence/age and enforce FIFO, or clearly label the queue as curator-mediated in public LP terms.
+- Evidence: `CapitalClass` now tracks next assigned and next processable redemption sequences; `LPPosition` stores its sequence and first-request timestamp.
+- Fix: first pending request assigns a sequence, pending top-ups keep that sequence, out-of-order processing is rejected, and partial processing does not advance the queue head.
+- Regression tests: Rust unit coverage for sequence assignment/top-up preservation, out-of-order rejection, and partial-processing queue-head behavior.
 
 ## 6. Strong Hypotheses And Test Gaps
 
 | Hypothesis | Why It Matters | Current Evidence | Probe Needed | Priority |
 | --- | --- | --- | --- | --- |
-| Founder campaign cap semantics may be per-rail rather than aggregate | A multi-asset campaign could accept more total nominal deposits than a reader expects from `campaign.hard_cap_amount` | `deposit_commitment` checks `payment_rail.hard_cap_amount` against the per-rail ledger; docs now describe per-asset rails | Decide product meaning and add an explicit aggregate-cap or per-rail-cap test/docs label | P2 |
-| Certora lane is useful but not a full handler proof | Prevents overstating formal verification in investor/release material | Docs now say constrained scalar/kernel models only | Add deeper handler-level models when Solana prover support is deterministic enough | P3 |
-| Devnet operator drawer sign-off depends on local signer parity | Simulate-only gate cannot run if local env points to the wrong governance key | Command failed before simulation due signer/config mismatch | Run with the canonical devnet governance signer or update devnet fixture env | P2 |
-| One-step governance rotation may be acceptable only if governance is a mature multisig | The remaining open control-plane issue changes severity by custody setup | Mainnet docs require Squads/equivalent multisig | Prove Squads V4 2-of-3 and record no-send mainnet plan in RC evidence | P1 before funding |
+| Certora lane is useful but not a full handler proof | Prevents overstating formal verification in investor/release material | `npm run certora:solana:check` verifies local prerequisites only and submits no remote job | Add deeper handler-level models when Solana prover support is deterministic enough | P3 |
+| QEDGen evidence depends on local tool availability | A missing prover tool should not be misreported as protocol validation | `npm run qedgen:check` failed before analysis because no `qedgen` binary or QEDGen skill was found | Install QEDGen or set `QEDGEN=/path/to/qedgen`, then rerun | P2 |
+| Devnet operator drawer sign-off depends on local signer parity | Simulate-only gate cannot run if local env points to the wrong governance key | Command failed before simulation because local signer `BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez` did not match configured governance `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU` | Run with the canonical devnet governance signer or update devnet fixture env | P2 |
+| Mainnet funding still depends on multisig evidence | Two-step transfer reduces mistakes but does not make a raw keypair operationally safe | Mainnet docs require Squads/equivalent multisig; no mainnet send was performed in this pass | Prove Squads V4 2-of-3 and record no-send mainnet plan in RC evidence | P1 before funding |
 
 ## 7. Hard Invariants
 
@@ -164,7 +163,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 5. Every optional reserve/allocation money account is the canonical PDA for its seeds and bump.
 6. Governance initialization proves the initializer is the current program upgrade authority.
 7. Governance rotation cannot target the zero pubkey.
-8. Before mainnet funding, governance rotation should require target acceptance.
+8. Governance authority transfer requires proposal, pending-authority acceptance, expiry enforcement, and current-governance cancellation.
 9. Claim intake by an operator cannot override the member-position claimant.
 10. Claim recipient changes lock after approval, payout, or terminal state.
 11. Evidence references lock after the first attestation.
@@ -180,57 +179,66 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 21. Selected-asset payouts require payout-enabled rails with fresh nonzero-staleness pricing.
 22. Selected-asset payout value cannot exceed configured overpay bounds.
 23. LP redemption pays only the LP owner.
-24. Redemption assets are derived from queued shares/assets, not caller-supplied value.
-25. Redemption processing cannot create zero-net LP payouts.
-26. Allocation settlement debits allocation ledgers as allocation capacity, not funded custody.
-27. Impairments on LP-allocation funding lines require scoped accounts.
-28. Frontend mounted wallet sends require pre-sign review or explicit `skipReview`.
-29. Generated IDL, `shared/protocol_contract.json`, and frontend generated contract files match program source.
-30. Localnet adversarial matrix owns every live instruction in the surface manifest.
-31. Mainnet bootstrap must require distinct operational role wallets unless break-glass is explicitly documented.
-32. Public docs must not claim Certora or third-party audit coverage unless that review exists.
+24. LP redemption processing must target the current FIFO head sequence.
+25. Partial LP redemption processing cannot advance the FIFO head before the LP position is fully cleared.
+26. Redemption assets are derived from queued shares/assets, not caller-supplied value.
+27. Redemption processing cannot create zero-net LP payouts.
+28. Allocation settlement debits allocation ledgers as allocation capacity, not funded custody.
+29. Impairments on LP-allocation funding lines require scoped accounts.
+30. Frontend mounted wallet sends require pre-sign review or explicit `skipReview`.
+31. Generated IDL, `shared/protocol_contract.json`, and frontend generated contract files match program source.
+32. Localnet adversarial matrix owns every live instruction in the surface manifest.
+33. Mainnet bootstrap must require distinct operational role wallets unless break-glass is explicitly documented.
+34. Public docs must not claim Certora, QEDGen, or third-party audit coverage unless that review exists.
 
 ## 8. Validation
 
 Passed:
 
+- `npm run anchor:idl`
+  - Regenerated `idl/omegax_protocol.json` and source hash.
+- `npm run protocol:contract`
+  - Regenerated `shared/protocol_contract.json` and frontend generated contract files.
+  - Contract SHA: `5988efbe9e29ff7b6da5363223ed00a8085adf5278d766e03fad94f5318b940b`.
+- `cargo test -p omegax_protocol --lib`
+  - Rust unit tests: 89 passed.
+- `npm run test:node`
+  - Node tests: 256 passed.
 - `npm run verify:public`
-  - Rust fmt, Rust unit tests: 84 passed, Rust clippy.
+  - Rust fmt, Rust unit tests, Rust clippy.
   - IDL freshness and protocol contract parity.
-  - Node tests: 254 passed.
+  - Node tests: 256 passed.
   - Frontend production build.
   - Semantic readiness, public hygiene, license audit, dependency advisory audit, SBOM generation.
 - `npm run test:e2e:localnet`
   - 19 passed.
-  - Executable adversarial matrix: `62 blocked`, `0 unexpectedSuccess`, `0 inconclusive`.
+  - Localnet surface manifest owns 70/70 live instructions.
+  - Executable adversarial matrix: `68 blocked`, `0 unexpectedSuccess`, `0 inconclusive`.
   - Commitment custody drill: 3 assets, 100 users per asset, 300 refunds, 27 blocked probes, 9 activation-mode checks.
-- `npm run qedgen:check`
-  - `190 info`, `1 warnings`, `0 errors`.
-  - Accepted warning: `missing_cpi_for_token_context` on `create_domain_asset_vault`.
 - `npm run certora:solana:check`
   - Local prerequisites pass; no remote job submitted.
 - Focused tests:
-  - `tests/security/cybersecurity_plan_regression.test.ts`
-  - `tests/security/allocation_scope_required_regression.test.ts`
-  - `tests/security/pre_sign_review_coverage.test.ts`
-  - `tests/security/settlement_fee_guards_regression.test.ts`
+  - Rust governance transfer and FIFO redemption unit coverage.
+  - Commitment intake capacity unit coverage for zero-uncapped and per-rail semantics.
+  - `tests/protocol_governance_builders.test.ts`
   - `tests/protocol_contract.test.ts`
 
 Failed / environment-blocked:
 
+- `npm run qedgen:check`
+  - Failed before analysis: `Unable to find qedgen. Set QEDGEN=/path/to/qedgen or install the QEDGen skill.`
 - `npm run devnet:operator:drawer:sim`
-  - Failed before simulation because the local signer did not match the configured devnet governance wallet. No send path executed.
+  - Failed before simulation because local signer `BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez` did not match configured devnet governance wallet `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU`. No send path executed.
 
 Repository state at report time:
 
-- Working tree clean.
-- Local `main` is ahead of `origin/main` by 5 commits.
-- No push was performed in this audit run.
+- Working branch: `codex/fix-adversarial-findings-20260506`.
+- No mainnet/devnet transaction send path executed in this implementation pass.
+- No secrets or keypair paths were committed.
 
 ## 9. Recommended Next Moves
 
 1. Do not mainnet-fund from this state until Squads/equivalent governance and upgrade posture are proven in release-candidate evidence.
-2. Replace one-step governance rotation with propose/accept/cancel before real-money launch, or formally accept the risk in the production control packet.
-3. Decide and document Founder campaign cap semantics: explicitly per-rail or aggregate campaign cap.
-4. Re-run `npm run devnet:operator:drawer:sim` with the canonical devnet governance signer and record the result.
-5. If this becomes a release candidate, push only after deciding whether the five local commits should all land on `main` now, because pushing will trigger the public repo workflow.
+2. Install or configure QEDGen and rerun `npm run qedgen:check`.
+3. Re-run `npm run devnet:operator:drawer:sim` with the canonical devnet governance signer and record the result.
+4. If this becomes a release candidate, push only after deciding whether the existing local `main` commits bundled into this branch should land together, because pushing will trigger the public repo workflow.

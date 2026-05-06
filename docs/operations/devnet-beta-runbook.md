@@ -70,10 +70,11 @@ Trigger: governance authority cannot execute required safety actions.
 
 Steps:
 1. Confirm the current protocol governance PDA, expected Realms governance address, and the signer currently capable of creating or executing proposals.
-2. If the required safety action is an emergency stop, use the current `set_protocol_emergency_pause` path through the authorized governance signer or approved proposal flow.
-3. Validate the resulting authority and pause state through on-chain readback plus the readonly governance UI.
-4. Execute a low-risk follow-up governance action before resuming normal operations.
-5. Resume only after authority checks, pause posture, and proposal execution are green.
+2. If authority rotation is required, execute `rotate_protocol_governance_authority` from the current authority to create a pending transfer, then have the new authority sign `accept_protocol_governance_authority` before the 7-day expiry. Use `cancel_protocol_governance_authority_transfer` if the proposed key is wrong or abandoned.
+3. If the required safety action is an emergency stop, use the current `set_protocol_emergency_pause` path through the authorized governance signer or approved proposal flow.
+4. Validate the resulting authority and pause state through on-chain readback plus the readonly governance UI.
+5. Execute a low-risk follow-up governance action before resuming normal operations.
+6. Resume only after authority checks, pause posture, and proposal execution are green.
 
 ### Emergency pause
 

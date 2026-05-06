@@ -14,7 +14,7 @@ Every entry below maps to a `require_*` check in the onchain program source (`pr
 
 | Role | Guards (program) | Allowed actions | Custody owner | Mainnet signer (required) | Pre-fix default |
 |------|------------------|-----------------|---------------|---------------------------|-----------------|
-| **Protocol governance** | `require_governance` | `set_protocol_emergency_pause`, `rotate_protocol_governance_authority`, protocol-config updates | OmegaX Health FZCO | **Multisig PDA** (Squads V4 or equivalent) — see §2 | local keypair via `SOLANA_KEYPAIR` |
+| **Protocol governance** | `require_governance` | `set_protocol_emergency_pause`, `rotate_protocol_governance_authority` proposal, `accept_protocol_governance_authority`, `cancel_protocol_governance_authority_transfer`, protocol-config updates | OmegaX Health FZCO | **Multisig PDA** (Squads V4 or equivalent) — see §2 | local keypair via `SOLANA_KEYPAIR` |
 | **Reserve domain admin** | `require_governance` (domain ops) | reserve-domain pause flags, vault wiring | Same as governance for v1; can split later | Multisig PDA | `governanceAuthority` |
 | **Plan admin / Sponsor** | `require_plan_control` | `update_health_plan`, sponsor-budget funding, plan pause flags | Sponsor entity | Distinct wallet (multisig recommended for >$10k exposure) | `governanceAuthority` |
 | **Sponsor operator** | `require_plan_control` (sponsor lane) | premium recording, sponsor-budget operations | Operations team | Distinct wallet | `governanceAuthority` |
@@ -75,7 +75,7 @@ Each role has a defined rotation cadence and method. Rotation does not require a
 
 | Role | Cadence | Method | Approval |
 |------|---------|--------|----------|
-| Protocol governance | On-demand only (post-incident or member change) | `rotate_protocol_governance_authority` instruction (already on-chain); behind the multisig signing flow | ≥2-of-N multisig + DCO-signed release-candidate evidence |
+| Protocol governance | On-demand only (post-incident or member change) | `rotate_protocol_governance_authority` proposes a pending authority; `accept_protocol_governance_authority` must be signed by the new authority within 7 days; `cancel_protocol_governance_authority_transfer` clears stale proposals | ≥2-of-N multisig proposal + new-authority acceptance evidence |
 | Plan admin / Sponsor | On-demand (sponsor change, contract end) | governance-authorized plan-config update | ≥1 governance multisig signer + sponsor signature |
 | Claims operator | Quarterly | governance-authorized plan-config update; old key remains valid for a 7-day overlap before being removed | ≥1 governance multisig signer |
 | Oracle authority | Quarterly | `register_oracle` / `claim_oracle` from new authority, then pool approval/permission updates for LP-backed claim products | Oracle operator + ≥1 governance multisig signer |

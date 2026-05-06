@@ -25,6 +25,8 @@ fn lp_credentialing_cannot_revoke_active_position() {
         lockup_ends_at: 0,
         credentialed: true,
         queue_status: LP_QUEUE_STATUS_PENDING,
+        redemption_sequence: 0,
+        redemption_requested_at: 0,
         bump: 7,
     };
 
@@ -46,6 +48,8 @@ fn lp_position_binding_initializes_fresh_position() {
         lockup_ends_at: 0,
         credentialed: false,
         queue_status: 0,
+        redemption_sequence: 0,
+        redemption_requested_at: 0,
         bump: 0,
     };
     let capital_class = Pubkey::new_unique();
@@ -75,6 +79,8 @@ fn lp_deposit_top_up_preserves_existing_state() {
         lockup_ends_at: 50,
         credentialed: true,
         queue_status: LP_QUEUE_STATUS_PENDING,
+        redemption_sequence: 3,
+        redemption_requested_at: 40,
         bump: 4,
     };
 
@@ -87,6 +93,8 @@ fn lp_deposit_top_up_preserves_existing_state() {
     assert_eq!(lp_position.realized_distributions, 7);
     assert_eq!(lp_position.impaired_principal, 3);
     assert_eq!(lp_position.queue_status, LP_QUEUE_STATUS_PENDING);
+    assert_eq!(lp_position.redemption_sequence, 3);
+    assert_eq!(lp_position.redemption_requested_at, 40);
     assert!(lp_position.credentialed);
     assert_eq!(lp_position.lockup_ends_at, 1_120);
 }
@@ -131,12 +139,71 @@ fn redemption_processing_uses_queued_assets() {
 }
 
 #[test]
+fn redemption_fifo_assigns_sequence_and_keeps_top_up_sequence() {
+    let reserve_domain = Pubkey::new_unique();
+    let liquidity_pool = Pubkey::new_unique();
+    let capital_class_key = Pubkey::new_unique();
+    let mut capital_class = sample_capital_class(reserve_domain, liquidity_pool);
+    let mut lp_position =
+        sample_lp_position_for_fifo(capital_class_key, Pubkey::new_unique(), 0, 0);
+
+    let first_sequence =
+        assign_redemption_queue_ticket(&mut capital_class, &mut lp_position, 10_000).unwrap();
+
+    assert_eq!(first_sequence, 0);
+    assert_eq!(lp_position.redemption_sequence, 0);
+    assert_eq!(lp_position.redemption_requested_at, 10_000);
+    assert_eq!(capital_class.next_redemption_sequence, 1);
+
+    lp_position.pending_redemption_shares = 20;
+    lp_position.queue_status = LP_QUEUE_STATUS_PENDING;
+    let top_up_sequence =
+        assign_redemption_queue_ticket(&mut capital_class, &mut lp_position, 10_100).unwrap();
+
+    assert_eq!(top_up_sequence, first_sequence);
+    assert_eq!(lp_position.redemption_sequence, first_sequence);
+    assert_eq!(lp_position.redemption_requested_at, 10_000);
+    assert_eq!(capital_class.next_redemption_sequence, 1);
+}
+
+#[test]
+fn redemption_fifo_blocks_out_of_order_and_advances_only_when_clear() {
+    let reserve_domain = Pubkey::new_unique();
+    let liquidity_pool = Pubkey::new_unique();
+    let capital_class_key = Pubkey::new_unique();
+    let mut capital_class = sample_capital_class(reserve_domain, liquidity_pool);
+    capital_class.next_redemption_sequence = 2;
+    capital_class.next_redemption_to_process = 0;
+
+    let mut first_lp = sample_lp_position_for_fifo(capital_class_key, Pubkey::new_unique(), 0, 100);
+    let second_lp = sample_lp_position_for_fifo(capital_class_key, Pubkey::new_unique(), 1, 100);
+
+    assert!(require_redemption_queue_head(&capital_class, &second_lp).is_err());
+    require_redemption_queue_head(&capital_class, &first_lp).unwrap();
+
+    first_lp.pending_redemption_shares = 50;
+    resolve_redemption_queue_status_after_process(&mut capital_class, &mut first_lp).unwrap();
+    assert_eq!(first_lp.queue_status, LP_QUEUE_STATUS_PENDING);
+    assert_eq!(capital_class.next_redemption_to_process, 0);
+    assert!(require_redemption_queue_head(&capital_class, &second_lp).is_err());
+
+    first_lp.pending_redemption_shares = 0;
+    resolve_redemption_queue_status_after_process(&mut capital_class, &mut first_lp).unwrap();
+    assert_eq!(first_lp.queue_status, LP_QUEUE_STATUS_PROCESSED);
+    assert_eq!(capital_class.next_redemption_to_process, 1);
+    require_redemption_queue_head(&capital_class, &second_lp).unwrap();
+}
+
+#[test]
 fn sentinel_is_not_curator_control() {
     let curator = Pubkey::new_unique();
     let sentinel = Pubkey::new_unique();
     let governance_authority = Pubkey::new_unique();
     let governance = ProtocolGovernance {
         governance_authority,
+        pending_governance_authority: ZERO_PUBKEY,
+        pending_governance_proposed_at: 0,
+        pending_governance_expires_at: 0,
         protocol_fee_bps: 0,
         emergency_pause: false,
         audit_nonce: 0,
@@ -469,6 +536,28 @@ fn sample_commitment_ledger(campaign: Pubkey, payment_asset_mint: Pubkey) -> Com
     }
 }
 
+fn sample_commitment_payment_rail(
+    campaign: Pubkey,
+    payment_asset_mint: Pubkey,
+    hard_cap_amount: u64,
+) -> CommitmentPaymentRail {
+    CommitmentPaymentRail {
+        campaign,
+        reserve_domain: Pubkey::new_unique(),
+        payment_asset_mint,
+        coverage_asset_mint: payment_asset_mint,
+        reserve_asset_rail: Pubkey::new_unique(),
+        coverage_funding_line: Pubkey::new_unique(),
+        mode: COMMITMENT_MODE_DIRECT_PREMIUM,
+        status: COMMITMENT_CAMPAIGN_STATUS_ACTIVE,
+        deposit_amount: 99_000_000,
+        coverage_amount: 1_000_000_000,
+        hard_cap_amount,
+        audit_nonce: 0,
+        bump: 1,
+    }
+}
+
 fn sample_commitment_position(
     campaign: Pubkey,
     ledger: Pubkey,
@@ -517,6 +606,33 @@ fn pending_commitment_deposit_stays_out_of_reserve_sheets() {
     assert_eq!(domain_sheet.funded, 99_000_000);
     assert_eq!(plan_sheet.funded, 99_000_000);
     assert_eq!(funding_line_sheet.funded, 99_000_000);
+}
+
+#[test]
+fn commitment_intake_limit_zero_is_uncapped() {
+    let campaign = Pubkey::new_unique();
+    let asset_mint = Pubkey::new_unique();
+    let mut ledger = sample_commitment_ledger(campaign, asset_mint);
+    ledger.pending_amount = u64::MAX - 10;
+    let payment_rail = sample_commitment_payment_rail(campaign, asset_mint, 0);
+
+    commitments::require_commitment_intake_capacity(&ledger, &payment_rail, 10).unwrap();
+}
+
+#[test]
+fn commitment_intake_limit_is_per_payment_rail() {
+    let campaign = Pubkey::new_unique();
+    let usdc_mint = Pubkey::new_unique();
+    let omegax_mint = Pubkey::new_unique();
+    let mut usdc_ledger = sample_commitment_ledger(campaign, usdc_mint);
+    let omegax_ledger = sample_commitment_ledger(campaign, omegax_mint);
+    let usdc_rail = sample_commitment_payment_rail(campaign, usdc_mint, 100);
+    let omegax_rail = sample_commitment_payment_rail(campaign, omegax_mint, 100);
+
+    usdc_ledger.pending_amount = 90;
+
+    assert!(commitments::require_commitment_intake_capacity(&usdc_ledger, &usdc_rail, 11).is_err());
+    commitments::require_commitment_intake_capacity(&omegax_ledger, &omegax_rail, 100).unwrap();
 }
 
 #[test]
@@ -826,31 +942,67 @@ fn allocation_and_impairment_reduce_redeemable_before_free_hits_zero() {
 }
 
 #[test]
-fn rotating_protocol_governance_authority_updates_state_and_nonce() {
+fn governance_authority_rotation_requires_pending_authority_acceptance() {
     let current_governance_authority = Pubkey::new_unique();
     let next_governance_authority = Pubkey::new_unique();
     let mut governance = ProtocolGovernance {
         governance_authority: current_governance_authority,
+        pending_governance_authority: ZERO_PUBKEY,
+        pending_governance_proposed_at: 0,
+        pending_governance_expires_at: 0,
         protocol_fee_bps: 50,
         emergency_pause: false,
         audit_nonce: 2,
         bump: 7,
     };
 
-    let previous =
-        rotate_protocol_governance_authority_state(&mut governance, next_governance_authority)
-            .unwrap();
+    let (previous, expires_at_ts) = propose_protocol_governance_authority_transfer_state(
+        &mut governance,
+        next_governance_authority,
+        1_000,
+    )
+    .unwrap();
 
     assert_eq!(previous, current_governance_authority);
-    assert_eq!(governance.governance_authority, next_governance_authority);
+    assert_eq!(
+        governance.governance_authority,
+        current_governance_authority
+    );
+    assert_eq!(
+        governance.pending_governance_authority,
+        next_governance_authority
+    );
+    assert_eq!(governance.pending_governance_proposed_at, 1_000);
+    assert_eq!(
+        expires_at_ts,
+        1_000 + GOVERNANCE_AUTHORITY_TRANSFER_WINDOW_SECONDS
+    );
     assert_eq!(governance.audit_nonce, 3);
+
+    let accepted_previous = accept_protocol_governance_authority_transfer_state(
+        &mut governance,
+        &next_governance_authority,
+        expires_at_ts,
+    )
+    .unwrap();
+
+    assert_eq!(accepted_previous, current_governance_authority);
+    assert_eq!(governance.governance_authority, next_governance_authority);
+    assert_eq!(governance.pending_governance_authority, ZERO_PUBKEY);
+    assert_eq!(governance.pending_governance_proposed_at, 0);
+    assert_eq!(governance.pending_governance_expires_at, 0);
+    assert_eq!(governance.audit_nonce, 4);
 }
 
 #[test]
-fn rotating_protocol_governance_authority_rejects_zero_pubkey() {
+fn governance_authority_transfer_rejects_zero_missing_and_expired() {
     let current_governance_authority = Pubkey::new_unique();
+    let next_governance_authority = Pubkey::new_unique();
     let mut governance = ProtocolGovernance {
         governance_authority: current_governance_authority,
+        pending_governance_authority: ZERO_PUBKEY,
+        pending_governance_proposed_at: 0,
+        pending_governance_expires_at: 0,
         protocol_fee_bps: 50,
         emergency_pause: false,
         audit_nonce: 2,
@@ -858,7 +1010,8 @@ fn rotating_protocol_governance_authority_rejects_zero_pubkey() {
     };
 
     let error =
-        rotate_protocol_governance_authority_state(&mut governance, ZERO_PUBKEY).unwrap_err();
+        propose_protocol_governance_authority_transfer_state(&mut governance, ZERO_PUBKEY, 1_000)
+            .unwrap_err();
 
     assert!(error
         .to_string()
@@ -868,6 +1021,72 @@ fn rotating_protocol_governance_authority_rejects_zero_pubkey() {
         current_governance_authority
     );
     assert_eq!(governance.audit_nonce, 2);
+
+    let missing_error = accept_protocol_governance_authority_transfer_state(
+        &mut governance,
+        &next_governance_authority,
+        1_000,
+    )
+    .unwrap_err();
+    assert!(missing_error
+        .to_string()
+        .contains("Governance authority transfer is missing"));
+
+    propose_protocol_governance_authority_transfer_state(
+        &mut governance,
+        next_governance_authority,
+        1_000,
+    )
+    .unwrap();
+
+    let expired_error = accept_protocol_governance_authority_transfer_state(
+        &mut governance,
+        &next_governance_authority,
+        1_000 + GOVERNANCE_AUTHORITY_TRANSFER_WINDOW_SECONDS + 1,
+    )
+    .unwrap_err();
+    assert!(expired_error
+        .to_string()
+        .contains("Governance authority transfer has expired"));
+    assert_eq!(
+        governance.governance_authority,
+        current_governance_authority
+    );
+}
+
+#[test]
+fn governance_authority_transfer_cancel_clears_pending_authority() {
+    let current_governance_authority = Pubkey::new_unique();
+    let next_governance_authority = Pubkey::new_unique();
+    let mut governance = ProtocolGovernance {
+        governance_authority: current_governance_authority,
+        pending_governance_authority: ZERO_PUBKEY,
+        pending_governance_proposed_at: 0,
+        pending_governance_expires_at: 0,
+        protocol_fee_bps: 50,
+        emergency_pause: false,
+        audit_nonce: 2,
+        bump: 7,
+    };
+
+    propose_protocol_governance_authority_transfer_state(
+        &mut governance,
+        next_governance_authority,
+        1_000,
+    )
+    .unwrap();
+
+    let canceled = cancel_protocol_governance_authority_transfer_state(&mut governance).unwrap();
+
+    assert_eq!(canceled, next_governance_authority);
+    assert_eq!(
+        governance.governance_authority,
+        current_governance_authority
+    );
+    assert_eq!(governance.pending_governance_authority, ZERO_PUBKEY);
+    assert_eq!(governance.pending_governance_proposed_at, 0);
+    assert_eq!(governance.pending_governance_expires_at, 0);
+    assert_eq!(governance.audit_nonce, 4);
 }
 
 fn sample_claim_case(
@@ -1312,6 +1531,9 @@ fn health_plan_with_membership_gate(gate_kind: u8, gate_mint: Pubkey) -> HealthP
 fn sample_governance(governance_authority: Pubkey) -> ProtocolGovernance {
     ProtocolGovernance {
         governance_authority,
+        pending_governance_authority: ZERO_PUBKEY,
+        pending_governance_proposed_at: 0,
+        pending_governance_expires_at: 0,
         protocol_fee_bps: 50,
         emergency_pause: false,
         audit_nonce: 0,
@@ -1479,7 +1701,42 @@ fn sample_capital_class(reserve_domain: Pubkey, liquidity_pool: Pubkey) -> Capit
         reserved_assets: 0,
         impaired_assets: 0,
         pending_redemptions: 0,
+        next_redemption_sequence: 0,
+        next_redemption_to_process: 0,
         active: true,
+        bump: 1,
+    }
+}
+
+#[allow(dead_code)]
+fn sample_lp_position_for_fifo(
+    capital_class: Pubkey,
+    owner: Pubkey,
+    redemption_sequence: u64,
+    pending_redemption_shares: u64,
+) -> LPPosition {
+    LPPosition {
+        capital_class,
+        owner,
+        shares: 1_000,
+        subscription_basis: 1_000,
+        pending_redemption_shares,
+        pending_redemption_assets: pending_redemption_shares,
+        realized_distributions: 0,
+        impaired_principal: 0,
+        lockup_ends_at: 0,
+        credentialed: true,
+        queue_status: if pending_redemption_shares > 0 {
+            LP_QUEUE_STATUS_PENDING
+        } else {
+            LP_QUEUE_STATUS_NONE
+        },
+        redemption_sequence,
+        redemption_requested_at: if pending_redemption_shares > 0 {
+            10_000
+        } else {
+            0
+        },
         bump: 1,
     }
 }

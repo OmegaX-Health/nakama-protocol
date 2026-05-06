@@ -508,11 +508,33 @@ const matrixRows: MatrixRow[] = [
   {
     area: "governance-control",
     instruction: "rotate_protocol_governance_authority",
-    attack: "wrong signer rotates governance to attacker",
+    attack: "wrong signer proposes governance transfer to attacker",
     expectedGuard: "current protocol governance authority",
     tx: protocol.buildRotateGovernanceAuthorityTx({
       governanceAuthority: attacker,
       newAuthority: attacker,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [protocol.deriveProtocolGovernancePda()],
+  },
+  {
+    area: "governance-control",
+    instruction: "accept_protocol_governance_authority",
+    attack: "attacker accepts governance without being the pending authority",
+    expectedGuard: "pending governance authority signer",
+    tx: protocol.buildAcceptGovernanceAuthorityTx({
+      pendingAuthority: attacker,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [protocol.deriveProtocolGovernancePda()],
+  },
+  {
+    area: "governance-control",
+    instruction: "cancel_protocol_governance_authority_transfer",
+    attack: "wrong signer cancels a pending governance transfer",
+    expectedGuard: "current protocol governance authority",
+    tx: protocol.buildCancelGovernanceAuthorityTransferTx({
+      governanceAuthority: attacker,
       recentBlockhash: STATIC_BLOCKHASH,
     }),
     mustInclude: [protocol.deriveProtocolGovernancePda()],
@@ -572,7 +594,7 @@ test("adversarial matrix owns all live instructions through the surface manifest
   assert.deepEqual(duplicateOwnedInstructions(), []);
   assert.deepEqual(blankInstructionExceptionReasons(), []);
   assert.deepEqual(missing, []);
-  assert.equal(live.length, 68);
+  assert.equal(live.length, 70);
 });
 
 test("money and control paths include adversarial signer and account-binding probes", () => {

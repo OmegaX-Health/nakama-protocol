@@ -1,8 +1,9 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: 6ded49101a0979085f8c1a284f3f9489ae9d8b669c89b10813e103fb3986d2d4
+// contract_sha256: 5988efbe9e29ff7b6da5363223ed00a8085adf5278d766e03fad94f5318b940b
 export const PROTOCOL_PROGRAM_ID = "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B";
 export const PROTOCOL_INSTRUCTION_DISCRIMINATORS = {
+    "accept_protocol_governance_authority": Uint8Array.from([202, 235, 28, 119, 167, 24, 81, 85]),
     "activate_direct_premium_commitment": Uint8Array.from([94, 177, 11, 111, 30, 246, 181, 78]),
     "activate_treasury_credit_commitment": Uint8Array.from([47, 66, 202, 199, 90, 165, 23, 88]),
     "activate_waterfall_commitment": Uint8Array.from([233, 25, 21, 234, 148, 136, 235, 119]),
@@ -12,6 +13,7 @@ export const PROTOCOL_INSTRUCTION_DISCRIMINATORS = {
     "attest_claim_case": Uint8Array.from([111, 40, 46, 51, 76, 157, 214, 136]),
     "authorize_claim_recipient": Uint8Array.from([112, 97, 129, 42, 125, 165, 226, 163]),
     "backfill_schema_dependency_ledger": Uint8Array.from([109, 109, 247, 151, 229, 78, 52, 167]),
+    "cancel_protocol_governance_authority_transfer": Uint8Array.from([113, 25, 246, 12, 38, 35, 223, 114]),
     "claim_oracle": Uint8Array.from([1, 252, 166, 132, 45, 24, 23, 233]),
     "close_outcome_schema": Uint8Array.from([196, 81, 8, 61, 95, 145, 225, 2]),
     "configure_reserve_asset_rail": Uint8Array.from([78, 48, 108, 190, 181, 203, 194, 176]),
@@ -73,6 +75,9 @@ export const PROTOCOL_INSTRUCTION_DISCRIMINATORS = {
     "withdraw_protocol_fee_spl": Uint8Array.from([120, 62, 236, 14, 227, 240, 52, 253]),
 };
 export const PROTOCOL_INSTRUCTION_ARGS = {
+    "accept_protocol_governance_authority": [
+
+    ],
     "activate_direct_premium_commitment": [
         { name: "args", type: {"defined":{"name":"ActivateCommitmentArgs"}} },
     ],
@@ -99,6 +104,9 @@ export const PROTOCOL_INSTRUCTION_ARGS = {
     ],
     "backfill_schema_dependency_ledger": [
         { name: "args", type: {"defined":{"name":"BackfillSchemaDependencyLedgerArgs"}} },
+    ],
+    "cancel_protocol_governance_authority_transfer": [
+
     ],
     "claim_oracle": [
 
@@ -279,6 +287,10 @@ export const PROTOCOL_INSTRUCTION_ARGS = {
     ],
 };
 export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
+    "accept_protocol_governance_authority": [
+        { name: "pending_authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "protocol_governance", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
+    ],
     "activate_direct_premium_commitment": [
         { name: "activation_authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "protocol_governance", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
@@ -374,6 +386,10 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "outcome_schema", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [111, 117, 116, 99, 111, 109, 101, 95, 115, 99, 104, 101, 109, 97] }, { kind: "arg", path: "args.schema_key_hash" }] },
         { name: "schema_dependency_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [115, 99, 104, 101, 109, 97, 95, 100, 101, 112, 101, 110, 100, 101, 110, 99, 121, 95, 108, 101, 100, 103, 101, 114] }, { kind: "arg", path: "args.schema_key_hash" }] },
         { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
+    ],
+    "cancel_protocol_governance_authority_transfer": [
+        { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "protocol_governance", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
     ],
     "claim_oracle": [
         { name: "oracle", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },

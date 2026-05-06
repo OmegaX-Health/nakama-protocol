@@ -9,6 +9,9 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct ProtocolGovernance {
     pub governance_authority: Pubkey,
+    pub pending_governance_authority: Pubkey,
+    pub pending_governance_proposed_at: i64,
+    pub pending_governance_expires_at: i64,
     pub protocol_fee_bps: u16,
     pub emergency_pause: bool,
     pub audit_nonce: u64,
@@ -289,6 +292,7 @@ pub struct CommitmentCampaign {
     pub status: u8,
     pub deposit_amount: u64,
     pub coverage_amount: u64,
+    /// Optional per-payment-rail commitment intake limit. Zero means uncapped.
     pub hard_cap_amount: u64,
     pub starts_at_ts: i64,
     pub refund_after_ts: i64,
@@ -311,6 +315,7 @@ pub struct CommitmentPaymentRail {
     pub status: u8,
     pub deposit_amount: u64,
     pub coverage_amount: u64,
+    /// Optional per-payment-rail commitment intake limit. Zero means uncapped.
     pub hard_cap_amount: u64,
     pub audit_nonce: u64,
     pub bump: u8,
@@ -437,6 +442,8 @@ pub struct CapitalClass {
     pub reserved_assets: u64,
     pub impaired_assets: u64,
     pub pending_redemptions: u64,
+    pub next_redemption_sequence: u64,
+    pub next_redemption_to_process: u64,
     pub active: bool,
     pub bump: u8,
 }
@@ -455,6 +462,8 @@ pub struct LPPosition {
     pub lockup_ends_at: i64,
     pub credentialed: bool,
     pub queue_status: u8,
+    pub redemption_sequence: u64,
+    pub redemption_requested_at: i64,
     pub bump: u8,
 }
 

@@ -10,6 +10,10 @@ pub enum OmegaXProtocolError {
     Unauthorized,
     #[msg("Governance authority is invalid")]
     InvalidGovernanceAuthority,
+    #[msg("Governance authority transfer is missing")]
+    GovernanceAuthorityTransferMissing,
+    #[msg("Governance authority transfer has expired")]
+    GovernanceAuthorityTransferExpired,
     #[msg("Protocol governance is emergency paused")]
     ProtocolEmergencyPaused,
     #[msg("Reserve domain is inactive")]
@@ -72,6 +76,8 @@ pub enum OmegaXProtocolError {
     AmountExceedsPendingRedemption,
     #[msg("Redemption amount cannot be derived from the queued share state")]
     InvalidRedemptionAmount,
+    #[msg("Redemption request is not at the head of the FIFO queue")]
+    RedemptionQueueOutOfOrder,
     #[msg("Deposit shares cannot be derived from the capital class NAV state")]
     InvalidCapitalShareState,
     #[msg("Deposit would mint zero shares")]
