@@ -9,6 +9,7 @@ use crate::constants::*;
 use crate::errors::*;
 use crate::events::*;
 use crate::kernel::*;
+use crate::program::OmegaxProtocol;
 use crate::state::*;
 use crate::types::*;
 
@@ -100,6 +101,14 @@ pub struct InitializeProtocolGovernance<'info> {
         bump
     )]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[account(
+        constraint = program.programdata_address()? == Some(program_data.key()) @ OmegaXProtocolError::Unauthorized
+    )]
+    pub program: Program<'info, OmegaxProtocol>,
+    #[account(
+        constraint = program_data.upgrade_authority_address == Some(governance_authority.key()) @ OmegaXProtocolError::Unauthorized
+    )]
+    pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,
 }
 

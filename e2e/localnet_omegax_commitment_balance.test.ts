@@ -282,12 +282,20 @@ function writeCommitmentCustodySummary(results: CustodyAssetResult[]): void {
   );
 }
 
+function loadProgramUpgradeAuthority(): Keypair | null {
+  const raw = process.env.OMEGAX_E2E_ORIGINAL_GOVERNANCE_SECRET_KEY_JSON?.trim();
+  if (!raw) return null;
+  const parsed = JSON.parse(raw) as number[];
+  return Keypair.fromSecretKey(Uint8Array.from(parsed));
+}
+
 test("localnet commitment custody is asset-agnostic across payment rails", async () => {
   const rpcUrl = process.env.SOLANA_RPC_URL?.trim();
   if (!rpcUrl) return;
+  const governance = loadProgramUpgradeAuthority();
+  if (!governance) return;
 
   const connection = new Connection(rpcUrl, "confirmed");
-  const governance = Keypair.generate();
   const attacker = Keypair.generate();
   const depositors = Array.from({ length: USER_COUNT }, () => Keypair.generate());
   const expectedVaultTotals = new Map<string, bigint>();

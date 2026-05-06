@@ -36,6 +36,9 @@ function configuredProtocolProgramId(): string {
 }
 
 const PROGRAM_ID = new PublicKey(configuredProtocolProgramId());
+export const BPF_UPGRADEABLE_LOADER_PROGRAM_ID = new PublicKey(
+  "BPFLoaderUpgradeab1e11111111111111111111111",
+);
 
 export const ZERO_PUBKEY = "11111111111111111111111111111111";
 export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
@@ -1152,6 +1155,10 @@ function stringSeed(value: string, label: string): Uint8Array {
 
 export function deriveProtocolGovernancePda(programId = PROGRAM_ID): PublicKey {
   return derivePda([TEXT_ENCODER.encode(SEED_PROTOCOL_GOVERNANCE)], programId);
+}
+
+export function deriveProgramDataAddress(programId = PROGRAM_ID): PublicKey {
+  return derivePda([programId.toBuffer()], BPF_UPGRADEABLE_LOADER_PROGRAM_ID);
 }
 
 export function deriveReserveDomainPda(params: {
@@ -4218,6 +4225,8 @@ export function buildInitializeProtocolGovernanceTx(params: {
     accounts: [
       { pubkey: governanceAuthority, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda(), isWritable: true },
+      { pubkey: getProgramId() },
+      { pubkey: deriveProgramDataAddress() },
       { pubkey: SystemProgram.programId },
     ],
   });

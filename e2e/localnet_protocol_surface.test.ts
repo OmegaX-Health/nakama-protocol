@@ -94,6 +94,7 @@ const {
   deriveOutcomeSchemaPda,
   derivePlanReserveLedgerPda,
   derivePolicySeriesPda,
+  deriveProgramDataAddress,
   deriveProtocolGovernancePda,
   derivePoolOracleApprovalPda,
   derivePoolOraclePermissionSetPda,
@@ -666,6 +667,8 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     });
 
     assert.equal(initializeGovernanceTx.instructions[0]!.keys[1]!.pubkey.toBase58(), deriveProtocolGovernancePda().toBase58());
+    assert.equal(initializeGovernanceTx.instructions[0]!.keys[2]!.pubkey.toBase58(), getProgramId().toBase58());
+    assert.equal(initializeGovernanceTx.instructions[0]!.keys[3]!.pubkey.toBase58(), deriveProgramDataAddress().toBase58());
     assert.equal(createReserveDomainTx.instructions[0]!.keys[2]!.pubkey.toBase58(), deriveReserveDomainPda({ domainId: reserveDomain.domainId }).toBase58());
     assert.equal(createDomainAssetVaultTx.instructions[0]!.keys[3]!.pubkey.toBase58(), deriveDomainAssetVaultPda({
       reserveDomain: reserveDomain.address,

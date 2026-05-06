@@ -596,6 +596,8 @@ async function main() {
       accounts: [
         { pubkey: governance.publicKey, isSigner: true, isWritable: true },
         { pubkey: governanceAddress, isWritable: true },
+        { pubkey: protocol.getProgramId() },
+        { pubkey: protocol.deriveProgramDataAddress() },
         { pubkey: SystemProgram.programId },
       ],
     });

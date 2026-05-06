@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: d4d46a73a199bfa2035785856bc9d4badf3d3326a307200c651d7046766f3076
+// contract_sha256: 6ded49101a0979085f8c1a284f3f9489ae9d8b669c89b10813e103fb3986d2d4
 
 export type ProtocolInstructionName =
   | "activate_direct_premium_commitment"
@@ -666,6 +666,8 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
   "initialize_protocol_governance": [
       { name: "governance_authority", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "protocol_governance", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
+      { name: "program", writable: false, signer: false, optional: false, address: "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B", pdaSeeds: undefined },
+      { name: "program_data", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
   ],
   "initialize_series_reserve_ledger": [
