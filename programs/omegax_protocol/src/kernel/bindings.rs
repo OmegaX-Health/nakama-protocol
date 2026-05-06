@@ -28,6 +28,23 @@ pub(crate) fn validate_optional_series_ledger(
             expected_asset_mint,
             OmegaXProtocolError::AssetMintMismatch
         );
+        let (expected_ledger, expected_bump) = Pubkey::find_program_address(
+            &[
+                SEED_SERIES_RESERVE_LEDGER,
+                expected_policy_series.as_ref(),
+                expected_asset_mint.as_ref(),
+            ],
+            &crate::ID,
+        );
+        require_keys_eq!(
+            ledger.key(),
+            expected_ledger,
+            OmegaXProtocolError::PolicySeriesMismatch
+        );
+        require!(
+            ledger.bump == expected_bump,
+            OmegaXProtocolError::PolicySeriesMismatch
+        );
     }
     Ok(())
 }
@@ -51,6 +68,23 @@ pub(crate) fn validate_optional_pool_class_ledger(
             ledger.asset_mint,
             expected_asset_mint,
             OmegaXProtocolError::AssetMintMismatch
+        );
+        let (expected_ledger, expected_bump) = Pubkey::find_program_address(
+            &[
+                SEED_POOL_CLASS_LEDGER,
+                expected_capital_class.as_ref(),
+                expected_asset_mint.as_ref(),
+            ],
+            &crate::ID,
+        );
+        require_keys_eq!(
+            ledger.key(),
+            expected_ledger,
+            OmegaXProtocolError::CapitalClassMismatch
+        );
+        require!(
+            ledger.bump == expected_bump,
+            OmegaXProtocolError::CapitalClassMismatch
         );
     }
     Ok(())
@@ -76,6 +110,23 @@ pub(crate) fn validate_optional_allocation_position(
             expected_funding_line,
             OmegaXProtocolError::FundingLineMismatch
         );
+        let (expected_position, expected_bump) = Pubkey::find_program_address(
+            &[
+                SEED_ALLOCATION_POSITION,
+                position.capital_class.as_ref(),
+                expected_funding_line.as_ref(),
+            ],
+            &crate::ID,
+        );
+        require_keys_eq!(
+            position.key(),
+            expected_position,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        require!(
+            position.bump == expected_bump,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
     }
     Ok(())
 }
@@ -99,6 +150,23 @@ pub(crate) fn validate_optional_allocation_ledger(
             ledger.asset_mint,
             expected_asset_mint,
             OmegaXProtocolError::AssetMintMismatch
+        );
+        let (expected_ledger, expected_bump) = Pubkey::find_program_address(
+            &[
+                SEED_ALLOCATION_LEDGER,
+                expected_allocation_position.as_ref(),
+                expected_asset_mint.as_ref(),
+            ],
+            &crate::ID,
+        );
+        require_keys_eq!(
+            ledger.key(),
+            expected_ledger,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        require!(
+            ledger.bump == expected_bump,
+            OmegaXProtocolError::AllocationPositionMismatch
         );
     }
     Ok(())
