@@ -31,7 +31,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 | Founder commitments | campaign, payment rails, deposits, activation, refunds | Pending commitment custody and active reserve capacity | Depositor, activation authority, reserve rails | Pending not counted as reserve; same-asset waterfall docs/builders; refund only to depositor; per-rail intake limit with zero uncapped | No aggregate campaign cap or claims-reserve cap was added. |
 | Frontend builders | `frontend/lib/protocol.ts` | Serialized tx accounts and user signing intent | Wallet adapter and generated contract | 26/26 pre-sign review callsites covered; generated contract parity | Governance init builders now include program/programdata accounts. |
 | Release chain | IDL, generated contract, public gate, localnet matrix | Public protocol surface integrity | Maintainers, CI, local toolchain | `verify:public`, localnet e2e, QEDGen, Certora prereq checks | Devnet operator sim blocked by local signer mismatch in this environment. |
-| Formal lanes | QEDGen, Certora Solana | Regression evidence | Local specs vs actual handler behavior | Certora local prerequisites pass | QEDGen is blocked in this environment because no `qedgen` binary or QEDGen skill is installed. |
+| Formal lanes | QEDGen, Certora Solana | Regression evidence | Local specs vs actual handler behavior | QEDGen passes with one accepted warning; Certora local prerequisites pass | Certora check submits no remote job. |
 
 ## 4. Attack Story Cards
 
@@ -150,7 +150,6 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 | Hypothesis | Why It Matters | Current Evidence | Probe Needed | Priority |
 | --- | --- | --- | --- | --- |
 | Certora lane is useful but not a full handler proof | Prevents overstating formal verification in investor/release material | `npm run certora:solana:check` verifies local prerequisites only and submits no remote job | Add deeper handler-level models when Solana prover support is deterministic enough | P3 |
-| QEDGen evidence depends on local tool availability | A missing prover tool should not be misreported as protocol validation | `npm run qedgen:check` failed before analysis because no `qedgen` binary or QEDGen skill was found | Install QEDGen or set `QEDGEN=/path/to/qedgen`, then rerun | P2 |
 | Devnet operator drawer sign-off depends on local signer parity | Simulate-only gate cannot run if local env points to the wrong governance key | Command failed before simulation because local signer `BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez` did not match configured governance `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU` | Run with the canonical devnet governance signer or update devnet fixture env | P2 |
 | Mainnet funding still depends on multisig evidence | Two-step transfer reduces mistakes but does not make a raw keypair operationally safe | Mainnet docs require Squads/equivalent multisig; no mainnet send was performed in this pass | Prove Squads V4 2-of-3 and record no-send mainnet plan in RC evidence | P1 before funding |
 
@@ -217,6 +216,9 @@ Passed:
   - Commitment custody drill: 3 assets, 100 users per asset, 300 refunds, 27 blocked probes, 9 activation-mode checks.
 - `npm run certora:solana:check`
   - Local prerequisites pass; no remote job submitted.
+- `npm run qedgen:check`
+  - `190 info`, `1 warning`, `0 errors`.
+  - Accepted warning: `missing_cpi_for_token_context` on `create_domain_asset_vault` because the handler has `token_program` in accounts but no `transfers` block.
 - Focused tests:
   - Rust governance transfer and FIFO redemption unit coverage.
   - Commitment intake capacity unit coverage for zero-uncapped and per-rail semantics.
@@ -225,8 +227,6 @@ Passed:
 
 Failed / environment-blocked:
 
-- `npm run qedgen:check`
-  - Failed before analysis: `Unable to find qedgen. Set QEDGEN=/path/to/qedgen or install the QEDGen skill.`
 - `npm run devnet:operator:drawer:sim`
   - Failed before simulation because local signer `BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez` did not match configured devnet governance wallet `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU`. No send path executed.
 
@@ -239,6 +239,5 @@ Repository state at report time:
 ## 9. Recommended Next Moves
 
 1. Do not mainnet-fund from this state until Squads/equivalent governance and upgrade posture are proven in release-candidate evidence.
-2. Install or configure QEDGen and rerun `npm run qedgen:check`.
-3. Re-run `npm run devnet:operator:drawer:sim` with the canonical devnet governance signer and record the result.
-4. If this becomes a release candidate, push only after deciding whether the existing local `main` commits bundled into this branch should land together, because pushing will trigger the public repo workflow.
+2. Re-run `npm run devnet:operator:drawer:sim` with the canonical devnet governance signer and record the result.
+3. If this becomes a release candidate, push only after deciding whether the existing local `main` commits bundled into this branch should land together, because pushing will trigger the public repo workflow.
