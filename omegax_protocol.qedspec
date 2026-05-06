@@ -9,6 +9,231 @@ const BASIS_POINTS_DENOMINATOR = 10000
 const MAX_CONFIGURED_FEE_BPS = 9999
 const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS = 50
 
+// Minimal handler argument records used by the spec model.
+// Unsupported/string/hash fields from the Anchor args are intentionally omitted
+// until a guard/effect/property references them.
+// Timestamp-like i64 fields used by this abstract model are treated as non-negative U64 domains.
+type ActivateCommitmentArgs = {}
+
+type AdjudicateClaimCaseArgs = {
+  review_state : U8,
+  approved_amount : U64,
+  denied_amount : U64,
+  reserve_amount : U64
+}
+
+type AllocateCapitalArgs = {
+  amount : U64
+}
+
+type AttachClaimEvidenceRefArgs = {}
+
+type AttestClaimCaseArgs = {}
+
+type AuthorizeClaimRecipientArgs = {}
+
+type BackfillSchemaDependencyLedgerArgs = {}
+
+type ConfigureReserveAssetRailArgs = {
+  active : Bool
+}
+
+type CreateAllocationPositionArgs = {
+  cap_amount : U64,
+  weight_bps : U16
+}
+
+type CreateCapitalClassArgs = {
+  fee_bps : U16,
+  pause_flags : U32
+}
+
+type CreateCommitmentCampaignArgs = {
+  deposit_amount : U64,
+  coverage_amount : U64
+}
+
+type CreateCommitmentPaymentRailArgs = {
+  deposit_amount : U64,
+  coverage_amount : U64
+}
+
+type CreateDomainAssetVaultArgs = {}
+
+type CreateHealthPlanArgs = {
+  allowed_rail_mask : U16,
+  pause_flags : U32
+}
+
+type CreateLiquidityPoolArgs = {
+  fee_bps : U16,
+  pause_flags : U32
+}
+
+type CreateObligationArgs = {
+  amount : U64
+}
+
+type CreatePolicySeriesArgs = {}
+
+type CreateReserveDomainArgs = {
+  allowed_rail_mask : U16,
+  pause_flags : U32
+}
+
+type DeallocateCapitalArgs = {
+  amount : U64
+}
+
+type DepositCommitmentArgs = {}
+
+type DepositIntoCapitalClassArgs = {
+  amount : U64,
+  shares : U64
+}
+
+type FundSponsorBudgetArgs = {
+  amount : U64
+}
+
+type InitPoolOracleFeeVaultArgs = {}
+
+type InitPoolTreasuryVaultArgs = {}
+
+type InitProtocolFeeVaultArgs = {}
+
+type InitializeProtocolGovernanceArgs = {
+  protocol_fee_bps : U16,
+  emergency_pause : Bool
+}
+
+type InitializeSeriesReserveLedgerArgs = {}
+
+type MarkImpairmentArgs = {
+  amount : U64
+}
+
+type OpenClaimCaseArgs = {}
+
+type OpenFundingLineArgs = {}
+
+type OpenMemberPositionArgs = {
+  eligibility_status : U8,
+  delegated_rights : U32
+}
+
+type PauseCommitmentCampaignArgs = {}
+
+type ProcessRedemptionQueueArgs = {
+  shares : U64
+}
+
+type PublishReserveAssetRailPriceArgs = {
+  price_usd_1e8 : U64,
+  confidence_bps : U16,
+  published_at_ts : U64
+}
+
+type RecordPremiumPaymentArgs = {
+  amount : U64
+}
+
+type RefundCommitmentArgs = {}
+
+type RegisterOracleArgs = {}
+
+type RegisterOutcomeSchemaArgs = {}
+
+type ReleaseReserveArgs = {
+  amount : U64
+}
+
+type RequestRedemptionArgs = {
+  shares : U64
+}
+
+type ReserveObligationArgs = {
+  amount : U64
+}
+
+type RotateProtocolGovernanceAuthorityArgs = {}
+
+type SetPoolOracleArgs = {
+  active : Bool
+}
+
+type SetPoolOraclePermissionsArgs = {}
+
+type SetPoolOraclePolicyArgs = {
+  quorum_m : U8,
+  quorum_n : U8,
+  oracle_fee_bps : U16
+}
+
+type SetProtocolEmergencyPauseArgs = {
+  emergency_pause : Bool
+}
+
+type SettleClaimCaseArgs = {
+  amount : U64
+}
+
+type SettleClaimCaseSelectedAssetArgs = {
+  claim_credit_amount : U64,
+  payout_amount : U64,
+  max_overpay_bps : U16
+}
+
+type SettleObligationArgs = {
+  amount : U64
+}
+
+type UpdateAllocationCapsArgs = {
+  cap_amount : U64,
+  weight_bps : U16,
+  active : Bool
+}
+
+type UpdateCapitalClassControlsArgs = {
+  pause_flags : U32,
+  queue_only_redemptions : Bool,
+  active : Bool
+}
+
+type UpdateHealthPlanControlsArgs = {
+  allowed_rail_mask : U16,
+  pause_flags : U32,
+  active : Bool
+}
+
+type UpdateLpPositionCredentialingArgs = {
+  credentialed : Bool
+}
+
+type UpdateMemberEligibilityArgs = {
+  eligibility_status : U8,
+  delegated_rights : U32,
+  active : Bool
+}
+
+type UpdateOracleProfileArgs = {}
+
+type UpdateReserveDomainControlsArgs = {
+  allowed_rail_mask : U16,
+  pause_flags : U32,
+  active : Bool
+}
+
+type VerifyOutcomeSchemaArgs = {
+  verified : Bool
+}
+
+type VersionPolicySeriesArgs = {}
+
+type WithdrawArgs = {
+  amount : U64
+}
+
 // Brownfield verification model. `State.Live` is an abstract aggregate over
 // the protocol accounts touched by the Anchor handlers, not one physical
 // account layout. The first pass keeps lane-specific conservation equations
@@ -28,10 +253,10 @@ type State
       publisher : Pubkey,
       audit_nonce : U64,
       protocol_fee_bps : U64,
-      emergency_pause : U64,
+      emergency_pause : Bool,
       allowed_rail_mask : U64,
       pause_flags : U64,
-      active : U64,
+      active : Bool,
       total_assets : U64,
       last_price_usd_1e8 : U64,
       last_price_confidence_bps : U64,
@@ -78,10 +303,10 @@ type State
       pending_redemptions : U64,
       total_shares : U64,
       nav_assets : U64,
-      queue_only_redemptions : U64,
-      credentialed : U64,
-      claimed : U64,
-      verified : U64,
+      queue_only_redemptions : Bool,
+      credentialed : Bool,
+      claimed : Bool,
+      verified : Bool,
       closed_outcome_schema_count : U64,
       commitment_deposit_amount : U64,
       refund_amount : U64,
@@ -220,6 +445,9 @@ type Error
 // SPEC-GUARANTEE: Fee withdrawals never exceed accrued balances and preserve rent-exempt SOL fee-vault balances.
 // SPEC-GUARANTEE: Pool class ledgers, allocation ledgers, LP positions, and redemption queues conserve shares and capacity.
 // SPEC-GUARANTEE: Claim attestations bind oracle, health plan, policy series, evidence hash, schema, and claim case before oracle fees or finality are trusted.
+
+property abstract_state_progress_nonnegative : audit_nonce >= 0
+  preserved_by all
 
 // Initial proof targets. These are intentionally first-order until the next
 // pass models exact per-account right-hand sides, token transfers, and CPI effects.
@@ -370,7 +598,7 @@ handler configure_reserve_asset_rail (args : ConfigureReserveAssetRailArgs) : St
     system_program      : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -389,7 +617,7 @@ handler publish_reserve_asset_rail_price (args : PublishReserveAssetRailPriceArg
     reserve_asset_rail  : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.price_usd_1e8 > 0 else AmountMustBePositive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
@@ -661,7 +889,7 @@ handler fund_sponsor_budget (args : FundSponsorBudgetArgs) : State.Live -> State
     token_program         : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-CPI: SPL deposit into the domain vault.
@@ -698,7 +926,7 @@ handler record_premium_payment (args : RecordPremiumPaymentArgs) : State.Live ->
     token_program         : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-CPI: SPL premium inflow into the domain vault.
@@ -734,7 +962,7 @@ handler create_commitment_campaign (args : CreateCommitmentCampaignArgs) : State
     system_program               : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.deposit_amount > 0 else AmountMustBePositive
   requires args.coverage_amount > 0 else AmountMustBePositive
 
@@ -762,7 +990,7 @@ handler create_commitment_payment_rail (args : CreateCommitmentPaymentRailArgs) 
     system_program             : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.deposit_amount > 0 else AmountMustBePositive
   requires args.coverage_amount > 0 else AmountMustBePositive
 
@@ -793,7 +1021,7 @@ handler deposit_commitment (args : DepositCommitmentArgs) : State.Live -> State.
     system_program       : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-CPI: commitment deposit amount is configured on the payment rail, not passed in args.
   transfers {
@@ -828,7 +1056,7 @@ handler activate_direct_premium_commitment (args : ActivateCommitmentArgs) : Sta
     coverage_series_reserve_ledger : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -858,7 +1086,7 @@ handler activate_treasury_credit_commitment (args : ActivateCommitmentArgs) : St
     coverage_series_reserve_ledger : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -889,7 +1117,7 @@ handler activate_waterfall_commitment (args : ActivateCommitmentArgs) : State.Li
     coverage_series_reserve_ledger : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -943,7 +1171,7 @@ handler pause_commitment_campaign (args : PauseCommitmentCampaignArgs) : State.L
     campaign            : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -971,7 +1199,7 @@ handler create_obligation (args : CreateObligationArgs) : State.Live -> State.Li
     system_program        : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
@@ -1001,7 +1229,7 @@ handler reserve_obligation (args : ReserveObligationArgs) : State.Live -> State.
     claim_case            : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
@@ -1043,7 +1271,7 @@ handler settle_obligation (args : SettleObligationArgs) : State.Live -> State.Li
     oracle_fee_attestation  : readonly
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-CPI: settled obligations pay the net recipient amount after oracle fees.
@@ -1080,7 +1308,7 @@ handler release_reserve (args : ReleaseReserveArgs) : State.Live -> State.Live {
     claim_case            : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
@@ -1106,7 +1334,7 @@ handler open_claim_case (args : OpenClaimCaseArgs) : State.Live -> State.Live {
     system_program      : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -1128,7 +1356,7 @@ handler authorize_claim_recipient (args : AuthorizeClaimRecipientArgs) : State.L
     claim_case          : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -1149,7 +1377,7 @@ handler attach_claim_evidence_ref (args : AttachClaimEvidenceRefArgs) : State.Li
     claim_case          : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -1171,7 +1399,7 @@ handler adjudicate_claim_case (args : AdjudicateClaimCaseArgs) : State.Live -> S
     obligation          : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.reserve_amount <= args.approved_amount else AmountExceedsApprovedClaim
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
@@ -1215,8 +1443,9 @@ handler settle_claim_case (args : SettleClaimCaseArgs) : State.Live -> State.Liv
     token_program           : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
+  requires paid_amount + args.amount <= approved_amount else AmountExceedsApprovedClaim
 
   // SPEC-CPI: direct claim settlement pays net recipient amount after protocol/oracle fees.
   transfers {
@@ -1258,9 +1487,11 @@ handler settle_claim_case_selected_asset (args : SettleClaimCaseSelectedAssetArg
     token_program                : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.claim_credit_amount > 0 else AmountMustBePositive
   requires args.payout_amount > 0 else AmountMustBePositive
+  requires args.max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS else SelectedAssetOverpayBpsTooHigh
+  requires paid_amount + args.claim_credit_amount <= approved_amount else AmountExceedsApprovedClaim
 
   // SPEC-CPI: selected-asset claims pay the requested payout asset amount.
   transfers {
@@ -1383,7 +1614,7 @@ handler deposit_into_capital_class (args : DepositIntoCapitalClassArgs) : State.
     system_program       : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-CPI: LP subscription deposits SPL assets into the domain vault.
@@ -1415,7 +1646,7 @@ handler request_redemption (args : RequestRedemptionArgs) : State.Live -> State.
     lp_position         : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.shares > 0 else AmountMustBePositive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
@@ -1448,7 +1679,7 @@ handler process_redemption_queue (args : ProcessRedemptionQueueArgs) : State.Liv
     token_program           : program
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.shares > 0 else AmountMustBePositive
 
   // SPEC-CPI: redemption pays the LP net amount after pool-treasury fees.
@@ -1483,6 +1714,9 @@ handler withdraw_protocol_fee_spl (args : WithdrawArgs) : State.Live -> State.Li
     token_program           : program
   }
 
+  requires args.amount > 0 else AmountMustBePositive
+  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
+
   // SPEC-CPI: protocol SPL fee withdrawal from the domain vault PDA.
   transfers {
     from vault_token_account to recipient_token_account amount args.amount authority domain_asset_vault
@@ -1509,6 +1743,9 @@ handler withdraw_protocol_fee_sol (args : WithdrawArgs) : State.Live -> State.Li
     system_program      : program
   }
 
+  requires args.amount > 0 else AmountMustBePositive
+  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
+
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
     withdrawn_fees +=! 1
@@ -1533,6 +1770,9 @@ handler withdraw_pool_treasury_spl (args : WithdrawArgs) : State.Live -> State.L
     recipient_token_account : writable
     token_program           : program
   }
+
+  requires args.amount > 0 else AmountMustBePositive
+  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
 
   // SPEC-CPI: pool treasury SPL fee withdrawal from the domain vault PDA.
   transfers {
@@ -1560,6 +1800,9 @@ handler withdraw_pool_treasury_sol (args : WithdrawArgs) : State.Live -> State.L
     system_program      : program
   }
 
+  requires args.amount > 0 else AmountMustBePositive
+  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
+
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
     withdrawn_fees +=! 1
@@ -1585,6 +1828,9 @@ handler withdraw_pool_oracle_fee_spl (args : WithdrawArgs) : State.Live -> State
     recipient_token_account : writable
     token_program           : program
   }
+
+  requires args.amount > 0 else AmountMustBePositive
+  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
 
   // SPEC-CPI: pool oracle SPL fee withdrawal from the domain vault PDA.
   transfers {
@@ -1612,6 +1858,9 @@ handler withdraw_pool_oracle_fee_sol (args : WithdrawArgs) : State.Live -> State
     recipient             : writable
     system_program        : program
   }
+
+  requires args.amount > 0 else AmountMustBePositive
+  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -1681,7 +1930,7 @@ handler allocate_capital (args : AllocateCapitalArgs) : State.Live -> State.Live
     allocation_ledger   : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-REFINE: bind allocation capacity deltas to free reserve/class capacity.
@@ -1709,7 +1958,7 @@ handler deallocate_capital (args : DeallocateCapitalArgs) : State.Live -> State.
     allocation_ledger   : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-REFINE: bind allocation capacity deltas to free reserve/class capacity.
@@ -1741,7 +1990,7 @@ handler mark_impairment (args : MarkImpairmentArgs) : State.Live -> State.Live {
     obligation            : writable
   }
 
-  requires emergency_pause == 0 else ProtocolEmergencyPaused
+  requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
@@ -1765,7 +2014,7 @@ handler register_oracle (args : RegisterOracleArgs) : State.Live -> State.Live {
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
     supported_schema_count +=! 1
-    active := 1
+    active := true
     audit_nonce +=! 1
   }
 }
@@ -1782,7 +2031,7 @@ handler claim_oracle : State.Live -> State.Live {
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
-    claimed := 1
+    claimed := true
     updated_at_ts +=! 1
     audit_nonce +=! 1
   }
