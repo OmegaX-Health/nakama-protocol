@@ -116,6 +116,29 @@ test("[CSO-2026-05-04] broad pool authority helper is removed from mutation path
   assert.match(extractRustFunctionBody("update_allocation_caps"), /require_allocator\(/);
 });
 
+test("[CSO-2026-05-06] allocation cap updates bind authorization to the allocation pool", () => {
+  const body = extractRustFunctionBody("update_allocation_caps");
+  const poolBindingIndex = body.indexOf("ctx.accounts.allocation_position.liquidity_pool");
+  const authIndex = body.indexOf("require_allocator(");
+  const mutationIndex = body.indexOf("allocation.cap_amount");
+
+  assert.notEqual(poolBindingIndex, -1);
+  assert.notEqual(authIndex, -1);
+  assert.notEqual(mutationIndex, -1);
+  assert.ok(
+    poolBindingIndex < authIndex,
+    "allocation position must be bound to the provided pool before allocator authorization",
+  );
+  assert.ok(
+    poolBindingIndex < mutationIndex,
+    "allocation position must be bound to the provided pool before cap mutation",
+  );
+  assert.match(
+    body,
+    /require_keys_eq!\([\s\S]*ctx\.accounts\.allocation_position\.liquidity_pool[\s\S]*ctx\.accounts\.liquidity_pool\.key\(\)[\s\S]*OmegaXProtocolError::LiquidityPoolMismatch/,
+  );
+});
+
 test("[CSO-2026-05-05] obligation lifecycle transitions reject partial amounts before mutation", () => {
   const body = extractRustFunctionBody("settle_obligation");
   const guardIndex = body.indexOf("require_full_obligation_transition_amount");
