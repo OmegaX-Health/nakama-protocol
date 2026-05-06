@@ -110,6 +110,11 @@ function normalizeRuleResults(output) {
   return Object.entries(output).filter(([, value]) => typeof value === 'string');
 }
 
+function isPassingRuleResult(result) {
+  const normalized = String(result).trim().toUpperCase();
+  return normalized === 'SUCCESS' || normalized === 'VERIFIED';
+}
+
 async function main() {
   const job = readLatestJob();
   const statusUrl = buildStatusUrl(job);
@@ -155,7 +160,7 @@ async function main() {
     const failing = [];
     for (const [rule, result] of results) {
       console.log(`[certora:solana:status] ${rule}: ${result}`);
-      if (result !== 'VERIFIED') {
+      if (!isPassingRuleResult(result)) {
         failing.push(rule);
       }
     }

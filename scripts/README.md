@@ -33,7 +33,7 @@ This directory contains the repository's command-line helpers.
 
 - `bootstrap_governance_realms.ts` provisions governance state
 - `bootstrap_protocol.ts` writes the canonical hard-break devnet migration manifest and env exports
-- `bootstrap_devnet_live_protocol.ts` seeds the canonical shared-devnet plan/capital/oracle/schema graph, then hands protocol governance over to the configured governance PDA when one is present, and syncs the resulting env addresses back into the frontend bootstrap files
+- `bootstrap_devnet_live_protocol.ts` seeds the canonical shared-devnet plan/capital/oracle/schema graph, then proposes protocol-governance transfer to the configured governance PDA when one is present; that PDA must later execute `accept_protocol_governance_authority`
 - `bootstrap_genesis_live_protocol.ts` seeds the real Genesis Protect Acute launch surface from explicit live inputs instead of the baked devnet fixture matrix
 - `devnet_founder_rehearsal.ts` runs the operator-only Founder Travel30 signed devnet rehearsal; `--plan` is read-only, while `--execute` sends signed devnet transactions and writes a redacted evidence bundle under `artifacts/devnet-founder-rehearsal-*`
 - `bootstrap_devnet_frontend_parity.ts` syncs canonical fixture env values and writes `frontend/public/devnet-fixtures.json`
@@ -50,7 +50,7 @@ This directory contains the repository's command-line helpers.
 - Prefer package scripts from the repository root when they exist.
 - Use `npm run verify:public` for the public release gate.
 - Use `npm run frontend:workbench:mobile-sidebar:smoke` for the targeted mobile drawer accessibility smoke.
-- Use `npm run devnet:operator:drawer:sim` for the targeted plan/governance operator drawer transaction smoke.
+- Use `SOLANA_KEYPAIR=<devnet governance keypair> npm run devnet:operator:drawer:sim` for the targeted plan/governance operator drawer transaction smoke; the signer must match `NEXT_PUBLIC_DEVNET_PROTOCOL_GOVERNANCE_WALLET`, and the script aborts before RPC simulation when it does not.
 - Use `npm run devnet:treasury:seed-canaries` before `npm run devnet:treasury:pen-test` when the devnet snapshot lacks live treasury outflow canaries.
 - Use `npm run test:e2e:localnet` as an additional release-candidate sign-off step when the public protocol surface changes.
 - Use `npm run semantic:readiness:check` when you want the canonical-surface wording guard on its own.
@@ -60,5 +60,5 @@ This directory contains the repository's command-line helpers.
 - The shared-devnet release sign-off path now typically runs `npm run protocol:bootstrap:devnet-live`, `npm run devnet:frontend:bootstrap`, `npm run devnet:frontend:signoff`, the governance smoke pair, and `npm run devnet:beta:observe` in one tracked rollout window.
 - Use [`../docs/operations/genesis-live-bootstrap.md`](../docs/operations/genesis-live-bootstrap.md) for the Genesis mainnet-ready bootstrap path and its required env inputs.
 - Use `npm run devnet:founder:rehearsal -- --plan` to preview the Founder Travel30 canonical IDs, per-asset rails, and per-asset funding lines without sending; use `npm run devnet:founder:rehearsal -- --execute --resume` only from an operator shell with a funded `SOLANA_KEYPAIR`.
-- The governance smoke uses the existing `GOVERNANCE_SECRET_KEY_BASE58` signer or the local Solana keypair fallback, requires pre-existing DAO tokens, only SOL-airdrops fee balance when the signer drops below the configured threshold, and expects the protocol governance authority handoff to match `GOVERNANCE_CONFIG`.
+- The governance smoke uses the existing `GOVERNANCE_SECRET_KEY_BASE58` signer or the local Solana keypair fallback, requires pre-existing DAO tokens, only SOL-airdrops fee balance when the signer drops below the configured threshold, and expects any protocol-governance transfer to be proposed and accepted before `GOVERNANCE_CONFIG` is treated as live authority.
 - The readonly governance UI smoke requires Playwright Chromium locally: `npx playwright install chromium`.

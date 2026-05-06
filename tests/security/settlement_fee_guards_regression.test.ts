@@ -117,6 +117,18 @@ test("[CSO-2026-05-04] configured fee bps cannot be 100 percent", () => {
   assert.match(extractInstructionBody("create_capital_class"), /args\.fee_bps <= MAX_CONFIGURED_FEE_BPS/);
 });
 
+test("[ALAMANX-509b8643] protocol governance init requires program upgrade authority", () => {
+  assert.match(programSource, /program\.programdata_address\(\)\? == Some\(program_data\.key\(\)\)/);
+  assert.match(
+    programSource,
+    /program_data\.upgrade_authority_address == Some\(governance_authority\.key\(\)\)/,
+  );
+  assert.deepEqual(
+    listProtocolInstructionAccounts("initialize_protocol_governance").map((account) => account.name),
+    ["governance_authority", "protocol_governance", "program", "program_data", "system_program"],
+  );
+});
+
 test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slots", () => {
   const claim = DEVNET_PROTOCOL_FIXTURE_STATE.claimCases.find((row) => row.linkedObligation)
     ?? DEVNET_PROTOCOL_FIXTURE_STATE.claimCases[0]!;

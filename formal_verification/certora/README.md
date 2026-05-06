@@ -43,12 +43,19 @@ summaries to Certora's remote service:
 npm run certora:solana:sanity
 ```
 
-The first committed config is a starter sanity lane. It exists to establish the
-repo shape and currently runs the `rule_selected_asset_payout_bounds` CVLR rule
-compiled under the program's `certora` feature. A passing run is internal
-formal-verification evidence; it is not a third-party audit and must not be
-described publicly as "Certora audited" unless Certora has actually performed
-and published that review.
+The committed sanity config runs the CVLR rules compiled under the program's
+`certora` feature:
+
+- `rule_selected_asset_payout_bounds`
+- `rule_fee_recipient_binding`
+- `rule_fee_vault_withdrawal_bounds`
+- `rule_reserve_capacity_non_overflow`
+
+These are constrained kernel/scalar models for selected high-value accounting
+and binding invariants. They are not full Anchor handler proofs, do not prove
+complete account-flow correctness, and do not make the repository
+"Certora audited." A passing run is internal formal-verification evidence unless
+Certora has actually performed and published a third-party review.
 
 The npm wrapper temporarily rewrites the local `Cargo.lock` metadata version
 from `4` to `3` while Certora builds because the Certora Solana platform-tools
@@ -76,11 +83,12 @@ locally recorded anonymous dashboard token, and prints the job state plus rule
 verdicts from the remote output bundle. It does not use `CERTORAKEY` directly
 and does not write run output into tracked files. It redacts the private report
 token by default; pass `-- --show-report-url` only when you intentionally want
-the local terminal to print the dashboard link.
+the local terminal to print the dashboard link. The local status check treats
+Certora `SUCCESS` and `VERIFIED` rule verdicts as passing.
 
 ## Relationship To QEDGen
 
 QEDGen remains the local brownfield modeling lane for broad handler-surface
-coverage. Certora is the narrower symbolic-prover lane for high-value Solana
-kernel properties such as fee recipient binding, vault transfer bounds,
-selected-asset payout limits, and reserve-capacity arithmetic.
+coverage. Certora is the narrower remote symbolic-prover lane for high-value
+Solana kernel properties such as fee recipient binding, fee-vault withdrawal
+bounds, selected-asset payout limits, and reserve-capacity arithmetic.

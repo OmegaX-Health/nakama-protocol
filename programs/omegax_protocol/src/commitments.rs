@@ -339,13 +339,7 @@ pub(crate) fn deposit_commitment(
 
     let now_ts = Clock::get()?.unix_timestamp;
     let queue_index = ctx.accounts.ledger.next_queue_index;
-    let accepted_amount = accepted_commitment_amount(&ctx.accounts.ledger)?;
-    if ctx.accounts.payment_rail.hard_cap_amount > 0 {
-        require!(
-            checked_add(accepted_amount, amount)? <= ctx.accounts.payment_rail.hard_cap_amount,
-            OmegaXProtocolError::CommitmentCapExceeded
-        );
-    }
+    require_commitment_intake_capacity(&ctx.accounts.ledger, &ctx.accounts.payment_rail, amount)?;
 
     let ledger_key = ctx.accounts.ledger.key();
     let ledger = &mut ctx.accounts.ledger;
@@ -1024,6 +1018,23 @@ pub(crate) fn accepted_commitment_amount(ledger: &CommitmentLedger) -> Result<u6
         checked_add(ledger.pending_amount, ledger.activated_amount)?,
         ledger.treasury_locked_amount,
     )
+}
+
+pub(crate) fn require_commitment_intake_capacity(
+    ledger: &CommitmentLedger,
+    payment_rail: &CommitmentPaymentRail,
+    amount: u64,
+) -> Result<()> {
+    if payment_rail.hard_cap_amount == 0 {
+        return Ok(());
+    }
+
+    let accepted_amount = accepted_commitment_amount(ledger)?;
+    require!(
+        checked_add(accepted_amount, amount)? <= payment_rail.hard_cap_amount,
+        OmegaXProtocolError::CommitmentCapExceeded
+    );
+    Ok(())
 }
 
 pub(crate) fn activate_commitment_position(

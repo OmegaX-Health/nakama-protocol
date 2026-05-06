@@ -23,6 +23,32 @@ test("[CSO-2026-05-04] treasury mutation bindings require allocation scope accou
   assert.match(body, /position\.health_plan[\s\S]+obligation\.health_plan[\s\S]+HealthPlanMismatch/);
 });
 
+test("[CSO-2026-05-06] optional reserve and allocation accounts must be canonical PDAs", () => {
+  const seriesBody = extractRustFunctionBody("validate_optional_series_ledger");
+  assert.match(seriesBody, /Pubkey::find_program_address/);
+  assert.match(seriesBody, /SEED_SERIES_RESERVE_LEDGER/);
+  assert.match(seriesBody, /ledger\.key\(\)[\s\S]+expected_ledger/);
+  assert.match(seriesBody, /ledger\.bump == expected_bump/);
+
+  const poolClassBody = extractRustFunctionBody("validate_optional_pool_class_ledger");
+  assert.match(poolClassBody, /Pubkey::find_program_address/);
+  assert.match(poolClassBody, /SEED_POOL_CLASS_LEDGER/);
+  assert.match(poolClassBody, /ledger\.key\(\)[\s\S]+expected_ledger/);
+  assert.match(poolClassBody, /ledger\.bump == expected_bump/);
+
+  const allocationPositionBody = extractRustFunctionBody("validate_optional_allocation_position");
+  assert.match(allocationPositionBody, /Pubkey::find_program_address/);
+  assert.match(allocationPositionBody, /SEED_ALLOCATION_POSITION/);
+  assert.match(allocationPositionBody, /position\.key\(\)[\s\S]+expected_position/);
+  assert.match(allocationPositionBody, /position\.bump == expected_bump/);
+
+  const allocationLedgerBody = extractRustFunctionBody("validate_optional_allocation_ledger");
+  assert.match(allocationLedgerBody, /Pubkey::find_program_address/);
+  assert.match(allocationLedgerBody, /SEED_ALLOCATION_LEDGER/);
+  assert.match(allocationLedgerBody, /ledger\.key\(\)[\s\S]+expected_ledger/);
+  assert.match(allocationLedgerBody, /ledger\.bump == expected_bump/);
+});
+
 test("[CSO-2026-05-04] reserve, release, and settlement share the strict binding gate", () => {
   assert.match(extractRustFunctionBody("reserve_obligation"), /validate_treasury_mutation_bindings\(/);
   assert.match(extractRustFunctionBody("release_reserve"), /validate_treasury_mutation_bindings\(/);

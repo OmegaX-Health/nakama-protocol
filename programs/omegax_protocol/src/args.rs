@@ -266,6 +266,7 @@ pub struct CreateCommitmentCampaignArgs {
     pub mode: u8,
     pub deposit_amount: u64,
     pub coverage_amount: u64,
+    /// Optional per-payment-rail commitment intake limit. Zero means uncapped.
     pub hard_cap_amount: u64,
     pub starts_at_ts: i64,
     pub refund_after_ts: i64,
@@ -282,6 +283,7 @@ pub struct CreateCommitmentPaymentRailArgs {
     pub mode: u8,
     pub deposit_amount: u64,
     pub coverage_amount: u64,
+    /// Optional per-payment-rail commitment intake limit. Zero means uncapped.
     pub hard_cap_amount: u64,
 }
 

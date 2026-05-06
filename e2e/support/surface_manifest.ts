@@ -31,6 +31,8 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
     instructions: [
       "initialize_protocol_governance",
       "rotate_protocol_governance_authority",
+      "accept_protocol_governance_authority",
+      "cancel_protocol_governance_authority_transfer",
       "set_protocol_emergency_pause",
       "update_reserve_domain_controls",
       "update_health_plan_controls",
@@ -76,7 +78,7 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
   founder_commitment_waterfall_lifecycle: {
     title: "Founder Commitment Waterfall Lifecycle",
     focus:
-      "Founder Travel30 stays one public campaign with multiple payment rails, pending custody outside claims-paying reserve, waterfall activation only after rail pricing/freshness controls, and explicit refund/pause controls.",
+      "Founder Travel30 stays one public campaign with multiple same-asset payment/funding rails, pending custody outside claims-paying reserve, waterfall activation only after rail pricing/freshness controls, and explicit refund/pause controls.",
     instructions: [
       "configure_reserve_asset_rail",
       "publish_reserve_asset_rail_price",

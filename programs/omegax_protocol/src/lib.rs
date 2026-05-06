@@ -101,6 +101,18 @@ pub mod omegax_protocol {
         crate::governance::rotate_protocol_governance_authority(ctx, args)
     }
 
+    pub fn accept_protocol_governance_authority(
+        ctx: Context<AcceptProtocolGovernanceAuthority>,
+    ) -> Result<()> {
+        crate::governance::accept_protocol_governance_authority(ctx)
+    }
+
+    pub fn cancel_protocol_governance_authority_transfer(
+        ctx: Context<CancelProtocolGovernanceAuthorityTransfer>,
+    ) -> Result<()> {
+        crate::governance::cancel_protocol_governance_authority_transfer(ctx)
+    }
+
     pub fn create_reserve_domain(
         ctx: Context<CreateReserveDomain>,
         args: CreateReserveDomainArgs,

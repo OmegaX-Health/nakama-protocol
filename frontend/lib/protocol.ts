@@ -36,6 +36,9 @@ function configuredProtocolProgramId(): string {
 }
 
 const PROGRAM_ID = new PublicKey(configuredProtocolProgramId());
+export const BPF_UPGRADEABLE_LOADER_PROGRAM_ID = new PublicKey(
+  "BPFLoaderUpgradeab1e11111111111111111111111",
+);
 
 export const ZERO_PUBKEY = "11111111111111111111111111111111";
 export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
@@ -403,6 +406,7 @@ export type CommitmentCampaignSnapshot = {
   status: number;
   depositAmount: BigNumberish;
   coverageAmount: BigNumberish;
+  /** Optional per-payment-rail commitment intake limit. Zero means uncapped. */
   hardCapAmount: BigNumberish;
   startsAtTs: number;
   refundAfterTs: number;
@@ -424,6 +428,7 @@ export type CommitmentPaymentRailSnapshot = {
   status: number;
   depositAmount: BigNumberish;
   coverageAmount: BigNumberish;
+  /** Optional per-payment-rail commitment intake limit. Zero means uncapped. */
   hardCapAmount: BigNumberish;
   auditNonce: BigNumberish;
   bump: number;
@@ -560,6 +565,8 @@ export type CapitalClassSnapshot = {
   navAssets: BigNumberish;
   allocatedAssets?: BigNumberish;
   pendingRedemptions?: BigNumberish;
+  nextRedemptionSequence?: BigNumberish;
+  nextRedemptionToProcess?: BigNumberish;
   minLockupSeconds?: number;
   queueOnlyRedemptions?: boolean;
   active: boolean;
@@ -588,6 +595,8 @@ export type LPPositionSnapshot = {
   lockupEndsAt?: number;
   credentialed?: boolean;
   queueStatus?: number;
+  redemptionSequence?: BigNumberish;
+  redemptionRequestedAt?: number;
 };
 
 export type AllocationPositionSnapshot = {
@@ -620,6 +629,9 @@ export type AllocationLedgerSnapshot = {
 export type ProtocolGovernanceSnapshot = {
   address: string;
   governanceAuthority: string;
+  pendingGovernanceAuthority: string;
+  pendingGovernanceProposedAt: number;
+  pendingGovernanceExpiresAt: number;
   protocolFeeBps: number;
   emergencyPause: boolean;
   auditNonce: BigNumberish;
@@ -1019,6 +1031,8 @@ export type ProtocolConfigSummary = {
   address: string;
   admin: string;
   governanceAuthority: string;
+  pendingGovernanceAuthority?: string | null;
+  pendingGovernanceExpiresAt?: number;
   governanceRealm: string;
   governanceConfig: string;
   protocolFeeBps: number;
@@ -1152,6 +1166,10 @@ function stringSeed(value: string, label: string): Uint8Array {
 
 export function deriveProtocolGovernancePda(programId = PROGRAM_ID): PublicKey {
   return derivePda([TEXT_ENCODER.encode(SEED_PROTOCOL_GOVERNANCE)], programId);
+}
+
+export function deriveProgramDataAddress(programId = PROGRAM_ID): PublicKey {
+  return derivePda([programId.toBuffer()], BPF_UPGRADEABLE_LOADER_PROGRAM_ID);
 }
 
 export function deriveReserveDomainPda(params: {
@@ -2786,6 +2804,9 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
         snapshot.protocolGovernance = {
           address,
           governanceAuthority: asAddress(decodedField(decoded, "governanceAuthority")),
+          pendingGovernanceAuthority: asAddress(decodedField(decoded, "pendingGovernanceAuthority")),
+          pendingGovernanceProposedAt: numberFromAnchorValue(decodedField(decoded, "pendingGovernanceProposedAt")),
+          pendingGovernanceExpiresAt: numberFromAnchorValue(decodedField(decoded, "pendingGovernanceExpiresAt")),
           protocolFeeBps: Number(decodedField(decoded, "protocolFeeBps") ?? 0),
           emergencyPause: Boolean(decodedField(decoded, "emergencyPause")),
           auditNonce: bigintFromAnchorValue(decodedField(decoded, "auditNonce")),
@@ -3130,6 +3151,8 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           navAssets: bigintFromAnchorValue(decodedField(decoded, "navAssets")),
           allocatedAssets: bigintFromAnchorValue(decodedField(decoded, "allocatedAssets")),
           pendingRedemptions: bigintFromAnchorValue(decodedField(decoded, "pendingRedemptions")),
+          nextRedemptionSequence: bigintFromAnchorValue(decodedField(decoded, "nextRedemptionSequence")),
+          nextRedemptionToProcess: bigintFromAnchorValue(decodedField(decoded, "nextRedemptionToProcess")),
           minLockupSeconds: numberFromAnchorValue(decodedField(decoded, "minLockupSeconds")),
           queueOnlyRedemptions: Boolean(decodedField(decoded, "queueOnlyRedemptions")),
           active: Boolean(decodedField(decoded, "active")),
@@ -3149,6 +3172,8 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           lockupEndsAt: numberFromAnchorValue(decodedField(decoded, "lockupEndsAt")),
           credentialed: Boolean(decodedField(decoded, "credentialed")),
           queueStatus: Number(decodedField(decoded, "queueStatus") ?? 0),
+          redemptionSequence: bigintFromAnchorValue(decodedField(decoded, "redemptionSequence")),
+          redemptionRequestedAt: numberFromAnchorValue(decodedField(decoded, "redemptionRequestedAt")),
         });
         break;
       case "AllocationPosition":
@@ -3692,6 +3717,10 @@ function protocolConfigFromSnapshot(snapshot: ProtocolConsoleSnapshot): Protocol
     address: snapshot.protocolGovernance.address,
     admin: snapshot.protocolGovernance.governanceAuthority,
     governanceAuthority: snapshot.protocolGovernance.governanceAuthority,
+    pendingGovernanceAuthority: snapshot.protocolGovernance.pendingGovernanceAuthority === ZERO_PUBKEY
+      ? null
+      : snapshot.protocolGovernance.pendingGovernanceAuthority,
+    pendingGovernanceExpiresAt: snapshot.protocolGovernance.pendingGovernanceExpiresAt,
     governanceRealm,
     governanceConfig,
     protocolFeeBps: snapshot.protocolGovernance.protocolFeeBps,
@@ -4218,6 +4247,8 @@ export function buildInitializeProtocolGovernanceTx(params: {
     accounts: [
       { pubkey: governanceAuthority, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda(), isWritable: true },
+      { pubkey: getProgramId() },
+      { pubkey: deriveProgramDataAddress() },
       { pubkey: SystemProgram.programId },
     ],
   });
@@ -4237,6 +4268,40 @@ export function buildRotateGovernanceAuthorityTx(params: {
     args: {
       new_governance_authority: newAuthority,
     },
+    accounts: [
+      { pubkey: governanceAuthority, isSigner: true, isWritable: true },
+      { pubkey: deriveProtocolGovernancePda(), isWritable: true },
+    ],
+  });
+}
+
+export function buildAcceptGovernanceAuthorityTx(params: {
+  pendingAuthority: PublicKeyish;
+  recentBlockhash: string;
+}): Transaction {
+  const pendingAuthority = toPublicKey(params.pendingAuthority);
+  return buildProtocolTransactionFromInstruction({
+    feePayer: pendingAuthority,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "accept_protocol_governance_authority",
+    args: {},
+    accounts: [
+      { pubkey: pendingAuthority, isSigner: true, isWritable: true },
+      { pubkey: deriveProtocolGovernancePda(), isWritable: true },
+    ],
+  });
+}
+
+export function buildCancelGovernanceAuthorityTransferTx(params: {
+  governanceAuthority: PublicKeyish;
+  recentBlockhash: string;
+}): Transaction {
+  const governanceAuthority = toPublicKey(params.governanceAuthority);
+  return buildProtocolTransactionFromInstruction({
+    feePayer: governanceAuthority,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "cancel_protocol_governance_authority_transfer",
+    args: {},
     accounts: [
       { pubkey: governanceAuthority, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda(), isWritable: true },

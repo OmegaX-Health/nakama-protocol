@@ -59,6 +59,11 @@ pub(crate) fn update_allocation_caps(
     ctx: Context<UpdateAllocationCaps>,
     args: UpdateAllocationCapsArgs,
 ) -> Result<()> {
+    require_keys_eq!(
+        ctx.accounts.allocation_position.liquidity_pool,
+        ctx.accounts.liquidity_pool.key(),
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
     require_allocator(
         &ctx.accounts.authority.key(),
         &ctx.accounts.protocol_governance,

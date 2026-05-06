@@ -100,10 +100,13 @@ Optional formal-verification evidence, when relevant to the release-candidate:
 | Tool | Command | Rule / target | Result | Artifact / job URL |
 |------|---------|---------------|--------|--------------------|
 | Certora Solana | `npm run certora:solana:check` | prerequisites only | `<pass / fail / skipped>` | n/a |
-| Certora Solana | `npm run certora:solana:sanity` | `<rule name>` | `<pass / fail / skipped>` | `<https://prover.certora.com/output/... or n/a>` |
+| Certora Solana | `npm run certora:solana:sanity -- --wait_for_results` | `<rule name(s)>` | `<pass / fail / skipped>` | `<https://prover.certora.com/output/... or n/a>` |
+| Certora Solana | `npm run certora:solana:status` | `<rule verdicts>` | `<pass / fail / skipped>` | `<redacted / local-only report URL>` |
 
 Certora rows are manual evidence. They do not replace external audit posture in
-section 8 and must not be used to claim the release was Certora-audited.
+section 8 and must not be used to claim the release was Certora-audited. The
+current lane records constrained kernel/scalar CVLR evidence, not full Anchor
+handler or account-flow proofs.
 
 ## 6. Dependency scan
 

@@ -42,6 +42,8 @@ pub(crate) fn create_capital_class(
     capital_class.reserved_assets = 0;
     capital_class.impaired_assets = 0;
     capital_class.pending_redemptions = 0;
+    capital_class.next_redemption_sequence = 0;
+    capital_class.next_redemption_to_process = 0;
     capital_class.active = true;
     capital_class.bump = ctx.bumps.capital_class;
 

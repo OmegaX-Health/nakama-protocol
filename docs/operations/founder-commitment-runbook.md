@@ -17,9 +17,10 @@ Founder Travel30 commitments are a temporary launch flow for collecting intent a
 - Pending commitments use the existing `DomainAssetVault` for custody.
 - Pending commitment deposits do not increase claims-paying reserve ledgers.
 - Founder Travel30 is one public campaign with multiple `CommitmentPaymentRail` accounts, not one campaign per asset.
+- Each `WATERFALL_RESERVE` payment rail activates against a same-asset Travel30 funding line and same-asset reserve ledgers. The waterfall is the ordered set of accepted reserve assets in one reserve domain; it is not an on-chain conversion of every accepted asset into one USDC premium line.
 - `ReserveAssetRail` accounts define the mixed-reserve waterfall for each accepted asset: role, payout priority, oracle source, freshness window, haircut, exposure cap, and whether deposits/payout/capacity are enabled.
 - Stable rails should be ordered first. Launch priority is USDC first, PUSD second, USDT third, SOL/WSOL fourth, WBTC fifth, WETH sixth, and OMEGAX last.
-- `WATERFALL_RESERVE` payment rails accept USDC, PUSD, USDT, SOL/WSOL, WBTC, WETH, or OMEGAX into the same reserve domain and later activate into reserve accounting only after the rail controls are valid.
+- `WATERFALL_RESERVE` payment rails accept USDC, PUSD, USDT, SOL/WSOL, WBTC, WETH, or OMEGAX into the same reserve domain and later activate into that rail's same-asset reserve accounting only after the rail controls are valid.
 - OMEGAX is not swapped or sold by the v1 protocol. It can be a commitment payment rail, and it can be a last-resort selected payout rail only when explicitly `payout_enabled`, fresh-priced, and ordered after stable/SOL/WBTC/WETH rails. It should only count as active claims capacity when `capacity_enabled=true`, a fresh approved price exists, haircut/exposure limits are set, and governance has accepted that capacity posture.
 - If an OMEGAX Chainlink feed is unavailable at launch, set the OMEGAX rail `capacity_enabled=false`; leave `payout_enabled=false` unless governance intentionally accepts fresh governance-attested pricing for selected-token payouts.
 - Legacy `DIRECT_PREMIUM` and `TREASURY_CREDIT` modes remain available for old/operator workflows, but new public Founder Travel30 rails should use `WATERFALL_RESERVE`.
@@ -43,10 +44,10 @@ Founder Travel30 commitments are a temporary launch flow for collecting intent a
 
 ## Operator Checklist
 
-1. Create or confirm the target reserve domain, payment vault, health plan, Travel30 policy series, and Travel30 premium funding line.
+1. Create or confirm the target reserve domain, payment vault, health plan, Travel30 policy series, and same-asset Travel30 premium funding lines for each accepted waterfall mint.
 2. Configure reserve rails for accepted assets. Start with USDC/PUSD/USDT stable rails, add SOL/WSOL, WBTC, and WETH only with live price sources, and add OMEGAX last with `capacity_enabled=false` until its price feed/attestation is ready. Any rail with `capacity_enabled=true` or `payout_enabled=true` must have a non-`NONE` oracle source, nonzero oracle authority, and nonzero staleness window.
-3. Create the Founder Travel30 campaign once, then add `CommitmentPaymentRail` accounts for each accepted mint under that same campaign.
+3. Create the Founder Travel30 campaign once, then add `CommitmentPaymentRail` accounts for each accepted mint under that same campaign. For `WATERFALL_RESERVE`, the rail's `payment_asset_mint`, `coverage_asset_mint`, and `coverage_funding_line.asset_mint` must all match.
 4. Keep public CTAs pointed at `/protect/founder` while commitment mode is live.
 5. Monitor commitment ledgers separately from reserve funding ledgers.
-6. Before activation, verify each payment rail maps to an active reserve asset rail with fresh price data when capacity or payout is enabled.
+6. Before activation, verify each payment rail maps to an active reserve asset rail, a same-asset funding line, and fresh price data when capacity or payout is enabled.
 7. Keep OMEGAX PDA-held and unsold; if used for selected-token payout or capacity, use it last in the waterfall after stable rails and SOL/WBTC/WETH.

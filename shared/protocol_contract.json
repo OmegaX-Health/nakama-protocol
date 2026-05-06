@@ -4,6 +4,62 @@
   "instructionSetVersion": 1,
   "instructions": [
     {
+      "name": "accept_protocol_governance_authority",
+      "discriminator": [
+        202,
+        235,
+        28,
+        119,
+        167,
+        24,
+        81,
+        85
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "name": "pending_authority",
+          "writable": false,
+          "signer": true,
+          "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "activate_direct_premium_commitment",
       "discriminator": [
         94,
@@ -2592,6 +2648,62 @@
           "signer": false,
           "optional": false,
           "address": "11111111111111111111111111111111"
+        }
+      ]
+    },
+    {
+      "name": "cancel_protocol_governance_authority_transfer",
+      "discriminator": [
+        113,
+        25,
+        246,
+        12,
+        38,
+        35,
+        223,
+        114
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": false,
+          "signer": true,
+          "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
         }
       ]
     },
@@ -7558,6 +7670,19 @@
               }
             ]
           }
+        },
+        {
+          "name": "program",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "address": "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B"
+        },
+        {
+          "name": "program_data",
+          "writable": false,
+          "signer": false,
+          "optional": false
         },
         {
           "name": "system_program",

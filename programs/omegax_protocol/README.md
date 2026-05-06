@@ -114,7 +114,8 @@ account initialization but does not move tokens.
 The optional Certora Solana lane lives in
 [`../../formal_verification/certora/`](../../formal_verification/certora/).
 It is a manual maintainer lane for narrow symbolic checks against high-value
-kernel properties, not part of `npm run verify:public` and not an audit claim.
+kernel/scalar properties, not part of `npm run verify:public` and not an audit
+claim.
 
 Run the local prerequisite check from the repository root:
 
@@ -128,6 +129,11 @@ confirmed that the configured sources may be sent to Certora's service:
 ```bash
 npm run certora:solana:sanity
 ```
+
+The sanity config currently runs constrained CVLR rules for selected-asset
+payout bounds, fee-recipient binding, fee-vault withdrawal bounds, and reserve
+capacity non-overflow. These are useful formal-verification evidence, but they
+are not full Anchor handler/account-flow proofs.
 
 Record any run result in the release-candidate evidence file with the exact
 rule name, command, result, and Certora job URL. Do not commit access keys,

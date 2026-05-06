@@ -200,8 +200,8 @@ Review focus:
 
 - protocol governance rotation
 - emergency pause and unpause boundaries
-- whether one-step authority rotation is acceptable once authority is a Squads
-  V4 2-of-3 PDA
+- two-step authority rotation proposal, acceptance, cancellation, and expiry
+  behavior once authority is a Squads V4 2-of-3 PDA
 - branch protection and CODEOWNERS as release-control plane
 
 ### Bootstrap Role Separation

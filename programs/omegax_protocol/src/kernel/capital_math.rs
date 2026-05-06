@@ -43,6 +43,8 @@ pub(crate) fn ensure_lp_position_binding(
         lp_position.lockup_ends_at = 0;
         lp_position.credentialed = false;
         lp_position.queue_status = LP_QUEUE_STATUS_NONE;
+        lp_position.redemption_sequence = 0;
+        lp_position.redemption_requested_at = 0;
         lp_position.bump = bump;
         return Ok(());
     }
@@ -176,4 +178,52 @@ pub(crate) fn redemption_assets_to_process(
     } else {
         prorata_amount(shares, pending_redemption_shares, pending_redemption_assets)
     }
+}
+
+pub(crate) fn assign_redemption_queue_ticket(
+    capital_class: &mut CapitalClass,
+    lp_position: &mut LPPosition,
+    now_ts: i64,
+) -> Result<u64> {
+    if lp_position.pending_redemption_shares == 0 {
+        let sequence = capital_class.next_redemption_sequence;
+        lp_position.redemption_sequence = sequence;
+        lp_position.redemption_requested_at = now_ts;
+        capital_class.next_redemption_sequence =
+            checked_add(capital_class.next_redemption_sequence, 1)?;
+        return Ok(sequence);
+    }
+
+    Ok(lp_position.redemption_sequence)
+}
+
+pub(crate) fn require_redemption_queue_head(
+    capital_class: &CapitalClass,
+    lp_position: &LPPosition,
+) -> Result<()> {
+    require!(
+        lp_position.queue_status == LP_QUEUE_STATUS_PENDING
+            && lp_position.pending_redemption_shares > 0,
+        OmegaXProtocolError::AmountExceedsPendingRedemption
+    );
+    require!(
+        lp_position.redemption_sequence == capital_class.next_redemption_to_process,
+        OmegaXProtocolError::RedemptionQueueOutOfOrder
+    );
+    Ok(())
+}
+
+pub(crate) fn resolve_redemption_queue_status_after_process(
+    capital_class: &mut CapitalClass,
+    lp_position: &mut LPPosition,
+) -> Result<()> {
+    if lp_position.pending_redemption_shares == 0 {
+        lp_position.queue_status = LP_QUEUE_STATUS_PROCESSED;
+        capital_class.next_redemption_to_process =
+            checked_add(capital_class.next_redemption_to_process, 1)?;
+    } else {
+        lp_position.queue_status = LP_QUEUE_STATUS_PENDING;
+    }
+
+    Ok(())
 }
