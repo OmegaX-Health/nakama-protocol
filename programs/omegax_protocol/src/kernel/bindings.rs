@@ -8,6 +8,58 @@ use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
 
+pub(crate) fn validate_optional_policy_series(
+    policy_series: Option<&Account<PolicySeries>>,
+    expected_policy_series: Pubkey,
+    expected_health_plan: Pubkey,
+    require_active: bool,
+) -> Result<()> {
+    if expected_policy_series == ZERO_PUBKEY {
+        require!(
+            policy_series.is_none(),
+            OmegaXProtocolError::PolicySeriesMismatch
+        );
+        return Ok(());
+    }
+
+    let series = policy_series.ok_or(OmegaXProtocolError::PolicySeriesMissing)?;
+    require_keys_eq!(
+        series.key(),
+        expected_policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require_keys_eq!(
+        series.health_plan,
+        expected_health_plan,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    let (expected_series, expected_bump) = Pubkey::find_program_address(
+        &[
+            SEED_POLICY_SERIES,
+            expected_health_plan.as_ref(),
+            series.series_id.as_bytes(),
+        ],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        series.key(),
+        expected_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require!(
+        series.bump == expected_bump,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    if require_active {
+        require!(
+            series.status == SERIES_STATUS_ACTIVE,
+            OmegaXProtocolError::PolicySeriesMismatch
+        );
+    }
+
+    Ok(())
+}
+
 pub(crate) fn validate_optional_series_ledger(
     series_ledger: Option<&Account<SeriesReserveLedger>>,
     expected_policy_series: Pubkey,
@@ -331,6 +383,25 @@ pub(crate) fn validate_impairment_bindings(
     }
     validate_optional_allocation_position(allocation_position, allocation_key, funding_line_key)?;
     if let (Some(class_ledger), Some(position)) = (pool_class_ledger, allocation_position) {
+        require_keys_eq!(
+            position.reserve_domain,
+            funding_line.reserve_domain,
+            OmegaXProtocolError::ReserveDomainMismatch
+        );
+        require_keys_eq!(
+            position.health_plan,
+            funding_line.health_plan,
+            OmegaXProtocolError::HealthPlanMismatch
+        );
+        require_keys_eq!(
+            position.policy_series,
+            funding_line.policy_series,
+            OmegaXProtocolError::PolicySeriesMismatch
+        );
+        require!(
+            position.active,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
         validate_optional_pool_class_ledger(
             Some(class_ledger),
             position.capital_class,

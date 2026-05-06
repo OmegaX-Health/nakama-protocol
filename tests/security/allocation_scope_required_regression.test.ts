@@ -71,4 +71,8 @@ test("[CSO-2026-05-04] standalone LP-allocation impairments require scoped accou
   assert.match(body, /funding_line\.line_type == FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION/);
   assert.match(body, /pool_class_ledger\.is_some\(\)[\s\S]+CapitalClassMismatch/);
   assert.match(body, /allocation_position\.is_some\(\) && allocation_ledger\.is_some\(\)[\s\S]+AllocationPositionMismatch/);
+  assert.match(body, /position\.reserve_domain[\s\S]+funding_line\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(body, /position\.health_plan[\s\S]+funding_line\.health_plan[\s\S]+HealthPlanMismatch/);
+  assert.match(body, /position\.policy_series[\s\S]+funding_line\.policy_series[\s\S]+PolicySeriesMismatch/);
+  assert.match(body, /position\.active[\s\S]+AllocationPositionMismatch/);
 });

@@ -40,6 +40,49 @@ test("[ALMANAX-d333108a] capital class update keeps pool queue-only policy as a 
   );
 });
 
+test("[ALMANAX-0bc4e15d] impairment PnL debits avoid lossy u64 to i64 casts", () => {
+  const body = extractRustFunctionBody("mark_impairment");
+
+  assert.doesNotMatch(body, /amount\s+as\s+i64/);
+  assert.match(body, /debit_realized_pnl_for_loss\(allocation_position\.realized_pnl,\s*amount\)/);
+  assert.match(body, /debit_realized_pnl_for_loss\(allocation_ledger\.realized_pnl,\s*amount\)/);
+  assert.match(extractRustFunctionBody("debit_realized_pnl_for_loss"), /i64::try_from\(amount\)/);
+  assert.match(extractRustFunctionBody("debit_realized_pnl_for_loss"), /checked_sub\(amount\)/);
+});
+
+test("[ALMANAX-675488d9] allocation creation binds plan, pool, funding line, and series", () => {
+  const body = extractRustFunctionBody("create_allocation_position");
+
+  assert.match(body, /capital_class\.reserve_domain[\s\S]+liquidity_pool\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(body, /health_plan\.reserve_domain[\s\S]+liquidity_pool\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(body, /funding_line\.reserve_domain[\s\S]+health_plan\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(body, /funding_line\.health_plan[\s\S]+health_plan\.key\(\)[\s\S]+HealthPlanMismatch/);
+  assert.match(body, /funding_line\.policy_series[\s\S]+args\.policy_series[\s\S]+PolicySeriesMismatch/);
+});
+
+test("[ALMANAX-c46c7b81/5a8f554b] nonzero policy series must be canonical for members and funding lines", () => {
+  assert.match(
+    extractRustFunctionBody("open_member_position"),
+    /validate_optional_policy_series\([\s\S]+args\.series_scope[\s\S]+true/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_funding_line"),
+    /validate_optional_policy_series\([\s\S]+args\.policy_series[\s\S]+false/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_funding_line"),
+    /args\.policy_series == ZERO_PUBKEY[\s\S]+series_reserve_ledger\.is_none\(\)/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_funding_line"),
+    /series_reserve_ledger[\s\S]+ok_or\(OmegaXProtocolError::PolicySeriesMissing\)/,
+  );
+  assert.match(
+    extractRustFunctionBody("create_obligation"),
+    /funding_line\.policy_series[\s\S]+args\.policy_series[\s\S]+PolicySeriesMismatch/,
+  );
+});
+
 test("[CSO-2026-05-04] allocation and reserve booking require free capacity", () => {
   assert.match(extractRustFunctionBody("allocate_capital"), /require_allocatable_reserve_capacity\(/);
   assert.match(extractRustFunctionBody("reserve_obligation"), /require_obligation_reserve_capacity\(/);

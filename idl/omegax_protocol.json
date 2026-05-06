@@ -8083,6 +8083,10 @@
           }
         },
         {
+          "name": "policy_series",
+          "optional": true
+        },
+        {
           "name": "series_reserve_ledger",
           "writable": true,
           "optional": true
@@ -8184,6 +8188,10 @@
               }
             ]
           }
+        },
+        {
+          "name": "policy_series",
+          "optional": true
         },
         {
           "name": "member_position",

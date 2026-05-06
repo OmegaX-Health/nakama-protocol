@@ -23,6 +23,11 @@ pub(crate) fn create_obligation(
         ctx.accounts.funding_line.asset_mint == args.asset_mint,
         OmegaXProtocolError::AssetMintMismatch
     );
+    require_keys_eq!(
+        ctx.accounts.funding_line.policy_series,
+        args.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
     require_positive_amount(args.amount)?;
     validate_optional_series_ledger(
         ctx.accounts.series_reserve_ledger.as_deref(),

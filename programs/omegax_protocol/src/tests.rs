@@ -25,6 +25,14 @@ fn queue_only_redemptions_are_floored_by_pool_policy_or_pause_flag() {
 }
 
 #[test]
+fn realized_pnl_loss_debit_uses_checked_signed_math() {
+    assert_eq!(debit_realized_pnl_for_loss(100, 40).unwrap(), 60);
+    assert_eq!(debit_realized_pnl_for_loss(-10, 5).unwrap(), -15);
+    assert!(debit_realized_pnl_for_loss(0, i64::MAX as u64 + 1).is_err());
+    assert!(debit_realized_pnl_for_loss(i64::MIN, 1).is_err());
+}
+
+#[test]
 fn lp_credentialing_cannot_revoke_active_position() {
     let mut lp_position = LPPosition {
         capital_class: Pubkey::new_unique(),

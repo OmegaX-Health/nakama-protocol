@@ -3534,13 +3534,28 @@ function optionalProtocolAccount(
     : { pubkey: undefined, isWritable: false };
 }
 
+function isMissingOrZeroPublicKey(pubkey?: PublicKeyish | null): boolean {
+  return !pubkey || toPublicKey(pubkey).equals(ZERO_PUBKEY_KEY);
+}
+
+function optionalNonZeroProtocolAccount(
+  pubkey?: PublicKeyish | null,
+  isWritable = false,
+): ProtocolInstructionAccountInput {
+  return isMissingOrZeroPublicKey(pubkey)
+    ? optionalProtocolAccount(undefined)
+    : optionalProtocolAccount(pubkey, isWritable);
+}
+
 function optionalSeriesReserveLedgerAccount(
   policySeriesAddress: PublicKeyish | null | undefined,
   assetMint: PublicKeyish | null | undefined,
 ): ProtocolInstructionAccountInput {
   if (!policySeriesAddress || !assetMint) return optionalProtocolAccount(undefined);
+  const policySeries = toPublicKey(policySeriesAddress);
+  if (policySeries.equals(ZERO_PUBKEY_KEY)) return optionalProtocolAccount(undefined);
   return optionalProtocolAccount(
-    deriveSeriesReserveLedgerPda({ policySeries: policySeriesAddress, assetMint }),
+    deriveSeriesReserveLedgerPda({ policySeries, assetMint }),
     true,
   );
 }
@@ -5100,6 +5115,7 @@ export function buildOpenFundingLineTx(params: {
         }),
         isWritable: true,
       },
+      optionalNonZeroProtocolAccount(params.policySeriesAddress),
       optionalSeriesReserveLedgerAccount(params.policySeriesAddress, assetMint),
       { pubkey: SystemProgram.programId },
     ],
@@ -5619,6 +5635,7 @@ export function buildOpenMemberPositionTx(params: {
       { pubkey: wallet, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda() },
       { pubkey: params.healthPlanAddress },
+      optionalNonZeroProtocolAccount(params.seriesScopeAddress),
       { pubkey: memberPosition, isWritable: true },
       optionalProtocolAccount(membershipAnchorSeat, true),
       optionalProtocolAccount(params.tokenGateAccountAddress),

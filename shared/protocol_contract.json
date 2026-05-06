@@ -8704,6 +8704,12 @@
           }
         },
         {
+          "name": "policy_series",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
           "name": "series_reserve_ledger",
           "writable": true,
           "signer": false,
@@ -8816,6 +8822,12 @@
               }
             ]
           }
+        },
+        {
+          "name": "policy_series",
+          "writable": false,
+          "signer": false,
+          "optional": true
         },
         {
           "name": "member_position",

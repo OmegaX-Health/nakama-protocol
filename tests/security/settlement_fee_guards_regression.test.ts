@@ -106,6 +106,22 @@ test("[CSO-2026-05-04] redemption settlement rejects zero-net LP payouts", () =>
   assert.match(body, /require_positive_amount\(net_to_lp\)\?/);
 });
 
+test("[ALMANAX-630dbd6a] claim settlement validates canonical oracle-fee PDAs", () => {
+  const settleBody = extractInstructionBody("settle_claim_case");
+  const helperBody = extractRustFunctionBody("require_oracle_fee_accounts_canonical");
+
+  assert.match(settleBody, /require_oracle_fee_accounts_canonical\(/);
+  assert.match(helperBody, /SEED_POOL_ORACLE_POLICY/);
+  assert.match(helperBody, /SEED_POOL_ORACLE_FEE_VAULT/);
+  assert.match(helperBody, /SEED_CLAIM_ATTESTATION/);
+  assert.match(helperBody, /policy\.key\(\)[\s\S]+expected_policy/);
+  assert.match(helperBody, /vault\.key\(\)[\s\S]+expected_vault/);
+  assert.match(helperBody, /attestation\.key\(\)[\s\S]+expected_attestation/);
+  assert.match(helperBody, /policy\.bump == expected_policy_bump/);
+  assert.match(helperBody, /vault\.bump == expected_vault_bump/);
+  assert.match(helperBody, /attestation\.bump == expected_attestation_bump/);
+});
+
 test("[CSO-2026-05-04] configured fee bps cannot be 100 percent", () => {
   assert.match(programSource, /pub const MAX_CONFIGURED_FEE_BPS: u16 = BASIS_POINTS_DENOMINATOR - 1;/);
   assert.match(

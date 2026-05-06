@@ -30,6 +30,13 @@ pub(crate) fn derive_queue_only_redemptions(pause_flags: u32, redemption_policy:
         || redemption_policy == REDEMPTION_POLICY_QUEUE_ONLY
 }
 
+pub(crate) fn debit_realized_pnl_for_loss(realized_pnl: i64, amount: u64) -> Result<i64> {
+    let amount = i64::try_from(amount).map_err(|_| OmegaXProtocolError::ArithmeticError)?;
+    realized_pnl
+        .checked_sub(amount)
+        .ok_or_else(|| OmegaXProtocolError::ArithmeticError.into())
+}
+
 pub(crate) fn ensure_lp_position_binding(
     lp_position: &mut LPPosition,
     capital_class: Pubkey,
