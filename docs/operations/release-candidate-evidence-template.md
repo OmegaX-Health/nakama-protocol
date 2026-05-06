@@ -95,6 +95,16 @@ Each lane is a separate evidence point. Run them on the candidate commit in a cl
 | Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | `<0>` | `<artifacts/localnet-e2e-summary-*.json>` |
 | Operator drawer simulation | `npm run devnet:operator:drawer:sim` | `<0>` | `<simulate-only output, none on disk>` |
 
+Optional formal-verification evidence, when relevant to the release-candidate:
+
+| Tool | Command | Rule / target | Result | Artifact / job URL |
+|------|---------|---------------|--------|--------------------|
+| Certora Solana | `npm run certora:solana:check` | prerequisites only | `<pass / fail / skipped>` | n/a |
+| Certora Solana | `npm run certora:solana:sanity` | `<rule name>` | `<pass / fail / skipped>` | `<https://prover.certora.com/output/... or n/a>` |
+
+Certora rows are manual evidence. They do not replace external audit posture in
+section 8 and must not be used to claim the release was Certora-audited.
+
 ## 6. Dependency scan
 
 ```bash

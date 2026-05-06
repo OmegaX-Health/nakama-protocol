@@ -1,0 +1,86 @@
+# Certora Solana Security Lane
+
+This directory is the manual Certora Solana lane for the OmegaX on-chain
+program. It is intentionally separate from `npm run verify:public`: Certora
+runs submit jobs to Certora's remote prover service, require a personal access
+key, and are release-candidate evidence rather than normal public CI.
+
+## Setup
+
+Install the local tools:
+
+```bash
+pip3 install certora-cli
+cargo install cargo-certora-sbf
+```
+
+Register for Certora's free personal access key and export it locally:
+
+```bash
+export CERTORAKEY=<personal_access_key>
+```
+
+Never commit `CERTORAKEY`, prover credentials, private source bundles, generated
+job archives, or dashboard-only links that reveal private run material.
+
+## Local Prerequisite Check
+
+Run this from the repository root:
+
+```bash
+npm run certora:solana:check
+```
+
+The check verifies local prerequisites and the presence of the lane files. It
+does not submit a remote job.
+
+## Manual Sanity Run
+
+Only run this when you are comfortable submitting the configured sources and
+summaries to Certora's remote service:
+
+```bash
+npm run certora:solana:sanity
+```
+
+The first committed config is a starter sanity lane. It exists to establish the
+repo shape and currently runs the `rule_selected_asset_payout_bounds` CVLR rule
+compiled under the program's `certora` feature. A passing run is internal
+formal-verification evidence; it is not a third-party audit and must not be
+described publicly as "Certora audited" unless Certora has actually performed
+and published that review.
+
+The npm wrapper temporarily rewrites the local `Cargo.lock` metadata version
+from `4` to `3` while Certora builds because the Certora Solana platform-tools
+metadata parser does not yet accept lockfile version 4. It restores the file
+before exiting and does not change dependency resolution. The wrapper also
+uses an ignored Certora-specific Cargo target directory so platform-tools
+artifacts do not mix with normal local Rust build artifacts.
+
+The starter sanity config passes `-solanaSkipCallRegInst true` because Anchor's
+compiled SBF currently leaves indirect-call instructions that the Solana prover
+cannot encode even after the rule is reduced to scalar accounting logic. Keep
+that flag scoped to this starter lane and reassess it for each future rule; do
+not treat it as a blanket soundness waiver.
+
+## Query Latest Manual Run
+
+After a manual submission, query the locally recorded latest job from this repo:
+
+```bash
+npm run certora:solana:status
+```
+
+The status command reads `.certora_internal/.certora_recent_jobs.json`, uses the
+locally recorded anonymous dashboard token, and prints the job state plus rule
+verdicts from the remote output bundle. It does not use `CERTORAKEY` directly
+and does not write run output into tracked files. It redacts the private report
+token by default; pass `-- --show-report-url` only when you intentionally want
+the local terminal to print the dashboard link.
+
+## Relationship To QEDGen
+
+QEDGen remains the local brownfield modeling lane for broad handler-surface
+coverage. Certora is the narrower symbolic-prover lane for high-value Solana
+kernel properties such as fee recipient binding, vault transfer bounds,
+selected-asset payout limits, and reserve-capacity arithmetic.

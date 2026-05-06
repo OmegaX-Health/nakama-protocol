@@ -51,6 +51,19 @@ npm run test:e2e:localnet
 
 Treat these commands as additional maintainer sign-off steps, not as per-PR or public-CI requirements. The operator drawer smoke is simulate-only and should fail on real builder/wiring mistakes such as membership proof-mode or gate-configuration mismatches. Review the latest scenario-ownership policy in [`../testing/protocol-surface-audit.md`](../testing/protocol-surface-audit.md).
 
+If a release candidate touches high-value money movement, reserve accounting,
+claim settlement, fee withdrawal, or privileged role logic, maintainers may also
+run the manual Certora Solana lane:
+
+```bash
+npm run certora:solana:check
+npm run certora:solana:sanity
+```
+
+This lane requires a local `CERTORAKEY` and submits a remote prover job to
+Certora. Treat it as optional formal-verification evidence, not baseline CI and
+not proof that a third-party Certora audit was performed.
+
 ## Main-branch prep
 
 Before merging a release candidate to `main`, confirm:
@@ -62,6 +75,7 @@ Before merging a release candidate to `main`, confirm:
 - `npm run test:e2e:localnet`
 - `npm run security:audit:deps`
 - `npm run security:sbom`
+- if applicable, the manual Certora Solana lane result and job URL are recorded in the release-candidate evidence
 - the checked-in docs describe the same public surface as the code and generated artifacts
 - [`./release-v0.3.1.md`](./release-v0.3.1.md) reflects the current release notes and known follow-up work
 

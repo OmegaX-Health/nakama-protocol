@@ -1,0 +1,105 @@
+/-
+Proofs.lean — user-owned preservation proofs.
+
+`qedgen codegen` bootstraps this file once and never touches it again.
+Spec.lean is regenerated; this file is durable. `qedgen check`
+(and `qedgen reconcile`) flag orphan theorems (handler removed from
+spec) and missing obligations (new `preserved_by` declared).
+-/
+import Spec
+
+namespace OmegaxProtocol
+
+open QEDGen.Solana
+
+-- Preservation obligations the spec expects.
+-- Write each theorem against the signature generated in Spec.lean
+-- (the handler's transition + the property predicate). Close with
+-- tactics like `unfold`, `omega`, or `simp_all` as appropriate, or
+-- `QEDGen.Solana.IndexedState.forall_update_pres` for per-account
+-- invariants in Map-backed specs.
+--
+--   theorem abstract_state_progress_nonnegative_preserved_by_activate_direct_premium_commitment
+--   theorem abstract_state_progress_nonnegative_preserved_by_activate_treasury_credit_commitment
+--   theorem abstract_state_progress_nonnegative_preserved_by_activate_waterfall_commitment
+--   theorem abstract_state_progress_nonnegative_preserved_by_adjudicate_claim_case
+--   theorem abstract_state_progress_nonnegative_preserved_by_allocate_capital
+--   theorem abstract_state_progress_nonnegative_preserved_by_attach_claim_evidence_ref
+--   theorem abstract_state_progress_nonnegative_preserved_by_attest_claim_case
+--   theorem abstract_state_progress_nonnegative_preserved_by_authorize_claim_recipient
+--   theorem abstract_state_progress_nonnegative_preserved_by_backfill_schema_dependency_ledger
+--   theorem abstract_state_progress_nonnegative_preserved_by_claim_oracle
+--   theorem abstract_state_progress_nonnegative_preserved_by_close_outcome_schema
+--   theorem abstract_state_progress_nonnegative_preserved_by_configure_reserve_asset_rail
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_allocation_position
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_capital_class
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_commitment_campaign
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_commitment_payment_rail
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_domain_asset_vault
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_health_plan
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_liquidity_pool
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_obligation
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_policy_series
+--   theorem abstract_state_progress_nonnegative_preserved_by_create_reserve_domain
+--   theorem abstract_state_progress_nonnegative_preserved_by_deallocate_capital
+--   theorem abstract_state_progress_nonnegative_preserved_by_deposit_commitment
+--   theorem abstract_state_progress_nonnegative_preserved_by_deposit_into_capital_class
+--   theorem abstract_state_progress_nonnegative_preserved_by_fund_sponsor_budget
+--   theorem abstract_state_progress_nonnegative_preserved_by_init_pool_oracle_fee_vault
+--   theorem abstract_state_progress_nonnegative_preserved_by_init_pool_treasury_vault
+--   theorem abstract_state_progress_nonnegative_preserved_by_init_protocol_fee_vault
+--   theorem abstract_state_progress_nonnegative_preserved_by_initialize_protocol_governance
+--   theorem abstract_state_progress_nonnegative_preserved_by_initialize_series_reserve_ledger
+--   theorem abstract_state_progress_nonnegative_preserved_by_mark_impairment
+--   theorem abstract_state_progress_nonnegative_preserved_by_open_claim_case
+--   theorem abstract_state_progress_nonnegative_preserved_by_open_funding_line
+--   theorem abstract_state_progress_nonnegative_preserved_by_open_member_position
+--   theorem abstract_state_progress_nonnegative_preserved_by_pause_commitment_campaign
+--   theorem abstract_state_progress_nonnegative_preserved_by_process_redemption_queue
+--   theorem abstract_state_progress_nonnegative_preserved_by_publish_reserve_asset_rail_price
+--   theorem abstract_state_progress_nonnegative_preserved_by_record_premium_payment
+--   theorem abstract_state_progress_nonnegative_preserved_by_refund_commitment
+--   theorem abstract_state_progress_nonnegative_preserved_by_register_oracle
+--   theorem abstract_state_progress_nonnegative_preserved_by_register_outcome_schema
+--   theorem abstract_state_progress_nonnegative_preserved_by_release_reserve
+--   theorem abstract_state_progress_nonnegative_preserved_by_request_redemption
+--   theorem abstract_state_progress_nonnegative_preserved_by_reserve_obligation
+--   theorem abstract_state_progress_nonnegative_preserved_by_rotate_protocol_governance_authority
+--   theorem abstract_state_progress_nonnegative_preserved_by_set_pool_oracle
+--   theorem abstract_state_progress_nonnegative_preserved_by_set_pool_oracle_permissions
+--   theorem abstract_state_progress_nonnegative_preserved_by_set_pool_oracle_policy
+--   theorem abstract_state_progress_nonnegative_preserved_by_set_protocol_emergency_pause
+--   theorem abstract_state_progress_nonnegative_preserved_by_settle_claim_case
+--   theorem abstract_state_progress_nonnegative_preserved_by_settle_claim_case_selected_asset
+--   theorem abstract_state_progress_nonnegative_preserved_by_settle_obligation
+--   theorem abstract_state_progress_nonnegative_preserved_by_update_allocation_caps
+--   theorem abstract_state_progress_nonnegative_preserved_by_update_capital_class_controls
+--   theorem abstract_state_progress_nonnegative_preserved_by_update_health_plan_controls
+--   theorem abstract_state_progress_nonnegative_preserved_by_update_lp_position_credentialing
+--   theorem abstract_state_progress_nonnegative_preserved_by_update_member_eligibility
+--   theorem abstract_state_progress_nonnegative_preserved_by_update_oracle_profile
+--   theorem abstract_state_progress_nonnegative_preserved_by_update_reserve_domain_controls
+--   theorem abstract_state_progress_nonnegative_preserved_by_verify_outcome_schema
+--   theorem abstract_state_progress_nonnegative_preserved_by_version_policy_series
+--   theorem abstract_state_progress_nonnegative_preserved_by_withdraw_pool_oracle_fee_sol
+--   theorem abstract_state_progress_nonnegative_preserved_by_withdraw_pool_oracle_fee_spl
+--   theorem abstract_state_progress_nonnegative_preserved_by_withdraw_pool_treasury_sol
+--   theorem abstract_state_progress_nonnegative_preserved_by_withdraw_pool_treasury_spl
+--   theorem abstract_state_progress_nonnegative_preserved_by_withdraw_protocol_fee_sol
+--   theorem abstract_state_progress_nonnegative_preserved_by_withdraw_protocol_fee_spl
+--   theorem allocation_cap_bounded_preserved_by_allocate_capital
+--   theorem allocation_cap_bounded_preserved_by_create_allocation_position
+--   theorem allocation_cap_bounded_preserved_by_deallocate_capital
+--   theorem allocation_cap_bounded_preserved_by_update_allocation_caps
+--   theorem claim_payment_bounded_preserved_by_adjudicate_claim_case
+--   theorem claim_payment_bounded_preserved_by_settle_claim_case
+--   theorem claim_payment_bounded_preserved_by_settle_claim_case_selected_asset
+--   theorem fee_withdrawals_bounded_preserved_by_withdraw_pool_oracle_fee_sol
+--   theorem fee_withdrawals_bounded_preserved_by_withdraw_pool_oracle_fee_spl
+--   theorem fee_withdrawals_bounded_preserved_by_withdraw_pool_treasury_sol
+--   theorem fee_withdrawals_bounded_preserved_by_withdraw_pool_treasury_spl
+--   theorem fee_withdrawals_bounded_preserved_by_withdraw_protocol_fee_sol
+--   theorem fee_withdrawals_bounded_preserved_by_withdraw_protocol_fee_spl
+--   theorem protocol_fee_bps_bounded_preserved_by_initialize_protocol_governance
+
+end OmegaxProtocol

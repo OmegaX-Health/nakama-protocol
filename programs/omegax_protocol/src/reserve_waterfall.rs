@@ -280,14 +280,28 @@ pub(crate) fn require_selected_asset_payout_value_at(
         payout_asset_rail,
         now,
     )?;
+    require_selected_asset_payout_value_bounds(claim_value, payout_value, max_overpay_bps)
+}
+
+pub(crate) fn require_selected_asset_payout_value_bounds(
+    claim_value: u128,
+    payout_value: u128,
+    max_overpay_bps: u16,
+) -> Result<()> {
+    require!(
+        max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS,
+        OmegaXProtocolError::SelectedAssetOverpayBpsTooHigh
+    );
     require!(
         payout_value >= claim_value,
         OmegaXProtocolError::SelectedAssetPayoutUnderpaid
     );
-    let max_value = claim_value
-        .checked_mul((BASIS_POINTS_DENOMINATOR as u128) + (max_overpay_bps as u128))
-        .and_then(|value| value.checked_div(BASIS_POINTS_DENOMINATOR as u128))
-        .ok_or(error!(OmegaXProtocolError::ArithmeticError))?;
+    let multiplier = (BASIS_POINTS_DENOMINATOR as u128) + (max_overpay_bps as u128);
+    let multiplied = match claim_value.checked_mul(multiplier) {
+        Some(value) => value,
+        None => return err!(OmegaXProtocolError::ArithmeticError),
+    };
+    let max_value = multiplied / (BASIS_POINTS_DENOMINATOR as u128);
     require!(
         payout_value <= max_value,
         OmegaXProtocolError::SelectedAssetPayoutOverpaid

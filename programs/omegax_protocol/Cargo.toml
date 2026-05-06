@@ -19,13 +19,23 @@ idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 custom-heap = []
 custom-panic = []
 anchor-debug = []
+certora = ["dep:cvlr"]
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(target_os, values("solana"))'] }
+
+[package.metadata.certora]
+sources = [
+  "Cargo.toml",
+  "src/**/*.rs",
+]
+solana_inlining = ["../../formal_verification/certora/summaries/omegax_solana_inlining.txt"]
+solana_summaries = ["../../formal_verification/certora/summaries/omegax_solana_summaries.txt"]
 
 [dependencies]
 anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
 anchor-spl = "0.32.1"
 blake3 = "=1.8.2"
+cvlr = { version = "0.4.0", optional = true }
 solana-sdk-ids = "2.2.1"
 solana-sha256-hasher = "2.3.0"

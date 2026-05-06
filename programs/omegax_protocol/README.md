@@ -108,3 +108,28 @@ equations still need to be tightened.
 The current QEDGen check is expected to report one token-CPI warning for
 `create_domain_asset_vault`: that handler accepts `token_program` for vault
 account initialization but does not move tokens.
+
+## Certora Solana lane
+
+The optional Certora Solana lane lives in
+[`../../formal_verification/certora/`](../../formal_verification/certora/).
+It is a manual maintainer lane for narrow symbolic checks against high-value
+kernel properties, not part of `npm run verify:public` and not an audit claim.
+
+Run the local prerequisite check from the repository root:
+
+```bash
+npm run certora:solana:check
+```
+
+Only submit a remote prover job when `CERTORAKEY` is set and the operator has
+confirmed that the configured sources may be sent to Certora's service:
+
+```bash
+npm run certora:solana:sanity
+```
+
+Record any run result in the release-candidate evidence file with the exact
+rule name, command, result, and Certora job URL. Do not commit access keys,
+generated job archives, or wording that implies Certora performed a third-party
+audit unless that review actually exists.
