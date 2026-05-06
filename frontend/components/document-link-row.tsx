@@ -20,9 +20,23 @@ function formatDocumentSource(value: string, fallback?: string): string {
   }
 }
 
+function canonicalClickableDocumentHref(value: string | null): "/coverage/technical-terms" | "/coverage/risk-disclosures" | null {
+  switch (value) {
+    case "/coverage/technical-terms":
+    case "https://protocol.omegax.health/coverage/technical-terms":
+      return "/coverage/technical-terms";
+    case "/coverage/risk-disclosures":
+    case "https://protocol.omegax.health/coverage/risk-disclosures":
+      return "/coverage/risk-disclosures";
+    default:
+      return null;
+  }
+}
+
 export function DocumentLinkRow({ href, label, sourceLabel }: DocumentLinkRowProps) {
   const safeHref = resolveSafeDocumentHref(href);
-  const displayHref = safeHref ?? href.trim();
+  const displayHref = safeHref ?? "Unavailable";
+  const clickableHref = canonicalClickableDocumentHref(safeHref);
   const documentSource = formatDocumentSource(displayHref, sourceLabel);
   const documentCopy = (
     <div className="plans-review-document-copy">
@@ -32,9 +46,9 @@ export function DocumentLinkRow({ href, label, sourceLabel }: DocumentLinkRowPro
     </div>
   );
 
-  if (!safeHref) {
+  if (!clickableHref) {
     return (
-      <div className="plans-review-document" aria-disabled="true">
+      <div className="plans-review-document" aria-disabled={safeHref ? undefined : "true"}>
         {documentCopy}
       </div>
     );
@@ -43,9 +57,7 @@ export function DocumentLinkRow({ href, label, sourceLabel }: DocumentLinkRowPro
   return (
     <a
       className="plans-review-document"
-      href={safeHref}
-      target={safeHref.startsWith("/") ? undefined : "_blank"}
-      rel={safeHref.startsWith("/") ? undefined : "noreferrer"}
+      href={clickableHref}
     >
       {documentCopy}
     </a>
