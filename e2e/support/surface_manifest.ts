@@ -76,7 +76,7 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
   founder_commitment_waterfall_lifecycle: {
     title: "Founder Commitment Waterfall Lifecycle",
     focus:
-      "Founder Travel30 stays one public campaign with multiple payment rails, pending custody outside claims-paying reserve, waterfall activation only after rail pricing/freshness controls, and explicit refund/pause controls.",
+      "Founder Travel30 stays one public campaign with multiple same-asset payment/funding rails, pending custody outside claims-paying reserve, waterfall activation only after rail pricing/freshness controls, and explicit refund/pause controls.",
     instructions: [
       "configure_reserve_asset_rail",
       "publish_reserve_asset_rail_price",

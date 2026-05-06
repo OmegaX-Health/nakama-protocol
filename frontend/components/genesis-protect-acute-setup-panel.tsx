@@ -299,7 +299,7 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
           <div className="plans-settings-row">
             <div>
               <span className="plans-settings-label">Payment rails</span>
-              <span className="plans-settings-lane">Accepted assets under the same Founder campaign, not split treasury campaigns</span>
+              <span className="plans-settings-lane">Accepted same-asset waterfall rails under the same Founder campaign</span>
             </div>
             <span className="plans-settings-address">
               {props.model.founderCommitments.waterfallRailCount}/{props.model.founderCommitments.paymentRailCount} waterfall
@@ -377,7 +377,7 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
                     <span className="plans-settings-address">{row.policySeries ? shortHash(row.policySeries) : "Unlinked"}</span>
                   </div>
                   <div className="plans-settings-row">
-                    <span className="plans-settings-label">Funding line</span>
+                    <span className="plans-settings-label">Primary line</span>
                     <span className="plans-settings-address">{shortHash(row.coverageFundingLine)}</span>
                   </div>
                   <div className="plans-settings-row">

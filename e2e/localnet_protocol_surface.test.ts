@@ -798,7 +798,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     const travel30PremiumLine = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines.find(
       (line) => line.healthPlan === genesisPlan.address && line.lineId === "genesis-travel30-premiums",
     )!;
-    const coverageMint = travel30PremiumLine.assetMint;
+    const primaryCoverageMint = travel30PremiumLine.assetMint;
     const campaignId = "founder-travel30";
     const campaign = deriveCommitmentCampaignPda({
       healthPlan: genesisPlan.address,
@@ -811,7 +811,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     const rails = [
       {
         symbol: "USDC",
-        mint: coverageMint,
+        mint: primaryCoverageMint,
         role: RESERVE_ASSET_ROLE_PRIMARY_STABLE,
         priority: 1,
         priceUsd1e8: 100_000_000n,
@@ -869,6 +869,12 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     assert.deepEqual(rails.map((rail) => rail.symbol), ["USDC", "PUSD", "WSOL", "WBTC", "WETH", "OMEGAX"]);
     assert.equal(rails[0]!.role, RESERVE_ASSET_ROLE_PRIMARY_STABLE);
     assert.equal(rails.at(-1)!.role, RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT);
+    const waterfallFundingLineFor = (rail: typeof rails[number]) => rail.symbol === "USDC"
+      ? travel30PremiumLine.address
+      : deriveFundingLinePda({
+        healthPlan: genesisPlan.address,
+        lineId: `genesis-travel30-premiums-${rail.symbol.toLowerCase()}`,
+      }).toBase58();
 
     for (const rail of rails) {
       const vaultTx = buildCreateDomainAssetVaultTx({
@@ -936,7 +942,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       reserveDomainAddress: genesisPlan.reserveDomain,
       coverageFundingLineAddress: travel30PremiumLine.address,
       paymentAssetMint: usdcRail.mint,
-      coverageAssetMint: coverageMint,
+      coverageAssetMint: primaryCoverageMint,
       activationAuthority: governanceWallet.address,
       recentBlockhash: STATIC_BLOCKHASH,
       campaignId,
@@ -968,17 +974,18 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
         healthPlanAddress: genesisPlan.address,
         reserveDomainAddress: genesisPlan.reserveDomain,
         campaignAddress: campaign,
-        coverageFundingLineAddress: travel30PremiumLine.address,
+        coverageFundingLineAddress: waterfallFundingLineFor(rail),
         paymentAssetMint: rail.mint,
-        coverageAssetMint: coverageMint,
+        coverageAssetMint: rail.mint,
         recentBlockhash: STATIC_BLOCKHASH,
-        mode: rail.symbol === "OMEGAX" ? COMMITMENT_MODE_WATERFALL_RESERVE : COMMITMENT_MODE_WATERFALL_RESERVE,
+        mode: COMMITMENT_MODE_WATERFALL_RESERVE,
         depositAmount: rail.symbol === "OMEGAX" ? 5_000_000n : 99_000_000n,
-        coverageAmount: 1_000_000_000n,
+        coverageAmount: rail.symbol === "OMEGAX" ? 5_000_000n : 99_000_000n,
         hardCapAmount: rail.symbol === "OMEGAX" ? 5_000_000_000n : 99_000_000_000n,
       });
       const paymentRailIx = assertProtocolTxInstruction(paymentRailTx, "create_commitment_payment_rail");
       assert.equal(paymentRailIx.keys[3]!.pubkey.toBase58(), campaign);
+      assert.equal(paymentRailIx.keys[6]!.pubkey.toBase58(), waterfallFundingLineFor(rail));
       assert.equal(paymentRailIx.keys[7]!.pubkey.toBase58(), deriveCommitmentPaymentRailPda({
         campaign,
         paymentAssetMint: rail.mint,
@@ -1018,15 +1025,15 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     const depositKeySet = new Set(depositIx.keys.map((key) => key.pubkey.toBase58()));
     assert.equal(depositKeySet.has(deriveFundingLineLedgerPda({
       fundingLine: travel30PremiumLine.address,
-      assetMint: coverageMint,
+      assetMint: primaryCoverageMint,
     }).toBase58()), false);
     assert.equal(depositKeySet.has(derivePlanReserveLedgerPda({
       healthPlan: genesisPlan.address,
-      assetMint: coverageMint,
+      assetMint: primaryCoverageMint,
     }).toBase58()), false);
     assert.equal(depositKeySet.has(deriveSeriesReserveLedgerPda({
       policySeries: travel30Series.address,
-      assetMint: coverageMint,
+      assetMint: primaryCoverageMint,
     }).toBase58()), false);
 
     const pusdRail = rails.find((rail) => rail.symbol === "PUSD")!;
@@ -1056,14 +1063,27 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       depositor: lpProviderWallet.address,
       beneficiary: wrapperProviderWallet.address,
     }).toBase58();
-    const activationBase = {
+    const directActivationBase = {
       activationAuthority: governanceWallet.address,
       healthPlanAddress: genesisPlan.address,
       reserveDomainAddress: genesisPlan.reserveDomain,
       campaignAddress: campaign,
       coverageFundingLineAddress: travel30PremiumLine.address,
+      paymentAssetMint: usdcRail.mint,
+      coverageAssetMint: primaryCoverageMint,
+      policySeriesAddress: travel30Series.address,
+      positionAddress: activatedPosition,
+      recentBlockhash: STATIC_BLOCKHASH,
+      activationReasonHashHex: reasonHashHex,
+    };
+    const waterfallActivationBase = {
+      activationAuthority: governanceWallet.address,
+      healthPlanAddress: genesisPlan.address,
+      reserveDomainAddress: genesisPlan.reserveDomain,
+      campaignAddress: campaign,
+      coverageFundingLineAddress: waterfallFundingLineFor(omegaxRail),
       paymentAssetMint: omegaxRail.mint,
-      coverageAssetMint: coverageMint,
+      coverageAssetMint: omegaxRail.mint,
       policySeriesAddress: travel30Series.address,
       positionAddress: activatedPosition,
       recentBlockhash: STATIC_BLOCKHASH,
@@ -1071,15 +1091,16 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     };
 
     const directTx = buildActivateDirectPremiumCommitmentTx({
-      ...activationBase,
-      paymentAssetMint: usdcRail.mint,
+      ...directActivationBase,
       ledgerAddress: deriveCommitmentLedgerPda({ campaign, paymentAssetMint: usdcRail.mint }).toBase58(),
     });
     assertProtocolTxInstruction(directTx, "activate_direct_premium_commitment");
     assert.equal(COMMITMENT_MODE_DIRECT_PREMIUM, 0);
 
     const treasuryTx = buildActivateTreasuryCreditCommitmentTx({
-      ...activationBase,
+      ...waterfallActivationBase,
+      coverageFundingLineAddress: travel30PremiumLine.address,
+      coverageAssetMint: primaryCoverageMint,
       ledgerAddress: deriveCommitmentLedgerPda({ campaign, paymentAssetMint: omegaxRail.mint }).toBase58(),
     });
     const treasuryIx = assertProtocolTxInstruction(treasuryTx, "activate_treasury_credit_commitment");
@@ -1093,7 +1114,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     assert.equal(COMMITMENT_MODE_TREASURY_CREDIT, 1);
 
     const waterfallTx = buildActivateWaterfallCommitmentTx({
-      ...activationBase,
+      ...waterfallActivationBase,
       ledgerAddress: deriveCommitmentLedgerPda({ campaign, paymentAssetMint: omegaxRail.mint }).toBase58(),
     });
     const waterfallIx = assertProtocolTxInstruction(waterfallTx, "activate_waterfall_commitment");
@@ -1101,6 +1122,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       reserveDomain: genesisPlan.reserveDomain,
       assetMint: omegaxRail.mint,
     }).toBase58());
+    assert.equal(waterfallIx.keys[9]!.pubkey.toBase58(), waterfallFundingLineFor(omegaxRail));
 
     const pauseTx = buildPauseCommitmentCampaignTx({
       authority: governanceWallet.address,
