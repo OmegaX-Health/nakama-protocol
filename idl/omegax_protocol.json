@@ -16632,6 +16632,16 @@
       "code": 6120,
       "name": "ReserveAssetMintDecimalsUnsupported",
       "msg": "Reserve asset mint decimals are unsupported"
+    },
+    {
+      "code": 6121,
+      "name": "HealthPlanInactive",
+      "msg": "Health plan is inactive"
+    },
+    {
+      "code": 6122,
+      "name": "CapitalClassInactive",
+      "msg": "Capital class is inactive"
     }
   ],
   "types": [

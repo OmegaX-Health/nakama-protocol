@@ -248,4 +248,8 @@ pub enum OmegaXProtocolError {
     SelectedAssetOverpayBpsTooHigh,
     #[msg("Reserve asset mint decimals are unsupported")]
     ReserveAssetMintDecimalsUnsupported,
+    #[msg("Health plan is inactive")]
+    HealthPlanInactive,
+    #[msg("Capital class is inactive")]
+    CapitalClassInactive,
 }

@@ -258,10 +258,8 @@ pub(crate) fn open_member_position(
     ctx: Context<OpenMemberPosition>,
     args: OpenMemberPositionArgs,
 ) -> Result<()> {
-    require!(
-        !ctx.accounts.protocol_governance.emergency_pause,
-        OmegaXProtocolError::ProtocolEmergencyPaused
-    );
+    require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
+    require_health_plan_active(&ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.health_plan.pause_flags & PAUSE_FLAG_PLAN_OPERATIONS == 0,
         OmegaXProtocolError::HealthPlanPaused

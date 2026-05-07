@@ -182,6 +182,25 @@ function parseJsonObjects(text) {
   return docs;
 }
 
+function isProgramInstructionNotInSpec(doc) {
+  return (
+    doc?.handler_coverage?.kind === 'ProgramInstructionNotInSpec' ||
+    doc?.kind === 'ProgramInstructionNotInSpec' ||
+    doc?.rule === 'ProgramInstructionNotInSpec'
+  );
+}
+
+function isAcceptedNonzeroStatusDoc(doc) {
+  if (doc?.rule && doc?.severity) return true;
+  if (Array.isArray(doc?.effect_coverage) && Array.isArray(doc?.handler_coverage)) return true;
+  if (Array.isArray(doc?.operations) && Array.isArray(doc?.properties) && Array.isArray(doc?.cells)) {
+    return true;
+  }
+  if (typeof doc?.operation === 'string' && typeof doc?.property === 'string') return true;
+  if (doc?.kind === 'missing' && typeof doc?.theorem === 'string') return true;
+  return false;
+}
+
 function runCheck(qedgen) {
   const result = spawnSync(qedgen, [...argsFor('check'), ...extraArgs], {
     cwd: process.cwd(),
@@ -196,6 +215,7 @@ function runCheck(qedgen) {
 
   const docs = parseJsonObjects(result.stdout ?? '');
   const findings = docs.filter((doc) => doc.rule && doc.severity);
+  const handlerCoverageDrift = docs.filter(isProgramInstructionNotInSpec);
   const counts = findings.reduce((acc, finding) => {
     acc[finding.severity] = (acc[finding.severity] ?? 0) + 1;
     return acc;
@@ -224,9 +244,26 @@ function runCheck(qedgen) {
     return 1;
   }
 
-  if (result.status !== 0 && docs.length === 0) {
-    process.stdout.write(result.stdout ?? '');
-    return result.status ?? 1;
+  if (handlerCoverageDrift.length > 0) {
+    console.error('QEDGen handler coverage drift:');
+    console.error(JSON.stringify(handlerCoverageDrift, null, 2));
+    return 1;
+  }
+
+  if (result.status !== 0) {
+    const unacceptedStatusDocs = docs.filter((doc) => !isAcceptedNonzeroStatusDoc(doc));
+    if (docs.length === 0 || unacceptedStatusDocs.length > 0) {
+      console.error(`qedgen check exited with status ${result.status ?? 'unknown'}`);
+      if (unacceptedStatusDocs.length > 0) {
+        console.error('Unaccepted QEDGen status docs:');
+        console.error(JSON.stringify(unacceptedStatusDocs, null, 2));
+      }
+      process.stdout.write(result.stdout ?? '');
+      return result.status ?? 1;
+    }
+    console.log(
+      `accepted qedgen nonzero status ${result.status}: coverage/theorem obligations only`,
+    );
   }
 
   return 0;

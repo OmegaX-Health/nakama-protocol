@@ -16,12 +16,16 @@ A control handler writes an `active` lifecycle field, but user-facing intake or 
 
 The protocol has separate pause flags that can still block these paths. The bug is that `active = false` looks like a lifecycle shutdown control but is not itself enforced on fresh intake or new deposits. That makes deactivation operationally fragile and easy to misread from frontend or incident-response code.
 
+## Fix Status
+
+Fixed in the protocol hardening pass: `open_member_position` and `open_claim_case` require an active health plan before fresh intake, and `deposit_into_capital_class` requires an active capital class before the SPL transfer into the domain vault. Existing wind-down paths remain outside this active guard.
+
 ## QEDGen Gap
 
 The raw checker already emits that `active` is written in effects but never referenced in any guard or property. The committed wrapper currently treats that as informational and also masks non-severity handler-coverage docs. A dedicated lifecycle-control lint should escalate when a field named `active`, `disabled`, `closed`, or `paused` is written by a control handler and no create/intake/deposit path reads it.
 
 ## Expected Guard Shape
 
-- Health plans: require active for new membership, claim-intake, and other new-business paths unless an explicit wind-down exception is documented.
+- Health plans: require active for new membership and claim-intake; admin setup and wind-down operations remain separate from this guard.
 - Capital classes: require active for new deposits before token transfer occurs.
-- Redemptions: decide separately whether inactive means wind-down-only or fully closed.
+- Redemptions: remain allowed for wind-down unless a future governance decision explicitly closes them.

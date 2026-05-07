@@ -92,6 +92,31 @@ test("[ALMANAX-c46c7b81/5a8f554b] nonzero policy series must be canonical for me
   );
 });
 
+test("[QEDGEN-2026-05-07] inactive plans and classes reject fresh intake before exposure", () => {
+  assert.match(
+    extractRustFunctionBody("open_member_position"),
+    /require_health_plan_active\(&ctx\.accounts\.health_plan\)\?/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_claim_case"),
+    /require_health_plan_active\(&ctx\.accounts\.health_plan\)\?/,
+  );
+
+  const depositBody = extractRustFunctionBody("deposit_into_capital_class");
+  const activeGuardIndex = depositBody.indexOf("require_capital_class_active");
+  const transferIndex = depositBody.indexOf("transfer_to_domain_vault");
+  assert.notEqual(activeGuardIndex, -1);
+  assert.notEqual(transferIndex, -1);
+  assert.ok(
+    activeGuardIndex < transferIndex,
+    "capital class active guard must run before any SPL transfer",
+  );
+
+  const errorNames = new Set((idl.errors ?? []).map((error) => error.name));
+  assert.ok(errorNames.has("HealthPlanInactive"), "IDL must expose HealthPlanInactive");
+  assert.ok(errorNames.has("CapitalClassInactive"), "IDL must expose CapitalClassInactive");
+});
+
 test("[CSO-2026-05-04] allocation and reserve booking require free capacity", () => {
   assert.match(extractRustFunctionBody("allocate_capital"), /require_allocatable_reserve_capacity\(/);
   assert.match(extractRustFunctionBody("reserve_obligation"), /require_obligation_reserve_capacity\(/);

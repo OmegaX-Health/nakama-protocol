@@ -25,6 +25,36 @@ fn queue_only_redemptions_are_floored_by_pool_policy_or_pause_flag() {
 }
 
 #[test]
+fn inactive_health_plan_guard_blocks_fresh_intake() {
+    let plan_admin = Pubkey::new_unique();
+    let mut plan = sample_health_plan_roles(
+        plan_admin,
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+    );
+    assert!(require_health_plan_active(&plan).is_ok());
+
+    plan.active = false;
+    assert_eq!(
+        require_health_plan_active(&plan).unwrap_err(),
+        OmegaXProtocolError::HealthPlanInactive.into()
+    );
+}
+
+#[test]
+fn inactive_capital_class_guard_blocks_fresh_deposits() {
+    let mut capital_class = sample_capital_class(Pubkey::new_unique(), Pubkey::new_unique());
+    assert!(require_capital_class_active(&capital_class).is_ok());
+
+    capital_class.active = false;
+    assert_eq!(
+        require_capital_class_active(&capital_class).unwrap_err(),
+        OmegaXProtocolError::CapitalClassInactive.into()
+    );
+}
+
+#[test]
 fn realized_pnl_loss_debit_uses_checked_signed_math() {
     assert_eq!(debit_realized_pnl_for_loss(100, 40).unwrap(), 60);
     assert_eq!(debit_realized_pnl_for_loss(-10, 5).unwrap(), -15);

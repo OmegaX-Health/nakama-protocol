@@ -242,6 +242,7 @@ type State
   | Uninitialized
   | Live of {
       governance_authority : Pubkey,
+      pending_authority : Pubkey,
       authority : Pubkey,
       plan_admin : Pubkey,
       wallet : Pubkey,
@@ -434,6 +435,8 @@ type Error
   | SelectedAssetPayoutOverpaid
   | SelectedAssetOverpayBpsTooHigh
   | ReserveAssetMintDecimalsUnsupported
+  | HealthPlanInactive
+  | CapitalClassInactive
 
 // Candidate guarantees guiding the current and next verification passes.
 // SPEC-GUARANTEE: Only configured governance or delegated domain/plan/oracle authority may mutate privileged controls.
@@ -517,6 +520,39 @@ handler rotate_protocol_governance_authority (args : RotateProtocolGovernanceAut
   }
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
+  effect {
+    audit_nonce +=! 1
+  }
+}
+
+/// `accept_protocol_governance_authority` - Anchor facade forwarder.
+/// Implementation: `crate::governance::accept_protocol_governance_authority`; accounts context: `AcceptProtocolGovernanceAuthority`.
+handler accept_protocol_governance_authority : State.Live -> State.Live {
+  auth pending_authority
+
+  accounts {
+    pending_authority   : signer
+    protocol_governance : writable
+  }
+
+  // SPEC-REFINE: pending-governance fields are abstracted in this state model.
+  effect {
+    governance_authority := pending_authority
+    audit_nonce +=! 1
+  }
+}
+
+/// `cancel_protocol_governance_authority_transfer` - Anchor facade forwarder.
+/// Implementation: `crate::governance::cancel_protocol_governance_authority_transfer`; accounts context: `CancelProtocolGovernanceAuthorityTransfer`.
+handler cancel_protocol_governance_authority_transfer : State.Live -> State.Live {
+  auth authority
+
+  accounts {
+    authority           : signer
+    protocol_governance : writable
+  }
+
+  // SPEC-REFINE: pending-governance fields are abstracted in this state model.
   effect {
     audit_nonce +=! 1
   }
@@ -732,6 +768,7 @@ handler update_health_plan_controls (args : UpdateHealthPlanControlsArgs) : Stat
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
+    active := args.active
     audit_nonce +=! 1
   }
 }
@@ -813,6 +850,9 @@ handler open_member_position (args : OpenMemberPositionArgs) : State.Live -> Sta
     invite_authority       : signer
     system_program         : program
   }
+
+  requires emergency_pause == false else ProtocolEmergencyPaused
+  requires active == true else HealthPlanInactive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -1335,6 +1375,7 @@ handler open_claim_case (args : OpenClaimCaseArgs) : State.Live -> State.Live {
   }
 
   requires emergency_pause == false else ProtocolEmergencyPaused
+  requires active == true else HealthPlanInactive
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
@@ -1616,6 +1657,7 @@ handler deposit_into_capital_class (args : DepositIntoCapitalClassArgs) : State.
 
   requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
+  requires active == true else CapitalClassInactive
 
   // SPEC-CPI: LP subscription deposits SPL assets into the domain vault.
   transfers {

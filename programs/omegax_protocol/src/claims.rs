@@ -15,6 +15,7 @@ use crate::state::*;
 pub(crate) fn open_claim_case(ctx: Context<OpenClaimCase>, args: OpenClaimCaseArgs) -> Result<()> {
     require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
     require_id(&args.claim_id)?;
+    require_health_plan_active(&ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.health_plan.pause_flags & PAUSE_FLAG_CLAIM_INTAKE == 0,
         OmegaXProtocolError::ClaimIntakePaused

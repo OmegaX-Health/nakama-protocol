@@ -42,6 +42,19 @@ pub(crate) fn require_protocol_not_paused(governance: &ProtocolGovernance) -> Re
     Ok(())
 }
 
+pub(crate) fn require_health_plan_active(plan: &HealthPlan) -> Result<()> {
+    require!(plan.active, OmegaXProtocolError::HealthPlanInactive);
+    Ok(())
+}
+
+pub(crate) fn require_capital_class_active(capital_class: &CapitalClass) -> Result<()> {
+    require!(
+        capital_class.active,
+        OmegaXProtocolError::CapitalClassInactive
+    );
+    Ok(())
+}
+
 pub(crate) fn require_positive_amount(amount: u64) -> Result<()> {
     require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
     Ok(())
