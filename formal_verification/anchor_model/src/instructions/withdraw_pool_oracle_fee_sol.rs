@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{WithdrawPoolOracleFeeSol, WithdrawArgs};
 
 impl<'info> WithdrawPoolOracleFeeSol<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "withdraw_pool_oracle_fee_sol", hash = "a7520a35f17e6085", spec_hash = "6755979cd32846a0")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "withdraw_pool_oracle_fee_sol", hash = "a7520a35f17e6085", spec_hash = "e778beddf60ba60d")]
     #[inline(always)]
     pub fn handler(&mut self, args: WithdrawArgs) -> Result<()> {
         guards::withdraw_pool_oracle_fee_sol(self, args)?;

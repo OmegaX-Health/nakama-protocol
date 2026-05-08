@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateObligation, CreateObligationArgs};
 
 impl<'info> CreateObligation<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_obligation", hash = "b665360eda5ac9db", spec_hash = "58ba0c028446bcc6")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_obligation", hash = "b665360eda5ac9db", spec_hash = "f67b8c3cade6e5d1")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateObligationArgs) -> Result<()> {
         guards::create_obligation(self, args)?;

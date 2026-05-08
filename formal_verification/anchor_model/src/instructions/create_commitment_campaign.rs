@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateCommitmentCampaign, CreateCommitmentCampaignArgs};
 
 impl<'info> CreateCommitmentCampaign<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_commitment_campaign", hash = "19120e0020efc39b", spec_hash = "23911aa991cd2f1a")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_commitment_campaign", hash = "19120e0020efc39b", spec_hash = "c84b0b3ef0ad7da0")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateCommitmentCampaignArgs) -> Result<()> {
         guards::create_commitment_campaign(self, args)?;

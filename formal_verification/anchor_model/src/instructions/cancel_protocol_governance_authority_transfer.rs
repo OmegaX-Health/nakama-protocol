@@ -7,13 +7,13 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::{RotateProtocolGovernanceAuthority, RotateProtocolGovernanceAuthorityArgs};
+use crate::CancelProtocolGovernanceAuthorityTransfer;
 
-impl<'info> RotateProtocolGovernanceAuthority<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "rotate_protocol_governance_authority", hash = "95f05868c11cd4d6", spec_hash = "647d9abb5c100f14")]
+impl<'info> CancelProtocolGovernanceAuthorityTransfer<'info> {
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "cancel_protocol_governance_authority_transfer", hash = "676cd334cb980ee2", spec_hash = "647d9abb5c100f14")]
     #[inline(always)]
-    pub fn handler(&mut self, args: RotateProtocolGovernanceAuthorityArgs) -> Result<()> {
-        guards::rotate_protocol_governance_authority(self, args)?;
+    pub fn handler(&mut self) -> Result<()> {
+        guards::cancel_protocol_governance_authority_transfer(self)?;
         self.protocol_governance.audit_nonce = self.protocol_governance.audit_nonce.saturating_add(1);
         Ok(())
     }

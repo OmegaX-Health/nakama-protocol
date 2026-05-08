@@ -14,6 +14,7 @@ use crate::*;
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn initialize_protocol_governance<'info>(ctx: &mut InitializeProtocolGovernance<'info>, args: InitializeProtocolGovernanceArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -29,6 +30,7 @@ pub fn initialize_protocol_governance<'info>(ctx: &mut InitializeProtocolGoverna
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn set_protocol_emergency_pause<'info>(ctx: &mut SetProtocolEmergencyPause<'info>, args: SetProtocolEmergencyPauseArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -42,6 +44,35 @@ pub fn set_protocol_emergency_pause<'info>(ctx: &mut SetProtocolEmergencyPause<'
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn rotate_protocol_governance_authority<'info>(ctx: &mut RotateProtocolGovernanceAuthority<'info>, args: RotateProtocolGovernanceAuthorityArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
+    let paid_amount: u64 = 0;
+    let approved_amount: u64 = u64::MAX;
+    let withdrawn_fees: u64 = 0;
+    let accrued_fees: u64 = u64::MAX;
+    // lifecycle: require status == Live
+    if ctx.protocol_governance.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
+    Ok(())
+}
+
+/// Guards for `accept_protocol_governance_authority`.
+/// Generated from the `requires` clauses of the spec handler block.
+pub fn accept_protocol_governance_authority<'info>(ctx: &mut AcceptProtocolGovernanceAuthority<'info>) -> Result<()> {
+    let emergency_pause = false;
+    let active = true;
+    let paid_amount: u64 = 0;
+    let approved_amount: u64 = u64::MAX;
+    let withdrawn_fees: u64 = 0;
+    let accrued_fees: u64 = u64::MAX;
+    // lifecycle: require status == Live
+    if ctx.protocol_governance.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
+    Ok(())
+}
+
+/// Guards for `cancel_protocol_governance_authority_transfer`.
+/// Generated from the `requires` clauses of the spec handler block.
+pub fn cancel_protocol_governance_authority_transfer<'info>(ctx: &mut CancelProtocolGovernanceAuthorityTransfer<'info>) -> Result<()> {
+    let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -55,6 +86,7 @@ pub fn rotate_protocol_governance_authority<'info>(ctx: &mut RotateProtocolGover
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_reserve_domain<'info>(ctx: &mut CreateReserveDomain<'info>, args: CreateReserveDomainArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -68,6 +100,7 @@ pub fn create_reserve_domain<'info>(ctx: &mut CreateReserveDomain<'info>, args: 
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn update_reserve_domain_controls<'info>(ctx: &mut UpdateReserveDomainControls<'info>, args: UpdateReserveDomainControlsArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -81,6 +114,7 @@ pub fn update_reserve_domain_controls<'info>(ctx: &mut UpdateReserveDomainContro
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_domain_asset_vault<'info>(ctx: &mut CreateDomainAssetVault<'info>, args: CreateDomainAssetVaultArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -93,6 +127,7 @@ pub fn create_domain_asset_vault<'info>(ctx: &mut CreateDomainAssetVault<'info>,
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn configure_reserve_asset_rail<'info>(ctx: &mut ConfigureReserveAssetRail<'info>, args: ConfigureReserveAssetRailArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -108,6 +143,7 @@ pub fn configure_reserve_asset_rail<'info>(ctx: &mut ConfigureReserveAssetRail<'
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn publish_reserve_asset_rail_price<'info>(ctx: &mut PublishReserveAssetRailPrice<'info>, args: PublishReserveAssetRailPriceArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -125,6 +161,7 @@ pub fn publish_reserve_asset_rail_price<'info>(ctx: &mut PublishReserveAssetRail
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn init_protocol_fee_vault<'info>(ctx: &mut InitProtocolFeeVault<'info>, args: InitProtocolFeeVaultArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -138,6 +175,7 @@ pub fn init_protocol_fee_vault<'info>(ctx: &mut InitProtocolFeeVault<'info>, arg
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn init_pool_treasury_vault<'info>(ctx: &mut InitPoolTreasuryVault<'info>, args: InitPoolTreasuryVaultArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -151,6 +189,7 @@ pub fn init_pool_treasury_vault<'info>(ctx: &mut InitPoolTreasuryVault<'info>, a
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn init_pool_oracle_fee_vault<'info>(ctx: &mut InitPoolOracleFeeVault<'info>, args: InitPoolOracleFeeVaultArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -164,6 +203,7 @@ pub fn init_pool_oracle_fee_vault<'info>(ctx: &mut InitPoolOracleFeeVault<'info>
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_health_plan<'info>(ctx: &mut CreateHealthPlan<'info>, args: CreateHealthPlanArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -177,6 +217,7 @@ pub fn create_health_plan<'info>(ctx: &mut CreateHealthPlan<'info>, args: Create
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn update_health_plan_controls<'info>(ctx: &mut UpdateHealthPlanControls<'info>, args: UpdateHealthPlanControlsArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -190,6 +231,7 @@ pub fn update_health_plan_controls<'info>(ctx: &mut UpdateHealthPlanControls<'in
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_policy_series<'info>(ctx: &mut CreatePolicySeries<'info>, args: CreatePolicySeriesArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -202,6 +244,7 @@ pub fn create_policy_series<'info>(ctx: &mut CreatePolicySeries<'info>, args: Cr
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn initialize_series_reserve_ledger<'info>(ctx: &mut InitializeSeriesReserveLedger<'info>, args: InitializeSeriesReserveLedgerArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -215,6 +258,7 @@ pub fn initialize_series_reserve_ledger<'info>(ctx: &mut InitializeSeriesReserve
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn version_policy_series<'info>(ctx: &mut VersionPolicySeries<'info>, args: VersionPolicySeriesArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -227,11 +271,15 @@ pub fn version_policy_series<'info>(ctx: &mut VersionPolicySeries<'info>, args: 
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn open_member_position<'info>(ctx: &mut OpenMemberPosition<'info>, args: OpenMemberPositionArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
     let accrued_fees: u64 = u64::MAX;
-    // No guards declared in spec — nothing to check.
+    // requires: emergency_pause = false
+    if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
+    // requires: active = true
+    if !(active == true) { return Err(OmegaxProtocolError::HealthPlanInactive.into()); }
     Ok(())
 }
 
@@ -239,6 +287,7 @@ pub fn open_member_position<'info>(ctx: &mut OpenMemberPosition<'info>, args: Op
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn update_member_eligibility<'info>(ctx: &mut UpdateMemberEligibility<'info>, args: UpdateMemberEligibilityArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -252,6 +301,7 @@ pub fn update_member_eligibility<'info>(ctx: &mut UpdateMemberEligibility<'info>
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn open_funding_line<'info>(ctx: &mut OpenFundingLine<'info>, args: OpenFundingLineArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -264,6 +314,7 @@ pub fn open_funding_line<'info>(ctx: &mut OpenFundingLine<'info>, args: OpenFund
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn fund_sponsor_budget<'info>(ctx: &mut FundSponsorBudget<'info>, args: FundSponsorBudgetArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -279,6 +330,7 @@ pub fn fund_sponsor_budget<'info>(ctx: &mut FundSponsorBudget<'info>, args: Fund
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn record_premium_payment<'info>(ctx: &mut RecordPremiumPayment<'info>, args: RecordPremiumPaymentArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -294,6 +346,7 @@ pub fn record_premium_payment<'info>(ctx: &mut RecordPremiumPayment<'info>, args
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_commitment_campaign<'info>(ctx: &mut CreateCommitmentCampaign<'info>, args: CreateCommitmentCampaignArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -311,6 +364,7 @@ pub fn create_commitment_campaign<'info>(ctx: &mut CreateCommitmentCampaign<'inf
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_commitment_payment_rail<'info>(ctx: &mut CreateCommitmentPaymentRail<'info>, args: CreateCommitmentPaymentRailArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -328,6 +382,7 @@ pub fn create_commitment_payment_rail<'info>(ctx: &mut CreateCommitmentPaymentRa
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn deposit_commitment<'info>(ctx: &mut DepositCommitment<'info>, args: DepositCommitmentArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -341,6 +396,7 @@ pub fn deposit_commitment<'info>(ctx: &mut DepositCommitment<'info>, args: Depos
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn activate_direct_premium_commitment<'info>(ctx: &mut ActivateDirectPremiumCommitment<'info>, args: ActivateCommitmentArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -354,6 +410,7 @@ pub fn activate_direct_premium_commitment<'info>(ctx: &mut ActivateDirectPremium
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn activate_treasury_credit_commitment<'info>(ctx: &mut ActivateTreasuryCreditCommitment<'info>, args: ActivateCommitmentArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -367,6 +424,7 @@ pub fn activate_treasury_credit_commitment<'info>(ctx: &mut ActivateTreasuryCred
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn activate_waterfall_commitment<'info>(ctx: &mut ActivateWaterfallCommitment<'info>, args: ActivateCommitmentArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -380,6 +438,7 @@ pub fn activate_waterfall_commitment<'info>(ctx: &mut ActivateWaterfallCommitmen
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn refund_commitment<'info>(ctx: &mut RefundCommitment<'info>, args: RefundCommitmentArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -392,6 +451,7 @@ pub fn refund_commitment<'info>(ctx: &mut RefundCommitment<'info>, args: RefundC
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn pause_commitment_campaign<'info>(ctx: &mut PauseCommitmentCampaign<'info>, args: PauseCommitmentCampaignArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -407,6 +467,7 @@ pub fn pause_commitment_campaign<'info>(ctx: &mut PauseCommitmentCampaign<'info>
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_obligation<'info>(ctx: &mut CreateObligation<'info>, args: CreateObligationArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -422,6 +483,7 @@ pub fn create_obligation<'info>(ctx: &mut CreateObligation<'info>, args: CreateO
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn reserve_obligation<'info>(ctx: &mut ReserveObligation<'info>, args: ReserveObligationArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -437,6 +499,7 @@ pub fn reserve_obligation<'info>(ctx: &mut ReserveObligation<'info>, args: Reser
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn settle_obligation<'info>(ctx: &mut SettleObligation<'info>, args: SettleObligationArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -452,6 +515,7 @@ pub fn settle_obligation<'info>(ctx: &mut SettleObligation<'info>, args: SettleO
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn release_reserve<'info>(ctx: &mut ReleaseReserve<'info>, args: ReleaseReserveArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -467,6 +531,7 @@ pub fn release_reserve<'info>(ctx: &mut ReleaseReserve<'info>, args: ReleaseRese
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn open_claim_case<'info>(ctx: &mut OpenClaimCase<'info>, args: OpenClaimCaseArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -475,6 +540,8 @@ pub fn open_claim_case<'info>(ctx: &mut OpenClaimCase<'info>, args: OpenClaimCas
     if ctx.claim_case.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
+    // requires: active = true
+    if !(active == true) { return Err(OmegaxProtocolError::HealthPlanInactive.into()); }
     Ok(())
 }
 
@@ -482,6 +549,7 @@ pub fn open_claim_case<'info>(ctx: &mut OpenClaimCase<'info>, args: OpenClaimCas
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn authorize_claim_recipient<'info>(ctx: &mut AuthorizeClaimRecipient<'info>, args: AuthorizeClaimRecipientArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -497,6 +565,7 @@ pub fn authorize_claim_recipient<'info>(ctx: &mut AuthorizeClaimRecipient<'info>
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn attach_claim_evidence_ref<'info>(ctx: &mut AttachClaimEvidenceRef<'info>, args: AttachClaimEvidenceRefArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -512,6 +581,7 @@ pub fn attach_claim_evidence_ref<'info>(ctx: &mut AttachClaimEvidenceRef<'info>,
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn adjudicate_claim_case<'info>(ctx: &mut AdjudicateClaimCase<'info>, args: AdjudicateClaimCaseArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -527,6 +597,7 @@ pub fn adjudicate_claim_case<'info>(ctx: &mut AdjudicateClaimCase<'info>, args: 
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn settle_claim_case<'info>(ctx: &mut SettleClaimCase<'info>, args: SettleClaimCaseArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -544,6 +615,7 @@ pub fn settle_claim_case<'info>(ctx: &mut SettleClaimCase<'info>, args: SettleCl
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn settle_claim_case_selected_asset<'info>(ctx: &mut SettleClaimCaseSelectedAsset<'info>, args: SettleClaimCaseSelectedAssetArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -565,6 +637,7 @@ pub fn settle_claim_case_selected_asset<'info>(ctx: &mut SettleClaimCaseSelected
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_liquidity_pool<'info>(ctx: &mut CreateLiquidityPool<'info>, args: CreateLiquidityPoolArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -580,6 +653,7 @@ pub fn create_liquidity_pool<'info>(ctx: &mut CreateLiquidityPool<'info>, args: 
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_capital_class<'info>(ctx: &mut CreateCapitalClass<'info>, args: CreateCapitalClassArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -593,6 +667,7 @@ pub fn create_capital_class<'info>(ctx: &mut CreateCapitalClass<'info>, args: Cr
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn update_capital_class_controls<'info>(ctx: &mut UpdateCapitalClassControls<'info>, args: UpdateCapitalClassControlsArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -606,6 +681,7 @@ pub fn update_capital_class_controls<'info>(ctx: &mut UpdateCapitalClassControls
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn update_lp_position_credentialing<'info>(ctx: &mut UpdateLpPositionCredentialing<'info>, args: UpdateLpPositionCredentialingArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -619,6 +695,7 @@ pub fn update_lp_position_credentialing<'info>(ctx: &mut UpdateLpPositionCredent
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn deposit_into_capital_class<'info>(ctx: &mut DepositIntoCapitalClass<'info>, args: DepositIntoCapitalClassArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -627,6 +704,8 @@ pub fn deposit_into_capital_class<'info>(ctx: &mut DepositIntoCapitalClass<'info
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
+    // requires: active = true
+    if !(active == true) { return Err(OmegaxProtocolError::CapitalClassInactive.into()); }
     Ok(())
 }
 
@@ -634,6 +713,7 @@ pub fn deposit_into_capital_class<'info>(ctx: &mut DepositIntoCapitalClass<'info
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn request_redemption<'info>(ctx: &mut RequestRedemption<'info>, args: RequestRedemptionArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -649,6 +729,7 @@ pub fn request_redemption<'info>(ctx: &mut RequestRedemption<'info>, args: Reque
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn process_redemption_queue<'info>(ctx: &mut ProcessRedemptionQueue<'info>, args: ProcessRedemptionQueueArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -664,6 +745,7 @@ pub fn process_redemption_queue<'info>(ctx: &mut ProcessRedemptionQueue<'info>, 
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_protocol_fee_spl<'info>(ctx: &mut WithdrawProtocolFeeSpl<'info>, args: WithdrawArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -679,6 +761,7 @@ pub fn withdraw_protocol_fee_spl<'info>(ctx: &mut WithdrawProtocolFeeSpl<'info>,
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_protocol_fee_sol<'info>(ctx: &mut WithdrawProtocolFeeSol<'info>, args: WithdrawArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -694,6 +777,7 @@ pub fn withdraw_protocol_fee_sol<'info>(ctx: &mut WithdrawProtocolFeeSol<'info>,
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_treasury_spl<'info>(ctx: &mut WithdrawPoolTreasurySpl<'info>, args: WithdrawArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -709,6 +793,7 @@ pub fn withdraw_pool_treasury_spl<'info>(ctx: &mut WithdrawPoolTreasurySpl<'info
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_treasury_sol<'info>(ctx: &mut WithdrawPoolTreasurySol<'info>, args: WithdrawArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -724,6 +809,7 @@ pub fn withdraw_pool_treasury_sol<'info>(ctx: &mut WithdrawPoolTreasurySol<'info
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_oracle_fee_spl<'info>(ctx: &mut WithdrawPoolOracleFeeSpl<'info>, args: WithdrawArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -739,6 +825,7 @@ pub fn withdraw_pool_oracle_fee_spl<'info>(ctx: &mut WithdrawPoolOracleFeeSpl<'i
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_oracle_fee_sol<'info>(ctx: &mut WithdrawPoolOracleFeeSol<'info>, args: WithdrawArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -754,6 +841,7 @@ pub fn withdraw_pool_oracle_fee_sol<'info>(ctx: &mut WithdrawPoolOracleFeeSol<'i
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_allocation_position<'info>(ctx: &mut CreateAllocationPosition<'info>, args: CreateAllocationPositionArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -766,6 +854,7 @@ pub fn create_allocation_position<'info>(ctx: &mut CreateAllocationPosition<'inf
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn update_allocation_caps<'info>(ctx: &mut UpdateAllocationCaps<'info>, args: UpdateAllocationCapsArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -779,6 +868,7 @@ pub fn update_allocation_caps<'info>(ctx: &mut UpdateAllocationCaps<'info>, args
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn allocate_capital<'info>(ctx: &mut AllocateCapital<'info>, args: AllocateCapitalArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -794,6 +884,7 @@ pub fn allocate_capital<'info>(ctx: &mut AllocateCapital<'info>, args: AllocateC
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn deallocate_capital<'info>(ctx: &mut DeallocateCapital<'info>, args: DeallocateCapitalArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -809,6 +900,7 @@ pub fn deallocate_capital<'info>(ctx: &mut DeallocateCapital<'info>, args: Deall
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn mark_impairment<'info>(ctx: &mut MarkImpairment<'info>, args: MarkImpairmentArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -824,6 +916,7 @@ pub fn mark_impairment<'info>(ctx: &mut MarkImpairment<'info>, args: MarkImpairm
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn register_oracle<'info>(ctx: &mut RegisterOracle<'info>, args: RegisterOracleArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -837,6 +930,7 @@ pub fn register_oracle<'info>(ctx: &mut RegisterOracle<'info>, args: RegisterOra
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn claim_oracle<'info>(ctx: &mut ClaimOracle<'info>) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -850,6 +944,7 @@ pub fn claim_oracle<'info>(ctx: &mut ClaimOracle<'info>) -> Result<()> {
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn update_oracle_profile<'info>(ctx: &mut UpdateOracleProfile<'info>, args: UpdateOracleProfileArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -863,6 +958,7 @@ pub fn update_oracle_profile<'info>(ctx: &mut UpdateOracleProfile<'info>, args: 
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn set_pool_oracle<'info>(ctx: &mut SetPoolOracle<'info>, args: SetPoolOracleArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -876,6 +972,7 @@ pub fn set_pool_oracle<'info>(ctx: &mut SetPoolOracle<'info>, args: SetPoolOracl
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn set_pool_oracle_permissions<'info>(ctx: &mut SetPoolOraclePermissions<'info>, args: SetPoolOraclePermissionsArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -889,6 +986,7 @@ pub fn set_pool_oracle_permissions<'info>(ctx: &mut SetPoolOraclePermissions<'in
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn set_pool_oracle_policy<'info>(ctx: &mut SetPoolOraclePolicy<'info>, args: SetPoolOraclePolicyArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -904,6 +1002,7 @@ pub fn set_pool_oracle_policy<'info>(ctx: &mut SetPoolOraclePolicy<'info>, args:
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn register_outcome_schema<'info>(ctx: &mut RegisterOutcomeSchema<'info>, args: RegisterOutcomeSchemaArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -916,6 +1015,7 @@ pub fn register_outcome_schema<'info>(ctx: &mut RegisterOutcomeSchema<'info>, ar
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn verify_outcome_schema<'info>(ctx: &mut VerifyOutcomeSchema<'info>, args: VerifyOutcomeSchemaArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -929,6 +1029,7 @@ pub fn verify_outcome_schema<'info>(ctx: &mut VerifyOutcomeSchema<'info>, args: 
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn backfill_schema_dependency_ledger<'info>(ctx: &mut BackfillSchemaDependencyLedger<'info>, args: BackfillSchemaDependencyLedgerArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -942,6 +1043,7 @@ pub fn backfill_schema_dependency_ledger<'info>(ctx: &mut BackfillSchemaDependen
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn close_outcome_schema<'info>(ctx: &mut CloseOutcomeSchema<'info>) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
@@ -954,6 +1056,7 @@ pub fn close_outcome_schema<'info>(ctx: &mut CloseOutcomeSchema<'info>) -> Resul
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn attest_claim_case<'info>(ctx: &mut AttestClaimCase<'info>, args: AttestClaimCaseArgs) -> Result<()> {
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;

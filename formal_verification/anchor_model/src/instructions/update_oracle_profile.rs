@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{UpdateOracleProfile, UpdateOracleProfileArgs};
 
 impl<'info> UpdateOracleProfile<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_oracle_profile", hash = "effd18baa14112a5", spec_hash = "f70a8b8ddf967658")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_oracle_profile", hash = "effd18baa14112a5", spec_hash = "7781b303dfaa7a86")]
     #[inline(always)]
     pub fn handler(&mut self, args: UpdateOracleProfileArgs) -> Result<()> {
         guards::update_oracle_profile(self, args)?;

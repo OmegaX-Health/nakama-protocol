@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateCapitalClass, CreateCapitalClassArgs};
 
 impl<'info> CreateCapitalClass<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_capital_class", hash = "9980fe381c6ebd48", spec_hash = "6f1a99f7bbacb716")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_capital_class", hash = "9980fe381c6ebd48", spec_hash = "08f704154ec21826")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateCapitalClassArgs) -> Result<()> {
         guards::create_capital_class(self, args)?;

@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{SettleClaimCase, SettleClaimCaseArgs};
 
 impl<'info> SettleClaimCase<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "settle_claim_case", hash = "2ee67da54e202d46", spec_hash = "02720550f54ff44c")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "settle_claim_case", hash = "2ee67da54e202d46", spec_hash = "70265252506fae34")]
     #[inline(always)]
     pub fn handler(&mut self, args: SettleClaimCaseArgs) -> Result<()> {
         guards::settle_claim_case(self, args)?;

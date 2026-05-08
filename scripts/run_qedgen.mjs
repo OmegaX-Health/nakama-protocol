@@ -688,6 +688,10 @@ function postprocessRustModel() {
           `use crate::{${contextMatch[1]}, ${argsMatch[1]}};`,
         );
       }
+      text = text.replace(
+        'self.protocol_governance.governance_authority = pending_authority;',
+        'self.protocol_governance.governance_authority = self.pending_authority.key();',
+      );
       writeFileSync(path, text);
     }
   }
@@ -697,6 +701,7 @@ function postprocessRustModel() {
     let guards = readFileSync(guardsPath, 'utf8');
     guards = guards.replace(/(pub fn \w+<'info>\([^{]+ \{)\n/g, `$1
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;

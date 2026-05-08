@@ -506,6 +506,7 @@ inductive Status where
 
 structure State where
   governance_authority : Pubkey
+  pending_authority : Pubkey
   authority : Pubkey
   plan_admin : Pubkey
   wallet : Pubkey
@@ -596,6 +597,16 @@ def rotate_protocol_governance_authorityTransition (s : State) (signer : Pubkey)
     some { s with status := .Live }
   else none
 
+def accept_protocol_governance_authorityTransition (s : State) (signer : Pubkey) : Option State :=
+  if signer = s.pending_authority ∧ s.status = .Live then
+    some { s with governance_authority := s.pending_authority, status := .Live }
+  else none
+
+def cancel_protocol_governance_authority_transferTransition (s : State) (signer : Pubkey) : Option State :=
+  if signer = s.authority ∧ s.status = .Live then
+    some { s with status := .Live }
+  else none
+
 def create_reserve_domainTransition (s : State) (signer : Pubkey) (args : CreateReserveDomainArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
     some { s with status := .Live }
@@ -643,7 +654,7 @@ def create_health_planTransition (s : State) (signer : Pubkey) (args : CreateHea
 
 def update_health_plan_controlsTransition (s : State) (signer : Pubkey) (args : UpdateHealthPlanControlsArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with status := .Live }
+    some { s with active := args.active, status := .Live }
   else none
 
 def create_policy_seriesTransition (s : State) (signer : Pubkey) (args : CreatePolicySeriesArgs) : Option State :=
@@ -662,7 +673,7 @@ def version_policy_seriesTransition (s : State) (signer : Pubkey) (args : Versio
   else none
 
 def open_member_positionTransition (s : State) (signer : Pubkey) (args : OpenMemberPositionArgs) : Option State :=
-  if signer = s.wallet ∧ s.status = .Live then
+  if signer = s.wallet ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (s.active = true) then
     some { s with eligibility_status := args.eligibility_status, delegated_rights := args.delegated_rights, status := .Live }
   else none
 
@@ -747,7 +758,7 @@ def release_reserveTransition (s : State) (signer : Pubkey) (args : ReleaseReser
   else none
 
 def open_claim_caseTransition (s : State) (signer : Pubkey) (args : OpenClaimCaseArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (s.active = true) then
     some { s with review_state := 0, status := .Live }
   else none
 
@@ -797,7 +808,7 @@ def update_lp_position_credentialingTransition (s : State) (signer : Pubkey) (ar
   else none
 
 def deposit_into_capital_classTransition (s : State) (signer : Pubkey) (args : DepositIntoCapitalClassArgs) : Option State :=
-  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) ∧ (s.active = true) then
     some { s with status := .Live }
   else none
 
@@ -925,6 +936,8 @@ inductive Operation where
   | initialize_protocol_governance (args : InitializeProtocolGovernanceArgs)
   | set_protocol_emergency_pause (args : SetProtocolEmergencyPauseArgs)
   | rotate_protocol_governance_authority (args : RotateProtocolGovernanceAuthorityArgs)
+  | accept_protocol_governance_authority
+  | cancel_protocol_governance_authority_transfer
   | create_reserve_domain (args : CreateReserveDomainArgs)
   | update_reserve_domain_controls (args : UpdateReserveDomainControlsArgs)
   | create_domain_asset_vault (args : CreateDomainAssetVaultArgs)
@@ -995,6 +1008,8 @@ def applyOp (s : State) (signer : Pubkey) : Operation → Option State
   | .initialize_protocol_governance args => initialize_protocol_governanceTransition s signer args
   | .set_protocol_emergency_pause args => set_protocol_emergency_pauseTransition s signer args
   | .rotate_protocol_governance_authority args => rotate_protocol_governance_authorityTransition s signer args
+  | .accept_protocol_governance_authority => accept_protocol_governance_authorityTransition s signer
+  | .cancel_protocol_governance_authority_transfer => cancel_protocol_governance_authority_transferTransition s signer
   | .create_reserve_domain args => create_reserve_domainTransition s signer args
   | .update_reserve_domain_controls args => update_reserve_domain_controlsTransition s signer args
   | .create_domain_asset_vault args => create_domain_asset_vaultTransition s signer args
