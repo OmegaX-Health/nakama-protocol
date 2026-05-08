@@ -1,12 +1,10 @@
 name: Localnet E2E
 
-# Runs the heavier `npm run test:e2e:localnet` suite when a PR touches the
-# on-chain program, the IDL, the shared protocol contract, the frontend
-# protocol/SDK surface, the e2e harness itself, or this workflow file.
-#
-# Keep CI fast on docs-only / unrelated frontend PRs by relying on the path
-# filter below — the public CI workflow (`ci.yml`) is the per-PR gate; this
-# workflow is the protocol-surface evidence lane.
+# Always reports a check. Runs the heavier `npm run test:e2e:localnet` suite
+# when a PR touches the on-chain program, the IDL, the shared protocol
+# contract, the frontend protocol/SDK surface, the e2e harness itself, or this
+# workflow file; otherwise exits successfully as a no-op so branch protection
+# can require this workflow safely.
 #
 # Expected first-run time: ~15-30 min (Solana CLI install + Anchor cargo
 # install + anchor build + localnet boot + suite). Subsequent runs reuse the
@@ -14,28 +12,6 @@ name: Localnet E2E
 
 on:
   pull_request:
-    paths:
-      - 'programs/**'
-      - 'idl/**'
-      - 'shared/**'
-      - 'frontend/lib/protocol.ts'
-      - 'frontend/lib/protocol-action.ts'
-      - 'frontend/lib/protocol-action-toast.ts'
-      - 'frontend/lib/plan-launch-tx.ts'
-      - 'frontend/lib/network-config.ts'
-      - 'frontend/components/plan-operator-drawer.tsx'
-      - 'frontend/components/capital-operator-drawer.tsx'
-      - 'frontend/components/governance-operator-drawer.tsx'
-      - 'frontend/components/pool-treasury-panel.tsx'
-      - 'e2e/**'
-      - 'scripts/bootstrap_genesis_live_protocol.ts'
-      - 'scripts/bootstrap_devnet_live_protocol.ts'
-      - 'scripts/devnet_operator_drawer_sim.ts'
-      - 'scripts/run_localnet_e2e.mjs'
-      - 'Anchor.toml'
-      - 'Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/localnet-e2e.yml'
   workflow_dispatch:
 
 permissions:
@@ -60,7 +36,28 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect localnet-relevant changes
+        id: localnet_changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")"
+          if printf '%s\n' "$changed" | grep -Eq '^(programs/|idl/|shared/|e2e/|frontend/lib/(protocol|protocol-action|protocol-action-toast|plan-launch-tx|network-config)\.ts|frontend/components/(plan-operator-drawer|capital-operator-drawer|governance-operator-drawer|pool-treasury-panel)\.tsx|scripts/(bootstrap_genesis_live_protocol|bootstrap_devnet_live_protocol|devnet_operator_drawer_sim|run_localnet_e2e)\.mjs|Anchor\.toml|Cargo\.(toml|lock)|\.github/workflows/localnet-e2e\.yml)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: No-op for non-protocol changes
+        if: steps.localnet_changes.outputs.relevant != 'true'
+        run: echo "No localnet-relevant changes in this pull request."
+
       - name: Setup Node.js
+        if: steps.localnet_changes.outputs.relevant == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 20
@@ -68,12 +65,14 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Setup Rust
+        if: steps.localnet_changes.outputs.relevant == 'true'
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           toolchain: 1.88.0
           components: rustfmt, clippy
 
       - name: Install system dependencies
+        if: steps.localnet_changes.outputs.relevant == 'true'
         # libudev-dev is required by hidapi, a transitive dep of anchor-cli
         # (HW-wallet support); pkg-config + build-essential are usually
         # present on ubuntu-latest but are listed for completeness.
@@ -85,6 +84,7 @@ jobs:
             build-essential
 
       - name: Cache cargo registry, git, and target
+        if: steps.localnet_changes.outputs.relevant == 'true'
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
           path: |
@@ -96,6 +96,7 @@ jobs:
             cargo-localnet-${{ runner.os }}-
 
       - name: Cache Solana CLI install
+        if: steps.localnet_changes.outputs.relevant == 'true'
         id: solana-cache
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
@@ -103,16 +104,18 @@ jobs:
           key: solana-${{ env.SOLANA_CLI_VERSION }}-${{ runner.os }}-v1
 
       - name: Install Solana CLI
-        if: steps.solana-cache.outputs.cache-hit != 'true'
+        if: steps.localnet_changes.outputs.relevant == 'true' && steps.solana-cache.outputs.cache-hit != 'true'
         run: |
           curl -sSfL "https://release.anza.xyz/${SOLANA_CLI_VERSION}/install" -o /tmp/solana-install.sh
           echo "${SOLANA_CLI_INSTALL_SHA256}  /tmp/solana-install.sh" | sha256sum -c -
           sh /tmp/solana-install.sh
 
       - name: Add Solana CLI to PATH
+        if: steps.localnet_changes.outputs.relevant == 'true'
         run: echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
 
       - name: Cache Anchor CLI binary
+        if: steps.localnet_changes.outputs.relevant == 'true'
         id: anchor-cache
         uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809
         with:
@@ -120,18 +123,21 @@ jobs:
           key: anchor-cli-${{ env.ANCHOR_VERSION }}-${{ runner.os }}
 
       - name: Install Anchor CLI
-        if: steps.anchor-cache.outputs.cache-hit != 'true'
+        if: steps.localnet_changes.outputs.relevant == 'true' && steps.anchor-cache.outputs.cache-hit != 'true'
         run: cargo install --git https://github.com/coral-xyz/anchor anchor-cli --tag v${{ env.ANCHOR_VERSION }} --locked
 
       - name: Install root dependencies
+        if: steps.localnet_changes.outputs.relevant == 'true'
         run: npm ci
 
       - name: Install frontend dependencies
+        if: steps.localnet_changes.outputs.relevant == 'true'
         # The e2e harness imports from frontend/lib/protocol.ts, which
         # requires @coral-xyz/anchor and other frontend-only deps.
         run: npm --prefix frontend ci
 
       - name: Build Solana program
+        if: steps.localnet_changes.outputs.relevant == 'true'
         # The e2e harness pre-checks for target/deploy/omegax_protocol.so
         # before its own build step (a guard-rail for operators who run
         # `anchor:idl` first). In CI we have no prior step, so we build
@@ -139,6 +145,7 @@ jobs:
         run: npm run anchor:build:checked
 
       - name: Run localnet E2E
+        if: steps.localnet_changes.outputs.relevant == 'true'
         run: npm run test:e2e:localnet
         env:
           OMEGAX_E2E_SKIP_BUILD: '1'

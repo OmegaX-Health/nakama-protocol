@@ -2,16 +2,6 @@ name: QEDGen Verify
 
 on:
   pull_request:
-    paths:
-      - 'omegax_protocol.qedspec'
-      - '.qed/**'
-      - 'formal_verification/**'
-      - 'programs/omegax_protocol/src/**'
-      - 'programs/omegax_protocol/Cargo.toml'
-      - 'scripts/run_qedgen.mjs'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/qedgen-verify.yml'
   workflow_dispatch:
 
 permissions:
@@ -34,7 +24,28 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Detect QEDGen-relevant changes
+        id: qedgen_changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")"
+          if printf '%s\n' "$changed" | grep -Eq '^(\.qed/|formal_verification/|omegax_protocol\.qedspec|programs/omegax_protocol/src/|programs/omegax_protocol/Cargo\.toml|programs/omegax_private_claim_review/|idl/omegax_private_claim_review\.json|scripts/run_qedgen\.mjs|Anchor\.toml|Cargo\.(toml|lock)|package(-lock)?\.json|\.github/workflows/qedgen-verify\.yml)'; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "relevant=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: No-op for non-protocol changes
+        if: steps.qedgen_changes.outputs.relevant != 'true'
+        run: echo "No QEDGen-relevant changes in this pull request."
+
       - name: Setup Node.js
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 20
@@ -42,11 +53,13 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Setup Rust
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         with:
           toolchain: 1.88.0
 
       - name: Install Lean
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -56,6 +69,7 @@ jobs:
           "$HOME/.elan/bin/lake" --version
 
       - name: Install Kani
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -63,6 +77,7 @@ jobs:
           cargo kani setup
 
       - name: Install QEDGen
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -71,16 +86,20 @@ jobs:
           echo "QEDGEN=/tmp/qedgen-solana-skills/bin/qedgen" >> "$GITHUB_ENV"
 
       - name: Setup QEDGen mathlib
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         run: |
           "$QEDGEN" setup --mathlib
 
       - name: Check spec
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         run: npm run qedgen:check
 
       - name: Regenerate verification artifacts
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         run: npm run qedgen:codegen
 
       - name: Fail on generated drift
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -89,7 +108,9 @@ jobs:
             formal_verification
 
       - name: Run generated backends
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         run: npm run qedgen:verify
 
       - name: Reconcile spec, code, and proofs
+        if: steps.qedgen_changes.outputs.relevant == 'true'
         run: npm run qedgen:reconcile

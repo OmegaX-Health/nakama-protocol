@@ -1,0 +1,2299 @@
+{
+  "address": "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn",
+  "metadata": {
+    "name": "omegax_private_claim_review",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "OmegaX MagicBlock private claim review session adjunct program"
+  },
+  "instructions": [
+    {
+      "name": "commit_and_close_review_session",
+      "discriminator": [
+        151,
+        5,
+        151,
+        96,
+        246,
+        43,
+        225,
+        24
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_authority",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.claim_case",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_id",
+                "account": "PrivateClaimReviewSession"
+              }
+            ]
+          }
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "delegate_review_session",
+      "discriminator": [
+        230,
+        75,
+        160,
+        167,
+        73,
+        127,
+        86,
+        193
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "buffer_review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                210,
+                96,
+                92,
+                20,
+                49,
+                30,
+                19,
+                16,
+                202,
+                35,
+                20,
+                209,
+                126,
+                102,
+                18,
+                170,
+                100,
+                170,
+                38,
+                236,
+                222,
+                47,
+                11,
+                168,
+                138,
+                252,
+                234,
+                191,
+                41,
+                240,
+                2,
+                25
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegation_record_review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "delegation_metadata_review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              },
+              {
+                "kind": "arg",
+                "path": "args.claim_case"
+              },
+              {
+                "kind": "arg",
+                "path": "args.session_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner_program",
+          "address": "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn"
+        },
+        {
+          "name": "delegation_program",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "DelegateReviewSessionArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_review_registry",
+      "discriminator": [
+        41,
+        240,
+        64,
+        189,
+        13,
+        218,
+        185,
+        138
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "InitializeReviewRegistryArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "mark_review_failed",
+      "discriminator": [
+        47,
+        217,
+        221,
+        73,
+        151,
+        239,
+        117,
+        53
+      ],
+      "accounts": [
+        {
+          "name": "actor",
+          "signer": true
+        },
+        {
+          "name": "review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_authority",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.claim_case",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_id",
+                "account": "PrivateClaimReviewSession"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "MarkReviewFailedArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "open_review_session",
+      "discriminator": [
+        210,
+        212,
+        98,
+        191,
+        120,
+        87,
+        155,
+        223
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "operator",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  111,
+                  112,
+                  101,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "operator.reviewer_authority",
+                "account": "PrivateReviewOperator"
+              }
+            ]
+          }
+        },
+        {
+          "name": "review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payer"
+              },
+              {
+                "kind": "arg",
+                "path": "args.claim_case"
+              },
+              {
+                "kind": "arg",
+                "path": "args.session_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "OpenReviewSessionArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "process_undelegation",
+      "discriminator": [
+        196,
+        28,
+        41,
+        206,
+        48,
+        37,
+        51,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "base_account",
+          "writable": true
+        },
+        {
+          "name": "buffer"
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "account_seeds",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "record_private_payment_ref",
+      "discriminator": [
+        5,
+        51,
+        153,
+        75,
+        95,
+        133,
+        241,
+        239
+      ],
+      "accounts": [
+        {
+          "name": "payment_attestor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_authority",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.claim_case",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_id",
+                "account": "PrivateClaimReviewSession"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "RecordPrivatePaymentRefArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "record_private_review",
+      "discriminator": [
+        222,
+        131,
+        156,
+        189,
+        210,
+        241,
+        41,
+        67
+      ],
+      "accounts": [
+        {
+          "name": "reviewer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "operator",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  111,
+                  112,
+                  101,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reviewer"
+              }
+            ]
+          }
+        },
+        {
+          "name": "review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_authority",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.claim_case",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_id",
+                "account": "PrivateClaimReviewSession"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "RecordPrivateReviewArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_review_operator_active",
+      "discriminator": [
+        145,
+        152,
+        21,
+        93,
+        249,
+        206,
+        38,
+        124
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "operator",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  111,
+                  112,
+                  101,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "operator.reviewer_authority",
+                "account": "PrivateReviewOperator"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "active",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "set_review_registry_authority",
+      "discriminator": [
+        145,
+        48,
+        161,
+        68,
+        197,
+        37,
+        247,
+        138
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "SetReviewRegistryAuthorityArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "upsert_review_operator",
+      "discriminator": [
+        18,
+        221,
+        40,
+        10,
+        205,
+        150,
+        23,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "operator",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119,
+                  95,
+                  111,
+                  112,
+                  101,
+                  114,
+                  97,
+                  116,
+                  111,
+                  114
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "args.reviewer_authority"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "UpsertReviewOperatorArgs"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "PrivateClaimReviewSession",
+      "discriminator": [
+        65,
+        251,
+        196,
+        172,
+        246,
+        214,
+        222,
+        202
+      ]
+    },
+    {
+      "name": "PrivateReviewOperator",
+      "discriminator": [
+        154,
+        132,
+        118,
+        100,
+        46,
+        119,
+        81,
+        145
+      ]
+    },
+    {
+      "name": "PrivateReviewRegistry",
+      "discriminator": [
+        34,
+        217,
+        194,
+        56,
+        238,
+        35,
+        201,
+        153
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "PrivatePaymentRefRecorded",
+      "discriminator": [
+        160,
+        91,
+        194,
+        207,
+        74,
+        57,
+        137,
+        20
+      ]
+    },
+    {
+      "name": "PrivateReviewRecorded",
+      "discriminator": [
+        18,
+        117,
+        151,
+        147,
+        48,
+        22,
+        144,
+        208
+      ]
+    },
+    {
+      "name": "ReviewOperatorActiveSet",
+      "discriminator": [
+        95,
+        251,
+        114,
+        25,
+        63,
+        157,
+        13,
+        231
+      ]
+    },
+    {
+      "name": "ReviewOperatorUpserted",
+      "discriminator": [
+        236,
+        255,
+        61,
+        86,
+        47,
+        221,
+        124,
+        116
+      ]
+    },
+    {
+      "name": "ReviewRegistryAuthoritySet",
+      "discriminator": [
+        157,
+        134,
+        118,
+        252,
+        111,
+        5,
+        184,
+        81
+      ]
+    },
+    {
+      "name": "ReviewRegistryInitialized",
+      "discriminator": [
+        106,
+        78,
+        130,
+        233,
+        174,
+        94,
+        130,
+        71
+      ]
+    },
+    {
+      "name": "ReviewSessionCommitted",
+      "discriminator": [
+        77,
+        98,
+        207,
+        205,
+        174,
+        81,
+        137,
+        128
+      ]
+    },
+    {
+      "name": "ReviewSessionDelegated",
+      "discriminator": [
+        125,
+        193,
+        111,
+        201,
+        88,
+        189,
+        241,
+        53
+      ]
+    },
+    {
+      "name": "ReviewSessionFailed",
+      "discriminator": [
+        135,
+        8,
+        91,
+        224,
+        182,
+        90,
+        238,
+        46
+      ]
+    },
+    {
+      "name": "ReviewSessionOpened",
+      "discriminator": [
+        43,
+        246,
+        64,
+        228,
+        37,
+        66,
+        158,
+        135
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "EmptySessionId",
+      "msg": "review session id is required"
+    },
+    {
+      "code": 6001,
+      "name": "SessionIdTooLong",
+      "msg": "review session id exceeds the maximum length"
+    },
+    {
+      "code": 6002,
+      "name": "SessionIdMismatch",
+      "msg": "review session id does not match the review session account"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidRegistryAuthority",
+      "msg": "registry authority cannot be the default pubkey"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidSessionAuthority",
+      "msg": "session authority cannot be the default pubkey"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidPaymentAttestor",
+      "msg": "payment attestor cannot be the default pubkey"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidReviewerAuthority",
+      "msg": "reviewer authority cannot be the default pubkey"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidClaimCase",
+      "msg": "claim case cannot be the default pubkey"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidHealthPlan",
+      "msg": "health plan cannot be the default pubkey"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidPolicySeries",
+      "msg": "policy series cannot be the default pubkey"
+    },
+    {
+      "code": 6010,
+      "name": "ZeroEvidenceRefHash",
+      "msg": "evidence reference hash cannot be zero"
+    },
+    {
+      "code": 6011,
+      "name": "ZeroSchemaKeyHash",
+      "msg": "schema key hash cannot be zero"
+    },
+    {
+      "code": 6012,
+      "name": "ZeroSchemaHash",
+      "msg": "schema hash cannot be zero"
+    },
+    {
+      "code": 6013,
+      "name": "ZeroReviewResultHash",
+      "msg": "review result hash cannot be zero"
+    },
+    {
+      "code": 6014,
+      "name": "ZeroReviewArtifactHash",
+      "msg": "review artifact hash cannot be zero"
+    },
+    {
+      "code": 6015,
+      "name": "ZeroReviewBinaryHash",
+      "msg": "review binary hash cannot be zero"
+    },
+    {
+      "code": 6016,
+      "name": "ZeroTeeAttestationDigest",
+      "msg": "TEE attestation digest cannot be zero"
+    },
+    {
+      "code": 6017,
+      "name": "ZeroPrivatePaymentRefHash",
+      "msg": "private payment reference hash cannot be zero"
+    },
+    {
+      "code": 6018,
+      "name": "ZeroFailureRefHash",
+      "msg": "failure reference hash cannot be zero"
+    },
+    {
+      "code": 6019,
+      "name": "RegistryInactive",
+      "msg": "review registry is inactive"
+    },
+    {
+      "code": 6020,
+      "name": "OperatorInactive",
+      "msg": "review operator is inactive"
+    },
+    {
+      "code": 6021,
+      "name": "OperatorRegistryMismatch",
+      "msg": "review operator is registered to a different registry"
+    },
+    {
+      "code": 6022,
+      "name": "UnauthorizedRegistryAuthority",
+      "msg": "signer is not the review registry authority"
+    },
+    {
+      "code": 6023,
+      "name": "UnauthorizedSessionAuthority",
+      "msg": "signer is not the review session authority"
+    },
+    {
+      "code": 6024,
+      "name": "UnauthorizedReviewer",
+      "msg": "signer is not the registered reviewer"
+    },
+    {
+      "code": 6025,
+      "name": "UnauthorizedReviewOperator",
+      "msg": "review operator does not match this session"
+    },
+    {
+      "code": 6026,
+      "name": "UnauthorizedPaymentAttestor",
+      "msg": "signer is not the registered payment attestor"
+    },
+    {
+      "code": 6027,
+      "name": "UnauthorizedFailureMarker",
+      "msg": "signer cannot mark this review failed"
+    },
+    {
+      "code": 6028,
+      "name": "ReviewBinaryHashMismatch",
+      "msg": "private review binary hash does not match the registered operator binary"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidReviewStatus",
+      "msg": "invalid private review status"
+    },
+    {
+      "code": 6030,
+      "name": "ReviewNotDelegatable",
+      "msg": "private review session is not delegatable in its current state"
+    },
+    {
+      "code": 6031,
+      "name": "ReviewNotWritable",
+      "msg": "private review is not writable in its current state"
+    },
+    {
+      "code": 6032,
+      "name": "ReviewAlreadyRecorded",
+      "msg": "private review result already recorded"
+    },
+    {
+      "code": 6033,
+      "name": "PaymentRefNotAllowed",
+      "msg": "private payment reference cannot be recorded in the current state"
+    },
+    {
+      "code": 6034,
+      "name": "PaymentRefAlreadyRecorded",
+      "msg": "private payment reference already recorded"
+    },
+    {
+      "code": 6035,
+      "name": "ReviewNotReadyToCommit",
+      "msg": "private review session is not ready to commit"
+    },
+    {
+      "code": 6036,
+      "name": "ApprovedReviewMissingPaymentRef",
+      "msg": "approved private review is missing a private payment reference"
+    },
+    {
+      "code": 6037,
+      "name": "ReviewAlreadyCommitted",
+      "msg": "private review session was already committed"
+    },
+    {
+      "code": 6038,
+      "name": "TerminalReviewCannotFail",
+      "msg": "terminal private review cannot be marked failed"
+    }
+  ],
+  "types": [
+    {
+      "name": "DelegateReviewSessionArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "session_id",
+            "type": "string"
+          },
+          {
+            "name": "claim_case",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitializeReviewRegistryArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "payment_attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MarkReviewFailedArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "failure_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "OpenReviewSessionArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "session_id",
+            "type": "string"
+          },
+          {
+            "name": "claim_case",
+            "type": "pubkey"
+          },
+          {
+            "name": "health_plan",
+            "type": "pubkey"
+          },
+          {
+            "name": "policy_series",
+            "type": "pubkey"
+          },
+          {
+            "name": "evidence_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "decision_support_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "schema_key_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "schema_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PrivateClaimReviewSession",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "session_id",
+            "type": "string"
+          },
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "claim_case",
+            "type": "pubkey"
+          },
+          {
+            "name": "health_plan",
+            "type": "pubkey"
+          },
+          {
+            "name": "policy_series",
+            "type": "pubkey"
+          },
+          {
+            "name": "evidence_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "decision_support_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "schema_key_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "schema_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "review_operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "reviewer_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "payment_attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "review_result_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "review_artifact_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "review_binary_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "tee_attestation_digest",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "private_payment_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "opened_at",
+            "type": "i64"
+          },
+          {
+            "name": "delegated_at",
+            "type": "i64"
+          },
+          {
+            "name": "reviewed_at",
+            "type": "i64"
+          },
+          {
+            "name": "payment_recorded_at",
+            "type": "i64"
+          },
+          {
+            "name": "committed_at",
+            "type": "i64"
+          },
+          {
+            "name": "failed_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PrivatePaymentRefRecorded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "review_session",
+            "type": "pubkey"
+          },
+          {
+            "name": "payment_attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "private_payment_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PrivateReviewOperator",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "registry",
+            "type": "pubkey"
+          },
+          {
+            "name": "reviewer_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "review_binary_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PrivateReviewRecorded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "review_session",
+            "type": "pubkey"
+          },
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "review_result_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "review_artifact_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PrivateReviewRegistry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "payment_attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "name": "operator_count",
+            "type": "u32"
+          },
+          {
+            "name": "created_at",
+            "type": "i64"
+          },
+          {
+            "name": "updated_at",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RecordPrivatePaymentRefArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "private_payment_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RecordPrivateReviewArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "review_result_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "review_artifact_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "review_binary_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "tee_attestation_digest",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewOperatorActiveSet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewOperatorUpserted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "registry",
+            "type": "pubkey"
+          },
+          {
+            "name": "reviewer_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "review_binary_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewRegistryAuthoritySet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "registry",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewRegistryInitialized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "registry",
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "payment_attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewSessionCommitted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "review_session",
+            "type": "pubkey"
+          },
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "review_artifact_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "private_payment_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewSessionDelegated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "review_session",
+            "type": "pubkey"
+          },
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "claim_case",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewSessionFailed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "review_session",
+            "type": "pubkey"
+          },
+          {
+            "name": "actor",
+            "type": "pubkey"
+          },
+          {
+            "name": "failure_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewSessionOpened",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "review_session",
+            "type": "pubkey"
+          },
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "review_operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "reviewer_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "claim_case",
+            "type": "pubkey"
+          },
+          {
+            "name": "evidence_ref_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "schema_key_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SetReviewRegistryAuthorityArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "new_authority",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpsertReviewOperatorArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "reviewer_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "review_binary_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "active",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ]
+}

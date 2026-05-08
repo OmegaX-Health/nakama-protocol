@@ -98,27 +98,28 @@ Last remote `main` baseline before this local commit:
 | Setting | Expected | Actual |
 |---------|----------|--------|
 | Branch protection enabled on `main` | yes | yes |
-| Required PR review approvals | `0` until another write collaborator/reviewer exists | `0` |
-| CODEOWNERS review | not enforceable with one write collaborator who is also PR author | no |
+| Required PR review approvals | `1` independent approval for release landing | `1` |
+| CODEOWNERS review | required for protocol/security-owned paths | yes |
 | Stale review dismissal | yes | yes |
-| Required status checks | `verify` | `verify` |
+| Last-push approval | yes | yes |
+| Required status checks | `verify`, `qedgen`, `localnet-e2e` | `verify`, `qedgen`, `localnet-e2e` |
 | Strict status checks | yes | yes |
 | Admin enforcement | yes | yes |
 | Force pushes blocked | yes | yes |
 | Branch deletion blocked | yes | yes |
 
-Branch-protection API snapshot, `2026-05-04T18:10:14Z`:
+Branch-protection API snapshot, `2026-05-08T14:28:12Z`:
 
 ```json
 {
   "required_pull_request_reviews": {
     "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false,
-    "require_last_push_approval": false,
-    "required_approving_review_count": 0
+    "require_code_owner_reviews": true,
+    "require_last_push_approval": true,
+    "required_approving_review_count": 1
   },
   "required_status_checks": {
-    "contexts": ["verify"],
+    "contexts": ["verify", "qedgen", "localnet-e2e"],
     "strict": true
   },
   "enforce_admins": true,
@@ -127,11 +128,9 @@ Branch-protection API snapshot, `2026-05-04T18:10:14Z`:
 }
 ```
 
-Review-operations note: the GitHub collaborator list visible to the maintainer
-token currently contains only `marinosabijan`. GitHub rejected self-approval
-with `Review Can not approve your own pull request`. A future team-review policy
-requires adding at least one non-author collaborator, team, or outside reviewer
-with repository review permission.
+Review-operations note: this policy intentionally blocks zero-review release
+landing. If a PR author cannot self-approve, a non-author collaborator, team, or
+outside reviewer with repository review permission must approve before merge.
 
 ## 5. Local Validation Lanes
 
