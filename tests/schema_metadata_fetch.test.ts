@@ -43,3 +43,27 @@ test("browser schema metadata fetch uses the same-origin proxy response", async 
     }
   }
 });
+
+test("server schema metadata fetch rejects non-allowlisted hosts before fetch", async () => {
+  const previousFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new Error("fetch should not run for non-allowlisted metadata hosts");
+  };
+
+  try {
+    const result = await fetchSchemaMetadata("https://169.254.169.254/latest/meta-data");
+
+    assert.equal(calls, 0);
+    assert.deepEqual(result, {
+      metadata: null,
+      error: {
+        code: "unsupported_host",
+        message: "Schema metadata URI host is not on the public allowlist.",
+      },
+    });
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});

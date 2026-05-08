@@ -49,6 +49,7 @@ export type SchemaOutcomeTemplateOption = {
 export type SchemaMetadataFetchErrorCode =
   | "invalid_uri"
   | "unsupported_protocol"
+  | "unsupported_host"
   | "fetch_failed"
   | "http_error"
   | "non_json_content_type"
@@ -83,6 +84,15 @@ const DEFAULT_IPFS_GATEWAY_BASES = [
   "https://cloudflare-ipfs.com/ipfs",
   "https://dweb.link/ipfs",
 ];
+const SAFE_SCHEMA_METADATA_HOSTS = new Set([
+  "protocol.omegax.health",
+  "omegax.health",
+  "www.omegax.health",
+  "ipfs.io",
+  "gateway.pinata.cloud",
+  "cloudflare-ipfs.com",
+  "dweb.link",
+]);
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -117,6 +127,51 @@ function dedupe(values: string[]): string[] {
     next.push(normalized);
   }
   return next;
+}
+
+function configuredGatewayHosts(): Set<string> {
+  const hosts = new Set<string>();
+  for (const gatewayBase of splitGatewayBases(process.env.NEXT_PUBLIC_IPFS_GATEWAY_BASE || "")) {
+    try {
+      const parsed = new URL(gatewayBase);
+      if (parsed.protocol === "https:") {
+        hosts.add(parsed.hostname.toLowerCase());
+      }
+    } catch {
+      continue;
+    }
+  }
+  return hosts;
+}
+
+function safeSchemaMetadataUrl(value: string): URL | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:") return null;
+
+  const host = parsed.hostname.toLowerCase();
+  if (SAFE_SCHEMA_METADATA_HOSTS.has(host) || configuredGatewayHosts().has(host)) {
+    return parsed;
+  }
+  return null;
+}
+
+function safeSchemaMetadataUrls(values: string[]): URL[] {
+  const urls: URL[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const parsed = safeSchemaMetadataUrl(value);
+    if (!parsed) continue;
+    const key = parsed.toString();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    urls.push(parsed);
+  }
+  return urls;
 }
 
 function parseIpfsUri(uri: string): string[] {
@@ -182,7 +237,7 @@ function resolveKnownSchemaMirrorUrls(uri: URL): string[] {
   return [];
 }
 
-function resolveMetadataFetchUrl(metadataUri: string): { urls: string[]; error: SchemaMetadataFetchError | null } {
+function resolveMetadataFetchUrl(metadataUri: string): { urls: URL[]; error: SchemaMetadataFetchError | null } {
   const uri = normalize(metadataUri);
   if (!uri) {
     return {
@@ -196,7 +251,7 @@ function resolveMetadataFetchUrl(metadataUri: string): { urls: string[]; error: 
 
   const ipfsResolved = parseIpfsUri(uri);
   if (ipfsResolved.length > 0) {
-    return { urls: ipfsResolved, error: null };
+    return { urls: safeSchemaMetadataUrls(ipfsResolved), error: null };
   }
 
   let parsedUrl: URL;
@@ -224,18 +279,29 @@ function resolveMetadataFetchUrl(metadataUri: string): { urls: string[]; error: 
 
   const ipfsGatewayResolved = parseIpfsGatewayHttpUri(parsedUrl.toString());
   if (ipfsGatewayResolved.length > 0) {
-    return { urls: ipfsGatewayResolved, error: null };
+    return { urls: safeSchemaMetadataUrls(ipfsGatewayResolved), error: null };
   }
 
   const knownMirrors = resolveKnownSchemaMirrorUrls(parsedUrl);
   if (knownMirrors.length > 0) {
-    return { urls: knownMirrors, error: null };
+    return { urls: safeSchemaMetadataUrls(knownMirrors), error: null };
   }
 
-  return { urls: [parsedUrl.toString()], error: null };
+  const safeUrl = safeSchemaMetadataUrl(parsedUrl.toString());
+  if (safeUrl) {
+    return { urls: [safeUrl], error: null };
+  }
+
+  return {
+    urls: [],
+    error: {
+      code: "unsupported_host",
+      message: "Schema metadata URI host is not on the public allowlist.",
+    },
+  };
 }
 
-async function fetchMetadataFromUrl(url: string): Promise<SchemaMetadataFetchResult> {
+async function fetchMetadataFromUrl(url: URL): Promise<SchemaMetadataFetchResult> {
   try {
     const response = await fetch(url, { method: "GET", cache: "no-store" });
     if (!response.ok) {
