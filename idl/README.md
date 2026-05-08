@@ -15,7 +15,10 @@ Regenerate it from the repository root with:
 npm run anchor:idl
 ```
 
-The MagicBlock private claim-room adjunct IDL is emitted by `anchor build` as
-`target/idl/omegax_private_claim_review.json`; copy it into this directory
-after adjunct surface changes and refresh
-`omegax_private_claim_review.source-hash`.
+The command copies both checked-in public IDLs:
+
+- `target/idl/omegax_protocol.json` -> `idl/omegax_protocol.json`
+- `target/idl/omegax_private_claim_review.json` -> `idl/omegax_private_claim_review.json`
+
+It also refreshes both source-hash files. Do not copy the MagicBlock adjunct
+IDL manually; `npm run idl:freshness:check` gates both programs in CI.

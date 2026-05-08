@@ -883,7 +883,7 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
                   <span className="plans-rail-tag">Field log</span>
-                  <span className="plans-rail-subtag">Live audit</span>
+                  <span className="plans-rail-subtag">Activity log</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (

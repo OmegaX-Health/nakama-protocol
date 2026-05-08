@@ -24,7 +24,7 @@
 
 If this PR touches `programs/omegax_protocol/`, `idl/`, `shared/protocol_contract.json`, `frontend/lib/protocol.ts`, or shared protocol builders, complete this section. Otherwise mark `n/a`.
 
-- [ ] `npm run anchor:idl` ran and `idl/omegax_protocol.json` reflects current sources
+- [ ] `npm run anchor:idl` ran and checked-in IDLs/source hashes reflect current program sources
 - [ ] `npm run protocol:contract` ran and `shared/protocol_contract.json`, `frontend/lib/generated/` reflect current IDL
 - [ ] `npm run test:e2e:localnet` passed locally — see [public release gate](../docs/operations/public-release-gate.md)
 

@@ -338,14 +338,17 @@ function buildLaunchOracleOptions(
 function FieldGroup({
   label,
   children,
+  hint,
 }: {
   label: string;
   children: ReactNode;
+  hint?: ReactNode;
 }) {
   return (
     <label className="plans-wizard-field-group">
       <span className="plans-wizard-field-label">{label}</span>
       {children}
+      {hint ? <span className="plans-wizard-field-hint">{hint}</span> : null}
     </label>
   );
 }
@@ -364,6 +367,28 @@ function ReviewRow({
       <span className="plans-wizard-review-label">{label}</span>
       <strong className={cn("plans-wizard-review-value", muted && "opacity-70")}>{value}</strong>
     </div>
+  );
+}
+
+function ReviewSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="plans-wizard-review-section">
+      <div className="plans-wizard-review-section-head">
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+      <div className="plans-wizard-review-section-rows">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -2279,6 +2304,10 @@ export function PlanCreationWizard() {
         </header>
 
         <nav className="plans-wizard-progress-wrap" aria-label="Plan wizard steps">
+          <div className="plans-wizard-progress-mobile" aria-hidden="true">
+            <span>Step {activeStep.number} of {steps.length}</span>
+            <strong>{activeStep.label}</strong>
+          </div>
           <div className="plans-wizard-progress liquid-glass">
             <div
               className="plans-wizard-progress-indicator"
@@ -2405,7 +2434,10 @@ export function PlanCreationWizard() {
                       disabled={genesisTemplateMode}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Reserve Domain">
+                  <FieldGroup
+                    label="Reserve Domain"
+                    hint={reserveDomainAddress ? `Selected account: ${reserveDomainAddress}` : "Choose a live reserve domain before launch."}
+                  >
                     <select
                       className="plans-wizard-input"
                       value={reserveDomainAddress}
@@ -2452,7 +2484,14 @@ export function PlanCreationWizard() {
                       </button>
                     </div>
                   </FieldGroup>
-                  <FieldGroup label="Payout Mint">
+                  <FieldGroup
+                    label="Payout Mint"
+                    hint={payoutAssetMode === "sol"
+                      ? "Native SOL payout rail uses the zero mint placeholder."
+                      : payoutMint
+                        ? `Selected mint: ${payoutMint}`
+                        : "Choose the domain rail mint before launch."}
+                  >
                     <div className="space-y-2">
                       <input
                         type="text"
@@ -2547,7 +2586,10 @@ export function PlanCreationWizard() {
                         </FieldGroup>
 
                         <div className="plans-wizard-row">
-                          <FieldGroup label="Technical Terms URL">
+                          <FieldGroup
+                            label="Technical Terms URL"
+                            hint={defiTechnicalTermsUri ? `Full URL: ${defiTechnicalTermsUri}` : "Add the public terms URL members can inspect."}
+                          >
                             <input
                               type="text"
                               className="plans-wizard-input"
@@ -2555,7 +2597,10 @@ export function PlanCreationWizard() {
                               onChange={(event) => setDefiTechnicalTermsUri(event.target.value)}
                             />
                           </FieldGroup>
-                          <FieldGroup label="Risk Disclosure URL">
+                          <FieldGroup
+                            label="Risk Disclosure URL"
+                            hint={defiRiskDisclosureUri ? `Full URL: ${defiRiskDisclosureUri}` : "Add the public risk disclosure URL members can inspect."}
+                          >
                             <input
                               type="text"
                               className="plans-wizard-input"
@@ -3079,43 +3124,67 @@ export function PlanCreationWizard() {
             {activeStep.id === "review" ? (
               <div className="plans-wizard-step-body">
                 <div className="plans-wizard-review-grid">
-                  <ReviewRow label="Plan type" value={launchIntent.charAt(0).toUpperCase() + launchIntent.slice(1)} />
-                  <ReviewRow
-                    label="Lanes"
-                    value={
-                      genesisTemplateMode
-                        ? "Event 7 + Travel 30"
-                        : requiresRewardLane(launchIntent) && requiresProtectionLane(launchIntent)
-                          ? "Reward + Protection"
-                          : requiresRewardLane(launchIntent)
-                            ? "Reward"
-                            : "Protection"
-                    }
-                  />
-                  <ReviewRow
-                    label="Plan address"
-                    value={genesisTemplateMode ? genesisArtifactPreview?.healthPlanAddress ?? "pending" : addressPreview.healthPlanAddress ?? "pending"}
-                    muted={genesisTemplateMode ? !genesisArtifactPreview?.healthPlanAddress : !addressPreview.healthPlanAddress}
-                  />
+                  <ReviewSection
+                    title="Plan shape"
+                    description="The human-facing coverage surface this transaction will create."
+                  >
+                    <ReviewRow label="Plan type" value={launchIntent.charAt(0).toUpperCase() + launchIntent.slice(1)} />
+                    <ReviewRow
+                      label="Coverage products"
+                      value={
+                        genesisTemplateMode
+                          ? "Event 7 + Travel 30"
+                          : requiresRewardLane(launchIntent) && requiresProtectionLane(launchIntent)
+                            ? "Reward + Protection"
+                            : requiresRewardLane(launchIntent)
+                              ? "Reward"
+                              : "Protection"
+                      }
+                    />
+                  </ReviewSection>
+                  <ReviewSection
+                    title="Created accounts"
+                    description="Full account addresses are shown for audit; they wrap instead of truncating."
+                  >
+                    <ReviewRow
+                      label="Plan account"
+                      value={genesisTemplateMode ? genesisArtifactPreview?.healthPlanAddress ?? "pending" : addressPreview.healthPlanAddress ?? "pending"}
+                      muted={genesisTemplateMode ? !genesisArtifactPreview?.healthPlanAddress : !addressPreview.healthPlanAddress}
+                    />
                   {genesisTemplateMode ? (
                     <>
                       <ReviewRow label="Event 7 series" value={genesisArtifactPreview?.seriesAddresses.event7 ?? "pending"} muted={!genesisArtifactPreview?.seriesAddresses.event7} />
                       <ReviewRow label="Travel 30 series" value={genesisArtifactPreview?.seriesAddresses.travel30 ?? "pending"} muted={!genesisArtifactPreview?.seriesAddresses.travel30} />
                       <ReviewRow label="Capital pool" value={genesisArtifactPreview?.poolAddress ?? "pending"} muted={!genesisArtifactPreview?.poolAddress} />
+                    </>
+                  ) : (
+                    <>
+                      <ReviewRow label="Reward series" value={addressPreview.rewardSeriesAddress ?? "n/a"} muted={!addressPreview.rewardSeriesAddress} />
+                      <ReviewRow label="Protection series" value={addressPreview.protectionSeriesAddress ?? "n/a"} muted={!addressPreview.protectionSeriesAddress} />
+                      <ReviewRow label="Sponsor funding line" value={addressPreview.rewardFundingLineAddress ?? "n/a"} muted={!addressPreview.rewardFundingLineAddress} />
+                      <ReviewRow label="Premium funding line" value={addressPreview.protectionFundingLineAddress ?? "n/a"} muted={!addressPreview.protectionFundingLineAddress} />
+                    </>
+                  )}
+                  </ReviewSection>
+                  <ReviewSection
+                    title={genesisTemplateMode ? "Bootstrap footprint" : "Funding commitments"}
+                    description={genesisTemplateMode
+                      ? "Counts are shown before the Genesis shell is created so the launch footprint is understandable."
+                      : "Amounts are shown in base units so operators can compare them with the transaction payload."}
+                  >
+                    {genesisTemplateMode ? (
+                      <>
                       <ReviewRow label="Funding lines" value={String(Object.keys(genesisArtifactPreview?.fundingLineAddresses ?? {}).length)} muted={!genesisArtifactPreview} />
                       <ReviewRow label="Capital classes" value={String(genesisProtectAcuteBootstrapCapitalClasses().length)} muted={!genesisArtifactPreview} />
                       <ReviewRow label="Allocations" value={String(genesisProtectAcuteBootstrapAllocations().length)} muted={!genesisArtifactPreview} />
                     </>
                   ) : (
                     <>
-                      <ReviewRow label="Reward series" value={addressPreview.rewardSeriesAddress ?? "n/a"} muted={!addressPreview.rewardSeriesAddress} />
-                      <ReviewRow label="Protection series" value={addressPreview.protectionSeriesAddress ?? "n/a"} muted={!addressPreview.protectionSeriesAddress} />
-                      <ReviewRow label="Sponsor line" value={addressPreview.rewardFundingLineAddress ?? "n/a"} muted={!addressPreview.rewardFundingLineAddress} />
-                      <ReviewRow label="Premium line" value={addressPreview.protectionFundingLineAddress ?? "n/a"} muted={!addressPreview.protectionFundingLineAddress} />
                       <ReviewRow label="Reward commitment" value={rewardLaneRequired ? baseUnitsPreview(rewardCommittedBudgetUi, payoutAssetMode, splDecimals) : "n/a"} muted={!rewardLaneRequired} />
                       <ReviewRow label="Premium commitment" value={protectionLaneRequired ? baseUnitsPreview(protectionExpectedPremiumUi, payoutAssetMode, splDecimals) : "n/a"} muted={!protectionLaneRequired} />
                     </>
                   )}
+                  </ReviewSection>
                 </div>
 
                 <div className="plans-wizard-divider" aria-hidden="true" />

@@ -2,7 +2,6 @@
 
 import type { Metadata } from "next";
 import {
-  ArrowRight,
   CheckCircle2,
   EyeOff,
   FileCheck2,
@@ -17,39 +16,39 @@ const REVIEW_PROGRAM_ID = "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn";
 const proofSteps = [
   {
     label: "Prepare",
-    title: "Redacted evidence packet",
+    title: "Evidence packet",
     detail:
-      "Medical documents stay private. The room keeps only safe metadata and a bundle checksum for audit.",
+      "Medical documents stay inside the review workspace. The public trail keeps safe metadata and a checksum.",
   },
   {
     label: "Open",
-    title: "Public review session",
+    title: "On-chain case",
     detail:
-      "Solana anchors the claim case, schema hash, and evidence checksum without exposing the documents.",
+      "Solana anchors the claim case, schema hash, and evidence checksum without exposing source documents.",
   },
   {
     label: "Delegate",
-    title: "Private execution lane",
+    title: "Fast review lane",
     detail:
-      "MagicBlock runs the private review session where reviewer output can be prepared quickly.",
+      "MagicBlock handles the review session so reviewer output can be prepared quickly.",
   },
   {
     label: "Review",
-    title: "Private reviewer output",
+    title: "Reviewer result",
     detail:
-      "The reviewer checks completeness and emits only result hashes and artifact references.",
+      "The reviewer checks completeness and emits result hashes plus artifact references.",
   },
   {
     label: "Pay",
-    title: "Private payment preview",
+    title: "Payment preview",
     detail:
-      "A devnet reimbursement preview confirms the private payment rail was invoked.",
+      "A devnet reimbursement preview confirms that the payment rail was invoked.",
   },
   {
     label: "Commit",
-    title: "Public proof out",
+    title: "Public receipt out",
     detail:
-      "The room commits a public proof that the claim attestation and settlement flow can use.",
+      "The review surface commits a public receipt that claim operators can verify before attestation.",
   },
 ] as const;
 
@@ -58,21 +57,25 @@ const proofSignals = [
     icon: <EyeOff className="h-4 w-4" strokeWidth={1.9} />,
     label: "Evidence privacy",
     value: "Private docs",
+    meta: "Raw files stay off-chain",
   },
   {
     icon: <Network className="h-4 w-4" strokeWidth={1.9} />,
     label: "Review session",
-    value: "Room review",
+    value: "Fast review",
+    meta: "Reviewer output is hashed",
   },
   {
     icon: <CheckCircle2 className="h-4 w-4" strokeWidth={1.9} />,
     label: "Public output",
-    value: "Solana proof",
+    value: "Hash receipt",
+    meta: "Only hashes are published",
   },
   {
     icon: <ReceiptText className="h-4 w-4" strokeWidth={1.9} />,
     label: "Settlement",
-    value: "Proof linked",
+    value: "Receipt linked",
+    meta: "Operators verify before settlement",
   },
 ] as const;
 
@@ -80,24 +83,24 @@ const auditRows = [
   {
     label: "Review program",
     value: REVIEW_PROGRAM_ID,
-    detail: "Public program anchoring the demo proof trail.",
+    detail: "Public program anchoring the demo review receipt.",
   },
   {
     label: "Private intake",
     value: "Evidence checksum",
-    detail: "Medical records remain off-chain and private to the review room.",
+    detail: "Medical records remain off-chain and private to the review workspace.",
   },
   {
     label: "Public attestation",
-    value: "Claim proof",
-    detail: "The public record receives the final review proof, not the raw packet.",
+    value: "Review receipt",
+    detail: "The public record receives the final review hash receipt, not the raw packet.",
   },
 ] as const;
 
 export const metadata: Metadata = {
   title: "MagicBlock Claim Room | OmegaX Protocol",
   description:
-    "A MagicBlock-powered private claim review room for OmegaX Protect medical claims.",
+    "A MagicBlock-powered claim review surface for OmegaX Protect medical claims.",
 };
 
 export default function MagicBlockClaimRoomPage() {
@@ -110,10 +113,10 @@ export default function MagicBlockClaimRoomPage() {
             <div className="plans-hero-copy">
               <span className="plans-hero-eyebrow">Private claim review</span>
               <h1 className="plans-hero-title">
-                OmegaX private <em>claim room</em>
+                OmegaX claim <em>privacy</em>
               </h1>
               <p className="plans-hero-subtitle">
-                A MagicBlock review room keeps medical evidence private while Solana receives the proof needed for public settlement.
+                Medical evidence stays inside the review workspace while Solana receives a review receipt operators can verify before settlement.
               </p>
             </div>
             <div className="plans-hero-actions">
@@ -125,7 +128,7 @@ export default function MagicBlockClaimRoomPage() {
           </div>
         </header>
 
-        <section className="plans-kpi-strip" aria-label="Private claim room guarantees">
+        <section className="plans-kpi-strip" aria-label="Claim privacy audit signals">
           {proofSignals.map((signal) => (
             <div key={signal.label} className="plans-kpi-metric">
               <span className="plans-kpi-label">{signal.label}</span>
@@ -133,7 +136,7 @@ export default function MagicBlockClaimRoomPage() {
                 {signal.icon}
                 {signal.value}
               </span>
-              <span className="plans-kpi-meta">claim-room guarantee</span>
+              <span className="plans-kpi-meta">{signal.meta}</span>
             </div>
           ))}
         </section>
@@ -143,9 +146,9 @@ export default function MagicBlockClaimRoomPage() {
             <article className="plans-card heavy-glass">
               <div className="plans-card-head">
                 <div>
-                  <p className="plans-card-eyebrow">Proof flow</p>
+                  <p className="plans-card-eyebrow">Review flow</p>
                   <h2 className="plans-card-title plans-card-title-display">
-                    Private review, <em>public proof</em>
+                    Private review, <em>public receipt</em>
                   </h2>
                 </div>
                 <span className="plans-card-meta">
@@ -154,7 +157,7 @@ export default function MagicBlockClaimRoomPage() {
                 </span>
               </div>
               <p className="plans-card-body">
-                The room separates medical evidence from settlement evidence. Operators can verify the proof trail without publishing the source documents.
+                The review surface separates medical evidence from settlement evidence. Operators can verify the review record without publishing the source documents.
               </p>
 
               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -169,12 +172,12 @@ export default function MagicBlockClaimRoomPage() {
             <section className="plans-rail-card heavy-glass">
               <div className="plans-rail-head">
                 <span className="plans-rail-tag">Audit anchor</span>
-                <span className="plans-rail-subtag">Public proof</span>
+                <span className="plans-rail-subtag">Public receipt</span>
               </div>
               <div className="plans-rail-hero">
-                <span className="plans-rail-hero-val">Claim proof trail</span>
+                <span className="plans-rail-hero-val">Claim review trail</span>
                 <span className="plans-rail-hero-sub">
-                  Private evidence in. Public proof out. Settlement stays on Solana.
+                  Private evidence in. Public receipt out. Settlement stays on Solana.
                 </span>
               </div>
             </section>
@@ -201,7 +204,7 @@ export default function MagicBlockClaimRoomPage() {
                 />
               </div>
               <p className="plans-rail-empty-copy">
-                Operator APIs remain private; this public view shows the proof record only.
+                Operator APIs remain private; this public view shows the review receipt only.
               </p>
             </section>
           </aside>
@@ -223,11 +226,7 @@ function ProofStep({
       <div className="flex items-center justify-between gap-3">
         <span className="workbench-card-meta">{String(index + 1).padStart(2, "0")}</span>
         {index < proofSteps.length - 1 ? (
-          <ArrowRight
-            className="h-4 w-4 text-[color:var(--muted-foreground)]"
-            strokeWidth={1.8}
-            aria-hidden="true"
-          />
+          <span className="claim-room-step-rule" aria-hidden="true" />
         ) : (
           <ReceiptText
             className="h-4 w-4 text-[color:var(--accent)]"

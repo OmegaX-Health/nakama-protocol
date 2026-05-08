@@ -36,6 +36,9 @@ type BackfillSchemaDependencyLedgerArgs = {}
 
 type ConfigureReserveAssetRailArgs = {
   active : Bool,
+  max_staleness_seconds : U64,
+  payout_enabled : Bool,
+  capacity_enabled : Bool,
   max_confidence_bps : U16
 }
 
@@ -176,17 +179,44 @@ type SetProtocolEmergencyPauseArgs = {
 }
 
 type SettleClaimCaseArgs = {
-  amount : U64
+  amount : U64,
+  rail_active : Bool,
+  rail_payout_enabled : Bool,
+  rail_price_usd_1e8 : U64,
+  rail_max_staleness_seconds : U64,
+  rail_max_confidence_bps : U16,
+  rail_last_price_confidence_bps : U16,
+  rail_last_price_published_at_ts : U64
 }
 
 type SettleClaimCaseSelectedAssetArgs = {
   claim_credit_amount : U64,
   payout_amount : U64,
-  max_overpay_bps : U16
+  max_overpay_bps : U16,
+  claim_rail_active : Bool,
+  claim_rail_price_usd_1e8 : U64,
+  claim_rail_max_staleness_seconds : U64,
+  claim_rail_max_confidence_bps : U16,
+  claim_rail_last_price_confidence_bps : U16,
+  claim_rail_last_price_published_at_ts : U64,
+  payout_rail_active : Bool,
+  payout_rail_payout_enabled : Bool,
+  payout_rail_price_usd_1e8 : U64,
+  payout_rail_max_staleness_seconds : U64,
+  payout_rail_max_confidence_bps : U16,
+  payout_rail_last_price_confidence_bps : U16,
+  payout_rail_last_price_published_at_ts : U64
 }
 
 type SettleObligationArgs = {
-  amount : U64
+  amount : U64,
+  rail_active : Bool,
+  rail_payout_enabled : Bool,
+  rail_price_usd_1e8 : U64,
+  rail_max_staleness_seconds : U64,
+  rail_max_confidence_bps : U16,
+  rail_last_price_confidence_bps : U16,
+  rail_last_price_published_at_ts : U64
 }
 
 type UpdateAllocationCapsArgs = {
@@ -263,6 +293,9 @@ type State
       last_price_usd_1e8 : U64,
       last_price_confidence_bps : U64,
       max_confidence_bps : U64,
+      max_staleness_seconds : U64,
+      payout_enabled : Bool,
+      capacity_enabled : Bool,
       last_price_published_at_ts : U64,
       accrued_fees : U64,
       withdrawn_fees : U64,
@@ -427,6 +460,7 @@ type Error
   | ReserveAssetRailCapacityDisabled
   | ReserveAssetPriceStale
   | ReserveAssetPriceInvalid
+  | ReserveAssetPriceConfidenceTooWide
   | CommitmentPaymentRailMismatch
   | CommitmentPaymentRailInactive
   | PartialObligationTransitionUnsupported
@@ -637,10 +671,16 @@ handler configure_reserve_asset_rail (args : ConfigureReserveAssetRailArgs) : St
   }
 
   requires emergency_pause == false else ProtocolEmergencyPaused
+  requires args.max_staleness_seconds > 0 else ReserveAssetPriceInvalid
+  requires args.max_confidence_bps > 0 else ReserveAssetPriceInvalid
+  requires args.max_confidence_bps <= BASIS_POINTS_DENOMINATOR else InvalidBps
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
     max_confidence_bps := args.max_confidence_bps
+    max_staleness_seconds := args.max_staleness_seconds
+    payout_enabled := args.payout_enabled
+    capacity_enabled := args.capacity_enabled
     audit_nonce +=! 1
   }
 }
@@ -657,7 +697,9 @@ handler publish_reserve_asset_rail_price (args : PublishReserveAssetRailPriceArg
   }
 
   requires emergency_pause == false else ProtocolEmergencyPaused
+  requires active == true else ReserveAssetRailInactive
   requires args.price_usd_1e8 > 0 else AmountMustBePositive
+  requires args.published_at_ts > 0 else ReserveAssetPriceStale
   requires max_confidence_bps > 0 else ReserveAssetPriceInvalid
   requires args.confidence_bps <= max_confidence_bps else ReserveAssetPriceConfidenceTooWide
 
@@ -1318,6 +1360,13 @@ handler settle_obligation (args : SettleObligationArgs) : State.Live -> State.Li
 
   requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
+  requires args.rail_active == true else ReserveAssetRailInactive
+  requires args.rail_payout_enabled == true else ReserveAssetRailPayoutDisabled
+  requires args.rail_price_usd_1e8 > 0 else ReserveAssetPriceInvalid
+  requires args.rail_max_staleness_seconds > 0 else ReserveAssetPriceInvalid
+  requires args.rail_max_confidence_bps > 0 else ReserveAssetPriceInvalid
+  requires args.rail_last_price_confidence_bps <= args.rail_max_confidence_bps else ReserveAssetPriceConfidenceTooWide
+  requires args.rail_last_price_published_at_ts > 0 else ReserveAssetPriceStale
 
   // SPEC-CPI: settled obligations pay the net recipient amount after oracle fees.
   transfers {
@@ -1492,6 +1541,13 @@ handler settle_claim_case (args : SettleClaimCaseArgs) : State.Live -> State.Liv
   requires emergency_pause == false else ProtocolEmergencyPaused
   requires args.amount > 0 else AmountMustBePositive
   requires paid_amount + args.amount <= approved_amount else AmountExceedsApprovedClaim
+  requires args.rail_active == true else ReserveAssetRailInactive
+  requires args.rail_payout_enabled == true else ReserveAssetRailPayoutDisabled
+  requires args.rail_price_usd_1e8 > 0 else ReserveAssetPriceInvalid
+  requires args.rail_max_staleness_seconds > 0 else ReserveAssetPriceInvalid
+  requires args.rail_max_confidence_bps > 0 else ReserveAssetPriceInvalid
+  requires args.rail_last_price_confidence_bps <= args.rail_max_confidence_bps else ReserveAssetPriceConfidenceTooWide
+  requires args.rail_last_price_published_at_ts > 0 else ReserveAssetPriceStale
 
   // SPEC-CPI: direct claim settlement pays net recipient amount after protocol/oracle fees.
   transfers {
@@ -1538,6 +1594,21 @@ handler settle_claim_case_selected_asset (args : SettleClaimCaseSelectedAssetArg
   requires args.payout_amount > 0 else AmountMustBePositive
   requires args.max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS else SelectedAssetOverpayBpsTooHigh
   requires paid_amount + args.claim_credit_amount <= approved_amount else AmountExceedsApprovedClaim
+  // The implementation checks the claim rail for activity/fresh pricing and the payout rail for
+  // activity, payout enablement, and fresh pricing before value comparison.
+  requires args.claim_rail_active == true else ReserveAssetRailInactive
+  requires args.claim_rail_price_usd_1e8 > 0 else ReserveAssetPriceInvalid
+  requires args.claim_rail_max_staleness_seconds > 0 else ReserveAssetPriceInvalid
+  requires args.claim_rail_max_confidence_bps > 0 else ReserveAssetPriceInvalid
+  requires args.claim_rail_last_price_confidence_bps <= args.claim_rail_max_confidence_bps else ReserveAssetPriceConfidenceTooWide
+  requires args.claim_rail_last_price_published_at_ts > 0 else ReserveAssetPriceStale
+  requires args.payout_rail_active == true else ReserveAssetRailInactive
+  requires args.payout_rail_payout_enabled == true else ReserveAssetRailPayoutDisabled
+  requires args.payout_rail_price_usd_1e8 > 0 else ReserveAssetPriceInvalid
+  requires args.payout_rail_max_staleness_seconds > 0 else ReserveAssetPriceInvalid
+  requires args.payout_rail_max_confidence_bps > 0 else ReserveAssetPriceInvalid
+  requires args.payout_rail_last_price_confidence_bps <= args.payout_rail_max_confidence_bps else ReserveAssetPriceConfidenceTooWide
+  requires args.payout_rail_last_price_published_at_ts > 0 else ReserveAssetPriceStale
 
   // SPEC-CPI: selected-asset claims pay the requested payout asset amount.
   transfers {

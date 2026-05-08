@@ -34,7 +34,7 @@ jobs:
             exit 0
           fi
           changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")"
-          if printf '%s\n' "$changed" | grep -Eq '^(\.qed/|formal_verification/|omegax_protocol\.qedspec|programs/omegax_protocol/src/|programs/omegax_protocol/Cargo\.toml|programs/omegax_private_claim_review/|idl/omegax_private_claim_review\.json|scripts/run_qedgen\.mjs|Anchor\.toml|Cargo\.(toml|lock)|package(-lock)?\.json|\.github/workflows/qedgen-verify\.yml)'; then
+          if printf '%s\n' "$changed" | grep -Eq '^(\.qed/|formal_verification/|omegax_protocol\.qedspec|programs/omegax_protocol/src/|programs/omegax_protocol/Cargo\.toml|programs/omegax_private_claim_review/|idl/omegax_private_claim_review\.json|scripts/(run_qedgen|check_private_claim_review_qedgen)\.mjs|Anchor\.toml|Cargo\.(toml|lock)|package(-lock)?\.json|\.github/workflows/qedgen-verify\.yml)'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
@@ -93,6 +93,10 @@ jobs:
       - name: Check spec
         if: steps.qedgen_changes.outputs.relevant == 'true'
         run: npm run qedgen:check
+
+      - name: Check MagicBlock adjunct spec
+        if: steps.qedgen_changes.outputs.relevant == 'true'
+        run: npm run qedgen:check:private-claim-review
 
       - name: Regenerate verification artifacts
         if: steps.qedgen_changes.outputs.relevant == 'true'

@@ -136,6 +136,12 @@ pub fn configure_reserve_asset_rail<'info>(ctx: &mut ConfigureReserveAssetRail<'
     if ctx.reserve_asset_rail.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
+    // requires: args.max_staleness_seconds > 0
+    if !(args.max_staleness_seconds > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.max_confidence_bps > 0
+    if !(args.max_confidence_bps > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.max_confidence_bps ≤ 10000
+    if !(args.max_confidence_bps <= 10000) { return Err(OmegaxProtocolError::InvalidBps.into()); }
     Ok(())
 }
 
@@ -153,8 +159,12 @@ pub fn publish_reserve_asset_rail_price<'info>(ctx: &mut PublishReserveAssetRail
     if ctx.reserve_asset_rail.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
+    // requires: active = true
+    if !(active == true) { return Err(OmegaxProtocolError::ReserveAssetRailInactive.into()); }
     // requires: args.price_usd_1e8 > 0
     if !(args.price_usd_1e8 > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
+    // requires: args.published_at_ts > 0
+    if !(args.published_at_ts > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceStale.into()); }
     // requires: max_confidence_bps > 0
     if !(max_confidence_bps > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
     // requires: args.confidence_bps ≤ max_confidence_bps
@@ -513,6 +523,20 @@ pub fn settle_obligation<'info>(ctx: &mut SettleObligation<'info>, args: SettleO
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
+    // requires: args.rail_active = true
+    if !(args.rail_active == true) { return Err(OmegaxProtocolError::ReserveAssetRailInactive.into()); }
+    // requires: args.rail_payout_enabled = true
+    if !(args.rail_payout_enabled == true) { return Err(OmegaxProtocolError::ReserveAssetRailPayoutDisabled.into()); }
+    // requires: args.rail_price_usd_1e8 > 0
+    if !(args.rail_price_usd_1e8 > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.rail_max_staleness_seconds > 0
+    if !(args.rail_max_staleness_seconds > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.rail_max_confidence_bps > 0
+    if !(args.rail_max_confidence_bps > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.rail_last_price_confidence_bps ≤ args.rail_max_confidence_bps
+    if !(args.rail_last_price_confidence_bps <= args.rail_max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }
+    // requires: args.rail_last_price_published_at_ts > 0
+    if !(args.rail_last_price_published_at_ts > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceStale.into()); }
     Ok(())
 }
 
@@ -613,6 +637,20 @@ pub fn settle_claim_case<'info>(ctx: &mut SettleClaimCase<'info>, args: SettleCl
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
     // requires: paid_amount + args.amount ≤ approved_amount
     if !(paid_amount + args.amount <= approved_amount) { return Err(OmegaxProtocolError::AmountExceedsApprovedClaim.into()); }
+    // requires: args.rail_active = true
+    if !(args.rail_active == true) { return Err(OmegaxProtocolError::ReserveAssetRailInactive.into()); }
+    // requires: args.rail_payout_enabled = true
+    if !(args.rail_payout_enabled == true) { return Err(OmegaxProtocolError::ReserveAssetRailPayoutDisabled.into()); }
+    // requires: args.rail_price_usd_1e8 > 0
+    if !(args.rail_price_usd_1e8 > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.rail_max_staleness_seconds > 0
+    if !(args.rail_max_staleness_seconds > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.rail_max_confidence_bps > 0
+    if !(args.rail_max_confidence_bps > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.rail_last_price_confidence_bps ≤ args.rail_max_confidence_bps
+    if !(args.rail_last_price_confidence_bps <= args.rail_max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }
+    // requires: args.rail_last_price_published_at_ts > 0
+    if !(args.rail_last_price_published_at_ts > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceStale.into()); }
     Ok(())
 }
 
@@ -635,6 +673,32 @@ pub fn settle_claim_case_selected_asset<'info>(ctx: &mut SettleClaimCaseSelected
     if !(args.max_overpay_bps <= 50) { return Err(OmegaxProtocolError::SelectedAssetOverpayBpsTooHigh.into()); }
     // requires: paid_amount + args.claim_credit_amount ≤ approved_amount
     if !(paid_amount + args.claim_credit_amount <= approved_amount) { return Err(OmegaxProtocolError::AmountExceedsApprovedClaim.into()); }
+    // requires: args.claim_rail_active = true
+    if !(args.claim_rail_active == true) { return Err(OmegaxProtocolError::ReserveAssetRailInactive.into()); }
+    // requires: args.claim_rail_price_usd_1e8 > 0
+    if !(args.claim_rail_price_usd_1e8 > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.claim_rail_max_staleness_seconds > 0
+    if !(args.claim_rail_max_staleness_seconds > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.claim_rail_max_confidence_bps > 0
+    if !(args.claim_rail_max_confidence_bps > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.claim_rail_last_price_confidence_bps ≤ args.claim_rail_max_confidence_bps
+    if !(args.claim_rail_last_price_confidence_bps <= args.claim_rail_max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }
+    // requires: args.claim_rail_last_price_published_at_ts > 0
+    if !(args.claim_rail_last_price_published_at_ts > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceStale.into()); }
+    // requires: args.payout_rail_active = true
+    if !(args.payout_rail_active == true) { return Err(OmegaxProtocolError::ReserveAssetRailInactive.into()); }
+    // requires: args.payout_rail_payout_enabled = true
+    if !(args.payout_rail_payout_enabled == true) { return Err(OmegaxProtocolError::ReserveAssetRailPayoutDisabled.into()); }
+    // requires: args.payout_rail_price_usd_1e8 > 0
+    if !(args.payout_rail_price_usd_1e8 > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.payout_rail_max_staleness_seconds > 0
+    if !(args.payout_rail_max_staleness_seconds > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.payout_rail_max_confidence_bps > 0
+    if !(args.payout_rail_max_confidence_bps > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceInvalid.into()); }
+    // requires: args.payout_rail_last_price_confidence_bps ≤ args.payout_rail_max_confidence_bps
+    if !(args.payout_rail_last_price_confidence_bps <= args.payout_rail_max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }
+    // requires: args.payout_rail_last_price_published_at_ts > 0
+    if !(args.payout_rail_last_price_published_at_ts > 0) { return Err(OmegaxProtocolError::ReserveAssetPriceStale.into()); }
     Ok(())
 }
 

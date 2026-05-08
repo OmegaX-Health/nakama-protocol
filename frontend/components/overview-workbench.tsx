@@ -90,7 +90,7 @@ function OverviewFieldLogCard(props: {
     <section className="ov-log-card liquid-glass" aria-label={props.mode === "demo" ? "Field log demo audit" : "Field log live audit"}>
       <div className="ov-log-card-head">
         <span className="ov-panel-tag">Field log</span>
-        <span className="ov-panel-subtag">{props.mode === "demo" ? "Demo audit" : "Live audit"}</span>
+        <span className="ov-panel-subtag">{props.mode === "demo" ? "Demo log" : "Activity log"}</span>
       </div>
 
       <div className="ov-audit-list" role="list" aria-label="Field log events">
@@ -144,6 +144,11 @@ function OverviewEntryCard(props: {
           <span className="ov-entry-preview-label">Open</span>
           <span className="material-symbols-outlined ov-entry-preview-icon">south</span>
         </div>
+
+        <span className="ov-entry-mobile-link" aria-hidden="true">
+          Open {props.title}
+          <span className="material-symbols-outlined ov-entry-link-icon">north_east</span>
+        </span>
 
         <div className="ov-entry-reveal">
           <div className="ov-entry-reveal-inner">

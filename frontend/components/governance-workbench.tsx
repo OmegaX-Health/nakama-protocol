@@ -509,7 +509,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
           <div className="plans-kpi-metric">
             <span className="plans-kpi-label">Authorities</span>
             <span className="plans-kpi-value">{configuredAuthorityWallets.length}</span>
-            <span className="plans-kpi-meta">{authorityWallets.length} live lanes</span>
+            <span className="plans-kpi-meta">{authorityWallets.length} live authorities</span>
           </div>
           <div className="plans-kpi-metric">
             <span className="plans-kpi-label">Templates</span>
@@ -770,7 +770,20 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                       })}
                     </div>
                   ) : (
-                    <p className="plans-card-body">{queueStatus.emptyMessage}</p>
+                    <div className="plans-empty plans-empty-inline liquid-glass">
+                      <strong>No proposals waiting</strong>
+                      <p>{queueStatus.emptyMessage}</p>
+                      <div className="plans-empty-actions">
+                        <button type="button" className="plans-inline-action" onClick={() => updateParams({ tab: "templates" })}>
+                          Review templates
+                          <span className="material-symbols-outlined" aria-hidden="true">schema</span>
+                        </button>
+                        <button type="button" className="plans-inline-action" onClick={() => updateParams({ tab: "authorities" })}>
+                          View authorities
+                          <span className="material-symbols-outlined" aria-hidden="true">shield_person</span>
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </article>
               </div>
@@ -840,6 +853,16 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                   <div className="plans-empty">
                     <strong>{queueStatus.emptyTitle}</strong>
                     <p>{queueStatus.emptyMessage}</p>
+                    <div className="plans-empty-actions">
+                      <button type="button" className="plans-inline-action" onClick={() => updateParams({ tab: "templates" })}>
+                        Review templates
+                        <span className="material-symbols-outlined" aria-hidden="true">schema</span>
+                      </button>
+                      <button type="button" className="plans-inline-action" onClick={() => updateParams({ tab: "authorities" })}>
+                        View authorities
+                        <span className="material-symbols-outlined" aria-hidden="true">shield_person</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </article>
@@ -855,7 +878,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                       Control <em>wallets</em>
                     </h2>
                   </div>
-                  <span className="plans-card-meta">{authorityWallets.length} live lanes</span>
+                  <span className="plans-card-meta">{authorityWallets.length} live authorities</span>
                 </div>
                 <p className="plans-card-body">
                   Wallets with live on-chain control of the protocol shell. Every authority row below is derived from the currently loaded reserve-domain, health-plan, and liquidity-pool state.
@@ -880,7 +903,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                 ) : (
                   <div className="plans-empty">
                     <strong>No live authorities</strong>
-                    <p>No control lanes are currently visible from the loaded protocol snapshot.</p>
+                    <p>No control authorities are currently visible from the loaded protocol snapshot.</p>
                   </div>
                 )}
               </article>
@@ -966,7 +989,13 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                   </Link>
                 </>
               ) : (
-                <p className="plans-rail-hero-sub">{queueStatus.emptyDetail}</p>
+                <div className="plans-rail-empty-block">
+                  <p className="plans-rail-hero-sub">{queueStatus.emptyDetail}</p>
+                  <Link href="/governance?tab=templates" className="plans-inline-action">
+                    Review templates
+                    <span className="material-symbols-outlined" aria-hidden="true">schema</span>
+                  </Link>
+                </div>
               )}
             </section>
 
@@ -992,7 +1021,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
             <section className="plans-rail-card heavy-glass">
               <div className="plans-rail-head">
                 <span className="plans-rail-tag">Field log</span>
-                <span className="plans-rail-subtag">Live audit</span>
+                <span className="plans-rail-subtag">Activity log</span>
               </div>
               <div className="plans-rail-trail">
                 {auditTrail.map((item) => (

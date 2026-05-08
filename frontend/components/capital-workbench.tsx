@@ -327,7 +327,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
         owner: selectedClass ? "Class ledger" : "Pool ledger",
         classLabel: selectedClass?.classId ?? "All classes",
         pending: residualPending,
-        status: "Ledger pending",
+        status: "Pending in class ledger",
       },
     ];
   }, [classByAddress, poolLpPositions, selectedClass, selectedPool]);
@@ -1215,7 +1215,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
                   <span className="plans-rail-tag">Field log</span>
-                  <span className="plans-rail-subtag">Live audit</span>
+                  <span className="plans-rail-subtag">Activity log</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (

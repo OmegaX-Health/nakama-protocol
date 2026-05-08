@@ -288,8 +288,8 @@ export function describeGovernanceQueueStatus(input: {
 
   const proposalLabel = input.count === 1 ? "proposal" : "proposals";
   return {
-    emptyDetail: "No active proposals for this governance realm.",
-    emptyMessage: "No active proposals for this governance realm.",
+    emptyDetail: "No active proposals are waiting right now. Review templates or authorities to prepare the next governance change.",
+    emptyMessage: "No active proposals are waiting right now. Review templates or authorities to prepare the next governance change.",
     emptyMeta: "No proposals",
     emptyTitle: "Live governance queue",
     metricAriaLabel: `${input.count} live governance ${proposalLabel}.`,
@@ -668,7 +668,7 @@ function buildOverviewAuditTrail(
         tone: leadProposal?.status === "Executing" ? "signal" : "pending",
         detail: leadProposal
           ? `${leadProposal.title} is the lead governance item for the shared protocol shell.`
-          : "No active proposals are loaded for this governance realm.",
+          : "No active governance proposals are waiting right now.",
       }),
     ];
   }
@@ -682,7 +682,7 @@ function buildOverviewAuditTrail(
         tone: leadProposal?.status === "Executing" ? "signal" : "pending",
         detail: leadProposal
           ? `${leadProposal.title} is currently anchoring the governance queue.`
-          : "No active proposals are loaded for this governance realm.",
+          : "No active governance proposals are waiting right now.",
       }),
       createAuditItem({
         seed: `overview:${persona}:claims`,
@@ -970,7 +970,7 @@ function buildGovernanceAuditTrail(
       tone: queue.length > 0 ? "signal" : "verified",
       detail: queue.length > 0
         ? `${queue.length} proposal${queue.length === 1 ? "" : "s"} ${countBe(queue.length)} visible${queueStateSummary ? `: ${queueStateSummary}.` : "."}`
-        : "No active proposals are loaded for this governance realm.",
+        : "No active governance proposals are waiting right now.",
     }),
   ];
 }
