@@ -60,9 +60,28 @@ test("server schema metadata fetch rejects non-allowlisted hosts before fetch", 
       metadata: null,
       error: {
         code: "unsupported_host",
-        message: "Schema metadata URI host is not on the public allowlist.",
+        message: "Server-side schema metadata fetches are limited to bundled OmegaX schemas.",
       },
     });
+  } finally {
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test("server schema metadata fetch serves bundled OmegaX schemas without external fetch", async () => {
+  const previousFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new Error("fetch should not run for bundled schema metadata");
+  };
+
+  try {
+    const result = await fetchSchemaMetadata("https://protocol.omegax.health/schemas/genesis-protect-acute-claim-v1.json");
+
+    assert.equal(calls, 0);
+    assert.equal(result.error, null);
+    assert.equal(typeof result.metadata, "object");
   } finally {
     globalThis.fetch = previousFetch;
   }

@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import genesisProtectAcuteClaimV1 from "../public/schemas/genesis-protect-acute-claim-v1.json";
+import healthOutcomes from "../public/schemas/health_outcomes.json";
+import standardHealthOutcomesV1 from "../public/schemas/omegax-standard-health-outcomes-v1.json";
+import standardHealthOutcomesV2 from "../public/schemas/omegax-standard-health-outcomes-v2.json";
+
 export type SchemaOutcomeOption = {
   id: string;
   label: string;
@@ -93,6 +98,14 @@ const SAFE_SCHEMA_METADATA_HOSTS = new Set([
   "cloudflare-ipfs.com",
   "dweb.link",
 ]);
+const LOCAL_SCHEMA_METADATA_BY_PATH: Record<string, unknown> = {
+  "/schemas/genesis-protect-acute-claim-v1.json": genesisProtectAcuteClaimV1,
+  "/schemas/health_outcomes.json": healthOutcomes,
+  "/schemas/omegax-standard-health-outcomes-v1.json": standardHealthOutcomesV1,
+  "/schemas/omegax-standard-health-outcomes-v2.json": standardHealthOutcomesV2,
+  "/schemas/standard-health-outcomes-v1.json": standardHealthOutcomesV1,
+  "/schemas/standard-health-outcomes-v2.json": standardHealthOutcomesV2,
+};
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -237,6 +250,48 @@ function resolveKnownSchemaMirrorUrls(uri: URL): string[] {
   return [];
 }
 
+function localSchemaPathFromMetadataUri(metadataUri: string): string | null {
+  const uri = normalize(metadataUri);
+  if (!uri) return null;
+
+  let parsed: URL;
+  try {
+    parsed = uri.startsWith("/")
+      ? new URL(uri, "https://protocol.omegax.health")
+      : new URL(uri);
+  } catch {
+    return null;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  if (host !== "protocol.omegax.health" && host !== "omegax.health" && host !== "www.omegax.health") {
+    return null;
+  }
+
+  const pathname = parsed.pathname;
+  if (!pathname.toLowerCase().startsWith("/schemas/")) return null;
+  if (pathname.includes("..") || !/^\/schemas\/[A-Za-z0-9._/-]+$/.test(pathname)) return null;
+  return pathname;
+}
+
+function bundledSchemaMetadataForUri(metadataUri: string): SchemaMetadataFetchResult | null {
+  const schemaPath = localSchemaPathFromMetadataUri(metadataUri);
+  if (!schemaPath) return null;
+  if (!Object.prototype.hasOwnProperty.call(LOCAL_SCHEMA_METADATA_BY_PATH, schemaPath)) {
+    return {
+      metadata: null,
+      error: {
+        code: "invalid_uri",
+        message: "Schema metadata URI is not bundled in this console build.",
+      },
+    };
+  }
+  return {
+    metadata: LOCAL_SCHEMA_METADATA_BY_PATH[schemaPath],
+    error: null,
+  };
+}
+
 function resolveMetadataFetchUrl(metadataUri: string): { urls: URL[]; error: SchemaMetadataFetchError | null } {
   const uri = normalize(metadataUri);
   if (!uri) {
@@ -303,8 +358,6 @@ function resolveMetadataFetchUrl(metadataUri: string): { urls: URL[]; error: Sch
 
 async function fetchMetadataFromUrl(url: URL): Promise<SchemaMetadataFetchResult> {
   try {
-    // Resolved schema metadata URLs are limited to HTTPS allowlisted hosts before fetch.
-    // codeql[js/request-forgery]
     const response = await fetch(url, { method: "GET", cache: "no-store" });
     if (!response.ok) {
       return {
@@ -357,6 +410,27 @@ async function fetchMetadataFromUrl(url: URL): Promise<SchemaMetadataFetchResult
       },
     };
   }
+}
+
+async function fetchSchemaMetadataBrowserDirect(metadataUri: string): Promise<SchemaMetadataFetchResult> {
+  const resolved = resolveMetadataFetchUrl(metadataUri);
+  if (resolved.error || resolved.urls.length === 0) {
+    return { metadata: null, error: resolved.error };
+  }
+
+  let lastError: SchemaMetadataFetchError | null = null;
+  for (const currentUrl of resolved.urls) {
+    const result = await fetchMetadataFromUrl(currentUrl);
+    if (!result.error) return result;
+    lastError = result.error;
+  }
+
+  return {
+    metadata: null,
+    error:
+      lastError
+      ?? { code: "fetch_failed", message: "Schema metadata request failed for all candidate endpoints." },
+  };
 }
 
 function asNumber(value: unknown): number | null {
@@ -459,24 +533,15 @@ function parseSeverity(value: unknown): SchemaOutcomeOption["severity"] | undefi
 }
 
 async function fetchSchemaMetadataDirect(metadataUri: string): Promise<SchemaMetadataFetchResult> {
-  const resolved = resolveMetadataFetchUrl(metadataUri);
-  if (resolved.error || resolved.urls.length === 0) {
-    return { metadata: null, error: resolved.error };
-  }
-
-  let lastError: SchemaMetadataFetchError | null = null;
-  for (const currentUrl of resolved.urls) {
-    const result = await fetchMetadataFromUrl(currentUrl);
-    if (!result.error) return result;
-    lastError = result.error;
-  }
-
+  const bundled = bundledSchemaMetadataForUri(metadataUri);
+  if (bundled) return bundled;
   return {
     metadata: null,
-    error:
-      lastError
-      ?? { code: "fetch_failed", message: "Schema metadata request failed for all candidate endpoints." },
-  }
+    error: {
+      code: "unsupported_host",
+      message: "Server-side schema metadata fetches are limited to bundled OmegaX schemas.",
+    },
+  };
 }
 
 export async function fetchSchemaMetadata(metadataUri: string): Promise<SchemaMetadataFetchResult> {
@@ -506,12 +571,15 @@ export async function fetchSchemaMetadata(metadataUri: string): Promise<SchemaMe
           && Object.prototype.hasOwnProperty.call(payload, "metadata")
           && Object.prototype.hasOwnProperty.call(payload, "error")
         ) {
-          return payload;
+          if (!payload.error || payload.error.code !== "unsupported_host") {
+            return payload;
+          }
         }
       }
     } catch {
       // Fall through to direct fetch for local/dev resilience.
     }
+    return fetchSchemaMetadataBrowserDirect(uri);
   }
 
   return fetchSchemaMetadataDirect(uri);
