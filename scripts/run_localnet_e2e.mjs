@@ -252,6 +252,9 @@ async function main() {
 
     const testEnv = {
       ...process.env,
+      NODE_OPTIONS: [process.env.NODE_OPTIONS, "--max-old-space-size=6144"]
+        .filter(Boolean)
+        .join(" "),
       SOLANA_RPC_URL: rpcUrl,
       NEXT_PUBLIC_PROTOCOL_PROGRAM_ID: programId,
       PROTOCOL_PROGRAM_ID: programId,
