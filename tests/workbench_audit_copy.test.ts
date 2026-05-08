@@ -50,3 +50,12 @@ test("overview audit trail uses live source when supplied instead of fixture fal
   );
   assert.equal(auditTrail.some((item) => item.detail.includes("fixture set")), false);
 });
+
+test("capital audit trail names pending redemption ledger units consistently", () => {
+  const auditTrail = buildAuditTrail({ section: "capital" });
+  const queueItem = auditTrail.find((item) => item.label === "Queue watch");
+
+  assert(queueItem, "expected capital queue audit item");
+  assert.match(queueItem.detail, /settlement units pending in the redemption queue/);
+  assert.doesNotMatch(queueItem.detail, /shares waiting in the redemption queue/);
+});

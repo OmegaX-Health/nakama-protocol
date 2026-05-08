@@ -3077,11 +3077,11 @@
   }
 
   .protocol-footer-fullscreen {
-    position: fixed;
-    left: 50%;
-    bottom: clamp(0.55rem, 1vw, 0.95rem);
-    margin: 0;
-    transform: translateX(-50%);
+    position: static;
+    left: auto;
+    bottom: auto;
+    margin: clamp(0.55rem, 1vw, 0.95rem) auto clamp(0.55rem, 1vw, 0.95rem);
+    transform: none;
   }
 
   .protocol-footer-document {

@@ -347,6 +347,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
   const requestedTab = firstSearchParamValue(searchParams.tab);
   const querySetup = firstSearchParamValue(searchParams.setup)?.trim() ?? "";
   const genesisSetupMode = querySetup === GENESIS_PROTECT_ACUTE_TEMPLATE_KEY;
+  const allSeriesSelectorLabel = genesisSetupMode ? "All coverage products" : "All series";
   const queryPool = firstSearchParamValue(searchParams.pool)?.trim() ?? "";
   const genesisPlan = useMemo(
     () => snapshot.healthPlans.find((plan) => plan.planId === GENESIS_PROTECT_ACUTE_PLAN_ID) ?? null,
@@ -859,11 +860,11 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
               renderMeta={(series) => `${series.seriesId} · ${describeSeriesMode(series.mode)}`}
               placeholder={seriesSelectorOptions.length > 0
                 ? seriesSelectionOptional
-                  ? (genesisSetupMode ? "All coverage products" : "All series")
+                  ? allSeriesSelectorLabel
                   : (activeTab === "coverage" || genesisSetupMode ? "Choose coverage product" : "All series")
                 : "No coverage products"}
               allowEmptySelection={seriesSelectionOptional}
-              emptyLabel={genesisSetupMode ? "All coverage products" : "All series"}
+              emptyLabel={allSeriesSelectorLabel}
               disabled={!selectedPlan || seriesSelectorOptions.length === 0}
               onChange={(value) => updateParams({
                 series: value || null,
@@ -1292,7 +1293,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                           <PlansEmptyState
                             title="No claim cases"
                             copy={selectedSeries
-                              ? "This coverage product does not currently expose claim cases. Choose “All coverage products” in the selector above to see plan-wide claims."
+                              ? `This coverage product does not currently expose claim cases. Choose "${allSeriesSelectorLabel}" in the selector above to see plan-wide claims.`
                               : "This plan does not currently expose claim cases."}
                           />
                         )}

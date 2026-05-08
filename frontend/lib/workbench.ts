@@ -770,7 +770,7 @@ function buildCapitalAuditTrail(
       index: 0,
       label: pendingRedemptions > 0n ? "Queue watch" : "Queue clear",
       tone: pendingRedemptions > 0n ? "pending" : "verified",
-      detail: `${queueScope} is running ${exitMode} exits with ${formatAuditAmount(pendingRedemptions)} shares waiting in the redemption queue.`,
+      detail: `${queueScope} is running ${exitMode} exits with ${formatAuditAmount(pendingRedemptions)} settlement units pending in the redemption queue.`,
     }),
     createAuditItem({
       seed: `capital:${queueScope}:routing`,

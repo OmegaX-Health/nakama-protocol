@@ -6,9 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 
 import { loadProtocolConsoleSnapshot, type ProtocolConsoleSnapshot } from "@/lib/protocol";
-import { formatRpcError } from "@/lib/rpc-errors";
+import { formatRpcError, isRpcRateLimitError } from "@/lib/rpc-errors";
 
 const POLL_INTERVAL_MS = 20_000;
+const SNAPSHOT_CACHE_TTL_MS = 1_000;
+const RATE_LIMIT_BACKOFF_MS = 12_000;
 
 const EMPTY_PROTOCOL_CONSOLE_SNAPSHOT: ProtocolConsoleSnapshot = {
   protocolGovernance: null,
@@ -48,6 +50,58 @@ const EMPTY_PROTOCOL_CONSOLE_SNAPSHOT: ProtocolConsoleSnapshot = {
   poolOracleFeeVaults: [],
 };
 
+type SnapshotCacheEntry = {
+  loadedAt: number;
+  snapshot: ProtocolConsoleSnapshot;
+};
+
+type RateLimitBackoffEntry = {
+  cause: unknown;
+  until: number;
+};
+
+const snapshotCache = new Map<string, SnapshotCacheEntry>();
+const snapshotLoads = new Map<string, Promise<ProtocolConsoleSnapshot>>();
+const rateLimitBackoffs = new Map<string, RateLimitBackoffEntry>();
+
+async function loadSharedProtocolConsoleSnapshot(
+  connection: Parameters<typeof loadProtocolConsoleSnapshot>[0],
+): Promise<ProtocolConsoleSnapshot> {
+  const key = connection.rpcEndpoint;
+  const now = Date.now();
+  const cached = snapshotCache.get(key);
+  if (cached && now - cached.loadedAt <= SNAPSHOT_CACHE_TTL_MS) {
+    return cached.snapshot;
+  }
+
+  const backoff = rateLimitBackoffs.get(key);
+  if (backoff) {
+    if (now < backoff.until) throw backoff.cause;
+    rateLimitBackoffs.delete(key);
+  }
+
+  const current = snapshotLoads.get(key);
+  if (current) return current;
+
+  const load = loadProtocolConsoleSnapshot(connection)
+    .then((snapshot) => {
+      snapshotCache.set(key, { loadedAt: Date.now(), snapshot });
+      rateLimitBackoffs.delete(key);
+      return snapshot;
+    })
+    .catch((cause) => {
+      if (isRpcRateLimitError(cause)) {
+        rateLimitBackoffs.set(key, { cause, until: Date.now() + RATE_LIMIT_BACKOFF_MS });
+      }
+      throw cause;
+    })
+    .finally(() => {
+      snapshotLoads.delete(key);
+    });
+  snapshotLoads.set(key, load);
+  return load;
+}
+
 export function useProtocolConsoleSnapshot() {
   const { connection } = useConnection();
   const [snapshot, setSnapshot] = useState<ProtocolConsoleSnapshot>(EMPTY_PROTOCOL_CONSOLE_SNAPSHOT);
@@ -60,7 +114,7 @@ export function useProtocolConsoleSnapshot() {
     setLoading(true);
     setError(null);
     try {
-      const nextSnapshot = await loadProtocolConsoleSnapshot(connection);
+      const nextSnapshot = await loadSharedProtocolConsoleSnapshot(connection);
       setSnapshot(nextSnapshot);
       setLastUpdatedAt(new Date());
       setSnapshotEndpoint(connection.rpcEndpoint);
@@ -87,7 +141,7 @@ export function useProtocolConsoleSnapshot() {
       setLoading(true);
       setError(null);
       try {
-        const nextSnapshot = await loadProtocolConsoleSnapshot(connection);
+        const nextSnapshot = await loadSharedProtocolConsoleSnapshot(connection);
         if (cancelled) return;
         setSnapshot(nextSnapshot);
         setLastUpdatedAt(new Date());
