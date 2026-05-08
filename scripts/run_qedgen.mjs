@@ -305,6 +305,43 @@ function runReconcile(qedgen) {
   return 0;
 }
 
+function runBackend(name, commandName, args, options = {}) {
+  console.log(`qedgen verify: ${name}`);
+  const result = spawnSync(commandName, args, {
+    cwd: options.cwd ?? process.cwd(),
+    stdio: 'inherit',
+    env: qedgenEnv(),
+    shell: false,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    console.error(`qedgen verify: ${name} failed with status ${result.status ?? 'unknown'}`);
+    return result.status ?? 1;
+  }
+  return 0;
+}
+
+function runVerify() {
+  const backends = [
+    ['proptest', 'cargo', ['test', '--test', 'proptest'], { cwd: MODEL_DIR }],
+    ['kani', 'cargo', ['kani', '--tests'], { cwd: MODEL_DIR }],
+    ['lean', 'lake', ['build'], { cwd: LEAN_DIR }],
+  ];
+
+  for (const [name, commandName, args, options] of backends) {
+    const status = runBackend(name, commandName, args, options);
+    if (status !== 0) {
+      return status;
+    }
+  }
+
+  console.log('qedgen verify: all generated backends passed');
+  return 0;
+}
+
 function postprocessLeanSpec() {
   if (!existsSync(LEAN_SPEC)) {
     return;
@@ -795,6 +832,9 @@ if (command === 'check') {
 }
 if (command === 'reconcile') {
   process.exit(runReconcile(qedgen));
+}
+if (command === 'verify') {
+  process.exit(runVerify());
 }
 
 const result = spawnSync(qedgen, [...argsFor(command), ...extraArgs], {
