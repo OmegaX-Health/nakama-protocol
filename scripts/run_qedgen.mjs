@@ -707,8 +707,55 @@ function postprocessRustModel() {
     let withdrawn_fees: u64 = 0;
     let accrued_fees: u64 = u64::MAX;
 `);
+    guards = guards.replace(
+      /(pub fn publish_reserve_asset_rail_price<'info>\([^{]+\{[\s\S]*?let accrued_fees: u64 = u64::MAX;\n)/,
+      `$1    let max_confidence_bps = ctx.reserve_asset_rail.max_confidence_bps;\n`,
+    );
+    guards = guards.replace(
+      'if !(args.confidence_bps <= max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }',
+      'if !((args.confidence_bps as u64) <= max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }',
+    );
     guards = guards.replace(/[ \t]+$/gm, '');
     writeFileSync(guardsPath, guards);
+  }
+
+  const errorsPath = `${MODEL_DIR}/src/errors.rs`;
+  if (existsSync(errorsPath)) {
+    let errors = readFileSync(errorsPath, 'utf8');
+    if (!errors.includes('ReserveAssetPriceConfidenceTooWide')) {
+      errors = errors.replace(
+        `    ReserveAssetPriceInvalid = 105,
+    CommitmentPaymentRailMismatch = 106,
+    CommitmentPaymentRailInactive = 107,
+    PartialObligationTransitionUnsupported = 108,
+    InvalidObligationDeliveryMode = 109,
+    ClaimAdjudicationLocked = 110,
+    SelectedAssetPayoutSameMint = 111,
+    SelectedAssetPayoutUnderpaid = 112,
+    SelectedAssetPayoutOverpaid = 113,
+    SelectedAssetOverpayBpsTooHigh = 114,
+    ReserveAssetMintDecimalsUnsupported = 115,
+    HealthPlanInactive = 116,
+    CapitalClassInactive = 117,
+    InvalidLifecycle = 118,`,
+        `    ReserveAssetPriceInvalid = 105,
+    ReserveAssetPriceConfidenceTooWide = 106,
+    CommitmentPaymentRailMismatch = 107,
+    CommitmentPaymentRailInactive = 108,
+    PartialObligationTransitionUnsupported = 109,
+    InvalidObligationDeliveryMode = 110,
+    ClaimAdjudicationLocked = 111,
+    SelectedAssetPayoutSameMint = 112,
+    SelectedAssetPayoutUnderpaid = 113,
+    SelectedAssetPayoutOverpaid = 114,
+    SelectedAssetOverpayBpsTooHigh = 115,
+    ReserveAssetMintDecimalsUnsupported = 116,
+    HealthPlanInactive = 117,
+    CapitalClassInactive = 118,
+    InvalidLifecycle = 119,`,
+      );
+      writeFileSync(errorsPath, errors);
+    }
   }
 
   for (const harnessPath of [KANI_HARNESS, PROPTEST_HARNESS]) {
