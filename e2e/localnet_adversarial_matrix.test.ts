@@ -24,6 +24,7 @@ import {
   duplicateOwnedInstructions,
   scenarioNames,
 } from "./support/surface_manifest.ts";
+import { requestConfirmedAirdrop } from "./support/airdrop.ts";
 import { instructionSurface } from "./support/surface.ts";
 
 const protocol = protocolModule as typeof import("../frontend/lib/protocol.ts");
@@ -651,12 +652,7 @@ test("executable adversarial matrix probes are blocked on localnet", async () =>
   }
 
   const connection = new Connection(rpcUrl, "confirmed");
-  const latestForAirdrop = await connection.getLatestBlockhash("confirmed");
-  const airdropSignature = await connection.requestAirdrop(attacker, 2_000_000_000);
-  await connection.confirmTransaction(
-    { signature: airdropSignature, ...latestForAirdrop },
-    "confirmed",
-  );
+  await requestConfirmedAirdrop(connection, attacker, 2_000_000_000);
 
   const probes = runtimeProbes();
   assert(probes.length >= matrixRows.length * 4, "expected runtime variants beyond the static row set");

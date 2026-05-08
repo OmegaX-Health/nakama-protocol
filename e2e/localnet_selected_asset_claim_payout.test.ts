@@ -6,7 +6,6 @@ import test from "node:test";
 import {
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
   sendAndConfirmTransaction,
   SystemProgram,
@@ -21,6 +20,7 @@ import {
 } from "@solana/spl-token";
 
 import protocolModule from "../frontend/lib/protocol.ts";
+import { requestConfirmedAirdrops } from "./support/airdrop.ts";
 
 const {
   CAPITAL_CLASS_RESTRICTION_OPEN,
@@ -79,12 +79,6 @@ const HASH_HEX = "55".repeat(32);
 const CLAIM_CREDIT_AMOUNT = 25_000_000n;
 const PAYOUT_AMOUNT = 25_000_000n;
 const PAYOUT_FUND_AMOUNT = 100_000_000n;
-
-async function airdrop(connection: Connection, recipient: PublicKey): Promise<void> {
-  const latest = await connection.getLatestBlockhash("confirmed");
-  const signature = await connection.requestAirdrop(recipient, 5 * LAMPORTS_PER_SOL);
-  await connection.confirmTransaction({ signature, ...latest }, "confirmed");
-}
 
 async function sendBuiltTransaction(
   connection: Connection,
@@ -168,10 +162,7 @@ test("localnet selected-asset payout settles and obligation creation rejects for
   const connection = new Connection(rpcUrl, "confirmed");
   const member = Keypair.generate();
 
-  await Promise.all([
-    airdrop(connection, governance.publicKey),
-    airdrop(connection, member.publicKey),
-  ]);
+  await requestConfirmedAirdrops(connection, [governance.publicKey, member.publicKey]);
 
   if (!await accountExists(connection, deriveProtocolGovernancePda())) {
     await sendBuiltTransaction(
