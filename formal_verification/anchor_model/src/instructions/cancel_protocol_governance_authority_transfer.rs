@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::CancelProtocolGovernanceAuthorityTransfer;
 
 impl<'info> CancelProtocolGovernanceAuthorityTransfer<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "cancel_protocol_governance_authority_transfer", hash = "676cd334cb980ee2", spec_hash = "603566d5248114ef")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "cancel_protocol_governance_authority_transfer", hash = "676cd334cb980ee2", spec_hash = "d144a115b1c685fd")]
     #[inline(always)]
     pub fn handler(&mut self) -> Result<()> {
         guards::cancel_protocol_governance_authority_transfer(self)?;

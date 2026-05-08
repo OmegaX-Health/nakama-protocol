@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{PublishReserveAssetRailPrice, PublishReserveAssetRailPriceArgs};
 
 impl<'info> PublishReserveAssetRailPrice<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "publish_reserve_asset_rail_price", hash = "b9e2da75463631d5", spec_hash = "9ccb6e51a04e0bfc")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "publish_reserve_asset_rail_price", hash = "b9e2da75463631d5", spec_hash = "b6756e388b384cf6")]
     #[inline(always)]
     pub fn handler(&mut self, args: PublishReserveAssetRailPriceArgs) -> Result<()> {
         guards::publish_reserve_asset_rail_price(self, args)?;

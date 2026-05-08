@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{SetPoolOracle, SetPoolOracleArgs};
 
 impl<'info> SetPoolOracle<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "set_pool_oracle", hash = "dc83c5d72d2ff750", spec_hash = "59c9aa9f167ef0d0")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "set_pool_oracle", hash = "dc83c5d72d2ff750", spec_hash = "746ee20bbc7ce3df")]
     #[inline(always)]
     pub fn handler(&mut self, args: SetPoolOracleArgs) -> Result<()> {
         guards::set_pool_oracle(self, args)?;

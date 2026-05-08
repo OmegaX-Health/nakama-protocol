@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::ClaimOracle;
 
 impl<'info> ClaimOracle<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "claim_oracle", hash = "695f301436b441f9", spec_hash = "df70f30c26e72227")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "claim_oracle", hash = "695f301436b441f9", spec_hash = "de2c2db9afa4318b")]
     #[inline(always)]
     pub fn handler(&mut self) -> Result<()> {
         guards::claim_oracle(self)?;

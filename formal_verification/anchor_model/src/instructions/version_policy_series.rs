@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{VersionPolicySeries, VersionPolicySeriesArgs};
 
 impl<'info> VersionPolicySeries<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "version_policy_series", hash = "f80770b4b58c533d", spec_hash = "4461b55293f336f0")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "version_policy_series", hash = "f80770b4b58c533d", spec_hash = "1a2a0b0a286be6f6")]
     #[inline(always)]
     pub fn handler(&mut self, args: VersionPolicySeriesArgs) -> Result<()> {
         guards::version_policy_series(self, args)?;

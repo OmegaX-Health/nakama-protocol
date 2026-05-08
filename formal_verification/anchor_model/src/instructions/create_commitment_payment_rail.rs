@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateCommitmentPaymentRail, CreateCommitmentPaymentRailArgs};
 
 impl<'info> CreateCommitmentPaymentRail<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_commitment_payment_rail", hash = "6e3cd17919889025", spec_hash = "21abae04f6226d3d")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_commitment_payment_rail", hash = "6e3cd17919889025", spec_hash = "b9d79e8ec4fc20a0")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateCommitmentPaymentRailArgs) -> Result<()> {
         guards::create_commitment_payment_rail(self, args)?;

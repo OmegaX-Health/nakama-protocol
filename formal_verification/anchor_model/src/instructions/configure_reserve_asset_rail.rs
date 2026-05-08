@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{ConfigureReserveAssetRail, ConfigureReserveAssetRailArgs};
 
 impl<'info> ConfigureReserveAssetRail<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "configure_reserve_asset_rail", hash = "746fd77366faa047", spec_hash = "ca4aa43975ac6cdf")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "configure_reserve_asset_rail", hash = "746fd77366faa047", spec_hash = "012e2765a20073d4")]
     #[inline(always)]
     pub fn handler(&mut self, args: ConfigureReserveAssetRailArgs) -> Result<()> {
         guards::configure_reserve_asset_rail(self, args)?;
