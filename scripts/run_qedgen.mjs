@@ -328,6 +328,125 @@ function prefixStateFields(line, stateFields) {
   return line.replace(pattern, 's.$1');
 }
 
+const MODEL_STATE_HELPERS = `
+fn read_model_account(account_info: &AccountInfo) -> Result<OmegaxProtocolAccount> {
+    let data = account_info.try_borrow_data()?;
+    OmegaxProtocolAccount::try_deserialize(&mut data.as_ref())
+}
+
+fn account_emergency_pause(account_info: &AccountInfo) -> Result<bool> {
+    Ok(read_model_account(account_info)?.emergency_pause)
+}
+
+fn account_paid_amount(account_info: &AccountInfo) -> Result<u64> {
+    Ok(read_model_account(account_info)?.paid_amount)
+}
+
+fn account_approved_amount(account_info: &AccountInfo) -> Result<u64> {
+    Ok(read_model_account(account_info)?.approved_amount)
+}
+
+fn account_withdrawn_fees(account_info: &AccountInfo) -> Result<u64> {
+    Ok(read_model_account(account_info)?.withdrawn_fees)
+}
+
+fn account_accrued_fees(account_info: &AccountInfo) -> Result<u64> {
+    Ok(read_model_account(account_info)?.accrued_fees)
+}
+`;
+
+function parseContextFields() {
+  const libPath = `${MODEL_DIR}/src/lib.rs`;
+  if (!existsSync(libPath)) {
+    return new Map();
+  }
+
+  const lib = readFileSync(libPath, 'utf8');
+  const contexts = new Map();
+  for (const match of lib.matchAll(/pub struct (\w+)<'info> \{([\s\S]*?)\n\}/g)) {
+    contexts.set(
+      match[1],
+      [...match[2].matchAll(/pub (\w+):/g)].map((field) => field[1]),
+    );
+  }
+  return contexts;
+}
+
+function firstExistingField(fields, candidates) {
+  return candidates.find((candidate) => fields.includes(candidate));
+}
+
+function guardStatePrelude(ctxType, body, contexts) {
+  const fields = contexts.get(ctxType) ?? [];
+  const lines = [];
+  if (/\bemergency_pause\b/.test(body)) {
+    const source = firstExistingField(fields, ['protocol_governance']);
+    if (source) {
+      lines.push(`    let emergency_pause = account_emergency_pause(&ctx.${source})?;`);
+    }
+  }
+  if (/\bpaid_amount\b/.test(body)) {
+    const source = firstExistingField(fields, ['claim_case']);
+    if (source) {
+      lines.push(`    let paid_amount = account_paid_amount(&ctx.${source})?;`);
+    }
+  }
+  if (/\bapproved_amount\b/.test(body)) {
+    const source = firstExistingField(fields, ['claim_case']);
+    if (source) {
+      lines.push(`    let approved_amount = account_approved_amount(&ctx.${source})?;`);
+    }
+  }
+  if (/\bwithdrawn_fees\b/.test(body)) {
+    const source = firstExistingField(fields, [
+      'protocol_fee_vault',
+      'pool_treasury_vault',
+      'pool_oracle_fee_vault',
+    ]);
+    if (source) {
+      lines.push(`    let withdrawn_fees = account_withdrawn_fees(&ctx.${source})?;`);
+    }
+  }
+  if (/\baccrued_fees\b/.test(body)) {
+    const source = firstExistingField(fields, [
+      'protocol_fee_vault',
+      'pool_treasury_vault',
+      'pool_oracle_fee_vault',
+    ]);
+    if (source) {
+      lines.push(`    let accrued_fees = account_accrued_fees(&ctx.${source})?;`);
+    }
+  }
+
+  return lines.length === 0 ? '' : `${lines.join('\n')}\n`;
+}
+
+function postprocessGuards(guards) {
+  let text = guards.replace(
+    /\n    let emergency_pause[^\n]*;\n    let paid_amount[^\n]*;\n    let approved_amount[^\n]*;\n    let withdrawn_fees[^\n]*;\n    let accrued_fees[^\n]*;\n/g,
+    '\n',
+  );
+  if (!text.includes('fn read_model_account(')) {
+    text = text.replace('use crate::*;\n', `use crate::*;\n${MODEL_STATE_HELPERS}\n`);
+  }
+
+  const contexts = parseContextFields();
+  text = text.replace(
+    /(pub fn \w+<'info>\(ctx: &mut (\w+)<'info>, args: \w+\) -> Result<\(\)> \{)\n([\s\S]*?)(?=\n\}\n(?:\n\/\/\/ Guards for|$))/g,
+    (_match, header, ctxType, body) => {
+      const withoutExistingPrelude = body
+        .replace(/    let emergency_pause = account_emergency_pause\(&ctx\.\w+\)\?;\n/g, '')
+        .replace(/    let paid_amount = account_paid_amount\(&ctx\.\w+\)\?;\n/g, '')
+        .replace(/    let approved_amount = account_approved_amount\(&ctx\.\w+\)\?;\n/g, '')
+        .replace(/    let withdrawn_fees = account_withdrawn_fees\(&ctx\.\w+\)\?;\n/g, '')
+        .replace(/    let accrued_fees = account_accrued_fees\(&ctx\.\w+\)\?;\n/g, '');
+      return `${header}\n${guardStatePrelude(ctxType, withoutExistingPrelude, contexts)}${withoutExistingPrelude}`;
+    },
+  );
+
+  return text.replace(/[ \t]+$/gm, '');
+}
+
 function dedupeFunctions(text) {
   const seen = new Set();
   return text.replace(
@@ -657,15 +776,7 @@ function postprocessRustModel() {
 
   const guardsPath = `${MODEL_DIR}/src/guards.rs`;
   if (existsSync(guardsPath)) {
-    let guards = readFileSync(guardsPath, 'utf8');
-    guards = guards.replace(/(pub fn \w+<'info>\([^{]+ \{)\n/g, `$1
-    let emergency_pause = false;
-    let paid_amount: u64 = 0;
-    let approved_amount: u64 = u64::MAX;
-    let withdrawn_fees: u64 = 0;
-    let accrued_fees: u64 = u64::MAX;
-`);
-    guards = guards.replace(/[ \t]+$/gm, '');
+    const guards = postprocessGuards(readFileSync(guardsPath, 'utf8'));
     writeFileSync(guardsPath, guards);
   }
 
