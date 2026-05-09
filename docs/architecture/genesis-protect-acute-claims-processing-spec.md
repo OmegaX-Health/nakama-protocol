@@ -1,11 +1,14 @@
 # Genesis Protect Acute v1 — Claims Processing Specification
 
-> **Version**: 1.0  
+> **Version**: 1.1  
 > **Author**: Manuel Soldatini — Protocol Verification & Claims  
 > **Status**: Draft — Internal  
 > **Date**: May 2026  
+> **Changelog**: v1.1 — updated to reflect multi-asset payout rails and MagicBlock private claim review path (protocol v0.3.2, May 2026 pull)  
 > **Companion docs**:
 > [`genesis-protect-claim-trace.md`](./genesis-protect-claim-trace.md) (onchain truth chain),
+> [`genesis-protect-acute-full-protect-flow.md`](./genesis-protect-acute-full-protect-flow.md) (operational flow — KR 1.1),
+> [`magicblock-private-claim-room.md`](./magicblock-private-claim-room.md) (private review adjunct),
 > [`decentralized-coverage-claims.md`](./decentralized-coverage-claims.md) (abstract model),
 > [`../../frontend/public/schemas/genesis-protect-acute-claim-v1.json`](../../frontend/public/schemas/genesis-protect-acute-claim-v1.json) (evidence schema)
 
@@ -40,6 +43,7 @@ dispute resolution). Phase 1 extensions (onchain dispute-case state, multi-attes
 | **Oracle Authority** | Designated oracle profile | Attest claim case against verified evidence schema | Adjudicate or settle claim unilaterally |
 | **Plan Admin** | OmegaX admin key (plan_admin) | Pause plan, set operational controls, open claim on behalf of incapacitated member | Rewrite approved or settled liabilities |
 | **LP / Sponsor** | Capital providers | Monitor reserve exposure, fund FundingLine | Intervene in individual claim decisions |
+| **TEE Reviewer** | MagicBlock private review path (Phase 0 demo) | Inspect private evidence in TEE, emit hash-bounded review artifact | Access raw PHI outside TEE, adjudicate or settle claim |
 
 ---
 
@@ -172,6 +176,45 @@ triggering oracle attestation.
 
 For Travel 30, after tier classification, the reimbursement top-up is calculated as:
 `min(actual_itemized_cost − tier_fixed_benefit, max_reimbursement_cap)`
+
+---
+
+## 6b. MagicBlock Private Claim Review Path (Optional Oracle Path)
+
+As of protocol v0.3.2, a **MagicBlock Ephemeral Rollup adjunct** (`omegax_private_claim_review`) is
+available as an alternative oracle attestation path for cases where standard human review requires
+enhanced privacy guarantees — for example, when evidence must be inspected by a Trusted Execution
+Environment (TEE) reviewer without exposing raw PHI to the Solana base layer.
+
+### When this path applies
+
+- High-sensitivity Tier 3 claims (surgery, ICU) where OCR processing of medical records is needed
+- Claims involving third-party reimbursement where private payment reference must be attested
+- Pilot / hackathon demo contexts (current Phase 0 status: demo-grade, not production settlement)
+
+### Flow (adjunct path)
+
+| Step | Action | What is recorded |
+|---|---|---|
+| 1 | Claims operator prepares redacted claim packet and hashes the evidence bundle | Hash only — raw PHI stays offchain |
+| 2 | `open_review_session` creates a public review-session PDA on base Solana | Session PDA seeded by authority + claim case + session ID (prevents squatting) |
+| 3 | `delegate_review_session` delegates the PDA to MagicBlock ER | Session marked `delegated` |
+| 4 | TEE/private reviewer inspects private packet, emits hash-bounded review artifact | Review result and binary hash — not raw content |
+| 5 | `record_private_review` records review hashes and status on the delegated session | Only the registered reviewer can write; binary hash must match operator registry |
+| 6 | `record_private_payment_ref` stores private payment reference hash (if applicable) | Reference hash only — payment details never onchain |
+| 7 | `commit_and_close_review_session` commits and undelegates back to Solana | Approved sessions require payment ref before commit |
+| 8 | `omegax_protocol::attest_claim_case` consumes the committed review artifact hash via normal attestation path | Onchain attestation proceeds as in standard flow |
+
+### Boundaries (must not be crossed)
+
+- The main `omegax_protocol` program is **not** delegated to MagicBlock — only the adjunct session PDA is.
+- `ClaimCase`, reserves, vaults, FundingLines, Obligations, and payout accounts are never delegated.
+- The adjunct is **not authoritative by itself** — consumers must verify registry binding, reviewer
+  binding, expected hashes, payment reference, and committed ownership before treating the result
+  as valid attestation input.
+- Phase 0 production status: **demo-grade**. The production reserve kernel (USDC settlement, obligation
+  reservation, claim adjudication) is not routed through this path in Phase 0. It demonstrates the
+  privacy architecture for investor and partner audiences.
 
 ---
 
@@ -349,7 +392,26 @@ In Phase 0, there is no onchain dispute-case state. Member appeals are handled a
 
 ### 11.2 Settlement Mechanics
 
-- Settlement currency is **USDC only** (SPL token, `hWMfBLfo8EBaRTCcrWV33xaUR8gK2iTtqPoQvEMHmvu` on devnet).
+**Preferred settlement asset**: USDC (SPL token, `hWMfBLfo8EBaRTCcrWV33xaUR8gK2iTtqPoQvEMHmvu` on devnet).
+
+**Multi-asset payout rails (protocol v0.3.2+)**: `settle_claim_case` and `settle_obligation` now
+require a matching `ReserveAssetRail` for the selected payout asset. The off-chain settlement router
+or oracle service selects the asset from the approved waterfall. The Solana program enforces the
+following before any value leaves custody:
+
+| Rail check | Requirement | Failure behaviour |
+|---|---|---|
+| Domain and mint binding | Rail must be bound to the same reserve domain and asset mint as the claim | Settlement fails |
+| Rail active | `rail.active == true` | Settlement fails |
+| Payout enabled | `rail.payout_enabled == true` | Settlement fails |
+| Oracle price freshness | Published price must be within the rail's freshness window | Asset counted as zero capacity — cannot be selected |
+| Oracle confidence | Price confidence must be ≤ `rail.max_confidence_bps` | Asset counted as zero capacity — cannot be selected |
+
+Approved fallback rails (where configured): PUSD, USDT, SOL, WBTC, WETH.
+The program **does not swap assets** and does not treat pending commitment custody as
+claims-paying reserve until activation/posting rules have made that true.
+
+Other settlement mechanics:
 - Payout is transferred atomically via `transfer_from_domain_vault` — the only authorized path
   money leaves the reserve domain (PT-01/PT-02 — protocol-enforced).
 - Default payout wallet: `MemberPosition.wallet`.
@@ -486,3 +548,6 @@ risk and is explicitly prohibited.
 | Mainnet privileged role controls | `docs/security/mainnet-privileged-role-controls.md` |
 | Operator runbook index | `docs/operations/runbooks.md` |
 | Protocol surface audit | `docs/testing/protocol-surface-audit.md` |
+| MagicBlock private claim room | `docs/architecture/magicblock-private-claim-room.md` |
+| Phase 0 mainnet surface gating | `docs/operations/phase0-mainnet-surface-gating.md` |
+| Full operational protect flow (KR 1.1) | `docs/architecture/genesis-protect-acute-full-protect-flow.md` |
