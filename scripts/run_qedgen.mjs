@@ -465,7 +465,7 @@ function guardStatePrelude(ctxType, body, contexts) {
   if (/\bemergency_pause\b/.test(body)) {
     const source = firstExistingField(fields, ['protocol_governance']);
     if (source) {
-      lines.push(`    let emergency_pause = account_emergency_pause(&ctx.${source})?;`);
+      lines.push(`    let emergency_pause = account_emergency_pause(&ctx.${source}.to_account_info())?;`);
     }
   }
   if (/\bactive\b/.test(body)) {
@@ -484,19 +484,19 @@ function guardStatePrelude(ctxType, body, contexts) {
       'obligation',
     ]);
     if (source) {
-      lines.push(`    let active = account_active(&ctx.${source})?;`);
+      lines.push(`    let active = account_active(&ctx.${source}.to_account_info())?;`);
     }
   }
   if (/\bpaid_amount\b/.test(body)) {
     const source = firstExistingField(fields, ['claim_case']);
     if (source) {
-      lines.push(`    let paid_amount = account_paid_amount(&ctx.${source})?;`);
+      lines.push(`    let paid_amount = account_paid_amount(&ctx.${source}.to_account_info())?;`);
     }
   }
   if (/\bapproved_amount\b/.test(body)) {
     const source = firstExistingField(fields, ['claim_case']);
     if (source) {
-      lines.push(`    let approved_amount = account_approved_amount(&ctx.${source})?;`);
+      lines.push(`    let approved_amount = account_approved_amount(&ctx.${source}.to_account_info())?;`);
     }
   }
   if (/\bwithdrawn_fees\b/.test(body)) {
@@ -506,7 +506,7 @@ function guardStatePrelude(ctxType, body, contexts) {
       'pool_oracle_fee_vault',
     ]);
     if (source) {
-      lines.push(`    let withdrawn_fees = account_withdrawn_fees(&ctx.${source})?;`);
+      lines.push(`    let withdrawn_fees = account_withdrawn_fees(&ctx.${source}.to_account_info())?;`);
     }
   }
   if (/\baccrued_fees\b/.test(body)) {
@@ -516,13 +516,13 @@ function guardStatePrelude(ctxType, body, contexts) {
       'pool_oracle_fee_vault',
     ]);
     if (source) {
-      lines.push(`    let accrued_fees = account_accrued_fees(&ctx.${source})?;`);
+      lines.push(`    let accrued_fees = account_accrued_fees(&ctx.${source}.to_account_info())?;`);
     }
   }
   if (/\bmax_confidence_bps\b/.test(body)) {
     const source = firstExistingField(fields, ['reserve_asset_rail']);
     if (source) {
-      lines.push(`    let max_confidence_bps = account_max_confidence_bps(&ctx.${source})?;`);
+      lines.push(`    let max_confidence_bps = account_max_confidence_bps(&ctx.${source}.to_account_info())?;`);
     }
   }
 
@@ -543,13 +543,13 @@ function postprocessGuards(guards) {
     /(pub fn \w+<'info>\(ctx: &mut (\w+)<'info>(?:, args: \w+)?\) -> Result<\(\)> \{)\n([\s\S]*?)(?=\n\}\n(?:\n\/\/\/ Guards for|$))/g,
     (_match, header, ctxType, body) => {
       const withoutExistingPrelude = body
-        .replace(/    let emergency_pause = account_emergency_pause\(&ctx\.\w+\)\?;\n/g, '')
-        .replace(/    let active = account_active\(&ctx\.\w+\)\?;\n/g, '')
-        .replace(/    let paid_amount = account_paid_amount\(&ctx\.\w+\)\?;\n/g, '')
-        .replace(/    let approved_amount = account_approved_amount\(&ctx\.\w+\)\?;\n/g, '')
-        .replace(/    let withdrawn_fees = account_withdrawn_fees\(&ctx\.\w+\)\?;\n/g, '')
-        .replace(/    let accrued_fees = account_accrued_fees\(&ctx\.\w+\)\?;\n/g, '')
-        .replace(/    let max_confidence_bps = account_max_confidence_bps\(&ctx\.\w+\)\?;\n/g, '');
+        .replace(/    let emergency_pause = account_emergency_pause\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '')
+        .replace(/    let active = account_active\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '')
+        .replace(/    let paid_amount = account_paid_amount\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '')
+        .replace(/    let approved_amount = account_approved_amount\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '')
+        .replace(/    let withdrawn_fees = account_withdrawn_fees\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '')
+        .replace(/    let accrued_fees = account_accrued_fees\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '')
+        .replace(/    let max_confidence_bps = account_max_confidence_bps\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '');
       return `${header}\n${guardStatePrelude(ctxType, withoutExistingPrelude, contexts)}${withoutExistingPrelude}`;
     },
   );

@@ -112,8 +112,8 @@ pub fn create_domain_asset_vault<'info>(ctx: &mut CreateDomainAssetVault<'info>,
 /// Guards for `configure_reserve_asset_rail`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn configure_reserve_asset_rail<'info>(ctx: &mut ConfigureReserveAssetRail<'info>, args: ConfigureReserveAssetRailArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let max_confidence_bps = account_max_confidence_bps(&ctx.reserve_asset_rail)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let max_confidence_bps = account_max_confidence_bps(&ctx.reserve_asset_rail.to_account_info())?;
     // lifecycle: require status == Live
     if ctx.reserve_asset_rail.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
@@ -130,9 +130,9 @@ pub fn configure_reserve_asset_rail<'info>(ctx: &mut ConfigureReserveAssetRail<'
 /// Guards for `publish_reserve_asset_rail_price`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn publish_reserve_asset_rail_price<'info>(ctx: &mut PublishReserveAssetRailPrice<'info>, args: PublishReserveAssetRailPriceArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let active = account_active(&ctx.reserve_asset_rail)?;
-    let max_confidence_bps = account_max_confidence_bps(&ctx.reserve_asset_rail)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let active = account_active(&ctx.reserve_asset_rail.to_account_info())?;
+    let max_confidence_bps = account_max_confidence_bps(&ctx.reserve_asset_rail.to_account_info())?;
     // lifecycle: require status == Live
     if ctx.reserve_asset_rail.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
@@ -215,8 +215,8 @@ pub fn version_policy_series<'info>(ctx: &mut VersionPolicySeries<'info>, args: 
 /// Guards for `open_member_position`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn open_member_position<'info>(ctx: &mut OpenMemberPosition<'info>, args: OpenMemberPositionArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let active = account_active(&ctx.health_plan)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let active = account_active(&ctx.health_plan.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: active = true
@@ -242,7 +242,7 @@ pub fn open_funding_line<'info>(ctx: &mut OpenFundingLine<'info>, args: OpenFund
 /// Guards for `fund_sponsor_budget`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn fund_sponsor_budget<'info>(ctx: &mut FundSponsorBudget<'info>, args: FundSponsorBudgetArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -253,7 +253,7 @@ pub fn fund_sponsor_budget<'info>(ctx: &mut FundSponsorBudget<'info>, args: Fund
 /// Guards for `record_premium_payment`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn record_premium_payment<'info>(ctx: &mut RecordPremiumPayment<'info>, args: RecordPremiumPaymentArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -264,7 +264,7 @@ pub fn record_premium_payment<'info>(ctx: &mut RecordPremiumPayment<'info>, args
 /// Guards for `create_commitment_campaign`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_commitment_campaign<'info>(ctx: &mut CreateCommitmentCampaign<'info>, args: CreateCommitmentCampaignArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.deposit_amount > 0
@@ -277,7 +277,7 @@ pub fn create_commitment_campaign<'info>(ctx: &mut CreateCommitmentCampaign<'inf
 /// Guards for `create_commitment_payment_rail`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_commitment_payment_rail<'info>(ctx: &mut CreateCommitmentPaymentRail<'info>, args: CreateCommitmentPaymentRailArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.deposit_amount > 0
@@ -290,7 +290,7 @@ pub fn create_commitment_payment_rail<'info>(ctx: &mut CreateCommitmentPaymentRa
 /// Guards for `deposit_commitment`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn deposit_commitment<'info>(ctx: &mut DepositCommitment<'info>, args: DepositCommitmentArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     Ok(())
@@ -299,7 +299,7 @@ pub fn deposit_commitment<'info>(ctx: &mut DepositCommitment<'info>, args: Depos
 /// Guards for `activate_direct_premium_commitment`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn activate_direct_premium_commitment<'info>(ctx: &mut ActivateDirectPremiumCommitment<'info>, args: ActivateCommitmentArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     Ok(())
@@ -308,7 +308,7 @@ pub fn activate_direct_premium_commitment<'info>(ctx: &mut ActivateDirectPremium
 /// Guards for `activate_treasury_credit_commitment`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn activate_treasury_credit_commitment<'info>(ctx: &mut ActivateTreasuryCreditCommitment<'info>, args: ActivateCommitmentArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     Ok(())
@@ -317,7 +317,7 @@ pub fn activate_treasury_credit_commitment<'info>(ctx: &mut ActivateTreasuryCred
 /// Guards for `activate_waterfall_commitment`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn activate_waterfall_commitment<'info>(ctx: &mut ActivateWaterfallCommitment<'info>, args: ActivateCommitmentArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     Ok(())
@@ -333,7 +333,7 @@ pub fn refund_commitment<'info>(ctx: &mut RefundCommitment<'info>, args: RefundC
 /// Guards for `pause_commitment_campaign`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn pause_commitment_campaign<'info>(ctx: &mut PauseCommitmentCampaign<'info>, args: PauseCommitmentCampaignArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // lifecycle: require status == Live
     if ctx.campaign.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
@@ -344,7 +344,7 @@ pub fn pause_commitment_campaign<'info>(ctx: &mut PauseCommitmentCampaign<'info>
 /// Guards for `create_obligation`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn create_obligation<'info>(ctx: &mut CreateObligation<'info>, args: CreateObligationArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -355,7 +355,7 @@ pub fn create_obligation<'info>(ctx: &mut CreateObligation<'info>, args: CreateO
 /// Guards for `reserve_obligation`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn reserve_obligation<'info>(ctx: &mut ReserveObligation<'info>, args: ReserveObligationArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -366,7 +366,7 @@ pub fn reserve_obligation<'info>(ctx: &mut ReserveObligation<'info>, args: Reser
 /// Guards for `settle_obligation`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn settle_obligation<'info>(ctx: &mut SettleObligation<'info>, args: SettleObligationArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -391,7 +391,7 @@ pub fn settle_obligation<'info>(ctx: &mut SettleObligation<'info>, args: SettleO
 /// Guards for `release_reserve`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn release_reserve<'info>(ctx: &mut ReleaseReserve<'info>, args: ReleaseReserveArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -402,8 +402,8 @@ pub fn release_reserve<'info>(ctx: &mut ReleaseReserve<'info>, args: ReleaseRese
 /// Guards for `open_claim_case`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn open_claim_case<'info>(ctx: &mut OpenClaimCase<'info>, args: OpenClaimCaseArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let active = account_active(&ctx.health_plan)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let active = account_active(&ctx.health_plan.to_account_info())?;
     // lifecycle: require status == Live
     if ctx.claim_case.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
@@ -416,7 +416,7 @@ pub fn open_claim_case<'info>(ctx: &mut OpenClaimCase<'info>, args: OpenClaimCas
 /// Guards for `authorize_claim_recipient`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn authorize_claim_recipient<'info>(ctx: &mut AuthorizeClaimRecipient<'info>, args: AuthorizeClaimRecipientArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // lifecycle: require status == Live
     if ctx.claim_case.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
@@ -427,7 +427,7 @@ pub fn authorize_claim_recipient<'info>(ctx: &mut AuthorizeClaimRecipient<'info>
 /// Guards for `attach_claim_evidence_ref`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn attach_claim_evidence_ref<'info>(ctx: &mut AttachClaimEvidenceRef<'info>, args: AttachClaimEvidenceRefArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // lifecycle: require status == Live
     if ctx.claim_case.status != Status::Live as u8 { return Err(crate::errors::OmegaxProtocolError::InvalidLifecycle.into()); }
     // requires: emergency_pause = false
@@ -438,8 +438,8 @@ pub fn attach_claim_evidence_ref<'info>(ctx: &mut AttachClaimEvidenceRef<'info>,
 /// Guards for `adjudicate_claim_case`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn adjudicate_claim_case<'info>(ctx: &mut AdjudicateClaimCase<'info>, args: AdjudicateClaimCaseArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let approved_amount = account_approved_amount(&ctx.claim_case)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let approved_amount = account_approved_amount(&ctx.claim_case.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.reserve_amount ≤ args.approved_amount
@@ -450,9 +450,9 @@ pub fn adjudicate_claim_case<'info>(ctx: &mut AdjudicateClaimCase<'info>, args: 
 /// Guards for `settle_claim_case`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn settle_claim_case<'info>(ctx: &mut SettleClaimCase<'info>, args: SettleClaimCaseArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let paid_amount = account_paid_amount(&ctx.claim_case)?;
-    let approved_amount = account_approved_amount(&ctx.claim_case)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let paid_amount = account_paid_amount(&ctx.claim_case.to_account_info())?;
+    let approved_amount = account_approved_amount(&ctx.claim_case.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -479,9 +479,9 @@ pub fn settle_claim_case<'info>(ctx: &mut SettleClaimCase<'info>, args: SettleCl
 /// Guards for `settle_claim_case_selected_asset`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn settle_claim_case_selected_asset<'info>(ctx: &mut SettleClaimCaseSelectedAsset<'info>, args: SettleClaimCaseSelectedAssetArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let paid_amount = account_paid_amount(&ctx.claim_case)?;
-    let approved_amount = account_approved_amount(&ctx.claim_case)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let paid_amount = account_paid_amount(&ctx.claim_case.to_account_info())?;
+    let approved_amount = account_approved_amount(&ctx.claim_case.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.claim_credit_amount > 0
@@ -558,8 +558,8 @@ pub fn update_lp_position_credentialing<'info>(ctx: &mut UpdateLpPositionCredent
 /// Guards for `deposit_into_capital_class`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn deposit_into_capital_class<'info>(ctx: &mut DepositIntoCapitalClass<'info>, args: DepositIntoCapitalClassArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
-    let active = account_active(&ctx.liquidity_pool)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
+    let active = account_active(&ctx.liquidity_pool.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -572,7 +572,7 @@ pub fn deposit_into_capital_class<'info>(ctx: &mut DepositIntoCapitalClass<'info
 /// Guards for `request_redemption`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn request_redemption<'info>(ctx: &mut RequestRedemption<'info>, args: RequestRedemptionArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.shares > 0
@@ -583,7 +583,7 @@ pub fn request_redemption<'info>(ctx: &mut RequestRedemption<'info>, args: Reque
 /// Guards for `process_redemption_queue`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn process_redemption_queue<'info>(ctx: &mut ProcessRedemptionQueue<'info>, args: ProcessRedemptionQueueArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.shares > 0
@@ -594,8 +594,8 @@ pub fn process_redemption_queue<'info>(ctx: &mut ProcessRedemptionQueue<'info>, 
 /// Guards for `withdraw_protocol_fee_spl`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_protocol_fee_spl<'info>(ctx: &mut WithdrawProtocolFeeSpl<'info>, args: WithdrawArgs) -> Result<()> {
-    let withdrawn_fees = account_withdrawn_fees(&ctx.protocol_fee_vault)?;
-    let accrued_fees = account_accrued_fees(&ctx.protocol_fee_vault)?;
+    let withdrawn_fees = account_withdrawn_fees(&ctx.protocol_fee_vault.to_account_info())?;
+    let accrued_fees = account_accrued_fees(&ctx.protocol_fee_vault.to_account_info())?;
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
     // requires: withdrawn_fees + args.amount ≤ accrued_fees
@@ -606,8 +606,8 @@ pub fn withdraw_protocol_fee_spl<'info>(ctx: &mut WithdrawProtocolFeeSpl<'info>,
 /// Guards for `withdraw_protocol_fee_sol`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_protocol_fee_sol<'info>(ctx: &mut WithdrawProtocolFeeSol<'info>, args: WithdrawArgs) -> Result<()> {
-    let withdrawn_fees = account_withdrawn_fees(&ctx.protocol_fee_vault)?;
-    let accrued_fees = account_accrued_fees(&ctx.protocol_fee_vault)?;
+    let withdrawn_fees = account_withdrawn_fees(&ctx.protocol_fee_vault.to_account_info())?;
+    let accrued_fees = account_accrued_fees(&ctx.protocol_fee_vault.to_account_info())?;
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
     // requires: withdrawn_fees + args.amount ≤ accrued_fees
@@ -618,8 +618,8 @@ pub fn withdraw_protocol_fee_sol<'info>(ctx: &mut WithdrawProtocolFeeSol<'info>,
 /// Guards for `withdraw_pool_treasury_spl`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_treasury_spl<'info>(ctx: &mut WithdrawPoolTreasurySpl<'info>, args: WithdrawArgs) -> Result<()> {
-    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_treasury_vault)?;
-    let accrued_fees = account_accrued_fees(&ctx.pool_treasury_vault)?;
+    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_treasury_vault.to_account_info())?;
+    let accrued_fees = account_accrued_fees(&ctx.pool_treasury_vault.to_account_info())?;
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
     // requires: withdrawn_fees + args.amount ≤ accrued_fees
@@ -630,8 +630,8 @@ pub fn withdraw_pool_treasury_spl<'info>(ctx: &mut WithdrawPoolTreasurySpl<'info
 /// Guards for `withdraw_pool_treasury_sol`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_treasury_sol<'info>(ctx: &mut WithdrawPoolTreasurySol<'info>, args: WithdrawArgs) -> Result<()> {
-    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_treasury_vault)?;
-    let accrued_fees = account_accrued_fees(&ctx.pool_treasury_vault)?;
+    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_treasury_vault.to_account_info())?;
+    let accrued_fees = account_accrued_fees(&ctx.pool_treasury_vault.to_account_info())?;
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
     // requires: withdrawn_fees + args.amount ≤ accrued_fees
@@ -642,8 +642,8 @@ pub fn withdraw_pool_treasury_sol<'info>(ctx: &mut WithdrawPoolTreasurySol<'info
 /// Guards for `withdraw_pool_oracle_fee_spl`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_oracle_fee_spl<'info>(ctx: &mut WithdrawPoolOracleFeeSpl<'info>, args: WithdrawArgs) -> Result<()> {
-    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_oracle_fee_vault)?;
-    let accrued_fees = account_accrued_fees(&ctx.pool_oracle_fee_vault)?;
+    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_oracle_fee_vault.to_account_info())?;
+    let accrued_fees = account_accrued_fees(&ctx.pool_oracle_fee_vault.to_account_info())?;
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
     // requires: withdrawn_fees + args.amount ≤ accrued_fees
@@ -654,8 +654,8 @@ pub fn withdraw_pool_oracle_fee_spl<'info>(ctx: &mut WithdrawPoolOracleFeeSpl<'i
 /// Guards for `withdraw_pool_oracle_fee_sol`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn withdraw_pool_oracle_fee_sol<'info>(ctx: &mut WithdrawPoolOracleFeeSol<'info>, args: WithdrawArgs) -> Result<()> {
-    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_oracle_fee_vault)?;
-    let accrued_fees = account_accrued_fees(&ctx.pool_oracle_fee_vault)?;
+    let withdrawn_fees = account_withdrawn_fees(&ctx.pool_oracle_fee_vault.to_account_info())?;
+    let accrued_fees = account_accrued_fees(&ctx.pool_oracle_fee_vault.to_account_info())?;
     // requires: args.amount > 0
     if !(args.amount > 0) { return Err(OmegaxProtocolError::AmountMustBePositive.into()); }
     // requires: withdrawn_fees + args.amount ≤ accrued_fees
@@ -681,7 +681,7 @@ pub fn update_allocation_caps<'info>(ctx: &mut UpdateAllocationCaps<'info>, args
 /// Guards for `allocate_capital`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn allocate_capital<'info>(ctx: &mut AllocateCapital<'info>, args: AllocateCapitalArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -692,7 +692,7 @@ pub fn allocate_capital<'info>(ctx: &mut AllocateCapital<'info>, args: AllocateC
 /// Guards for `deallocate_capital`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn deallocate_capital<'info>(ctx: &mut DeallocateCapital<'info>, args: DeallocateCapitalArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
@@ -703,7 +703,7 @@ pub fn deallocate_capital<'info>(ctx: &mut DeallocateCapital<'info>, args: Deall
 /// Guards for `mark_impairment`.
 /// Generated from the `requires` clauses of the spec handler block.
 pub fn mark_impairment<'info>(ctx: &mut MarkImpairment<'info>, args: MarkImpairmentArgs) -> Result<()> {
-    let emergency_pause = account_emergency_pause(&ctx.protocol_governance)?;
+    let emergency_pause = account_emergency_pause(&ctx.protocol_governance.to_account_info())?;
     // requires: emergency_pause = false
     if !(emergency_pause == false) { return Err(OmegaxProtocolError::ProtocolEmergencyPaused.into()); }
     // requires: args.amount > 0
