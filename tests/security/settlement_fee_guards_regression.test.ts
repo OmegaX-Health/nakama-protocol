@@ -93,8 +93,11 @@ test("[CSO-2026-05-06] payout-only rails can publish prices but zero staleness i
 
   assert.match(configureBody, /let price_required = args\.capacity_enabled \|\| args\.payout_enabled/);
   assert.match(configureBody, /args\.max_staleness_seconds > 0/);
+  assert.match(configureBody, /args\.max_confidence_bps > 0/);
+  assert.match(publishBody, /args\.confidence_bps <= ctx\.accounts\.reserve_asset_rail\.max_confidence_bps/);
   assert.match(publishBody, /capacity_enabled[\s\S]+\|\|[\s\S]+payout_enabled/);
   assert.match(freshnessBody, /rail\.max_staleness_seconds > 0/);
+  assert.match(freshnessBody, /rail\.last_price_confidence_bps <= rail\.max_confidence_bps/);
 });
 
 test("[CSO-2026-05-04] redemption settlement rejects zero-net LP payouts", () => {
@@ -104,6 +107,29 @@ test("[CSO-2026-05-04] redemption settlement rejects zero-net LP payouts", () =>
   assert.match(body, /exit_fee < asset_amount[\s\S]+FeeVaultBpsMisconfigured/);
   assert.match(body, /let net_to_lp = checked_sub\(asset_amount, exit_fee\)\?/);
   assert.match(body, /require_positive_amount\(net_to_lp\)\?/);
+});
+
+test("[ALMANAX-630dbd6a] claim settlement validates canonical oracle-fee PDAs", () => {
+  const settleBody = extractInstructionBody("settle_claim_case");
+  const helperBody = extractRustFunctionBody("require_oracle_fee_accounts_canonical");
+
+  assert.match(settleBody, /require_oracle_fee_accounts_canonical\(/);
+  assert.match(helperBody, /SEED_POOL_ORACLE_POLICY/);
+  assert.match(helperBody, /SEED_POOL_ORACLE_FEE_VAULT/);
+  assert.match(helperBody, /SEED_CLAIM_ATTESTATION/);
+  assert.match(helperBody, /policy\.key\(\)[\s\S]+expected_policy/);
+  assert.match(helperBody, /vault\.key\(\)[\s\S]+expected_vault/);
+  assert.match(helperBody, /attestation\.key\(\)[\s\S]+expected_attestation/);
+  assert.match(helperBody, /policy\.bump == expected_policy_bump/);
+  assert.match(helperBody, /vault\.bump == expected_vault_bump/);
+  assert.match(helperBody, /attestation\.bump == expected_attestation_bump/);
+});
+
+test("[ALMANAX-2026-05-06] obligation settlement validates canonical oracle-fee PDAs", () => {
+  assert.match(
+    programSource,
+    /fn resolve_obligation_oracle_fee[\s\S]+require_oracle_fee_accounts_canonical\([\s\S]+claim_case\.key\(\)[\s\S]+obligation\.asset_mint/,
+  );
 });
 
 test("[CSO-2026-05-04] configured fee bps cannot be 100 percent", () => {

@@ -15,6 +15,7 @@ use crate::state::*;
 pub(crate) fn open_claim_case(ctx: Context<OpenClaimCase>, args: OpenClaimCaseArgs) -> Result<()> {
     require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
     require_id(&args.claim_id)?;
+    require_health_plan_active(&ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.health_plan.pause_flags & PAUSE_FLAG_CLAIM_INTAKE == 0,
         OmegaXProtocolError::ClaimIntakePaused
@@ -236,6 +237,13 @@ pub(crate) fn settle_claim_case(
         ctx.accounts.oracle_fee_attestation.as_deref(),
     ) {
         (Some(vault), Some(policy), Some(attestation)) => {
+            require_oracle_fee_accounts_canonical(
+                vault,
+                policy,
+                attestation,
+                ctx.accounts.claim_case.key(),
+                asset_mint_key,
+            )?;
             require_keys_eq!(
                 vault.oracle,
                 attestation.oracle,
@@ -386,6 +394,67 @@ pub(crate) fn settle_claim_case(
         intake_status,
         approved_amount,
     });
+
+    Ok(())
+}
+
+pub(crate) fn require_oracle_fee_accounts_canonical(
+    vault: &Account<PoolOracleFeeVault>,
+    policy: &Account<PoolOraclePolicy>,
+    attestation: &Account<ClaimAttestation>,
+    claim_case: Pubkey,
+    asset_mint: Pubkey,
+) -> Result<()> {
+    let (expected_policy, expected_policy_bump) = Pubkey::find_program_address(
+        &[SEED_POOL_ORACLE_POLICY, policy.liquidity_pool.as_ref()],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        policy.key(),
+        expected_policy,
+        OmegaXProtocolError::PoolOracleApprovalRequired
+    );
+    require!(
+        policy.bump == expected_policy_bump,
+        OmegaXProtocolError::PoolOracleApprovalRequired
+    );
+
+    let (expected_attestation, expected_attestation_bump) = Pubkey::find_program_address(
+        &[
+            SEED_CLAIM_ATTESTATION,
+            claim_case.as_ref(),
+            attestation.oracle.as_ref(),
+        ],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        attestation.key(),
+        expected_attestation,
+        OmegaXProtocolError::Unauthorized
+    );
+    require!(
+        attestation.bump == expected_attestation_bump,
+        OmegaXProtocolError::Unauthorized
+    );
+
+    let (expected_vault, expected_vault_bump) = Pubkey::find_program_address(
+        &[
+            SEED_POOL_ORACLE_FEE_VAULT,
+            policy.liquidity_pool.as_ref(),
+            attestation.oracle.as_ref(),
+            asset_mint.as_ref(),
+        ],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        vault.key(),
+        expected_vault,
+        OmegaXProtocolError::FeeVaultMismatch
+    );
+    require!(
+        vault.bump == expected_vault_bump,
+        OmegaXProtocolError::FeeVaultMismatch
+    );
 
     Ok(())
 }

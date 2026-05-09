@@ -12,6 +12,57 @@ fn class_access_requires_credential_for_restricted_modes() {
 }
 
 #[test]
+fn queue_only_redemptions_are_floored_by_pool_policy_or_pause_flag() {
+    assert!(!derive_queue_only_redemptions(0, REDEMPTION_POLICY_OPEN));
+    assert!(derive_queue_only_redemptions(
+        0,
+        REDEMPTION_POLICY_QUEUE_ONLY
+    ));
+    assert!(derive_queue_only_redemptions(
+        PAUSE_FLAG_REDEMPTION_QUEUE_ONLY,
+        REDEMPTION_POLICY_OPEN
+    ));
+}
+
+#[test]
+fn inactive_health_plan_guard_blocks_fresh_intake() {
+    let plan_admin = Pubkey::new_unique();
+    let mut plan = sample_health_plan_roles(
+        plan_admin,
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+    );
+    assert!(require_health_plan_active(&plan).is_ok());
+
+    plan.active = false;
+    assert_eq!(
+        require_health_plan_active(&plan).unwrap_err(),
+        OmegaXProtocolError::HealthPlanInactive.into()
+    );
+}
+
+#[test]
+fn inactive_capital_class_guard_blocks_fresh_deposits() {
+    let mut capital_class = sample_capital_class(Pubkey::new_unique(), Pubkey::new_unique());
+    assert!(require_capital_class_active(&capital_class).is_ok());
+
+    capital_class.active = false;
+    assert_eq!(
+        require_capital_class_active(&capital_class).unwrap_err(),
+        OmegaXProtocolError::CapitalClassInactive.into()
+    );
+}
+
+#[test]
+fn realized_pnl_loss_debit_uses_checked_signed_math() {
+    assert_eq!(debit_realized_pnl_for_loss(100, 40).unwrap(), 60);
+    assert_eq!(debit_realized_pnl_for_loss(-10, 5).unwrap(), -15);
+    assert!(debit_realized_pnl_for_loss(0, i64::MAX as u64 + 1).is_err());
+    assert!(debit_realized_pnl_for_loss(i64::MIN, 1).is_err());
+}
+
+#[test]
 fn lp_credentialing_cannot_revoke_active_position() {
     let mut lp_position = LPPosition {
         capital_class: Pubkey::new_unique(),
@@ -97,6 +148,64 @@ fn lp_deposit_top_up_preserves_existing_state() {
     assert_eq!(lp_position.redemption_requested_at, 40);
     assert!(lp_position.credentialed);
     assert_eq!(lp_position.lockup_ends_at, 1_120);
+}
+
+#[test]
+fn lp_deposit_accepts_zero_lockup() {
+    let mut lp_position = LPPosition {
+        capital_class: Pubkey::new_unique(),
+        owner: Pubkey::new_unique(),
+        shares: 0,
+        subscription_basis: 0,
+        pending_redemption_shares: 0,
+        pending_redemption_assets: 0,
+        realized_distributions: 0,
+        impaired_principal: 0,
+        lockup_ends_at: 0,
+        credentialed: true,
+        queue_status: LP_QUEUE_STATUS_NONE,
+        redemption_sequence: 0,
+        redemption_requested_at: 0,
+        bump: 4,
+    };
+
+    apply_lp_position_deposit(&mut lp_position, 25, 30, 0, 1_000).unwrap();
+
+    assert_eq!(lp_position.shares, 30);
+    assert_eq!(lp_position.subscription_basis, 25);
+    assert_eq!(lp_position.lockup_ends_at, 1_000);
+}
+
+#[test]
+fn lp_deposit_rejects_negative_lockup_without_mutation() {
+    let mut lp_position = LPPosition {
+        capital_class: Pubkey::new_unique(),
+        owner: Pubkey::new_unique(),
+        shares: 100,
+        subscription_basis: 90,
+        pending_redemption_shares: 12,
+        pending_redemption_assets: 18,
+        realized_distributions: 7,
+        impaired_principal: 3,
+        lockup_ends_at: 50,
+        credentialed: true,
+        queue_status: LP_QUEUE_STATUS_PENDING,
+        redemption_sequence: 3,
+        redemption_requested_at: 40,
+        bump: 4,
+    };
+
+    let original_shares = lp_position.shares;
+    let original_subscription_basis = lp_position.subscription_basis;
+    let original_lockup_ends_at = lp_position.lockup_ends_at;
+    let error = apply_lp_position_deposit(&mut lp_position, 25, 30, -1, 1_000).unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("Capital class lockup seconds cannot be negative"));
+    assert_eq!(lp_position.shares, original_shares);
+    assert_eq!(lp_position.subscription_basis, original_subscription_basis);
+    assert_eq!(lp_position.lockup_ends_at, original_lockup_ends_at);
 }
 
 #[test]
@@ -730,6 +839,7 @@ fn reserve_asset_capacity_requires_published_price() {
         oracle_source: RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
         oracle_feed_id: [7u8; 32],
         max_staleness_seconds: 3_600,
+        max_confidence_bps: 50,
         haircut_bps: 5_000,
         max_exposure_bps: 1_000,
         deposit_enabled: true,
@@ -748,9 +858,13 @@ fn reserve_asset_capacity_requires_published_price() {
     assert!(reserve_waterfall::require_reserve_asset_rail_capacity_enabled(&rail).is_err());
 
     rail.last_price_usd_1e8 = 42_000_000;
+    rail.last_price_confidence_bps = 50;
     rail.last_price_published_at_ts = 1_000;
     assert!(reserve_waterfall::require_fresh_reserve_asset_price_at(&rail, 1_100).is_ok());
     assert!(reserve_waterfall::require_fresh_reserve_asset_price_at(&rail, 5_000).is_err());
+
+    rail.last_price_confidence_bps = 51;
+    assert!(reserve_waterfall::require_fresh_reserve_asset_price_at(&rail, 1_100).is_err());
 }
 
 #[test]
@@ -765,6 +879,7 @@ fn reserve_asset_payout_requires_enabled_fresh_price() {
         oracle_source: RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
         oracle_feed_id: [9u8; 32],
         max_staleness_seconds: 3_600,
+        max_confidence_bps: 100,
         haircut_bps: 2_500,
         max_exposure_bps: 1_000,
         deposit_enabled: true,
@@ -786,6 +901,7 @@ fn reserve_asset_payout_requires_enabled_fresh_price() {
     assert!(reserve_waterfall::require_reserve_asset_rail_payout_enabled(&rail).is_err());
 
     rail.last_price_usd_1e8 = 6_500_000_000_000;
+    rail.last_price_confidence_bps = 100;
     rail.last_price_published_at_ts = 1_000;
     assert!(reserve_waterfall::require_fresh_reserve_asset_price_at(&rail, 1_100).is_ok());
 }
@@ -802,6 +918,7 @@ fn reserve_asset_price_zero_staleness_is_invalid_for_payout() {
         oracle_source: RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
         oracle_feed_id: [9u8; 32],
         max_staleness_seconds: 0,
+        max_confidence_bps: 100,
         haircut_bps: 2_500,
         max_exposure_bps: 1_000,
         deposit_enabled: true,
@@ -832,6 +949,7 @@ fn selected_asset_payout_value_bounds_are_enforced() {
         oracle_source: RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
         oracle_feed_id: [1u8; 32],
         max_staleness_seconds: 3_600,
+        max_confidence_bps: 50,
         haircut_bps: 0,
         max_exposure_bps: 10_000,
         deposit_enabled: true,
@@ -846,7 +964,7 @@ fn selected_asset_payout_value_bounds_are_enforced() {
         audit_nonce: 0,
         bump: 1,
     };
-    let wbtc_rail = ReserveAssetRail {
+    let mut wbtc_rail = ReserveAssetRail {
         reserve_domain: usdc_rail.reserve_domain,
         asset_mint: Pubkey::new_unique(),
         oracle_authority: Pubkey::new_unique(),
@@ -856,6 +974,7 @@ fn selected_asset_payout_value_bounds_are_enforced() {
         oracle_source: RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
         oracle_feed_id: [2u8; 32],
         max_staleness_seconds: 3_600,
+        max_confidence_bps: 150,
         haircut_bps: 2_500,
         max_exposure_bps: 1_000,
         deposit_enabled: true,
@@ -917,6 +1036,34 @@ fn selected_asset_payout_value_bounds_are_enforced() {
     .is_err());
 
     usdc_rail.last_price_published_at_ts = 0;
+    assert!(reserve_waterfall::require_selected_asset_payout_value_at(
+        500_000_000,
+        6,
+        &usdc_rail,
+        1_000_000,
+        8,
+        &wbtc_rail,
+        50,
+        1_100,
+    )
+    .is_err());
+
+    usdc_rail.last_price_published_at_ts = 1_000;
+    usdc_rail.last_price_confidence_bps = 51;
+    assert!(reserve_waterfall::require_selected_asset_payout_value_at(
+        500_000_000,
+        6,
+        &usdc_rail,
+        1_000_000,
+        8,
+        &wbtc_rail,
+        50,
+        1_100,
+    )
+    .is_err());
+
+    usdc_rail.last_price_confidence_bps = 0;
+    wbtc_rail.last_price_confidence_bps = 151;
     assert!(reserve_waterfall::require_selected_asset_payout_value_at(
         500_000_000,
         6,

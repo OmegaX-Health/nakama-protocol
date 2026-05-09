@@ -3,7 +3,7 @@
 import { DEVNET_PROTOCOL_FIXTURE_STATE, type DevnetFixtureRole } from "./devnet-fixtures";
 import { GENESIS_PROTECT_ACUTE_PLAN_ID } from "./genesis-protect-acute";
 import { GENESIS_PROTECT_ACUTE_PRIMARY_SKU } from "./genesis-protect-acute-operator";
-import { buildOverviewStats, type OverviewStatsSource } from "./overview-metrics";
+import { buildOverviewStats, countPendingRedemptionSources, type OverviewStatsSource } from "./overview-metrics";
 import {
   availableFundingLineBalance,
   CLAIM_INTAKE_APPROVED,
@@ -16,7 +16,6 @@ import {
   describeObligationStatus,
   describeSeriesMode,
   describeSeriesStatus,
-  hasPendingRedemptionQueue,
   isActiveClaimStatus,
   isObligationOnDisputeWatch,
   toBigIntAmount,
@@ -207,6 +206,14 @@ function countRemain(count: number): string {
   return count === 1 ? "remains" : "remain";
 }
 
+function humanFundingLineType(lineType: number): string {
+  return describeFundingLineType(lineType).replace(/_/g, " ");
+}
+
+function primaryDisplayName(value: string): string {
+  return value.split("·")[0]?.trim() || value;
+}
+
 function joinWithConjunction(values: string[]): string {
   if (values.length === 0) return "";
   if (values.length === 1) return values[0]!;
@@ -281,8 +288,8 @@ export function describeGovernanceQueueStatus(input: {
 
   const proposalLabel = input.count === 1 ? "proposal" : "proposals";
   return {
-    emptyDetail: "No live governance proposals are available for the configured realm.",
-    emptyMessage: "No live governance proposals are available for the configured realm.",
+    emptyDetail: "No active proposals are waiting right now. Review templates or authorities to prepare the next governance change.",
+    emptyMessage: "No active proposals are waiting right now. Review templates or authorities to prepare the next governance change.",
     emptyMeta: "No proposals",
     emptyTitle: "Live governance queue",
     metricAriaLabel: `${input.count} live governance ${proposalLabel}.`,
@@ -543,7 +550,7 @@ export function buildGovernanceQueue(proposals: GovernanceProposalSummary[] = []
 
 export function computeWorkbenchMetrics(source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE) {
   const activeClaims = source.claimCases.filter((claim) => isActiveClaimStatus(claim.intakeStatus)).length;
-  const pendingRedemptions = source.lpPositions.filter(hasPendingRedemptionQueue).length;
+  const pendingRedemptions = countPendingRedemptionSources(source);
   const reservedObligations = source.obligations.filter(
     (obligation) =>
       obligation.status === OBLIGATION_STATUS_RESERVED || obligation.status === OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
@@ -643,7 +650,7 @@ function buildOverviewAuditTrail(
         index: 0,
         label: metrics.pendingRedemptionCount > 0 ? "Queue watch" : "Queue clear",
         tone: metrics.pendingRedemptionCount > 0 ? "pending" : "verified",
-        detail: `${metrics.pendingRedemptionCount} LP queue records still need action across ${metrics.queueOnlyPoolCount} queue-only pool lane${metrics.queueOnlyPoolCount === 1 ? "" : "s"}.`,
+        detail: `${metrics.pendingRedemptionCount} redemption source${metrics.pendingRedemptionCount === 1 ? "" : "s"} ${countRemain(metrics.pendingRedemptionCount)} across ${metrics.queueOnlyPoolCount} pool${metrics.queueOnlyPoolCount === 1 ? "" : "s"} using queued redemptions.`,
       }),
       createAuditItem({
         seed: `overview:${persona}:routing`,
@@ -661,7 +668,7 @@ function buildOverviewAuditTrail(
         tone: leadProposal?.status === "Executing" ? "signal" : "pending",
         detail: leadProposal
           ? `${leadProposal.title} is the lead governance item for the shared protocol shell.`
-          : "No live governance proposals are currently loaded into the workbench queue.",
+          : "No active governance proposals are waiting right now.",
       }),
     ];
   }
@@ -675,14 +682,14 @@ function buildOverviewAuditTrail(
         tone: leadProposal?.status === "Executing" ? "signal" : "pending",
         detail: leadProposal
           ? `${leadProposal.title} is currently anchoring the governance queue.`
-          : "No live governance proposals are currently loaded into the workbench queue.",
+          : "No active governance proposals are waiting right now.",
       }),
       createAuditItem({
         seed: `overview:${persona}:claims`,
         index: 1,
         label: metrics.activeClaimCount > 0 ? "Claims watch" : "Claims clear",
         tone: metrics.activeClaimCount > 0 ? "pending" : "verified",
-        detail: `${metrics.activeClaimCount} claim lane${metrics.activeClaimCount === 1 ? "" : "s"} ${countRemain(metrics.activeClaimCount)} open across sponsor and oracle surfaces.`,
+        detail: `${metrics.activeClaimCount} claim case${metrics.activeClaimCount === 1 ? "" : "s"} ${countRemain(metrics.activeClaimCount)} open across sponsor and oracle surfaces.`,
       }),
       createAuditItem({
         seed: `overview:${persona}:obligations`,
@@ -700,7 +707,7 @@ function buildOverviewAuditTrail(
       index: 0,
       label: metrics.approvedClaimCount > 0 ? "Claims approved" : "Claims quiet",
       tone: metrics.approvedClaimCount > 0 ? "signal" : "verified",
-      detail: `${metrics.approvedClaimCount} claim lane${metrics.approvedClaimCount === 1 ? "" : "s"} ${countBe(metrics.approvedClaimCount)} approved and waiting for reserve or settlement execution.`,
+      detail: `${metrics.approvedClaimCount} claim case${metrics.approvedClaimCount === 1 ? "" : "s"} ${countBe(metrics.approvedClaimCount)} approved and waiting for reserve or settlement execution.`,
     }),
     createAuditItem({
       seed: `overview:${persona}:plan`,
@@ -716,7 +723,7 @@ function buildOverviewAuditTrail(
       index: 2,
       label: metrics.pendingRedemptionCount > 0 ? "Capital queue" : "Capital clear",
       tone: metrics.pendingRedemptionCount > 0 ? "pending" : "verified",
-      detail: `${metrics.pendingRedemptionCount} LP queue record${metrics.pendingRedemptionCount === 1 ? "" : "s"} ${metrics.pendingRedemptionCount === 1 ? "still needs" : "still need"} processing across active capital classes.`,
+      detail: `${metrics.pendingRedemptionCount} redemption source${metrics.pendingRedemptionCount === 1 ? "" : "s"} ${metrics.pendingRedemptionCount === 1 ? "still needs" : "still need"} processing across active capital classes.`,
     }),
   ];
 }
@@ -761,8 +768,8 @@ function buildCapitalAuditTrail(
   const pendingRedemptions = toBigIntAmount(selectedClass?.pendingRedemptions ?? pool.totalPendingRedemptions);
   const queueScope = selectedClass?.displayName ?? pool.displayName;
   const exitMode = selectedClass?.queueOnlyRedemptions || pool.redemptionPolicy === REDEMPTION_POLICY_QUEUE_ONLY
-    ? "queue_only"
-    : "open";
+    ? "queued redemption processing"
+    : "open redemption processing";
 
   return [
     createAuditItem({
@@ -770,7 +777,7 @@ function buildCapitalAuditTrail(
       index: 0,
       label: pendingRedemptions > 0n ? "Queue watch" : "Queue clear",
       tone: pendingRedemptions > 0n ? "pending" : "verified",
-      detail: `${queueScope} is running ${exitMode} exits with ${formatAuditAmount(pendingRedemptions)} shares waiting in the redemption queue.`,
+      detail: `${queueScope} is using ${exitMode} with ${formatAuditAmount(pendingRedemptions)} settlement units pending in the redemption queue.`,
     }),
     createAuditItem({
       seed: `capital:${queueScope}:routing`,
@@ -836,7 +843,7 @@ function buildPlansAuditTrail(
       index: 0,
       label: liveClaims.length > 0 ? "Claims watch" : "Claims quiet",
       tone: liveClaims.length > 0 ? "pending" : "verified",
-      detail: `${scopedClaims.length} claim lane${scopedClaims.length === 1 ? "" : "s"} ${countBe(scopedClaims.length)} scoped to ${scopeLabel}; ${approvedClaims.length} approved and ${liveClaims.length} still active.`,
+      detail: `${scopedClaims.length} claim case${scopedClaims.length === 1 ? "" : "s"} ${countBe(scopedClaims.length)} scoped to ${scopeLabel}; ${approvedClaims.length} approved and ${liveClaims.length} still active.`,
     }),
     createAuditItem({
       seed: `plans:${scopeLabel}:funding`,
@@ -844,7 +851,7 @@ function buildPlansAuditTrail(
       label: leadFundingLine ? "Funding live" : "Funding idle",
       tone: leadFundingLine ? "signal" : "verified",
       detail: leadFundingLine
-        ? `${leadFundingLine.displayName} is the lead ${describeFundingLineType(leadFundingLine.lineType)} lane with ${formatAuditAmount(availableFundingLineBalance(leadFundingLine))} available and ${formatAuditAmount(leadFundingLine.reservedAmount)} reserved.`
+        ? `${primaryDisplayName(leadFundingLine.displayName)} is the lead ${humanFundingLineType(leadFundingLine.lineType)} lane with ${formatAuditAmount(availableFundingLineBalance(leadFundingLine))} available and ${formatAuditAmount(leadFundingLine.reservedAmount)} reserved.`
         : `No funding lines are currently bound to ${scopeLabel}.`,
     }),
     createAuditItem({
@@ -901,7 +908,7 @@ function buildOraclesAuditTrail(
       label: selectedSeries ? "Binding live" : "Pool bindings",
       tone: selectedSeries ? "verified" : "signal",
       detail: selectedSeries
-        ? `${selectedSeries.displayName} stays bound to ${pool.displayName} in ${describeSeriesMode(selectedSeries.mode)} mode with terms ${selectedSeries.termsVersion}.`
+        ? `${selectedSeries.displayName} stays bound to ${pool.displayName} in ${describeSeriesMode(selectedSeries.mode)} mode${selectedSeries.termsVersion ? ` with terms ${selectedSeries.termsVersion}` : ""}.`
         : `${boundSeries.length} series ${countBe(boundSeries.length)} currently bound to ${pool.displayName} for the visible oracle shell.`,
     }),
     createAuditItem({
@@ -910,7 +917,7 @@ function buildOraclesAuditTrail(
       label: scopedClaims.length > 0 ? "Attestation watch" : "Attestations quiet",
       tone: scopedClaims.length > 0 ? "pending" : "verified",
       detail: leadClaim && leadClaimSeries
-        ? `${scopedClaims.length} claim lane${scopedClaims.length === 1 ? "" : "s"} ${countBe(scopedClaims.length)} in scope; ${leadClaim.claimId} is ${describeClaimStatus(leadClaim.intakeStatus)} for ${leadClaimSeries.displayName}.`
+        ? `${scopedClaims.length} claim case${scopedClaims.length === 1 ? "" : "s"} ${countBe(scopedClaims.length)} in scope; ${leadClaim.claimId} is ${describeClaimStatus(leadClaim.intakeStatus)} for ${leadClaimSeries.displayName}.`
         : `No claim attestations are currently scoped to ${scopeLabel}.`,
     }),
     createAuditItem({
@@ -962,8 +969,8 @@ function buildGovernanceAuditTrail(
       label: queue.length > 0 ? "Queue live" : "Queue empty",
       tone: queue.length > 0 ? "signal" : "verified",
       detail: queue.length > 0
-        ? `${queue.length} proposal lane${queue.length === 1 ? "" : "s"} ${countBe(queue.length)} visible${queueStateSummary ? `: ${queueStateSummary}.` : "."}`
-        : "No live governance proposals are currently loaded into the workbench queue.",
+        ? `${queue.length} proposal${queue.length === 1 ? "" : "s"} ${countBe(queue.length)} visible${queueStateSummary ? `: ${queueStateSummary}.` : "."}`
+        : "No active governance proposals are waiting right now.",
     }),
   ];
 }

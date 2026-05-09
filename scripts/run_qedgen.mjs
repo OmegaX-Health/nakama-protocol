@@ -182,6 +182,25 @@ function parseJsonObjects(text) {
   return docs;
 }
 
+function isProgramInstructionNotInSpec(doc) {
+  return (
+    doc?.handler_coverage?.kind === 'ProgramInstructionNotInSpec' ||
+    doc?.kind === 'ProgramInstructionNotInSpec' ||
+    doc?.rule === 'ProgramInstructionNotInSpec'
+  );
+}
+
+function isAcceptedNonzeroStatusDoc(doc) {
+  if (doc?.rule && doc?.severity) return true;
+  if (Array.isArray(doc?.effect_coverage) && Array.isArray(doc?.handler_coverage)) return true;
+  if (Array.isArray(doc?.operations) && Array.isArray(doc?.properties) && Array.isArray(doc?.cells)) {
+    return true;
+  }
+  if (typeof doc?.operation === 'string' && typeof doc?.property === 'string') return true;
+  if (doc?.kind === 'missing' && typeof doc?.theorem === 'string') return true;
+  return false;
+}
+
 function runCheck(qedgen) {
   const result = spawnSync(qedgen, [...argsFor('check'), ...extraArgs], {
     cwd: process.cwd(),
@@ -196,6 +215,7 @@ function runCheck(qedgen) {
 
   const docs = parseJsonObjects(result.stdout ?? '');
   const findings = docs.filter((doc) => doc.rule && doc.severity);
+  const handlerCoverageDrift = docs.filter(isProgramInstructionNotInSpec);
   const counts = findings.reduce((acc, finding) => {
     acc[finding.severity] = (acc[finding.severity] ?? 0) + 1;
     return acc;
@@ -224,9 +244,26 @@ function runCheck(qedgen) {
     return 1;
   }
 
-  if (result.status !== 0 && docs.length === 0) {
-    process.stdout.write(result.stdout ?? '');
-    return result.status ?? 1;
+  if (handlerCoverageDrift.length > 0) {
+    console.error('QEDGen handler coverage drift:');
+    console.error(JSON.stringify(handlerCoverageDrift, null, 2));
+    return 1;
+  }
+
+  if (result.status !== 0) {
+    const unacceptedStatusDocs = docs.filter((doc) => !isAcceptedNonzeroStatusDoc(doc));
+    if (docs.length === 0 || unacceptedStatusDocs.length > 0) {
+      console.error(`qedgen check exited with status ${result.status ?? 'unknown'}`);
+      if (unacceptedStatusDocs.length > 0) {
+        console.error('Unaccepted QEDGen status docs:');
+        console.error(JSON.stringify(unacceptedStatusDocs, null, 2));
+      }
+      process.stdout.write(result.stdout ?? '');
+      return result.status ?? 1;
+    }
+    console.log(
+      `accepted qedgen nonzero status ${result.status}: coverage/theorem obligations only`,
+    );
   }
 
   return 0;
@@ -265,6 +302,43 @@ function runReconcile(qedgen) {
     );
   }
 
+  return 0;
+}
+
+function runBackend(name, commandName, args, options = {}) {
+  console.log(`qedgen verify: ${name}`);
+  const result = spawnSync(commandName, args, {
+    cwd: options.cwd ?? process.cwd(),
+    stdio: 'inherit',
+    env: qedgenEnv(),
+    shell: false,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    console.error(`qedgen verify: ${name} failed with status ${result.status ?? 'unknown'}`);
+    return result.status ?? 1;
+  }
+  return 0;
+}
+
+function runVerify() {
+  const backends = [
+    ['proptest', 'cargo', ['test', '--test', 'proptest'], { cwd: MODEL_DIR }],
+    ['kani', 'cargo', ['kani', '--tests'], { cwd: MODEL_DIR }],
+    ['lean', 'lake', ['build'], { cwd: LEAN_DIR }],
+  ];
+
+  for (const [name, commandName, args, options] of backends) {
+    const status = runBackend(name, commandName, args, options);
+    if (status !== 0) {
+      return status;
+    }
+  }
+
+  console.log('qedgen verify: all generated backends passed');
   return 0;
 }
 
@@ -419,6 +493,49 @@ use proptest::prelude::*;
 
 const MAX_CONFIGURED_FEE_BPS: u16 = 9999;
 const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS: u16 = 50;
+const SAFE_RAIL_CONFIDENCE_BPS: u16 = 25;
+const SAFE_RAIL_MAX_CONFIDENCE_BPS: u16 = 100;
+const SAFE_RAIL_PRICE_USD_1E8: u64 = 100_000_000;
+const SAFE_RAIL_STALENESS_SECONDS: u64 = 3_600;
+const SAFE_RAIL_PUBLISHED_AT_TS: u64 = 1;
+
+fn safe_settle_claim_args(amount: u64) -> SettleClaimCaseArgs {
+    SettleClaimCaseArgs {
+        amount,
+        rail_active: true,
+        rail_payout_enabled: true,
+        rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
+        rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
+        rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
+        rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
+        rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
+    }
+}
+
+fn safe_selected_asset_args(
+    claim_credit_amount: u64,
+    payout_amount: u64,
+    max_overpay_bps: u16,
+) -> SettleClaimCaseSelectedAssetArgs {
+    SettleClaimCaseSelectedAssetArgs {
+        claim_credit_amount,
+        payout_amount,
+        max_overpay_bps,
+        claim_rail_active: true,
+        claim_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
+        claim_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
+        claim_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
+        claim_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
+        claim_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
+        payout_rail_active: true,
+        payout_rail_payout_enabled: true,
+        payout_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
+        payout_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
+        payout_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
+        payout_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
+        payout_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
+    }
+}
 
 proptest! {
     #[test]
@@ -429,7 +546,7 @@ proptest! {
 
     #[test]
     fn claim_payment_guard_keeps_paid_within_approval(paid_amount in 0u64..=(u64::MAX / 2), amount in 1u64..=(u64::MAX / 2)) {
-        let args = SettleClaimCaseArgs { amount };
+        let args = safe_settle_claim_args(amount);
         let approved_amount = paid_amount + args.amount;
         let next_paid = paid_amount + args.amount;
         prop_assert!(next_paid <= approved_amount);
@@ -437,11 +554,7 @@ proptest! {
 
     #[test]
     fn selected_asset_guard_bounds_overpay_and_claim_credit(paid_amount in 0u64..=(u64::MAX / 2), claim_credit_amount in 1u64..=(u64::MAX / 2), payout_amount in 1u64..=u64::MAX, max_overpay_bps in 0u16..=MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS) {
-        let args = SettleClaimCaseSelectedAssetArgs {
-            claim_credit_amount,
-            payout_amount,
-            max_overpay_bps,
-        };
+        let args = safe_selected_asset_args(claim_credit_amount, payout_amount, max_overpay_bps);
         let approved_amount = paid_amount + args.claim_credit_amount;
         let next_paid = paid_amount + args.claim_credit_amount;
         prop_assert!(args.payout_amount > 0);
@@ -552,6 +665,49 @@ use omegaxprotocol::state::{
 
 const MAX_CONFIGURED_FEE_BPS: u16 = 9999;
 const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS: u16 = 50;
+const SAFE_RAIL_CONFIDENCE_BPS: u16 = 25;
+const SAFE_RAIL_MAX_CONFIDENCE_BPS: u16 = 100;
+const SAFE_RAIL_PRICE_USD_1E8: u64 = 100_000_000;
+const SAFE_RAIL_STALENESS_SECONDS: u64 = 3_600;
+const SAFE_RAIL_PUBLISHED_AT_TS: u64 = 1;
+
+fn safe_settle_claim_args(amount: u64) -> SettleClaimCaseArgs {
+    SettleClaimCaseArgs {
+        amount,
+        rail_active: true,
+        rail_payout_enabled: true,
+        rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
+        rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
+        rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
+        rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
+        rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
+    }
+}
+
+fn safe_selected_asset_args(
+    claim_credit_amount: u64,
+    payout_amount: u64,
+    max_overpay_bps: u16,
+) -> SettleClaimCaseSelectedAssetArgs {
+    SettleClaimCaseSelectedAssetArgs {
+        claim_credit_amount,
+        payout_amount,
+        max_overpay_bps,
+        claim_rail_active: true,
+        claim_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
+        claim_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
+        claim_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
+        claim_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
+        claim_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
+        payout_rail_active: true,
+        payout_rail_payout_enabled: true,
+        payout_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
+        payout_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
+        payout_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
+        payout_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
+        payout_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
+    }
+}
 
 #[kani::proof]
 fn protocol_fee_guard_accepts_configured_domain() {
@@ -568,7 +724,7 @@ fn claim_payment_guard_keeps_paid_within_approval() {
     let amount: u64 = kani::any();
     kani::assume(amount > 0);
     kani::assume(paid_amount <= u64::MAX - amount);
-    let args = SettleClaimCaseArgs { amount };
+    let args = safe_settle_claim_args(amount);
     let approved_amount = paid_amount + args.amount;
     let next_paid = paid_amount + args.amount;
     assert!(next_paid <= approved_amount);
@@ -584,11 +740,7 @@ fn selected_asset_guard_bounds_overpay_and_claim_credit() {
     kani::assume(payout_amount > 0);
     kani::assume(max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS);
     kani::assume(paid_amount <= u64::MAX - claim_credit_amount);
-    let args = SettleClaimCaseSelectedAssetArgs {
-        claim_credit_amount,
-        payout_amount,
-        max_overpay_bps,
-    };
+    let args = safe_selected_asset_args(claim_credit_amount, payout_amount, max_overpay_bps);
     let approved_amount = paid_amount + args.claim_credit_amount;
     let next_paid = paid_amount + args.claim_credit_amount;
     assert!(args.payout_amount > 0);
@@ -651,6 +803,10 @@ function postprocessRustModel() {
           `use crate::{${contextMatch[1]}, ${argsMatch[1]}};`,
         );
       }
+      text = text.replace(
+        'self.protocol_governance.governance_authority = pending_authority;',
+        'self.protocol_governance.governance_authority = self.pending_authority.key();',
+      );
       writeFileSync(path, text);
     }
   }
@@ -660,13 +816,61 @@ function postprocessRustModel() {
     let guards = readFileSync(guardsPath, 'utf8');
     guards = guards.replace(/(pub fn \w+<'info>\([^{]+ \{)\n/g, `$1
     let emergency_pause = false;
+    let active = true;
     let paid_amount: u64 = 0;
     let approved_amount: u64 = u64::MAX;
     let withdrawn_fees: u64 = 0;
     let accrued_fees: u64 = u64::MAX;
 `);
+    guards = guards.replace(
+      /(pub fn publish_reserve_asset_rail_price<'info>\([^{]+\{[\s\S]*?let accrued_fees: u64 = u64::MAX;\n)/,
+      `$1    let max_confidence_bps = ctx.reserve_asset_rail.max_confidence_bps;\n`,
+    );
+    guards = guards.replace(
+      'if !(args.confidence_bps <= max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }',
+      'if !((args.confidence_bps as u64) <= max_confidence_bps) { return Err(OmegaxProtocolError::ReserveAssetPriceConfidenceTooWide.into()); }',
+    );
     guards = guards.replace(/[ \t]+$/gm, '');
     writeFileSync(guardsPath, guards);
+  }
+
+  const errorsPath = `${MODEL_DIR}/src/errors.rs`;
+  if (existsSync(errorsPath)) {
+    let errors = readFileSync(errorsPath, 'utf8');
+    if (!errors.includes('ReserveAssetPriceConfidenceTooWide')) {
+      errors = errors.replace(
+        `    ReserveAssetPriceInvalid = 105,
+    CommitmentPaymentRailMismatch = 106,
+    CommitmentPaymentRailInactive = 107,
+    PartialObligationTransitionUnsupported = 108,
+    InvalidObligationDeliveryMode = 109,
+    ClaimAdjudicationLocked = 110,
+    SelectedAssetPayoutSameMint = 111,
+    SelectedAssetPayoutUnderpaid = 112,
+    SelectedAssetPayoutOverpaid = 113,
+    SelectedAssetOverpayBpsTooHigh = 114,
+    ReserveAssetMintDecimalsUnsupported = 115,
+    HealthPlanInactive = 116,
+    CapitalClassInactive = 117,
+    InvalidLifecycle = 118,`,
+        `    ReserveAssetPriceInvalid = 105,
+    ReserveAssetPriceConfidenceTooWide = 106,
+    CommitmentPaymentRailMismatch = 107,
+    CommitmentPaymentRailInactive = 108,
+    PartialObligationTransitionUnsupported = 109,
+    InvalidObligationDeliveryMode = 110,
+    ClaimAdjudicationLocked = 111,
+    SelectedAssetPayoutSameMint = 112,
+    SelectedAssetPayoutUnderpaid = 113,
+    SelectedAssetPayoutOverpaid = 114,
+    SelectedAssetOverpayBpsTooHigh = 115,
+    ReserveAssetMintDecimalsUnsupported = 116,
+    HealthPlanInactive = 117,
+    CapitalClassInactive = 118,
+    InvalidLifecycle = 119,`,
+      );
+      writeFileSync(errorsPath, errors);
+    }
   }
 
   for (const harnessPath of [KANI_HARNESS, PROPTEST_HARNESS]) {
@@ -706,6 +910,9 @@ if (command === 'check') {
 }
 if (command === 'reconcile') {
   process.exit(runReconcile(qedgen));
+}
+if (command === 'verify') {
+  process.exit(runVerify());
 }
 
 const result = spawnSync(qedgen, [...argsFor(command), ...extraArgs], {

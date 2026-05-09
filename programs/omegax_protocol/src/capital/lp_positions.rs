@@ -40,6 +40,7 @@ pub(crate) fn deposit_into_capital_class(
 ) -> Result<()> {
     require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
     require_positive_amount(args.amount)?;
+    require_capital_class_active(&ctx.accounts.capital_class)?;
     require!(
         ctx.accounts.capital_class.pause_flags & PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS == 0,
         OmegaXProtocolError::CapitalSubscriptionsPaused

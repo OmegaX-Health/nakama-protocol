@@ -67,10 +67,18 @@ instance : Inhabited BackfillSchemaDependencyLedgerArgs := ⟨{
 
 structure ConfigureReserveAssetRailArgs where
   active : Bool
+  max_staleness_seconds : Nat
+  payout_enabled : Bool
+  capacity_enabled : Bool
+  max_confidence_bps : Nat
   deriving Repr, DecidableEq, BEq
 
 instance : Inhabited ConfigureReserveAssetRailArgs := ⟨{
   active := false,
+  max_staleness_seconds := 0,
+  payout_enabled := false,
+  capacity_enabled := false,
+  max_confidence_bps := 0,
 }⟩
 
 structure CreateAllocationPositionArgs where
@@ -377,30 +385,84 @@ instance : Inhabited SetProtocolEmergencyPauseArgs := ⟨{
 
 structure SettleClaimCaseArgs where
   amount : Nat
+  rail_active : Bool
+  rail_payout_enabled : Bool
+  rail_price_usd_1e8 : Nat
+  rail_max_staleness_seconds : Nat
+  rail_max_confidence_bps : Nat
+  rail_last_price_confidence_bps : Nat
+  rail_last_price_published_at_ts : Nat
   deriving Repr, DecidableEq, BEq
 
 instance : Inhabited SettleClaimCaseArgs := ⟨{
   amount := 0,
+  rail_active := false,
+  rail_payout_enabled := false,
+  rail_price_usd_1e8 := 0,
+  rail_max_staleness_seconds := 0,
+  rail_max_confidence_bps := 0,
+  rail_last_price_confidence_bps := 0,
+  rail_last_price_published_at_ts := 0,
 }⟩
 
 structure SettleClaimCaseSelectedAssetArgs where
   claim_credit_amount : Nat
   payout_amount : Nat
   max_overpay_bps : Nat
+  claim_rail_active : Bool
+  claim_rail_price_usd_1e8 : Nat
+  claim_rail_max_staleness_seconds : Nat
+  claim_rail_max_confidence_bps : Nat
+  claim_rail_last_price_confidence_bps : Nat
+  claim_rail_last_price_published_at_ts : Nat
+  payout_rail_active : Bool
+  payout_rail_payout_enabled : Bool
+  payout_rail_price_usd_1e8 : Nat
+  payout_rail_max_staleness_seconds : Nat
+  payout_rail_max_confidence_bps : Nat
+  payout_rail_last_price_confidence_bps : Nat
+  payout_rail_last_price_published_at_ts : Nat
   deriving Repr, DecidableEq, BEq
 
 instance : Inhabited SettleClaimCaseSelectedAssetArgs := ⟨{
   claim_credit_amount := 0,
   payout_amount := 0,
   max_overpay_bps := 0,
+  claim_rail_active := false,
+  claim_rail_price_usd_1e8 := 0,
+  claim_rail_max_staleness_seconds := 0,
+  claim_rail_max_confidence_bps := 0,
+  claim_rail_last_price_confidence_bps := 0,
+  claim_rail_last_price_published_at_ts := 0,
+  payout_rail_active := false,
+  payout_rail_payout_enabled := false,
+  payout_rail_price_usd_1e8 := 0,
+  payout_rail_max_staleness_seconds := 0,
+  payout_rail_max_confidence_bps := 0,
+  payout_rail_last_price_confidence_bps := 0,
+  payout_rail_last_price_published_at_ts := 0,
 }⟩
 
 structure SettleObligationArgs where
   amount : Nat
+  rail_active : Bool
+  rail_payout_enabled : Bool
+  rail_price_usd_1e8 : Nat
+  rail_max_staleness_seconds : Nat
+  rail_max_confidence_bps : Nat
+  rail_last_price_confidence_bps : Nat
+  rail_last_price_published_at_ts : Nat
   deriving Repr, DecidableEq, BEq
 
 instance : Inhabited SettleObligationArgs := ⟨{
   amount := 0,
+  rail_active := false,
+  rail_payout_enabled := false,
+  rail_price_usd_1e8 := 0,
+  rail_max_staleness_seconds := 0,
+  rail_max_confidence_bps := 0,
+  rail_last_price_confidence_bps := 0,
+  rail_last_price_published_at_ts := 0,
 }⟩
 
 structure UpdateAllocationCapsArgs where
@@ -506,6 +568,7 @@ inductive Status where
 
 structure State where
   governance_authority : Pubkey
+  pending_authority : Pubkey
   authority : Pubkey
   plan_admin : Pubkey
   wallet : Pubkey
@@ -524,6 +587,10 @@ structure State where
   total_assets : Nat
   last_price_usd_1e8 : Nat
   last_price_confidence_bps : Nat
+  max_confidence_bps : Nat
+  max_staleness_seconds : Nat
+  payout_enabled : Bool
+  capacity_enabled : Bool
   last_price_published_at_ts : Nat
   accrued_fees : Nat
   withdrawn_fees : Nat
@@ -596,6 +663,16 @@ def rotate_protocol_governance_authorityTransition (s : State) (signer : Pubkey)
     some { s with status := .Live }
   else none
 
+def accept_protocol_governance_authorityTransition (s : State) (signer : Pubkey) : Option State :=
+  if signer = s.pending_authority ∧ s.status = .Live then
+    some { s with governance_authority := s.pending_authority, status := .Live }
+  else none
+
+def cancel_protocol_governance_authority_transferTransition (s : State) (signer : Pubkey) : Option State :=
+  if signer = s.authority ∧ s.status = .Live then
+    some { s with status := .Live }
+  else none
+
 def create_reserve_domainTransition (s : State) (signer : Pubkey) (args : CreateReserveDomainArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
     some { s with status := .Live }
@@ -612,12 +689,12 @@ def create_domain_asset_vaultTransition (s : State) (signer : Pubkey) (args : Cr
   else none
 
 def configure_reserve_asset_railTransition (s : State) (signer : Pubkey) (args : ConfigureReserveAssetRailArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
-    some { s with status := .Live }
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.max_staleness_seconds > 0) ∧ (args.max_confidence_bps > 0) ∧ (args.max_confidence_bps ≤ 10000) then
+    some { s with max_confidence_bps := args.max_confidence_bps, max_staleness_seconds := args.max_staleness_seconds, payout_enabled := args.payout_enabled, capacity_enabled := args.capacity_enabled, status := .Live }
   else none
 
 def publish_reserve_asset_rail_priceTransition (s : State) (signer : Pubkey) (args : PublishReserveAssetRailPriceArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.price_usd_1e8 > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (s.active = true) ∧ (args.price_usd_1e8 > 0) ∧ (args.published_at_ts > 0) ∧ (s.max_confidence_bps > 0) ∧ (args.confidence_bps ≤ s.max_confidence_bps) then
     some { s with last_price_usd_1e8 := args.price_usd_1e8, last_price_confidence_bps := args.confidence_bps, last_price_published_at_ts := args.published_at_ts, status := .Live }
   else none
 
@@ -643,7 +720,7 @@ def create_health_planTransition (s : State) (signer : Pubkey) (args : CreateHea
 
 def update_health_plan_controlsTransition (s : State) (signer : Pubkey) (args : UpdateHealthPlanControlsArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
-    some { s with status := .Live }
+    some { s with active := args.active, status := .Live }
   else none
 
 def create_policy_seriesTransition (s : State) (signer : Pubkey) (args : CreatePolicySeriesArgs) : Option State :=
@@ -662,7 +739,7 @@ def version_policy_seriesTransition (s : State) (signer : Pubkey) (args : Versio
   else none
 
 def open_member_positionTransition (s : State) (signer : Pubkey) (args : OpenMemberPositionArgs) : Option State :=
-  if signer = s.wallet ∧ s.status = .Live then
+  if signer = s.wallet ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (s.active = true) then
     some { s with eligibility_status := args.eligibility_status, delegated_rights := args.delegated_rights, status := .Live }
   else none
 
@@ -737,7 +814,7 @@ def reserve_obligationTransition (s : State) (signer : Pubkey) (args : ReserveOb
   else none
 
 def settle_obligationTransition (s : State) (signer : Pubkey) (args : SettleObligationArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) ∧ (args.rail_active = true) ∧ (args.rail_payout_enabled = true) ∧ (args.rail_price_usd_1e8 > 0) ∧ (args.rail_max_staleness_seconds > 0) ∧ (args.rail_max_confidence_bps > 0) ∧ (args.rail_last_price_confidence_bps ≤ args.rail_max_confidence_bps) ∧ (args.rail_last_price_published_at_ts > 0) then
     some { s with status := .Live }
   else none
 
@@ -747,7 +824,7 @@ def release_reserveTransition (s : State) (signer : Pubkey) (args : ReleaseReser
   else none
 
 def open_claim_caseTransition (s : State) (signer : Pubkey) (args : OpenClaimCaseArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (s.active = true) then
     some { s with review_state := 0, status := .Live }
   else none
 
@@ -767,12 +844,12 @@ def adjudicate_claim_caseTransition (s : State) (signer : Pubkey) (args : Adjudi
   else none
 
 def settle_claim_caseTransition (s : State) (signer : Pubkey) (args : SettleClaimCaseArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) ∧ (s.paid_amount + args.amount ≤ s.approved_amount) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) ∧ (s.paid_amount + args.amount ≤ s.approved_amount) ∧ (args.rail_active = true) ∧ (args.rail_payout_enabled = true) ∧ (args.rail_price_usd_1e8 > 0) ∧ (args.rail_max_staleness_seconds > 0) ∧ (args.rail_max_confidence_bps > 0) ∧ (args.rail_last_price_confidence_bps ≤ args.rail_max_confidence_bps) ∧ (args.rail_last_price_published_at_ts > 0) then
     some { s with status := .Live }
   else none
 
 def settle_claim_case_selected_assetTransition (s : State) (signer : Pubkey) (args : SettleClaimCaseSelectedAssetArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.claim_credit_amount > 0) ∧ (args.payout_amount > 0) ∧ (args.max_overpay_bps ≤ 50) ∧ (s.paid_amount + args.claim_credit_amount ≤ s.approved_amount) then
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.claim_credit_amount > 0) ∧ (args.payout_amount > 0) ∧ (args.max_overpay_bps ≤ 50) ∧ (s.paid_amount + args.claim_credit_amount ≤ s.approved_amount) ∧ (args.claim_rail_active = true) ∧ (args.claim_rail_price_usd_1e8 > 0) ∧ (args.claim_rail_max_staleness_seconds > 0) ∧ (args.claim_rail_max_confidence_bps > 0) ∧ (args.claim_rail_last_price_confidence_bps ≤ args.claim_rail_max_confidence_bps) ∧ (args.claim_rail_last_price_published_at_ts > 0) ∧ (args.payout_rail_active = true) ∧ (args.payout_rail_payout_enabled = true) ∧ (args.payout_rail_price_usd_1e8 > 0) ∧ (args.payout_rail_max_staleness_seconds > 0) ∧ (args.payout_rail_max_confidence_bps > 0) ∧ (args.payout_rail_last_price_confidence_bps ≤ args.payout_rail_max_confidence_bps) ∧ (args.payout_rail_last_price_published_at_ts > 0) then
     some { s with status := .Live }
   else none
 
@@ -797,7 +874,7 @@ def update_lp_position_credentialingTransition (s : State) (signer : Pubkey) (ar
   else none
 
 def deposit_into_capital_classTransition (s : State) (signer : Pubkey) (args : DepositIntoCapitalClassArgs) : Option State :=
-  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
+  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) ∧ (s.active = true) then
     some { s with status := .Live }
   else none
 
@@ -925,6 +1002,8 @@ inductive Operation where
   | initialize_protocol_governance (args : InitializeProtocolGovernanceArgs)
   | set_protocol_emergency_pause (args : SetProtocolEmergencyPauseArgs)
   | rotate_protocol_governance_authority (args : RotateProtocolGovernanceAuthorityArgs)
+  | accept_protocol_governance_authority
+  | cancel_protocol_governance_authority_transfer
   | create_reserve_domain (args : CreateReserveDomainArgs)
   | update_reserve_domain_controls (args : UpdateReserveDomainControlsArgs)
   | create_domain_asset_vault (args : CreateDomainAssetVaultArgs)
@@ -995,6 +1074,8 @@ def applyOp (s : State) (signer : Pubkey) : Operation → Option State
   | .initialize_protocol_governance args => initialize_protocol_governanceTransition s signer args
   | .set_protocol_emergency_pause args => set_protocol_emergency_pauseTransition s signer args
   | .rotate_protocol_governance_authority args => rotate_protocol_governance_authorityTransition s signer args
+  | .accept_protocol_governance_authority => accept_protocol_governance_authorityTransition s signer
+  | .cancel_protocol_governance_authority_transfer => cancel_protocol_governance_authority_transferTransition s signer
   | .create_reserve_domain args => create_reserve_domainTransition s signer args
   | .update_reserve_domain_controls args => update_reserve_domain_controlsTransition s signer args
   | .create_domain_asset_vault args => create_domain_asset_vaultTransition s signer args

@@ -8,7 +8,6 @@ import test from "node:test";
 import {
   Connection,
   Keypair,
-  LAMPORTS_PER_SOL,
   PublicKey,
   sendAndConfirmTransaction,
   SystemProgram,
@@ -24,6 +23,7 @@ import {
 } from "@solana/spl-token";
 
 import protocolModule from "../frontend/lib/protocol.ts";
+import { requestConfirmedAirdrops } from "./support/airdrop.ts";
 
 const {
   COMMITMENT_MODE_DIRECT_PREMIUM,
@@ -131,12 +131,6 @@ type CustodyAssetResult = {
   waterfallHaircutBps: number;
   waterfallCapacity: string;
 };
-
-async function airdrop(connection: Connection, recipient: PublicKey): Promise<void> {
-  const latest = await connection.getLatestBlockhash("confirmed");
-  const signature = await connection.requestAirdrop(recipient, 5 * LAMPORTS_PER_SOL);
-  await connection.confirmTransaction({ signature, ...latest }, "confirmed");
-}
 
 async function sendBuiltTransaction(
   connection: Connection,
@@ -303,10 +297,10 @@ test("localnet commitment custody is asset-agnostic across payment rails", async
   const initializedFeeVaults = new Set<string>();
   const custodyResults: CustodyAssetResult[] = [];
 
-  await Promise.all([
-    airdrop(connection, governance.publicKey),
-    airdrop(connection, attacker.publicKey),
-    ...depositors.map((depositor) => airdrop(connection, depositor.publicKey)),
+  await requestConfirmedAirdrops(connection, [
+    governance.publicKey,
+    attacker.publicKey,
+    ...depositors.map((depositor) => depositor.publicKey),
   ]);
 
   const domainId = `commitment-custody-${Date.now().toString(36)}`;
@@ -416,6 +410,7 @@ test("localnet commitment custody is asset-agnostic across payment rails", async
         payoutPriority: asset.payoutPriority,
         oracleSource: RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED,
         maxStalenessSeconds: 86_400n,
+        maxConfidenceBps: 150,
         haircutBps: asset.haircutBps,
         maxExposureBps: 10_000,
         depositEnabled: true,

@@ -25,6 +25,8 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   const initPoolOracleFeeVaultArgs = idl.types.find((entry) => entry.name === "InitPoolOracleFeeVaultArgs");
   const requestRedemptionArgs = idl.types.find((entry) => entry.name === "RequestRedemptionArgs");
   const processRedemptionArgs = idl.types.find((entry) => entry.name === "ProcessRedemptionQueueArgs");
+  const configureReserveAssetRailArgs = idl.types.find((entry) => entry.name === "ConfigureReserveAssetRailArgs");
+  const reserveAssetRailAccount = idl.types.find((entry) => entry.name === "ReserveAssetRail");
   const selectedAssetPayoutArgs = idl.types.find((entry) => entry.name === "SettleClaimCaseSelectedAssetArgs");
   const claimCaseAccount = idl.types.find((entry) => entry.name === "ClaimCase");
   const claimAttestationAccount = idl.types.find((entry) => entry.name === "ClaimAttestation");
@@ -204,6 +206,18 @@ test("canonical contract exposes the health-capital-markets surface", () => {
       `settle_claim_case_selected_asset missing ${accountName}`,
     );
   }
+  for (const accountName of [
+    "liquidity_pool",
+    "capital_class",
+    "pool_class_ledger",
+    "allocation_position",
+    "allocation_ledger",
+  ]) {
+    assert(
+      PROTOCOL_INSTRUCTION_ACCOUNTS.create_obligation.some((account) => account.name === accountName),
+      `create_obligation missing ${accountName}`,
+    );
+  }
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.reserve_obligation.find((account) => account.name === "claim_case")?.pdaSeeds);
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.release_reserve.find((account) => account.name === "claim_case")?.pdaSeeds);
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.find((account) => account.name === "claim_case")?.pdaSeeds);
@@ -237,6 +251,8 @@ test("canonical contract exposes the health-capital-markets surface", () => {
     processRedemptionArgs?.type.fields?.map((field) => field.name),
     ["shares"],
   );
+  assert(configureReserveAssetRailArgs?.type.fields?.some((field) => field.name === "max_confidence_bps"));
+  assert(reserveAssetRailAccount?.type.fields?.some((field) => field.name === "max_confidence_bps"));
   assert.deepEqual(
     selectedAssetPayoutArgs?.type.fields?.map((field) => field.name),
     ["claim_credit_amount", "payout_amount", "max_overpay_bps", "settlement_reason_hash"],

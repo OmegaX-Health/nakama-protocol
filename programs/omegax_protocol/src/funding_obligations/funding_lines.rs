@@ -22,6 +22,25 @@ pub(crate) fn open_funding_line(
         ctx.accounts.domain_asset_ledger.asset_mint == args.asset_mint,
         OmegaXProtocolError::AssetMintMismatch
     );
+    validate_optional_policy_series(
+        ctx.accounts.policy_series.as_deref(),
+        args.policy_series,
+        ctx.accounts.health_plan.key(),
+        false,
+    )?;
+    if args.policy_series == ZERO_PUBKEY {
+        require!(
+            ctx.accounts.series_reserve_ledger.is_none(),
+            OmegaXProtocolError::SeriesLedgerUnexpected
+        );
+    } else {
+        let series_ledger = ctx
+            .accounts
+            .series_reserve_ledger
+            .as_deref()
+            .ok_or(OmegaXProtocolError::PolicySeriesMissing)?;
+        validate_optional_series_ledger(Some(series_ledger), args.policy_series, args.asset_mint)?;
+    }
 
     let funding_line = &mut ctx.accounts.funding_line;
     funding_line.reserve_domain = ctx.accounts.health_plan.reserve_domain;
@@ -117,6 +136,7 @@ pub struct OpenFundingLine<'info> {
         bump
     )]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    pub policy_series: Option<Box<Account<'info, PolicySeries>>>,
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
     pub system_program: Program<'info, System>,

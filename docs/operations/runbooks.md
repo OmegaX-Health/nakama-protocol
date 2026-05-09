@@ -43,9 +43,9 @@ The `scripts/CLAUDE.md` file is explicit that bootstrap, deploy, and devnet gove
 When the on-chain program surface changes, regenerate the checked-in artifacts so SDKs downstream stay in sync:
 
 ```bash
-npm run anchor:idl              # rebuilds + copies idl/omegax_protocol.json + writes idl/omegax_protocol.source-hash
+npm run anchor:idl              # rebuilds + copies checked-in program IDLs + writes source hashes
 npm run protocol:contract       # regenerates shared/protocol_contract.json and frontend/lib/generated/
-npm run idl:freshness:check     # CI-mirrored guard: fails if program source drifted from the checked-in IDL
+npm run idl:freshness:check     # CI-mirrored guard: fails if any gated program source drifted from its checked-in IDL
 npm run protocol:contract:check # CI-mirrored guard: fails if generated downstreams drifted from the IDL
 ```
 

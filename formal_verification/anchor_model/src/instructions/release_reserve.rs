@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{ReleaseReserve, ReleaseReserveArgs};
 
 impl<'info> ReleaseReserve<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "release_reserve", hash = "31139d946cb9810f", spec_hash = "9e50c15008d2c9b7")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "release_reserve", hash = "31139d946cb9810f", spec_hash = "0a499995fb103e5f")]
     #[inline(always)]
     pub fn handler(&mut self, args: ReleaseReserveArgs) -> Result<()> {
         guards::release_reserve(self, args)?;

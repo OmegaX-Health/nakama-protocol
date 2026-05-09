@@ -25,6 +25,18 @@ pub(crate) fn require_class_access_mode(restriction_mode: u8, credentialed: bool
     }
 }
 
+pub(crate) fn derive_queue_only_redemptions(pause_flags: u32, redemption_policy: u8) -> bool {
+    pause_flags & PAUSE_FLAG_REDEMPTION_QUEUE_ONLY != 0
+        || redemption_policy == REDEMPTION_POLICY_QUEUE_ONLY
+}
+
+pub(crate) fn debit_realized_pnl_for_loss(realized_pnl: i64, amount: u64) -> Result<i64> {
+    let amount = i64::try_from(amount).map_err(|_| OmegaXProtocolError::ArithmeticError)?;
+    realized_pnl
+        .checked_sub(amount)
+        .ok_or_else(|| OmegaXProtocolError::ArithmeticError.into())
+}
+
 pub(crate) fn ensure_lp_position_binding(
     lp_position: &mut LPPosition,
     capital_class: Pubkey,
@@ -87,6 +99,10 @@ pub(crate) fn apply_lp_position_deposit(
     min_lockup_seconds: i64,
     now_ts: i64,
 ) -> Result<()> {
+    require!(
+        min_lockup_seconds >= 0,
+        OmegaXProtocolError::InvalidLockupSeconds
+    );
     lp_position.shares = checked_add(lp_position.shares, shares)?;
     lp_position.subscription_basis = checked_add(lp_position.subscription_basis, amount)?;
     lp_position.lockup_ends_at = now_ts

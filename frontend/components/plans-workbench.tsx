@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import { PlanCoveragePanel } from "@/components/plan-coverage-panel";
@@ -138,11 +139,12 @@ function humanizeFundingLineType(lineType: number): string {
   return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function PlansEmptyState({ title, copy }: { title: string; copy: string }) {
+function PlansEmptyState({ title, copy, action }: { title: string; copy: string; action?: ReactNode }) {
   return (
     <div className="plans-empty liquid-glass">
       <strong>{title}</strong>
       <p>{copy}</p>
+      {action ? <div className="plans-empty-actions">{action}</div> : null}
     </div>
   );
 }
@@ -347,6 +349,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
   const requestedTab = firstSearchParamValue(searchParams.tab);
   const querySetup = firstSearchParamValue(searchParams.setup)?.trim() ?? "";
   const genesisSetupMode = querySetup === GENESIS_PROTECT_ACUTE_TEMPLATE_KEY;
+  const allSeriesSelectorLabel = genesisSetupMode ? "All coverage products" : "All series";
   const queryPool = firstSearchParamValue(searchParams.pool)?.trim() ?? "";
   const genesisPlan = useMemo(
     () => snapshot.healthPlans.find((plan) => plan.planId === GENESIS_PROTECT_ACUTE_PLAN_ID) ?? null,
@@ -682,6 +685,8 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
   const totalFunded = planFundingLines.reduce((sum, line) => sum + Number(line.fundedAmount), 0);
   const totalReserved = planFundingLines.reduce((sum, line) => sum + Number(line.reservedAmount), 0);
   const poolUtilization = totalFunded > 0 ? Math.round((totalReserved / totalFunded) * 100) : 0;
+  const filteredClaimApproved = filteredClaims.reduce((sum, claim) => sum + Number(claim.approvedAmount), 0);
+  const filteredClaimReserved = filteredClaims.reduce((sum, claim) => sum + Number(claim.reservedAmount), 0);
 
   // Per-series vitality bars (kept on overview)
   const vitalityBars = useMemo(() => {
@@ -859,11 +864,11 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
               renderMeta={(series) => `${series.seriesId} · ${describeSeriesMode(series.mode)}`}
               placeholder={seriesSelectorOptions.length > 0
                 ? seriesSelectionOptional
-                  ? (genesisSetupMode ? "All coverage products" : "All series")
+                  ? allSeriesSelectorLabel
                   : (activeTab === "coverage" || genesisSetupMode ? "Choose coverage product" : "All series")
                 : "No coverage products"}
               allowEmptySelection={seriesSelectionOptional}
-              emptyLabel={genesisSetupMode ? "All coverage products" : "All series"}
+              emptyLabel={allSeriesSelectorLabel}
               disabled={!selectedPlan || seriesSelectorOptions.length === 0}
               onChange={(value) => updateParams({
                 series: value || null,
@@ -1292,8 +1297,18 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                           <PlansEmptyState
                             title="No claim cases"
                             copy={selectedSeries
-                              ? "This coverage product does not currently expose claim cases. Choose “All coverage products” in the selector above to see plan-wide claims."
-                              : "This plan does not currently expose claim cases."}
+                              ? `No claims are attached to ${selectedSeries.displayName}. Show ${allSeriesSelectorLabel} to review plan-wide claims.`
+                              : "No claim cases are attached to this plan yet."}
+                            action={selectedSeries ? (
+                              <button
+                                type="button"
+                                className="plans-inline-action"
+                                onClick={() => updateParams({ series: null, claim: null, panel: null })}
+                              >
+                                Show {allSeriesSelectorLabel}
+                                <span className="material-symbols-outlined" aria-hidden="true">filter_alt_off</span>
+                              </button>
+                            ) : null}
                           />
                         )}
                       </article>
@@ -1471,7 +1486,46 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
 
             {/* ── Rail ───────────────────────── */}
             <aside className="plans-rail">
-              <section className="plans-rail-card heavy-glass">
+              {activeTab === "claims" ? (
+                <section className="plans-rail-card heavy-glass">
+                  <div className="plans-rail-head">
+                    <span className="plans-rail-tag">Claims posture</span>
+                    <span className="plans-rail-subtag">
+                      <span className="plans-live-dot" aria-hidden="true" />
+                      Read-only
+                    </span>
+                  </div>
+                  <div className="plans-rail-hero">
+                    <span className="plans-rail-hero-val">
+                      {filteredClaims.length > 0
+                        ? `${filteredClaims.length} ${filteredClaims.length === 1 ? "case" : "cases"}`
+                        : "No cases"}
+                    </span>
+                    <span className="plans-rail-hero-sub">
+                      {selectedSeries
+                        ? `${selectedSeries.displayName} filter`
+                        : "Plan-wide claim register"}
+                    </span>
+                  </div>
+                  <div className="plans-rail-row">
+                    <span>Approved</span>
+                    <strong title={rawAmountTitle(filteredClaimApproved)}>{formatSettlementUnits(filteredClaimApproved)}</strong>
+                  </div>
+                  <div className="plans-rail-row">
+                    <span>Reserved</span>
+                    <strong title={rawAmountTitle(filteredClaimReserved)}>{formatSettlementUnits(filteredClaimReserved)}</strong>
+                  </div>
+                  <div className="plans-rail-row">
+                    <span>Obligations</span>
+                    <strong>{filteredObligations.length}</strong>
+                  </div>
+                  <div className="plans-rail-row">
+                    <span>Operator mode</span>
+                    <strong>{canOperate ? "Controls available" : "Read-only"}</strong>
+                  </div>
+                </section>
+              ) : (
+                <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
                   <span className="plans-rail-tag">Sponsor velocity</span>
                   <span className="plans-rail-subtag">
@@ -1511,11 +1565,12 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                   <strong>{poolUtilization}%</strong>
                 </div>
               </section>
+              )}
 
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
                   <span className="plans-rail-tag">Activity</span>
-                  <span className="plans-rail-subtag">Live audit</span>
+                  <span className="plans-rail-subtag">Activity log</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (

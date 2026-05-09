@@ -26,6 +26,14 @@ pub mod omegaxprotocol {
         ctx.accounts.handler(args)
     }
 
+    pub fn accept_protocol_governance_authority(ctx: Context<AcceptProtocolGovernanceAuthority>) -> Result<()> {
+        ctx.accounts.handler()
+    }
+
+    pub fn cancel_protocol_governance_authority_transfer(ctx: Context<CancelProtocolGovernanceAuthorityTransfer>) -> Result<()> {
+        ctx.accounts.handler()
+    }
+
     pub fn create_reserve_domain(ctx: Context<CreateReserveDomain>, args: CreateReserveDomainArgs) -> Result<()> {
         ctx.accounts.handler(args)
     }
@@ -313,6 +321,20 @@ pub struct SetProtocolEmergencyPause<'info> {
 
 #[derive(Accounts)]
 pub struct RotateProtocolGovernanceAuthority<'info> {
+    pub authority: Signer<'info>,
+    #[account(mut, has_one = authority)]
+    pub protocol_governance: Account<'info, OmegaxProtocolAccount>,
+}
+
+#[derive(Accounts)]
+pub struct AcceptProtocolGovernanceAuthority<'info> {
+    pub pending_authority: Signer<'info>,
+    #[account(mut, has_one = pending_authority)]
+    pub protocol_governance: Account<'info, OmegaxProtocolAccount>,
+}
+
+#[derive(Accounts)]
+pub struct CancelProtocolGovernanceAuthorityTransfer<'info> {
     pub authority: Signer<'info>,
     #[account(mut, has_one = authority)]
     pub protocol_governance: Account<'info, OmegaxProtocolAccount>,

@@ -295,6 +295,7 @@ export type ReserveAssetRailSnapshot = {
   oracleSource: number;
   oracleFeedIdHex: string;
   maxStalenessSeconds: number;
+  maxConfidenceBps: number;
   haircutBps: number;
   maxExposureBps: number;
   depositEnabled: boolean;
@@ -1795,10 +1796,17 @@ export function buildMixedReserveWaterfallModel(params: {
     const price = toBigIntAmount(rail.lastPriceUsd1e8);
     const publishedAt = Number(rail.lastPricePublishedAtTs ?? 0);
     const maxStaleness = Number(rail.maxStalenessSeconds ?? 0);
+    const confidenceBps = Number(rail.lastPriceConfidenceBps ?? 0);
+    const maxConfidenceBps = Number(rail.maxConfidenceBps ?? 0);
     const priceFresh =
       rail.capacityEnabled
       && price > 0n
-      && (maxStaleness === 0 || (publishedAt > 0 && nowTs - publishedAt <= maxStaleness));
+      && maxStaleness > 0
+      && maxConfidenceBps > 0
+      && confidenceBps <= maxConfidenceBps
+      && publishedAt > 0
+      && publishedAt <= nowTs
+      && nowTs - publishedAt <= maxStaleness;
     const decimals = Math.max(0, Math.min(18, params.assetDecimalsByMint?.[rail.assetMint] ?? 6));
     const decimalFactor = 10n ** BigInt(decimals);
     const haircutNumerator = BigInt(Math.max(0, 10_000 - rail.haircutBps));
@@ -1859,7 +1867,16 @@ function freshRailPrice(rail: ReserveAssetRailSnapshot | null | undefined, nowTs
   if (price <= 0n) return false;
   const publishedAt = Number(rail.lastPricePublishedAtTs ?? 0);
   const maxStaleness = Number(rail.maxStalenessSeconds ?? 0);
-  return maxStaleness > 0 && publishedAt > 0 && publishedAt <= nowTs && nowTs - publishedAt <= maxStaleness;
+  const confidenceBps = Number(rail.lastPriceConfidenceBps ?? 0);
+  const maxConfidenceBps = Number(rail.maxConfidenceBps ?? 0);
+  return (
+    maxStaleness > 0 &&
+    maxConfidenceBps > 0 &&
+    confidenceBps <= maxConfidenceBps &&
+    publishedAt > 0 &&
+    publishedAt <= nowTs &&
+    nowTs - publishedAt <= maxStaleness
+  );
 }
 
 function amountToUsd1e8(params: {
@@ -2845,6 +2862,7 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           oracleSource: Number(decodedField(decoded, "oracleSource", "oracle_source") ?? 0),
           oracleFeedIdHex: bytesToHex(decodedField(decoded, "oracleFeedId", "oracle_feed_id")),
           maxStalenessSeconds: numberFromAnchorValue(decodedField(decoded, "maxStalenessSeconds", "max_staleness_seconds")),
+          maxConfidenceBps: Number(decodedField(decoded, "maxConfidenceBps", "max_confidence_bps") ?? 0),
           haircutBps: Number(decodedField(decoded, "haircutBps", "haircut_bps") ?? 0),
           maxExposureBps: Number(decodedField(decoded, "maxExposureBps", "max_exposure_bps") ?? 0),
           depositEnabled: Boolean(decodedField(decoded, "depositEnabled", "deposit_enabled")),
@@ -3534,13 +3552,28 @@ function optionalProtocolAccount(
     : { pubkey: undefined, isWritable: false };
 }
 
+function isMissingOrZeroPublicKey(pubkey?: PublicKeyish | null): boolean {
+  return !pubkey || toPublicKey(pubkey).equals(ZERO_PUBKEY_KEY);
+}
+
+function optionalNonZeroProtocolAccount(
+  pubkey?: PublicKeyish | null,
+  isWritable = false,
+): ProtocolInstructionAccountInput {
+  return isMissingOrZeroPublicKey(pubkey)
+    ? optionalProtocolAccount(undefined)
+    : optionalProtocolAccount(pubkey, isWritable);
+}
+
 function optionalSeriesReserveLedgerAccount(
   policySeriesAddress: PublicKeyish | null | undefined,
   assetMint: PublicKeyish | null | undefined,
 ): ProtocolInstructionAccountInput {
   if (!policySeriesAddress || !assetMint) return optionalProtocolAccount(undefined);
+  const policySeries = toPublicKey(policySeriesAddress);
+  if (policySeries.equals(ZERO_PUBKEY_KEY)) return optionalProtocolAccount(undefined);
   return optionalProtocolAccount(
-    deriveSeriesReserveLedgerPda({ policySeries: policySeriesAddress, assetMint }),
+    deriveSeriesReserveLedgerPda({ policySeries, assetMint }),
     true,
   );
 }
@@ -4410,6 +4443,7 @@ export function buildConfigureReserveAssetRailTx(params: {
   oracleSource: number;
   oracleFeedIdHex?: string | null;
   maxStalenessSeconds: bigint;
+  maxConfidenceBps: number;
   haircutBps: number;
   maxExposureBps: number;
   depositEnabled: boolean;
@@ -4434,6 +4468,7 @@ export function buildConfigureReserveAssetRailTx(params: {
       oracle_source: params.oracleSource,
       oracle_feed_id: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.oracleFeedIdHex), 32)),
       max_staleness_seconds: params.maxStalenessSeconds,
+      max_confidence_bps: params.maxConfidenceBps,
       haircut_bps: params.haircutBps,
       max_exposure_bps: params.maxExposureBps,
       deposit_enabled: params.depositEnabled,
@@ -5100,6 +5135,7 @@ export function buildOpenFundingLineTx(params: {
         }),
         isWritable: true,
       },
+      optionalNonZeroProtocolAccount(params.policySeriesAddress),
       optionalSeriesReserveLedgerAccount(params.policySeriesAddress, assetMint),
       { pubkey: SystemProgram.programId },
     ],
@@ -5524,6 +5560,7 @@ export function buildRefundCommitmentTx(params: {
     },
     accounts: [
       { pubkey: depositor, isSigner: true, isWritable: true },
+      { pubkey: deriveProtocolGovernancePda() },
       { pubkey: campaign, isWritable: true },
       { pubkey: paymentRail },
       { pubkey: ledger, isWritable: true },
@@ -5619,6 +5656,7 @@ export function buildOpenMemberPositionTx(params: {
       { pubkey: wallet, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda() },
       { pubkey: params.healthPlanAddress },
+      optionalNonZeroProtocolAccount(params.seriesScopeAddress),
       { pubkey: memberPosition, isWritable: true },
       optionalProtocolAccount(membershipAnchorSeat, true),
       optionalProtocolAccount(params.tokenGateAccountAddress),
@@ -5876,7 +5914,10 @@ export function buildCreateObligationTx(params: {
         isWritable: true,
       },
       optionalSeriesReserveLedgerAccount(params.policySeriesAddress, params.assetMint),
-      optionalPoolClassLedgerAccount(params.capitalClassAddress, params.poolAssetMint),
+      optionalProtocolAccount(params.liquidityPoolAddress),
+      optionalProtocolAccount(params.capitalClassAddress),
+      optionalPoolClassLedgerAccount(params.capitalClassAddress, params.poolAssetMint ?? params.assetMint),
+      optionalProtocolAccount(params.allocationPositionAddress),
       optionalAllocationLedgerAccount(params.allocationPositionAddress, params.assetMint),
       { pubkey: obligation, isWritable: true },
       { pubkey: SystemProgram.programId },

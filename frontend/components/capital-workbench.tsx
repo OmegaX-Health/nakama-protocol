@@ -48,6 +48,24 @@ import { cn } from "@/lib/cn";
 /* ── Constants ──────────────────────────────────────── */
 
 type TabHero = { eyebrow: string; title: string; emphasis: string; tail: string; subtitle: string };
+type RedemptionQueueRow =
+  | {
+    kind: "position";
+    id: string;
+    owner: string;
+    classLabel: string;
+    shares: bigint;
+    pending: bigint;
+    status: string;
+  }
+  | {
+    kind: "aggregate";
+    id: string;
+    owner: string;
+    classLabel: string;
+    pending: bigint;
+    status: string;
+  };
 
 const TAB_HEROES: Record<CapitalTabId, TabHero> = {
   overview: {
@@ -272,9 +290,47 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
     const classAddresses = new Set(poolClasses.map((capitalClass) => capitalClass.address));
     return snapshot.lpPositions.filter((position) => classAddresses.has(position.capitalClass));
   }, [poolClasses, snapshot.lpPositions]);
-  const queueRows = useMemo(() => {
-    return poolLpPositions.filter((position) => hasPendingRedemptionQueue(position));
-  }, [poolLpPositions]);
+  const classByAddress = useMemo(
+    () => new Map(snapshot.capitalClasses.map((capitalClass) => [capitalClass.address, capitalClass])),
+    [snapshot.capitalClasses],
+  );
+  const queueRows = useMemo<RedemptionQueueRow[]>(() => {
+    const scopedPositions = selectedClass
+      ? poolLpPositions.filter((position) => position.capitalClass === selectedClass.address)
+      : poolLpPositions;
+    const positionRows = scopedPositions
+      .filter((position) => hasPendingRedemptionQueue(position))
+      .map((position): RedemptionQueueRow => {
+        const capitalClass = classByAddress.get(position.capitalClass);
+        return {
+          kind: "position",
+          id: position.address,
+          owner: shortenAddress(position.owner, 6),
+          classLabel: capitalClass?.classId ?? shortenAddress(position.capitalClass, 6),
+          shares: toBigIntAmount(position.shares),
+          pending: toBigIntAmount(position.pendingRedemptionShares),
+          status: describeLpQueueStatus(position),
+        };
+      });
+    const positionPending = positionRows.reduce((sum, row) => sum + row.pending, 0n);
+    const ledgerPending = toBigIntAmount(
+      selectedClass?.pendingRedemptions ?? selectedPool?.totalPendingRedemptions ?? 0n,
+    );
+    const residualPending = ledgerPending > positionPending ? ledgerPending - positionPending : 0n;
+    if (residualPending <= 0n) return positionRows;
+
+    return [
+      ...positionRows,
+      {
+        kind: "aggregate",
+        id: `aggregate:${selectedClass?.address ?? selectedPool?.address ?? "pool"}`,
+        owner: selectedClass ? "Class ledger" : "Pool ledger",
+        classLabel: selectedClass?.classId ?? "All classes",
+        pending: residualPending,
+        status: "Pending in class ledger",
+      },
+    ];
+  }, [classByAddress, poolLpPositions, selectedClass, selectedPool]);
   const linkedPlanContext = useMemo(() => {
     const planAddresses = [...new Set(poolAllocations.map((allocation) => allocation.healthPlan).filter(Boolean))];
     const seriesAddresses = [...new Set(
@@ -298,10 +354,6 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
   const seriesByAddress = useMemo(
     () => new Map(snapshot.policySeries.map((series) => [series.address, series])),
     [snapshot.policySeries],
-  );
-  const classByAddress = useMemo(
-    () => new Map(snapshot.capitalClasses.map((capitalClass) => [capitalClass.address, capitalClass])),
-    [snapshot.capitalClasses],
   );
   const auditTrail = useMemo(
     () => buildAuditTrail({
@@ -934,7 +986,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                     </div>
                     <span className="plans-card-meta">
                       <span className="plans-live-dot" aria-hidden="true" />
-                      {queueRows.length} {queueRows.length === 1 ? "lane" : "lanes"}
+                      {queueRows.length} pending {queueRows.length === 1 ? "source" : "sources"}
                     </span>
                   </div>
 
@@ -951,33 +1003,28 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                           </tr>
                         </thead>
                         <tbody>
-                          {queueRows.map((position) => {
-                            const capitalClass = classByAddress.get(position.capitalClass);
+                          {queueRows.map((row) => {
                             return (
-                              <tr key={position.address}>
+                              <tr key={row.id}>
                                 <td data-label="Owner">
-                                  <span className="plans-table-mono">
-                                    {shortenAddress(position.owner, 6)}
-                                  </span>
+                                  <span className="plans-table-mono">{row.owner}</span>
                                 </td>
                                 <td data-label="Class">
-                                  <span className="plans-table-mono">
-                                    {capitalClass?.classId ?? shortenAddress(position.capitalClass, 6)}
-                                  </span>
+                                  <span className="plans-table-mono">{row.classLabel}</span>
                                 </td>
                                 <td data-label="Shares">
                                   <span className="plans-table-amount">
-                                    {formatAmount(position.shares)}
+                                    {row.kind === "position" ? formatAmount(row.shares) : "—"}
                                   </span>
                                 </td>
                                 <td data-label="Pending">
                                   <span className="plans-table-amount">
-                                    {formatAmount(position.pendingRedemptionShares)}
+                                    {row.kind === "position" ? formatAmount(row.pending) : formatSettlementUnits(row.pending)}
                                   </span>
                                 </td>
                                 <td data-label="Status">
                                   <span className="plans-badge plans-badge-info">
-                                    {describeLpQueueStatus(position)}
+                                    {row.status}
                                   </span>
                                 </td>
                               </tr>
@@ -1168,7 +1215,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
                   <span className="plans-rail-tag">Field log</span>
-                  <span className="plans-rail-subtag">Live audit</span>
+                  <span className="plans-rail-subtag">Activity log</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (

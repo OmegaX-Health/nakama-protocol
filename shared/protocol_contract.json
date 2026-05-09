@@ -5223,8 +5223,26 @@
           "optional": true
         },
         {
+          "name": "liquidity_pool",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
+          "name": "capital_class",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
           "name": "pool_class_ledger",
           "writable": true,
+          "signer": false,
+          "optional": true
+        },
+        {
+          "name": "allocation_position",
+          "writable": false,
           "signer": false,
           "optional": true
         },
@@ -8704,6 +8722,12 @@
           }
         },
         {
+          "name": "policy_series",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
           "name": "series_reserve_ledger",
           "writable": true,
           "signer": false,
@@ -8816,6 +8840,12 @@
               }
             ]
           }
+        },
+        {
+          "name": "policy_series",
+          "writable": false,
+          "signer": false,
+          "optional": true
         },
         {
           "name": "member_position",
@@ -9959,6 +9989,40 @@
           "writable": true,
           "signer": true,
           "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "campaign",

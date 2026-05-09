@@ -79,6 +79,7 @@ const {
   buildUpdateLpPositionCredentialingTx,
   buildUpdateOracleProfileTx,
   buildVerifyOutcomeSchemaTx,
+  deriveAllocationLedgerPda,
   deriveClaimAttestationPda,
   deriveCommitmentCampaignPda,
   deriveCommitmentLedgerPda,
@@ -94,6 +95,7 @@ const {
   deriveOutcomeSchemaPda,
   derivePlanReserveLedgerPda,
   derivePolicySeriesPda,
+  derivePoolClassLedgerPda,
   deriveProgramDataAddress,
   deriveProtocolGovernancePda,
   derivePoolOracleApprovalPda,
@@ -711,11 +713,12 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       healthPlan: plan.address,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(openFundingLineTx.instructions[0]!.keys[8]!.pubkey.toBase58(), deriveSeriesReserveLedgerPda({
+    assert.equal(openFundingLineTx.instructions[0]!.keys[8]!.pubkey.toBase58(), protectionSeries.address);
+    assert.equal(openFundingLineTx.instructions[0]!.keys[9]!.pubkey.toBase58(), deriveSeriesReserveLedgerPda({
       policySeries: protectionSeries.address,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(openMemberPositionTx.instructions[0]!.keys[3]!.pubkey.toBase58(), protectionMember.address);
+    assert.equal(openMemberPositionTx.instructions[0]!.keys[4]!.pubkey.toBase58(), protectionMember.address);
     assert.equal(openClaimCaseTx.instructions[0]!.keys[5]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(attestClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(
@@ -734,7 +737,18 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     }).toBase58());
     assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(settleObligationFinalTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(createObligationTx.instructions[0]!.keys[10]!.pubkey.toBase58(), linkedObligation.address);
+    assert.equal(createObligationTx.instructions[0]!.keys[8]!.pubkey.toBase58(), pool.address);
+    assert.equal(createObligationTx.instructions[0]!.keys[9]!.pubkey.toBase58(), openClass.address);
+    assert.equal(createObligationTx.instructions[0]!.keys[10]!.pubkey.toBase58(), derivePoolClassLedgerPda({
+      capitalClass: openClass.address,
+      assetMint: protectionLine.assetMint,
+    }).toBase58());
+    assert.equal(createObligationTx.instructions[0]!.keys[11]!.pubkey.toBase58(), impairedAllocation.address);
+    assert.equal(createObligationTx.instructions[0]!.keys[12]!.pubkey.toBase58(), deriveAllocationLedgerPda({
+      allocationPosition: impairedAllocation.address,
+      assetMint: protectionLine.assetMint,
+    }).toBase58());
+    assert.equal(createObligationTx.instructions[0]!.keys[13]!.pubkey.toBase58(), linkedObligation.address);
     assert.equal(updateCredentialingTx.instructions[0]!.keys[4]!.pubkey.toBase58(), deriveLpPositionPda({
       capitalClass: openClass.address,
       owner: credentialedLp.owner,
@@ -906,6 +920,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
         oracleSource: RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
         oracleFeedIdHex: "56".repeat(32),
         maxStalenessSeconds: 300n,
+        maxConfidenceBps: rail.symbol === "USDC" ? 50 : 150,
         haircutBps: rail.haircutBps,
         maxExposureBps: rail.maxExposureBps,
         depositEnabled: true,
@@ -1058,7 +1073,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       refundReasonHashHex: reasonHashHex,
     });
     const refundIx = assertProtocolTxInstruction(refundTx, "refund_commitment");
-    assert.equal(refundIx.keys[4]!.pubkey.toBase58(), refundedPosition);
+    assert.equal(refundIx.keys[5]!.pubkey.toBase58(), refundedPosition);
 
     const omegaxRail = rails.find((rail) => rail.symbol === "OMEGAX")!;
     const activatedPosition = deriveCommitmentPositionPda({

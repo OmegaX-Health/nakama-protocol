@@ -56,6 +56,8 @@ pub enum OmegaXProtocolError {
     FundingLineMismatch,
     #[msg("Funding line type mismatch")]
     FundingLineTypeMismatch,
+    #[msg("Obligation account mismatch")]
+    ObligationMismatch,
     #[msg("Invalid obligation state transition")]
     InvalidObligationStateTransition,
     #[msg("Amount exceeds outstanding obligation")]
@@ -92,6 +94,8 @@ pub enum OmegaXProtocolError {
     LPPositionHasActiveCapital,
     #[msg("Capital class lockup is still active")]
     LockupActive,
+    #[msg("Capital class lockup seconds cannot be negative")]
+    InvalidLockupSeconds,
     #[msg("Allocation cap exceeded")]
     AllocationCapExceeded,
     #[msg("Allocation position mismatch")]
@@ -224,6 +228,8 @@ pub enum OmegaXProtocolError {
     ReserveAssetPriceStale,
     #[msg("Reserve asset oracle price is invalid")]
     ReserveAssetPriceInvalid,
+    #[msg("Reserve asset oracle price confidence exceeds rail threshold")]
+    ReserveAssetPriceConfidenceTooWide,
     #[msg("Commitment payment rail mismatch")]
     CommitmentPaymentRailMismatch,
     #[msg("Commitment payment rail is inactive")]
@@ -244,4 +250,8 @@ pub enum OmegaXProtocolError {
     SelectedAssetOverpayBpsTooHigh,
     #[msg("Reserve asset mint decimals are unsupported")]
     ReserveAssetMintDecimalsUnsupported,
+    #[msg("Health plan is inactive")]
+    HealthPlanInactive,
+    #[msg("Capital class is inactive")]
+    CapitalClassInactive,
 }

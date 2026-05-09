@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateReserveDomain, CreateReserveDomainArgs};
 
 impl<'info> CreateReserveDomain<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_reserve_domain", hash = "79db929c3facd74a", spec_hash = "fc980e1565fc61fa")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_reserve_domain", hash = "79db929c3facd74a", spec_hash = "4d716173acd2c5ce")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateReserveDomainArgs) -> Result<()> {
         guards::create_reserve_domain(self, args)?;

@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{AttestClaimCase, AttestClaimCaseArgs};
 
 impl<'info> AttestClaimCase<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "attest_claim_case", hash = "564ba172440687c9", spec_hash = "69f2bbd74dc6dd97")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "attest_claim_case", hash = "564ba172440687c9", spec_hash = "8003adf08460f0cf")]
     #[inline(always)]
     pub fn handler(&mut self, args: AttestClaimCaseArgs) -> Result<()> {
         guards::attest_claim_case(self, args)?;
