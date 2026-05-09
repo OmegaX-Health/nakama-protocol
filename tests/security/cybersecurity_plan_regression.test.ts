@@ -10,6 +10,10 @@ const frontendProtocolSource = readFileSync(
   new URL("../../frontend/lib/protocol.ts", import.meta.url),
   "utf8",
 );
+const founderRehearsalSource = readFileSync(
+  new URL("../../scripts/devnet_founder_rehearsal.ts", import.meta.url),
+  "utf8",
+);
 const idl = JSON.parse(
   readFileSync(new URL("../../idl/omegax_protocol.json", import.meta.url), "utf8"),
 ) as { errors?: Array<{ name: string }> };
@@ -101,6 +105,8 @@ test("[CSO-2026-05-05] waterfall activation books only haircut and cap bounded r
     /activate_commitment_position\(\s*&mut ctx\.accounts\.ledger,\s*&mut ctx\.accounts\.position,\s*COMMITMENT_POSITION_WATERFALL_RESERVE_ACTIVATED,\s*amount,/,
   );
   assert.doesNotMatch(body, /COMMITMENT_POSITION_WATERFALL_RESERVE_ACTIVATED,\s*capacity_amount/);
+  assert.doesNotMatch(founderRehearsalSource, /committedAmount:\s*0n/);
+  assert.match(founderRehearsalSource, /committedAmount:\s*fundingLineCommittedAmountForActivation/);
   assert.match(programSource, /fn reserve_capacity_amount\(amount: u64, haircut_bps: u16, max_exposure_bps: u16\)/);
   assert.match(programSource, /checked_sub\(u64::from\(haircut_bps\)\)/);
   assert.match(programSource, /fn checked_mul_div_u64\(value: u64, numerator: u64, denominator: u64\)/);
