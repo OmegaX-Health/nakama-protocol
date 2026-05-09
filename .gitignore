@@ -60,8 +60,10 @@ strategy/
 .DS_Store
 .idea
 .vscode
+.claude/
 .playwright-cli/
 .gstack/
+.superstack/
 .certora_internal/
 certora_output/
 formal_verification/certora/runs/
