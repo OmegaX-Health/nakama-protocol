@@ -57,7 +57,7 @@ The active public object model is:
 
 Restricted and wrapper-only capital classes now rely on managed `LPPosition` credentialing. Direct deposits do not carry a caller-supplied credential flag; access is granted on-chain through the canonical LP position for that class and owner.
 
-Founder commitment campaigns are a narrow pre-activation primitive. Pending USDC, PUSD, WSOL, WBTC, WETH, and OMEGAX commitments sit in the existing `DomainAssetVault` custody lane, but they do not increase claims-paying reserve ledgers until an explicit activation instruction runs. `WATERFALL_RESERVE` activation books capacity through configured `ReserveAssetRail` controls: role, payout priority, oracle source, price freshness, haircut, and exposure cap. Stable rails pay first, volatile rails are discounted, and OMEGAX remains last in the waterfall. The v1 program does not sell, swap, or withdraw OMEGAX treasury inventory; if OMEGAX capacity is enabled, it must use an approved Chainlink/governance-attested price and conservative caps. Legacy `DIRECT_PREMIUM` and `TREASURY_CREDIT` modes remain for operator/backward workflows, not the new public Founder Travel30 path.
+Founder commitment campaigns are a narrow pre-activation primitive. Pending USDC, PUSD, WSOL, WBTC, WETH, and OMEGAX commitments sit in the existing `DomainAssetVault` custody lane, but they do not increase claims-paying reserve ledgers until an explicit activation instruction runs. `WATERFALL_RESERVE` activation books capacity through configured `ReserveAssetRail` controls: role, payout priority, oracle source, price freshness, price-confidence threshold, haircut, and exposure cap. Stable rails pay first, volatile rails are discounted, and OMEGAX remains disabled for capacity/payout by default and last in the waterfall if governance later enables it. The v1 program does not sell, swap, or withdraw OMEGAX treasury inventory; if OMEGAX capacity is enabled, it must use an approved Chainlink/governance-attested price with conservative confidence, haircut, and exposure limits. Legacy `DIRECT_PREMIUM` and `TREASURY_CREDIT` modes remain for operator/backward workflows, not the new public Founder Travel30 path.
 
 ## Important reviewer rule
 
@@ -84,3 +84,58 @@ npm run rust:lint
 npm run anchor:idl
 npm run protocol:contract
 ```
+
+## QEDGen onboarding
+
+The repo now has a brownfield QEDGen spec at
+[`../../omegax_protocol.qedspec`](../../omegax_protocol.qedspec), with
+project metadata in [`../../.qed/config.json`](../../.qed/config.json).
+
+Run the current spec sanity check from the repository root:
+
+```bash
+qedgen check --anchor-project programs/omegax_protocol --coverage --json
+```
+
+The current pass records the public handler surface, program id, selected
+constants, account contexts, source-derived signer bindings, an abstract
+aggregate `State.Live`, first-order handler effects, initial properties, and
+the obvious SPL transfer directions. Remaining modeling work is deliberately
+called out inline as `SPEC-REFINE` comments where exact per-account right-hand
+sides, fee carve-outs, PDA derivations, emitted events, and deeper conservation
+equations still need to be tightened.
+
+The current QEDGen check is expected to report one token-CPI warning for
+`create_domain_asset_vault`: that handler accepts `token_program` for vault
+account initialization but does not move tokens.
+
+## Certora Solana lane
+
+The optional Certora Solana lane lives in
+[`../../formal_verification/certora/`](../../formal_verification/certora/).
+It is a manual maintainer lane for narrow symbolic checks against high-value
+kernel/scalar properties, not part of `npm run verify:public` and not an audit
+claim.
+
+Run the local prerequisite check from the repository root:
+
+```bash
+npm run certora:solana:check
+```
+
+Only submit a remote prover job when `CERTORAKEY` is set and the operator has
+confirmed that the configured sources may be sent to Certora's service:
+
+```bash
+npm run certora:solana:sanity
+```
+
+The sanity config currently runs constrained CVLR rules for selected-asset
+payout bounds, fee-recipient binding, fee-vault withdrawal bounds, and reserve
+capacity non-overflow. These are useful formal-verification evidence, but they
+are not full Anchor handler/account-flow proofs.
+
+Record any run result in the release-candidate evidence file with the exact
+rule name, command, result, and Certora job URL. Do not commit access keys,
+generated job archives, or wording that implies Certora performed a third-party
+audit unless that review actually exists.

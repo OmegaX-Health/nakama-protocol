@@ -18,7 +18,8 @@ import { PoolWorkspaceProvider } from "@/components/pool-workspace-context";
 import { useWorkspacePersona } from "@/components/workspace-persona";
 import { deriveWalletCapabilities } from "@/lib/ui-capabilities";
 import { buildCanonicalConsoleStateFromSnapshot } from "@/lib/console-model";
-import { formatAmount } from "@/lib/canonical-ui";
+import { formatAmount, formatSettlementUnits, rawAmountTitle } from "@/lib/canonical-ui";
+import { GENESIS_PROTECT_ACUTE_POOL_ID } from "@/lib/genesis-protect-acute";
 import { firstSearchParamValue, type RouteSearchParams, toURLSearchParams } from "@/lib/search-params";
 import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
 import {
@@ -32,10 +33,13 @@ import {
   type CapitalTabId,
 } from "@/lib/workbench";
 import {
+  type CapitalClassSnapshot,
   describeCapitalRestriction,
   describeLpQueueStatus,
   hasPendingRedemptionQueue,
   shortenAddress,
+  toBigIntAmount,
+  CAPITAL_CLASS_RESTRICTION_OPEN,
   ZERO_PUBKEY,
 } from "@/lib/protocol";
 import type { ProtocolConfigSummary } from "@/lib/protocol";
@@ -44,6 +48,24 @@ import { cn } from "@/lib/cn";
 /* ── Constants ──────────────────────────────────────── */
 
 type TabHero = { eyebrow: string; title: string; emphasis: string; tail: string; subtitle: string };
+type RedemptionQueueRow =
+  | {
+    kind: "position";
+    id: string;
+    owner: string;
+    classLabel: string;
+    shares: bigint;
+    pending: bigint;
+    status: string;
+  }
+  | {
+    kind: "aggregate";
+    id: string;
+    owner: string;
+    classLabel: string;
+    pending: bigint;
+    status: string;
+  };
 
 const TAB_HEROES: Record<CapitalTabId, TabHero> = {
   overview: {
@@ -63,7 +85,7 @@ const TAB_HEROES: Record<CapitalTabId, TabHero> = {
       "Tranche restrictions, NAV depth, and lockup posture for classes in this pool.",
   },
   allocations: {
-    eyebrow: "Allocation lanes",
+    eyebrow: "Capital allocation",
     title: "Allocation",
     emphasis: "Lanes.",
     tail: "",
@@ -134,6 +156,13 @@ function personaEyebrow(_persona: string): string {
   return "Capital";
 }
 
+function preferredCapitalClass(classes: CapitalClassSnapshot[]): CapitalClassSnapshot | null {
+  return classes.find((capitalClass) =>
+    capitalClass.restrictionMode === CAPITAL_CLASS_RESTRICTION_OPEN
+    && toBigIntAmount(capitalClass.navAssets) > 0n,
+  ) ?? classes.find((capitalClass) => capitalClass.restrictionMode === CAPITAL_CLASS_RESTRICTION_OPEN) ?? classes[0] ?? null;
+}
+
 function CapitalEmptyState({ title, copy }: { title: string; copy: string }) {
   return (
     <div className="plans-empty liquid-glass">
@@ -198,11 +227,11 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { effectivePersona } = useWorkspacePersona();
-  const { selectedNetwork } = useNetworkContext();
+  const { selectedNetwork, executionClusterVerified } = useNetworkContext();
   const { snapshot, loading, error, refresh } = useProtocolConsoleSnapshot();
   const phase0Profile = useMemo(
-    () => resolveGenesisPhase0LaunchProfile({ network: selectedNetwork }),
-    [selectedNetwork],
+    () => resolveGenesisPhase0LaunchProfile({ network: selectedNetwork, executionClusterVerified }),
+    [executionClusterVerified, selectedNetwork],
   );
   const consoleState = useMemo(() => buildCanonicalConsoleStateFromSnapshot(snapshot), [snapshot]);
   const wallet = useWallet();
@@ -219,7 +248,10 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
   const hasInvalidPool = Boolean(queryPool) && !matchedPool;
   const selectedPool = useMemo(() => {
     if (hasInvalidPool) return null;
-    return matchedPool ?? allPools[0] ?? null;
+    return matchedPool
+      ?? allPools.find((pool) => pool.poolId === GENESIS_PROTECT_ACUTE_POOL_ID)
+      ?? allPools[0]
+      ?? null;
   }, [allPools, hasInvalidPool, matchedPool]);
 
   const poolClasses = useMemo(
@@ -238,7 +270,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
   const hasInvalidClass = Boolean(queryClass) && !matchedClass;
   const selectedClass = useMemo(() => {
     if (hasInvalidClass) return null;
-    return matchedClass ?? poolClasses[0] ?? null;
+    return matchedClass ?? preferredCapitalClass(poolClasses);
   }, [hasInvalidClass, matchedClass, poolClasses]);
 
   /* ── Derived data ── */
@@ -258,9 +290,47 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
     const classAddresses = new Set(poolClasses.map((capitalClass) => capitalClass.address));
     return snapshot.lpPositions.filter((position) => classAddresses.has(position.capitalClass));
   }, [poolClasses, snapshot.lpPositions]);
-  const queueRows = useMemo(() => {
-    return poolLpPositions.filter((position) => hasPendingRedemptionQueue(position));
-  }, [poolLpPositions]);
+  const classByAddress = useMemo(
+    () => new Map(snapshot.capitalClasses.map((capitalClass) => [capitalClass.address, capitalClass])),
+    [snapshot.capitalClasses],
+  );
+  const queueRows = useMemo<RedemptionQueueRow[]>(() => {
+    const scopedPositions = selectedClass
+      ? poolLpPositions.filter((position) => position.capitalClass === selectedClass.address)
+      : poolLpPositions;
+    const positionRows = scopedPositions
+      .filter((position) => hasPendingRedemptionQueue(position))
+      .map((position): RedemptionQueueRow => {
+        const capitalClass = classByAddress.get(position.capitalClass);
+        return {
+          kind: "position",
+          id: position.address,
+          owner: shortenAddress(position.owner, 6),
+          classLabel: capitalClass?.classId ?? shortenAddress(position.capitalClass, 6),
+          shares: toBigIntAmount(position.shares),
+          pending: toBigIntAmount(position.pendingRedemptionShares),
+          status: describeLpQueueStatus(position),
+        };
+      });
+    const positionPending = positionRows.reduce((sum, row) => sum + row.pending, 0n);
+    const ledgerPending = toBigIntAmount(
+      selectedClass?.pendingRedemptions ?? selectedPool?.totalPendingRedemptions ?? 0n,
+    );
+    const residualPending = ledgerPending > positionPending ? ledgerPending - positionPending : 0n;
+    if (residualPending <= 0n) return positionRows;
+
+    return [
+      ...positionRows,
+      {
+        kind: "aggregate",
+        id: `aggregate:${selectedClass?.address ?? selectedPool?.address ?? "pool"}`,
+        owner: selectedClass ? "Class ledger" : "Pool ledger",
+        classLabel: selectedClass?.classId ?? "All classes",
+        pending: residualPending,
+        status: "Pending in class ledger",
+      },
+    ];
+  }, [classByAddress, poolLpPositions, selectedClass, selectedPool]);
   const linkedPlanContext = useMemo(() => {
     const planAddresses = [...new Set(poolAllocations.map((allocation) => allocation.healthPlan).filter(Boolean))];
     const seriesAddresses = [...new Set(
@@ -284,10 +354,6 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
   const seriesByAddress = useMemo(
     () => new Map(snapshot.policySeries.map((series) => [series.address, series])),
     [snapshot.policySeries],
-  );
-  const classByAddress = useMemo(
-    () => new Map(snapshot.capitalClasses.map((capitalClass) => [capitalClass.address, capitalClass])),
-    [snapshot.capitalClasses],
   );
   const auditTrail = useMemo(
     () => buildAuditTrail({
@@ -480,7 +546,10 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
           <div className="plans-hero-head">
             <div className="plans-hero-copy">
               <span className="plans-hero-eyebrow">{eyebrow}</span>
-              <h1 className="plans-hero-title">
+              <h1
+                className="plans-hero-title"
+                aria-label={[hero.title, hero.emphasis, hero.tail].filter(Boolean).join(" ")}
+              >
                 {hero.title}{" "}
                 {hero.emphasis ? <em>{hero.emphasis}</em> : null}
                 {hero.tail ? <> {hero.tail}</> : null}
@@ -507,7 +576,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                   className="plans-hero-cta"
                 >
                   <span className="material-symbols-outlined" aria-hidden="true">north_east</span>
-                  Open plan treasury
+                  Open linked plan
                 </Link>
               ) : (
                 <button
@@ -528,7 +597,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
             <article className="plans-card liquid-glass">
               <div className="plans-card-head">
                 <div>
-                  <p className="plans-card-eyebrow">LIVE_PROTOCOL_STATE</p>
+                  <p className="plans-card-eyebrow">Live protocol state</p>
                   <h2 className="plans-card-title plans-card-title-display">
                     {loading ? <>Syncing <em>capital</em></> : <>RPC <em>attention</em></>}
                   </h2>
@@ -547,7 +616,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
         <div className="plans-context-bar">
           <div className="plans-context-selectors liquid-glass">
             <HeroSelector
-              eyebrow="LIQUIDITY_POOL"
+              eyebrow="Reserve pool"
               label="Liquidity pool"
               value={selectedPool}
               options={allPools}
@@ -558,7 +627,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
             />
             <span className="plans-context-divider" aria-hidden="true" />
             <HeroSelector
-              eyebrow="CAPITAL_CLASS"
+              eyebrow="Capital class"
               label="Capital class"
               value={selectedClass}
               options={poolClasses}
@@ -606,7 +675,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                   <article className="plans-card plans-vitality heavy-glass">
                     <div className="plans-card-head">
                       <div>
-                        <p className="plans-card-eyebrow">POOL_VITALITY_INDEX</p>
+                        <p className="plans-card-eyebrow">Pool vitality</p>
                         <h2 className="plans-card-title plans-card-title-display">
                           {selectedPool?.displayName ?? "Awaiting pool"}
                         </h2>
@@ -620,7 +689,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                     <div className="plans-vitality-stats">
                       <div className="plans-vitality-stat">
                         <span className="plans-vitality-stat-value">
-                          ${formatAmount(tvl)}
+                          <span title={rawAmountTitle(tvl)}>{formatSettlementUnits(tvl)}</span>
                         </span>
                         <span className="plans-vitality-stat-label">Total value locked</span>
                       </div>
@@ -645,7 +714,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                     {classBars.length > 0 ? (
                       <div className="plans-vitality-chart" aria-label="NAV by capital class">
                         <div className="plans-vitality-chart-head">
-                          <span className="plans-chart-label">NAV_BY_CLASS</span>
+                        <span className="plans-chart-label">NAV by class</span>
                           <span className="plans-chart-legend">NAV · Allocated</span>
                         </div>
                         <div className="plans-vitality-bars">
@@ -653,7 +722,9 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                             <div key={bar.id} className="plans-vitality-bar">
                               <div className="plans-vitality-bar-head">
                                 <span className="plans-vitality-bar-name">{bar.name}</span>
-                                <span className="plans-vitality-bar-val">${formatAmount(bar.nav)}</span>
+                                <span className="plans-vitality-bar-val" title={rawAmountTitle(bar.nav)}>
+                                  {formatSettlementUnits(bar.nav)}
+                                </span>
                               </div>
                               <div className="plans-vitality-bar-track">
                                 <div
@@ -662,7 +733,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                                 />
                               </div>
                               <span className="plans-vitality-bar-claims">
-                                ${formatAmount(bar.allocated)} allocated · ${formatAmount(bar.pending)} pending
+                                {formatSettlementUnits(bar.allocated)} allocated · {formatSettlementUnits(bar.pending)} pending
                               </span>
                             </div>
                           ))}
@@ -674,7 +745,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                   <article className="plans-card plans-lanes heavy-glass">
                     <div className="plans-card-head">
                       <div>
-                        <p className="plans-card-eyebrow">CAPITAL_CLASSES</p>
+                        <p className="plans-card-eyebrow">Capital classes</p>
                         <h2 className="plans-card-title plans-card-title-display">
                           {poolClasses.length} active <em>{poolClasses.length === 1 ? "class" : "classes"}</em>
                         </h2>
@@ -710,7 +781,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                                   {humanizeCapitalRestriction(capitalClass.restrictionMode)}
                                 </span>
                                 <span className="plans-lane-outcomes">
-                                  ${formatAmount(capitalClass.navAssets)} NAV
+                                  {formatSettlementUnits(capitalClass.navAssets)} NAV
                                 </span>
                               </div>
                             </button>
@@ -726,7 +797,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
 
                   <CapitalLpSelfServicePanel
                     selectedPool={selectedPool}
-                    selectedClass={selectedClass ?? poolClasses[0] ?? null}
+                    selectedClass={selectedClass ?? preferredCapitalClass(poolClasses)}
                     domainAssetVaults={snapshot.domainAssetVaults}
                     lpPositions={poolLpPositions}
                     onRefresh={refresh}
@@ -739,7 +810,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                 <article className="plans-card heavy-glass">
                   <div className="plans-card-head">
                     <div>
-                      <p className="plans-card-eyebrow">TRANCHE_REGISTER</p>
+                      <p className="plans-card-eyebrow">Capital register</p>
                       <h2 className="plans-card-title plans-card-title-display">
                         Capital <em>classes</em>
                       </h2>
@@ -781,12 +852,16 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                                 </td>
                                 <td data-label="NAV">
                                   <span className="plans-table-amount">
-                                    ${formatAmount(capitalClass.navAssets)}
+                                    <span title={rawAmountTitle(capitalClass.navAssets)}>
+                                      {formatSettlementUnits(capitalClass.navAssets)}
+                                    </span>
                                   </span>
                                 </td>
                                 <td data-label="Pending">
                                   <span className="plans-table-amount">
-                                    ${formatAmount(capitalClass.pendingRedemptions)}
+                                    <span title={rawAmountTitle(capitalClass.pendingRedemptions)}>
+                                      {formatSettlementUnits(capitalClass.pendingRedemptions)}
+                                    </span>
                                   </span>
                                 </td>
                                 <td data-label="Lockup">
@@ -816,7 +891,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                 <article className="plans-card heavy-glass">
                   <div className="plans-card-head">
                     <div>
-                      <p className="plans-card-eyebrow">ALLOCATION_LANES</p>
+                      <p className="plans-card-eyebrow">Allocation lanes</p>
                       <h2 className="plans-card-title plans-card-title-display">
                         Deployed <em>capacity</em>
                       </h2>
@@ -872,12 +947,16 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                                 </td>
                                 <td data-label="Allocated">
                                   <span className="plans-table-amount">
-                                    ${formatAmount(allocation.allocatedAmount)}
+                                    <span title={rawAmountTitle(allocation.allocatedAmount)}>
+                                      {formatSettlementUnits(allocation.allocatedAmount)}
+                                    </span>
                                   </span>
                                 </td>
                                 <td data-label="Reserved">
                                   <span className="plans-table-amount">
-                                    ${formatAmount(allocation.reservedCapacity)}
+                                    <span title={rawAmountTitle(allocation.reservedCapacity)}>
+                                      {formatSettlementUnits(allocation.reservedCapacity)}
+                                    </span>
                                   </span>
                                 </td>
                               </tr>
@@ -900,14 +979,14 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                 <article className="plans-card heavy-glass">
                   <div className="plans-card-head">
                     <div>
-                      <p className="plans-card-eyebrow">REDEMPTION_REGISTER</p>
+                      <p className="plans-card-eyebrow">Redemption register</p>
                       <h2 className="plans-card-title plans-card-title-display">
                         Pending <em>redemptions</em>
                       </h2>
                     </div>
                     <span className="plans-card-meta">
                       <span className="plans-live-dot" aria-hidden="true" />
-                      {queueRows.length} {queueRows.length === 1 ? "lane" : "lanes"}
+                      {queueRows.length} pending {queueRows.length === 1 ? "source" : "sources"}
                     </span>
                   </div>
 
@@ -924,33 +1003,28 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                           </tr>
                         </thead>
                         <tbody>
-                          {queueRows.map((position) => {
-                            const capitalClass = classByAddress.get(position.capitalClass);
+                          {queueRows.map((row) => {
                             return (
-                              <tr key={position.address}>
+                              <tr key={row.id}>
                                 <td data-label="Owner">
-                                  <span className="plans-table-mono">
-                                    {shortenAddress(position.owner, 6)}
-                                  </span>
+                                  <span className="plans-table-mono">{row.owner}</span>
                                 </td>
                                 <td data-label="Class">
-                                  <span className="plans-table-mono">
-                                    {capitalClass?.classId ?? shortenAddress(position.capitalClass, 6)}
-                                  </span>
+                                  <span className="plans-table-mono">{row.classLabel}</span>
                                 </td>
                                 <td data-label="Shares">
                                   <span className="plans-table-amount">
-                                    {formatAmount(position.shares)}
+                                    {row.kind === "position" ? formatAmount(row.shares) : "—"}
                                   </span>
                                 </td>
                                 <td data-label="Pending">
                                   <span className="plans-table-amount">
-                                    {formatAmount(position.pendingRedemptionShares)}
+                                    {row.kind === "position" ? formatAmount(row.pending) : formatSettlementUnits(row.pending)}
                                   </span>
                                 </td>
                                 <td data-label="Status">
                                   <span className="plans-badge plans-badge-info">
-                                    {describeLpQueueStatus(position)}
+                                    {row.status}
                                   </span>
                                 </td>
                               </tr>
@@ -973,7 +1047,7 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                 <article className="plans-card heavy-glass">
                   <div className="plans-card-head">
                     <div>
-                      <p className="plans-card-eyebrow">FUNDED_PLANS</p>
+                      <p className="plans-card-eyebrow">Funded plans</p>
                       <h2 className="plans-card-title plans-card-title-display">
                         Linked <em>plans</em>
                       </h2>
@@ -1051,16 +1125,18 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
             <aside className="plans-rail">
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">POOL_HEALTH</span>
+                  <span className="plans-rail-tag">Pool health</span>
                   <span className="plans-rail-subtag">
                     <span className="plans-live-dot" aria-hidden="true" />
                     LIVE
                   </span>
                 </div>
                 <div className="plans-rail-hero">
-                  <span className="plans-rail-hero-val">${formatAmount(totalNav || tvl)}</span>
+                  <span className="plans-rail-hero-val" title={rawAmountTitle(totalNav || tvl)}>
+                    {formatSettlementUnits(totalNav || tvl)}
+                  </span>
                   <span className="plans-rail-hero-sub">
-                    Total NAV · ${formatAmount(unallocated)} unallocated
+                    Total NAV · {formatSettlementUnits(unallocated)} unallocated
                   </span>
                 </div>
                 <div className="plans-rail-bar">
@@ -1075,11 +1151,11 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                 </div>
                 <div className="plans-rail-row">
                   <span>Total allocated</span>
-                  <strong>${formatAmount(allocated)}</strong>
+                  <strong title={rawAmountTitle(allocated)}>{formatSettlementUnits(allocated)}</strong>
                 </div>
                 <div className="plans-rail-row">
                   <span>Pending redemption</span>
-                  <strong>${formatAmount(pending)}</strong>
+                  <strong title={rawAmountTitle(pending)}>{formatSettlementUnits(pending)}</strong>
                 </div>
                 <div className="plans-rail-row">
                   <span>Redemption policy</span>
@@ -1091,14 +1167,16 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
 
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">SELECTED_CLASS</span>
+                  <span className="plans-rail-tag">Selected class</span>
                   <span className="plans-rail-subtag">{selectedClass?.classId ?? "—"}</span>
                 </div>
                 {selectedClass ? (
                   <>
                     <div className="plans-rail-hero">
                       <span className="plans-rail-hero-val">
-                        ${formatAmount(selectedClass.navAssets)}
+                        <span title={rawAmountTitle(selectedClass.navAssets)}>
+                          {formatSettlementUnits(selectedClass.navAssets)}
+                        </span>
                       </span>
                       <span className="plans-rail-hero-sub">{selectedClass.displayName}</span>
                     </div>
@@ -1108,11 +1186,15 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                     </div>
                     <div className="plans-rail-row">
                       <span>Allocated</span>
-                      <strong>${formatAmount(selectedClass.allocatedAssets)}</strong>
+                      <strong title={rawAmountTitle(selectedClass.allocatedAssets)}>
+                        {formatSettlementUnits(selectedClass.allocatedAssets)}
+                      </strong>
                     </div>
                     <div className="plans-rail-row">
                       <span>Pending</span>
-                      <strong>${formatAmount(selectedClass.pendingRedemptions)}</strong>
+                      <strong title={rawAmountTitle(selectedClass.pendingRedemptions)}>
+                        {formatSettlementUnits(selectedClass.pendingRedemptions)}
+                      </strong>
                     </div>
                     <div className="plans-rail-row">
                       <span>Lockup</span>
@@ -1132,8 +1214,8 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
 
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">FIELD_LOG</span>
-                  <span className="plans-rail-subtag">LIVE_AUDIT</span>
+                  <span className="plans-rail-tag">Field log</span>
+                  <span className="plans-rail-subtag">Activity log</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (

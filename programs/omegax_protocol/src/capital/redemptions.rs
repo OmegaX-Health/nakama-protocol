@@ -38,6 +38,12 @@ pub(crate) fn request_redemption(
         ctx.accounts.capital_class.total_shares,
         ctx.accounts.capital_class.nav_assets,
     )?;
+    let now_ts = Clock::get()?.unix_timestamp;
+    let redemption_sequence = assign_redemption_queue_ticket(
+        &mut ctx.accounts.capital_class,
+        &mut ctx.accounts.lp_position,
+        now_ts,
+    )?;
     ctx.accounts.lp_position.pending_redemption_shares = checked_add(
         ctx.accounts.lp_position.pending_redemption_shares,
         args.shares,
@@ -62,6 +68,8 @@ pub(crate) fn request_redemption(
         owner: ctx.accounts.owner.key(),
         shares: args.shares,
         asset_amount,
+        redemption_sequence,
+        requested_at_ts: now_ts,
     });
 
     Ok(())
@@ -81,6 +89,7 @@ pub(crate) fn process_redemption_queue(
         args.shares <= ctx.accounts.lp_position.pending_redemption_shares,
         OmegaXProtocolError::AmountExceedsPendingRedemption
     );
+    require_redemption_queue_head(&ctx.accounts.capital_class, &ctx.accounts.lp_position)?;
 
     let asset_amount = redemption_assets_to_process(
         args.shares,
@@ -127,12 +136,10 @@ pub(crate) fn process_redemption_queue(
     // realized_distributions tracks what the LP actually received (post-fee).
     ctx.accounts.lp_position.realized_distributions =
         checked_add(ctx.accounts.lp_position.realized_distributions, net_to_lp)?;
-    ctx.accounts.lp_position.queue_status =
-        if ctx.accounts.lp_position.pending_redemption_shares == 0 {
-            LP_QUEUE_STATUS_PROCESSED
-        } else {
-            LP_QUEUE_STATUS_PENDING
-        };
+    resolve_redemption_queue_status_after_process(
+        &mut ctx.accounts.capital_class,
+        &mut ctx.accounts.lp_position,
+    )?;
 
     // capital_class: LP claim reduced by the full asset_amount (the LP
     // gives up claim on the entire pending payout; the fee portion is

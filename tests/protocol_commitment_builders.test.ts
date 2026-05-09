@@ -41,6 +41,7 @@ const {
   deriveDomainAssetLedgerPda,
   deriveDomainAssetVaultPda,
   deriveDomainAssetVaultTokenAccountPda,
+  deriveFundingLinePda,
   deriveFundingLineLedgerPda,
   derivePlanReserveLedgerPda,
   deriveProtocolGovernancePda,
@@ -69,6 +70,11 @@ const travel30PremiumLine = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines.find(
 )!;
 const paymentMint = new PublicKey(travel30PremiumLine.assetMint);
 const coverageMint = new PublicKey(travel30PremiumLine.assetMint);
+const waterfallPaymentMint = new PublicKey(DEVNET_PROTOCOL_FIXTURE_STATE.rewardMint);
+const waterfallFundingLine = deriveFundingLinePda({
+  healthPlan: genesisPlan.address,
+  lineId: "genesis-travel30-premiums-omegax",
+});
 const campaign = deriveCommitmentCampaignPda({
   healthPlan: genesisPlan.address,
   campaignId: CAMPAIGN_ID,
@@ -84,6 +90,18 @@ const paymentRail = deriveCommitmentPaymentRailPda({
 const reserveAssetRail = deriveReserveAssetRailPda({
   reserveDomain: genesisPlan.reserveDomain,
   assetMint: paymentMint,
+});
+const waterfallLedger = deriveCommitmentLedgerPda({
+  campaign,
+  paymentAssetMint: waterfallPaymentMint,
+});
+const waterfallPaymentRail = deriveCommitmentPaymentRailPda({
+  campaign,
+  paymentAssetMint: waterfallPaymentMint,
+});
+const waterfallReserveAssetRail = deriveReserveAssetRailPda({
+  reserveDomain: genesisPlan.reserveDomain,
+  assetMint: waterfallPaymentMint,
 });
 const position = deriveCommitmentPositionPda({
   campaign,
@@ -139,6 +157,7 @@ test("reserve asset rail builders expose the mixed-treasury oracle controls", ()
     oracleSource: RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
     oracleFeedIdHex: "aa".repeat(32),
     maxStalenessSeconds: 300n,
+    maxConfidenceBps: 50,
     haircutBps: 0,
     maxExposureBps: 10_000,
     depositEnabled: true,
@@ -218,27 +237,32 @@ test("create commitment campaign builder uses the canonical campaign and reserve
   assert.equal(ix.keys[12]!.pubkey.toBase58(), SystemProgram.programId.toBase58());
 });
 
-test("additional commitment payment rail builder adds assets without splitting campaigns", () => {
+test("additional commitment payment rail builder adds same-asset waterfall rails without splitting campaigns", () => {
   const tx = buildCreateCommitmentPaymentRailTx({
     authority: AUTHORITY,
     healthPlanAddress: genesisPlan.address,
     reserveDomainAddress: genesisPlan.reserveDomain,
     campaignAddress: campaign,
-    coverageFundingLineAddress: travel30PremiumLine.address,
-    paymentAssetMint: paymentMint,
-    coverageAssetMint: coverageMint,
+    coverageFundingLineAddress: waterfallFundingLine,
+    paymentAssetMint: waterfallPaymentMint,
+    coverageAssetMint: waterfallPaymentMint,
     recentBlockhash: RECENT_BLOCKHASH,
     mode: COMMITMENT_MODE_WATERFALL_RESERVE,
-    depositAmount: 99_000_000n,
-    coverageAmount: 1_000_000_000n,
-    hardCapAmount: 99_000_000_000n,
+    depositAmount: 5_000_000n,
+    coverageAmount: 5_000_000n,
+    hardCapAmount: 5_000_000_000n,
   });
   const ix = assertProtocolIxShape(tx, "create_commitment_payment_rail", AUTHORITY);
   assert.equal(ix.keys.length, 10);
   assert.equal(ix.keys[3]!.pubkey.toBase58(), campaign.toBase58());
-  assert.equal(ix.keys[6]!.pubkey.toBase58(), travel30PremiumLine.address);
-  assert.equal(ix.keys[7]!.pubkey.toBase58(), paymentRail.toBase58());
-  assert.equal(ix.keys[8]!.pubkey.toBase58(), ledger.toBase58());
+  assert.equal(ix.keys[4]!.pubkey.toBase58(), deriveDomainAssetVaultPda({
+    reserveDomain: genesisPlan.reserveDomain,
+    assetMint: waterfallPaymentMint,
+  }).toBase58());
+  assert.equal(ix.keys[5]!.pubkey.toBase58(), waterfallReserveAssetRail.toBase58());
+  assert.equal(ix.keys[6]!.pubkey.toBase58(), waterfallFundingLine.toBase58());
+  assert.equal(ix.keys[7]!.pubkey.toBase58(), waterfallPaymentRail.toBase58());
+  assert.equal(ix.keys[8]!.pubkey.toBase58(), waterfallLedger.toBase58());
 });
 
 test("series reserve ledger builder initializes extra asset accounting for an existing series", () => {
@@ -301,12 +325,13 @@ test("deposit, refund, and pause commitment builders keep commitment custody out
     refundReasonHashHex: "22".repeat(32),
   });
   const refundIx = assertProtocolIxShape(refundTx, "refund_commitment", DEPOSITOR);
-  assert.equal(refundIx.keys.length, 10);
-  assert.equal(refundIx.keys[1]!.pubkey.toBase58(), campaign.toBase58());
-  assert.equal(refundIx.keys[2]!.pubkey.toBase58(), paymentRail.toBase58());
-  assert.equal(refundIx.keys[3]!.pubkey.toBase58(), ledger.toBase58());
-  assert.equal(refundIx.keys[4]!.pubkey.toBase58(), position.toBase58());
-  assert.equal(refundIx.keys[8]!.pubkey.toBase58(), RECIPIENT_TOKEN_ACCOUNT.toBase58());
+  assert.equal(refundIx.keys.length, 11);
+  assert.equal(refundIx.keys[1]!.pubkey.toBase58(), deriveProtocolGovernancePda().toBase58());
+  assert.equal(refundIx.keys[2]!.pubkey.toBase58(), campaign.toBase58());
+  assert.equal(refundIx.keys[3]!.pubkey.toBase58(), paymentRail.toBase58());
+  assert.equal(refundIx.keys[4]!.pubkey.toBase58(), ledger.toBase58());
+  assert.equal(refundIx.keys[5]!.pubkey.toBase58(), position.toBase58());
+  assert.equal(refundIx.keys[9]!.pubkey.toBase58(), RECIPIENT_TOKEN_ACCOUNT.toBase58());
 
   const pauseTx = buildPauseCommitmentCampaignTx({
     authority: AUTHORITY,
@@ -375,10 +400,10 @@ test("activation builders expose direct-premium and treasury-credit flows with o
     healthPlanAddress: genesisPlan.address,
     reserveDomainAddress: genesisPlan.reserveDomain,
     campaignAddress: campaign,
-    ledgerAddress: ledger,
-    paymentAssetMint: paymentMint,
-    coverageAssetMint: coverageMint,
-    coverageFundingLineAddress: travel30PremiumLine.address,
+    ledgerAddress: waterfallLedger,
+    paymentAssetMint: waterfallPaymentMint,
+    coverageAssetMint: waterfallPaymentMint,
+    coverageFundingLineAddress: waterfallFundingLine,
     policySeriesAddress: travel30Series.address,
     positionAddress: position,
     recentBlockhash: RECENT_BLOCKHASH,
@@ -386,7 +411,12 @@ test("activation builders expose direct-premium and treasury-credit flows with o
   });
   const waterfallIx = assertProtocolIxShape(waterfallTx, "activate_waterfall_commitment", AUTHORITY);
   assert.equal(waterfallIx.keys.length, 13);
-  assert.equal(waterfallIx.keys[4]!.pubkey.toBase58(), paymentRail.toBase58());
-  assert.equal(waterfallIx.keys[5]!.pubkey.toBase58(), reserveAssetRail.toBase58());
-  assert.equal(waterfallIx.keys[6]!.pubkey.toBase58(), ledger.toBase58());
+  assert.equal(waterfallIx.keys[4]!.pubkey.toBase58(), waterfallPaymentRail.toBase58());
+  assert.equal(waterfallIx.keys[5]!.pubkey.toBase58(), waterfallReserveAssetRail.toBase58());
+  assert.equal(waterfallIx.keys[6]!.pubkey.toBase58(), waterfallLedger.toBase58());
+  assert.equal(waterfallIx.keys[9]!.pubkey.toBase58(), waterfallFundingLine.toBase58());
+  assert.equal(
+    waterfallIx.keys[10]!.pubkey.toBase58(),
+    deriveFundingLineLedgerPda({ fundingLine: waterfallFundingLine, assetMint: waterfallPaymentMint }).toBase58(),
+  );
 });

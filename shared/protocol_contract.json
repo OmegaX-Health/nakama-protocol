@@ -4,6 +4,62 @@
   "instructionSetVersion": 1,
   "instructions": [
     {
+      "name": "accept_protocol_governance_authority",
+      "discriminator": [
+        202,
+        235,
+        28,
+        119,
+        167,
+        24,
+        81,
+        85
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "name": "pending_authority",
+          "writable": false,
+          "signer": true,
+          "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "activate_direct_premium_commitment",
       "discriminator": [
         94,
@@ -2596,6 +2652,62 @@
       ]
     },
     {
+      "name": "cancel_protocol_governance_authority_transfer",
+      "discriminator": [
+        113,
+        25,
+        246,
+        12,
+        38,
+        35,
+        223,
+        114
+      ],
+      "args": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": false,
+          "signer": true,
+          "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "claim_oracle",
       "discriminator": [
         1,
@@ -5111,8 +5223,26 @@
           "optional": true
         },
         {
+          "name": "liquidity_pool",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
+          "name": "capital_class",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
           "name": "pool_class_ledger",
           "writable": true,
+          "signer": false,
+          "optional": true
+        },
+        {
+          "name": "allocation_position",
+          "writable": false,
           "signer": false,
           "optional": true
         },
@@ -7560,6 +7690,19 @@
           }
         },
         {
+          "name": "program",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "address": "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B"
+        },
+        {
+          "name": "program_data",
+          "writable": false,
+          "signer": false,
+          "optional": false
+        },
+        {
           "name": "system_program",
           "writable": false,
           "signer": false,
@@ -8579,6 +8722,12 @@
           }
         },
         {
+          "name": "policy_series",
+          "writable": false,
+          "signer": false,
+          "optional": true
+        },
+        {
           "name": "series_reserve_ledger",
           "writable": true,
           "signer": false,
@@ -8691,6 +8840,12 @@
               }
             ]
           }
+        },
+        {
+          "name": "policy_series",
+          "writable": false,
+          "signer": false,
+          "optional": true
         },
         {
           "name": "member_position",
@@ -9834,6 +9989,40 @@
           "writable": true,
           "signer": true,
           "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
         },
         {
           "name": "campaign",
@@ -12053,6 +12242,49 @@
           }
         },
         {
+          "name": "reserve_asset_rail",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  114,
+                  97,
+                  105,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "funding_line.asset_mint",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
           "name": "domain_asset_vault",
           "writable": true,
           "signer": false,
@@ -12419,6 +12651,478 @@
       ]
     },
     {
+      "name": "settle_claim_case_selected_asset",
+      "discriminator": [
+        21,
+        218,
+        248,
+        73,
+        41,
+        97,
+        47,
+        212
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "SettleClaimCaseSelectedAssetArgs"
+            }
+          }
+        }
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": false,
+          "signer": true,
+          "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "health_plan",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  104,
+                  101,
+                  97,
+                  108,
+                  116,
+                  104,
+                  95,
+                  112,
+                  108,
+                  97,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.health_plan_id",
+                "account": "HealthPlan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "claim_asset_rail",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  114,
+                  97,
+                  105,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "claim_case.asset_mint",
+                "account": "ClaimCase"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout_asset_rail",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  114,
+                  97,
+                  105,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "payout_funding_line.asset_mint",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout_domain_asset_vault",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "payout_funding_line.asset_mint",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout_domain_asset_ledger",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  108,
+                  101,
+                  100,
+                  103,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "payout_funding_line.asset_mint",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout_funding_line",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  117,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  108,
+                  105,
+                  110,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan"
+              },
+              {
+                "kind": "account",
+                "path": "payout_funding_line.line_id",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout_funding_line_ledger",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  117,
+                  110,
+                  100,
+                  105,
+                  110,
+                  103,
+                  95,
+                  108,
+                  105,
+                  110,
+                  101,
+                  95,
+                  108,
+                  101,
+                  100,
+                  103,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "payout_funding_line"
+              },
+              {
+                "kind": "account",
+                "path": "payout_funding_line.asset_mint",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout_plan_reserve_ledger",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  108,
+                  97,
+                  110,
+                  95,
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  108,
+                  101,
+                  100,
+                  103,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan"
+              },
+              {
+                "kind": "account",
+                "path": "payout_funding_line.asset_mint",
+                "account": "FundingLine"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payout_series_reserve_ledger",
+          "writable": true,
+          "signer": false,
+          "optional": true
+        },
+        {
+          "name": "claim_case",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  99,
+                  97,
+                  115,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan"
+              },
+              {
+                "kind": "account",
+                "path": "claim_case.claim_id",
+                "account": "ClaimCase"
+              }
+            ]
+          }
+        },
+        {
+          "name": "member_position",
+          "writable": false,
+          "signer": false,
+          "optional": false
+        },
+        {
+          "name": "claim_asset_mint",
+          "writable": false,
+          "signer": false,
+          "optional": false
+        },
+        {
+          "name": "payout_asset_mint",
+          "writable": false,
+          "signer": false,
+          "optional": false
+        },
+        {
+          "name": "payout_vault_token_account",
+          "writable": true,
+          "signer": false,
+          "optional": false
+        },
+        {
+          "name": "recipient_token_account",
+          "writable": true,
+          "signer": false,
+          "optional": false
+        },
+        {
+          "name": "token_program",
+          "writable": false,
+          "signer": false,
+          "optional": false
+        }
+      ]
+    },
+    {
       "name": "settle_obligation",
       "discriminator": [
         209,
@@ -12513,6 +13217,49 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve_asset_rail",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  97,
+                  115,
+                  115,
+                  101,
+                  116,
+                  95,
+                  114,
+                  97,
+                  105,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "health_plan.reserve_domain",
+                "account": "HealthPlan"
+              },
+              {
+                "kind": "account",
+                "path": "obligation.asset_mint",
+                "account": "Obligation"
               }
             ]
           }

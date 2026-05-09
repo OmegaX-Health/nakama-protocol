@@ -79,6 +79,7 @@ type OpenFundingLineInstructionParams = {
   reserveDomain: PublicKey;
   healthPlan: PublicKey;
   assetMint: PublicKey;
+  policySeries: PublicKey;
   fundingLine: PublicKey;
   fundingLineLedger: PublicKey;
   planReserveLedger: PublicKey;
@@ -287,6 +288,7 @@ export function buildOpenFundingLineInstruction(params: OpenFundingLineInstructi
       { pubkey: params.fundingLine, isSigner: false, isWritable: true },
       { pubkey: params.fundingLineLedger, isSigner: false, isWritable: true },
       { pubkey: params.planReserveLedger, isSigner: false, isWritable: true },
+      { pubkey: params.policySeries, isSigner: false, isWritable: false },
       { pubkey: params.seriesReserveLedger, isSigner: false, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],

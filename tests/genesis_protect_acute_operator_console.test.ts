@@ -46,6 +46,7 @@ const {
   deriveCommitmentCampaignPda,
   deriveCommitmentLedgerPda,
   deriveCommitmentPaymentRailPda,
+  deriveFundingLinePda,
 } = protocolModule as typeof import("../frontend/lib/protocol.ts");
 
 function cloneFixtureSnapshot(): ProtocolConsoleSnapshot {
@@ -422,9 +423,17 @@ test("Genesis reserve console summarizes lanes by funding path and flags degrade
   assert.equal(selectedLane?.skuKey, "travel30");
   assert.equal(selectedLane?.hasVisibilityGap, true);
   assert.ok(selectedLane?.warningReasons.some((warning) => /missing/i.test(warning)));
+  assert.equal(model.summary.claimsPayingCapital, model.setupModel.claimsPayingCapital);
+  assert.equal(
+    model.summary.diagnosticLaneFundedAmount,
+    model.lanes.reduce((sum, lane) => sum + lane.claimsPayingCapital, 0n),
+  );
   assert.equal(model.summary.visibilityGapCount, 1);
   assert.ok(
     model.warnings.includes("One or more Genesis reserve lanes are missing live balance-sheet or allocation context."),
+  );
+  assert.ok(
+    model.warnings.includes("Visible lane funding is diagnostic until Genesis posting rules recognize it as claims-paying reserve."),
   );
   assert.ok(model.warnings.some((warning) => model.setupModel.posture.reasons.includes(warning)));
 
@@ -457,6 +466,10 @@ test("Genesis setup surfaces Founder commitments separately from claims-paying r
     paymentAssetMint: travel30PremiumLine.assetMint,
   }).toBase58();
   const omegaxPaymentMint = snapshot.rewardMint;
+  const omegaxFundingLine = deriveFundingLinePda({
+    healthPlan: genesisPlan.address,
+    lineId: "genesis-travel30-premiums-omegax",
+  }).toBase58();
   const omegaxLedger = deriveCommitmentLedgerPda({
     campaign,
     paymentAssetMint: omegaxPaymentMint,
@@ -522,9 +535,9 @@ test("Genesis setup surfaces Founder commitments separately from claims-paying r
       campaign,
       reserveDomain: genesisPlan.reserveDomain,
       paymentAssetMint: omegaxPaymentMint,
-      coverageAssetMint: travel30PremiumLine.assetMint,
+      coverageAssetMint: omegaxPaymentMint,
       reserveAssetRail: "FounderOmegaxReserveRail1111111111111111111",
-      coverageFundingLine: travel30PremiumLine.address,
+      coverageFundingLine: omegaxFundingLine,
       mode: COMMITMENT_MODE_WATERFALL_RESERVE,
       status: COMMITMENT_CAMPAIGN_STATUS_ACTIVE,
       depositAmount: 5_000n,
@@ -586,7 +599,7 @@ test("Genesis setup surfaces Founder commitments separately from claims-paying r
       depositor: "FounderTreasuryDepositor1111111111111111111",
       beneficiary: "FounderTreasuryBeneficiary1111111111111111",
       paymentAssetMint: omegaxPaymentMint,
-      coverageAssetMint: travel30PremiumLine.assetMint,
+      coverageAssetMint: omegaxPaymentMint,
       amount: 5_000n,
       coverageAmount: 1_000n,
       queueIndex: 0n,
@@ -617,6 +630,6 @@ test("Genesis setup surfaces Founder commitments separately from claims-paying r
     model.founderCommitments.warnings.some((warning) => /do not count as claims-paying reserve/i.test(warning)),
   );
   assert.ok(
-    model.founderCommitments.warnings.some((warning) => /stable rails pay first and OMEGAX-style rails remain last/i.test(warning)),
+    model.founderCommitments.warnings.some((warning) => /same-asset funding line/i.test(warning)),
   );
 });

@@ -565,7 +565,7 @@ function buildGenesisProtectAcuteCommitmentPosture(params: {
     || paymentRails.some((rail) => rail.mode === COMMITMENT_MODE_WATERFALL_RESERVE)
     || positions.some((position) => position.state === COMMITMENT_POSITION_WATERFALL_RESERVE_ACTIVATED)
   ) {
-    warnings.push("Waterfall reserve commitments activate only after rail pricing, freshness, haircut, and exposure controls pass; stable rails pay first and OMEGAX-style rails remain last.");
+    warnings.push("Waterfall reserve commitments activate only after each rail has a same-asset funding line plus pricing, freshness, haircut, and exposure controls; stable rails pay first and OMEGAX-style rails remain last.");
   }
   if (
     campaigns.some((campaign) => campaign.mode === COMMITMENT_MODE_DIRECT_PREMIUM)

@@ -8,6 +8,8 @@ declare_id!("Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B");
 
 pub mod args;
 pub mod capital;
+#[cfg(feature = "certora")]
+pub mod certora;
 pub mod claims;
 pub mod commitments;
 pub mod constants;
@@ -55,6 +57,7 @@ pub(crate) use capital::{
     __client_accounts_update_capital_class_controls,
     __client_accounts_update_lp_position_credentialing,
 };
+pub(crate) use claims::__client_accounts_settle_claim_case_selected_asset;
 pub(crate) use commitments::{
     __client_accounts_activate_direct_premium_commitment,
     __client_accounts_activate_treasury_credit_commitment,
@@ -96,6 +99,18 @@ pub mod omegax_protocol {
         args: RotateProtocolGovernanceAuthorityArgs,
     ) -> Result<()> {
         crate::governance::rotate_protocol_governance_authority(ctx, args)
+    }
+
+    pub fn accept_protocol_governance_authority(
+        ctx: Context<AcceptProtocolGovernanceAuthority>,
+    ) -> Result<()> {
+        crate::governance::accept_protocol_governance_authority(ctx)
+    }
+
+    pub fn cancel_protocol_governance_authority_transfer(
+        ctx: Context<CancelProtocolGovernanceAuthorityTransfer>,
+    ) -> Result<()> {
+        crate::governance::cancel_protocol_governance_authority_transfer(ctx)
     }
 
     pub fn create_reserve_domain(
@@ -343,6 +358,13 @@ pub mod omegax_protocol {
         args: SettleClaimCaseArgs,
     ) -> Result<()> {
         crate::claims::settle_claim_case(ctx, args)
+    }
+
+    pub fn settle_claim_case_selected_asset(
+        ctx: Context<SettleClaimCaseSelectedAsset>,
+        args: SettleClaimCaseSelectedAssetArgs,
+    ) -> Result<()> {
+        crate::claims::settle_claim_case_selected_asset(ctx, args)
     }
 
     pub fn create_liquidity_pool(

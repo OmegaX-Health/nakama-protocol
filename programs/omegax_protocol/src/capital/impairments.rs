@@ -41,14 +41,13 @@ pub(crate) fn mark_impairment(
     if let Some(allocation_position) = ctx.accounts.allocation_position.as_deref_mut() {
         allocation_position.impaired_amount =
             checked_add(allocation_position.impaired_amount, amount)?;
-        allocation_position.realized_pnl = allocation_position
-            .realized_pnl
-            .saturating_sub(amount as i64);
+        allocation_position.realized_pnl =
+            debit_realized_pnl_for_loss(allocation_position.realized_pnl, amount)?;
     }
     if let Some(allocation_ledger) = ctx.accounts.allocation_ledger.as_deref_mut() {
         book_impairment(&mut allocation_ledger.sheet, amount)?;
         allocation_ledger.realized_pnl =
-            allocation_ledger.realized_pnl.saturating_sub(amount as i64);
+            debit_realized_pnl_for_loss(allocation_ledger.realized_pnl, amount)?;
     }
     if let Some(obligation) = ctx.accounts.obligation.as_deref_mut() {
         obligation.status = OBLIGATION_STATUS_IMPAIRED;

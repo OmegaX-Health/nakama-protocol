@@ -61,3 +61,7 @@ strategy/
 .idea
 .vscode
 .playwright-cli/
+.gstack/
+.certora_internal/
+certora_output/
+formal_verification/certora/runs/

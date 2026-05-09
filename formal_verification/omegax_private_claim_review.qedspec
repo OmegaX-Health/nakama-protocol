@@ -1,0 +1,335 @@
+// Manual QEDGen adjunct spec for the MagicBlock private claim-review program.
+// This file models the security invariants that matter for the public proof
+// trail: registry-gated session creation, registered reviewer writes,
+// payment-attestor writes, and monotonic lifecycle transitions.
+
+spec OmegaxPrivateClaimReview
+
+program_id "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn"
+
+const REVIEW_STATUS_OPENED = 0
+const REVIEW_STATUS_DELEGATED = 1
+const REVIEW_STATUS_REVIEWED = 2
+const REVIEW_STATUS_APPROVED = 3
+const REVIEW_STATUS_NEEDS_MORE_INFO = 4
+const REVIEW_STATUS_ESCALATED = 5
+const REVIEW_STATUS_FAILED = 6
+
+type PrivateReviewRegistry
+  | Active of {
+      authority         : Pubkey,
+      session_authority : Pubkey,
+      payment_attestor  : Pubkey,
+      active            : Bool,
+      operator_count    : U32,
+      created_at        : I64,
+      updated_at        : I64,
+      bump              : U8
+    }
+  | Closed
+
+type PrivateReviewOperator
+  | Active of {
+      registry            : Pubkey,
+      reviewer_authority  : Pubkey,
+      review_binary_hash  : U64,
+      active              : Bool,
+      created_at          : I64,
+      updated_at          : I64,
+      bump                : U8
+    }
+  | Closed
+
+type PrivateClaimReviewSession
+  | Active of {
+      session_id               : U64,
+      session_authority        : Pubkey,
+      claim_case               : Pubkey,
+      health_plan              : Pubkey,
+      policy_series            : Pubkey,
+      evidence_ref_hash        : U64,
+      decision_support_hash    : U64,
+      schema_key_hash          : U64,
+      schema_hash              : U64,
+      review_operator          : Pubkey,
+      reviewer_authority       : Pubkey,
+      payment_attestor         : Pubkey,
+      review_result_hash       : U64,
+      review_artifact_hash     : U64,
+      review_binary_hash       : U64,
+      tee_attestation_digest   : U64,
+      operator                 : Pubkey,
+      private_payment_ref_hash : U64,
+      status                   : U8,
+      opened_at                : I64,
+      delegated_at             : I64,
+      reviewed_at              : I64,
+      payment_recorded_at      : I64,
+      committed_at             : I64,
+      failed_at                : I64,
+      bump                     : U8
+    }
+  | Closed
+
+pda review_registry ["private_review_registry"]
+pda review_operator ["private_review_operator", reviewer_authority]
+pda review_session ["private_claim_review", session_authority, claim_case, session_id]
+pda buffer_review_session ["buffer", review_session]
+pda delegation_record_review_session ["delegation", review_session]
+pda delegation_metadata_review_session ["delegation-metadata", review_session]
+
+type Error
+  | EmptySessionId
+  | SessionIdTooLong
+  | SessionIdMismatch
+  | InvalidRegistryAuthority
+  | InvalidSessionAuthority
+  | InvalidPaymentAttestor
+  | InvalidReviewerAuthority
+  | InvalidClaimCase
+  | InvalidHealthPlan
+  | InvalidPolicySeries
+  | ZeroEvidenceRefHash
+  | ZeroSchemaKeyHash
+  | ZeroSchemaHash
+  | ZeroReviewResultHash
+  | ZeroReviewArtifactHash
+  | ZeroReviewBinaryHash
+  | ZeroTeeAttestationDigest
+  | ZeroPrivatePaymentRefHash
+  | ZeroFailureRefHash
+  | RegistryInactive
+  | OperatorInactive
+  | OperatorRegistryMismatch
+  | UnauthorizedRegistryAuthority
+  | UnauthorizedSessionAuthority
+  | UnauthorizedReviewer
+  | UnauthorizedReviewOperator
+  | UnauthorizedPaymentAttestor
+  | UnauthorizedFailureMarker
+  | ReviewBinaryHashMismatch
+  | InvalidReviewStatus
+  | ReviewNotDelegatable
+  | ReviewNotWritable
+  | ReviewAlreadyRecorded
+  | PaymentRefNotAllowed
+  | PaymentRefAlreadyRecorded
+  | ReviewNotReadyToCommit
+  | ApprovedReviewMissingPaymentRef
+  | ReviewAlreadyCommitted
+  | TerminalReviewCannotFail
+  | UnauthorizedRegistryInitializer
+
+handler initialize_review_registry : State.Active -> State.Active {
+  auth authority
+  requires program.programdata == program_data else UnauthorizedRegistryInitializer
+  requires program_data.upgrade_authority == authority else UnauthorizedRegistryInitializer
+  requires session_authority != default_pubkey else InvalidSessionAuthority
+  requires payment_attestor != default_pubkey else InvalidPaymentAttestor
+  effect {
+    authority := authority
+    session_authority := session_authority
+    payment_attestor := payment_attestor
+    active := active
+  }
+  accounts {
+    authority : signer, writable
+    registry : writable, pda [review_registry]
+    program : program
+    program_data : readonly
+    system_program : program
+  }
+}
+
+handler set_review_registry_authority : State.Active -> State.Active {
+  auth authority
+  requires authority == registry.authority else UnauthorizedRegistryAuthority
+  requires new_authority != default_pubkey else InvalidRegistryAuthority
+  effect {
+    authority := new_authority
+  }
+  accounts {
+    authority : signer, writable
+    registry : writable, pda [review_registry]
+  }
+}
+
+handler upsert_review_operator : State.Active -> State.Active {
+  auth authority
+  requires authority == registry.authority else UnauthorizedRegistryAuthority
+  requires registry.active == true else RegistryInactive
+  requires reviewer_authority != default_pubkey else InvalidReviewerAuthority
+  requires review_binary_hash != 0 else ZeroReviewBinaryHash
+  effect {
+    registry := review_registry
+    reviewer_authority := reviewer_authority
+    review_binary_hash := review_binary_hash
+    active := active
+  }
+  accounts {
+    authority : signer, writable
+    registry : writable, pda [review_registry]
+    operator : writable, pda [review_operator]
+    system_program : program
+  }
+}
+
+handler set_review_operator_active : State.Active -> State.Active {
+  auth authority
+  requires authority == registry.authority else UnauthorizedRegistryAuthority
+  requires operator.registry == review_registry else OperatorRegistryMismatch
+  effect {
+    active := active
+  }
+  accounts {
+    authority : signer, writable
+    registry : writable, pda [review_registry]
+    operator : writable, pda [review_operator]
+  }
+}
+
+handler open_review_session : State.Active -> State.Active {
+  auth session_authority
+  requires registry.active == true else RegistryInactive
+  requires session_authority == registry.session_authority else UnauthorizedSessionAuthority
+  requires operator.registry == review_registry else OperatorRegistryMismatch
+  requires operator.active == true else OperatorInactive
+  requires session_id != 0 else EmptySessionId
+  requires evidence_ref_hash != 0 else ZeroEvidenceRefHash
+  requires schema_key_hash != 0 else ZeroSchemaKeyHash
+  requires schema_hash != 0 else ZeroSchemaHash
+  effect {
+    session_authority := session_authority
+    review_operator := review_operator
+    reviewer_authority := operator.reviewer_authority
+    payment_attestor := registry.payment_attestor
+    status := REVIEW_STATUS_OPENED
+    review_result_hash := 0
+    private_payment_ref_hash := 0
+  }
+  accounts {
+    session_authority : signer, writable
+    registry : readonly, pda [review_registry]
+    operator : readonly, pda [review_operator]
+    review_session : writable, pda [review_session]
+    system_program : program
+  }
+}
+
+handler delegate_review_session : State.Active -> State.Active {
+  auth session_authority
+  requires session_authority == review_session.session_authority else UnauthorizedSessionAuthority
+  requires claim_case == review_session.claim_case else InvalidClaimCase
+  requires session_id == review_session.session_id else SessionIdMismatch
+  requires review_session.status == REVIEW_STATUS_OPENED else ReviewNotDelegatable
+  effect {
+    status := REVIEW_STATUS_DELEGATED
+    delegated_at := now
+  }
+  accounts {
+    session_authority : signer, writable
+    buffer_review_session : writable, pda [buffer_review_session]
+    delegation_record_review_session : writable, pda [delegation_record_review_session]
+    delegation_metadata_review_session : writable, pda [delegation_metadata_review_session]
+    review_session : writable, pda [review_session]
+    owner_program : readonly
+    delegation_program : readonly
+    system_program : program
+  }
+}
+
+handler record_private_review : State.Active -> State.Active {
+  auth reviewer_authority
+  requires registry.active == true else RegistryInactive
+  requires operator.active == true else OperatorInactive
+  requires operator.registry == review_registry else OperatorRegistryMismatch
+  requires reviewer_authority == operator.reviewer_authority else UnauthorizedReviewer
+  requires review_session.review_operator == review_operator else UnauthorizedReviewOperator
+  requires review_session.reviewer_authority == reviewer_authority else UnauthorizedReviewer
+  requires review_binary_hash == operator.review_binary_hash else ReviewBinaryHashMismatch
+  requires review_session.status == REVIEW_STATUS_DELEGATED else ReviewNotWritable
+  requires review_session.review_result_hash == 0 else ReviewAlreadyRecorded
+  requires status > REVIEW_STATUS_DELEGATED else InvalidReviewStatus
+  requires status <= REVIEW_STATUS_FAILED else InvalidReviewStatus
+  requires review_result_hash != 0 else ZeroReviewResultHash
+  requires review_artifact_hash != 0 else ZeroReviewArtifactHash
+  requires review_binary_hash != 0 else ZeroReviewBinaryHash
+  requires tee_attestation_digest != 0 else ZeroTeeAttestationDigest
+  effect {
+    review_result_hash := review_result_hash
+    review_artifact_hash := review_artifact_hash
+    review_binary_hash := review_binary_hash
+    operator := reviewer_authority
+    status := status
+  }
+  accounts {
+    reviewer_authority : signer, writable
+    registry : readonly, pda [review_registry]
+    operator : readonly, pda [review_operator]
+    review_session : writable, pda [review_session]
+  }
+}
+
+handler record_private_payment_ref : State.Active -> State.Active {
+  auth payment_attestor
+  requires registry.active == true else RegistryInactive
+  requires payment_attestor == registry.payment_attestor else UnauthorizedPaymentAttestor
+  requires payment_attestor == review_session.payment_attestor else UnauthorizedPaymentAttestor
+  requires review_session.status == REVIEW_STATUS_APPROVED else PaymentRefNotAllowed
+  requires review_session.private_payment_ref_hash == 0 else PaymentRefAlreadyRecorded
+  requires private_payment_ref_hash != 0 else ZeroPrivatePaymentRefHash
+  effect {
+    private_payment_ref_hash := private_payment_ref_hash
+  }
+  accounts {
+    payment_attestor : signer, writable
+    registry : readonly, pda [review_registry]
+    review_session : writable, pda [review_session]
+  }
+}
+
+handler commit_and_close_review_session : State.Active -> State.Closed {
+  auth session_authority
+  requires session_authority == review_session.session_authority else UnauthorizedSessionAuthority
+  requires review_session.status > REVIEW_STATUS_DELEGATED else ReviewNotReadyToCommit
+  requires review_session.status <= REVIEW_STATUS_FAILED else ReviewNotReadyToCommit
+  requires review_session.status == REVIEW_STATUS_APPROVED
+        implies review_session.private_payment_ref_hash != 0 else ApprovedReviewMissingPaymentRef
+  requires review_session.committed_at == 0 else ReviewAlreadyCommitted
+  effect {
+    committed_at := now
+  }
+  accounts {
+    session_authority : signer, writable
+    review_session : writable, pda [review_session]
+    magic_program : readonly
+    magic_context : writable
+  }
+}
+
+handler mark_review_failed : State.Active -> State.Active {
+  auth actor
+  requires actor == review_session.session_authority
+        or actor == review_session.reviewer_authority else UnauthorizedFailureMarker
+  requires review_session.status <= REVIEW_STATUS_DELEGATED else TerminalReviewCannotFail
+  requires review_session.committed_at == 0 else ReviewAlreadyCommitted
+  requires failure_ref_hash != 0 else ZeroFailureRefHash
+  effect {
+    review_artifact_hash := failure_ref_hash
+    status := REVIEW_STATUS_FAILED
+  }
+  accounts {
+    actor : signer
+    review_session : writable, pda [review_session]
+  }
+}
+
+cover private_claim_room_happy_path [
+  initialize_review_registry,
+  upsert_review_operator,
+  open_review_session,
+  delegate_review_session,
+  record_private_review,
+  record_private_payment_ref,
+  commit_and_close_review_session
+]

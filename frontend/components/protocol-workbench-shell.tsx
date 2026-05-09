@@ -14,7 +14,7 @@ import { useTheme } from "@/components/theme-provider";
 import { WalletButton } from "@/components/wallet-providers";
 import { useWorkspacePersona } from "@/components/workspace-persona";
 import frontendPackage from "@/package.json";
-import { NETWORK_OPTIONS, normalizeExplorerCluster } from "@/lib/network-config";
+import { NETWORK_OPTIONS } from "@/lib/network-config";
 import { cn } from "@/lib/cn";
 import { computeWorkbenchMetrics, WORKBENCH_NAV } from "@/lib/workbench";
 import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
@@ -25,9 +25,8 @@ const SDK_PACKAGE_URL = "https://www.npmjs.com/package/@omegax/protocol-sdk";
 const DOCS_URL = "https://docs.omegax.health";
 const SECURITY_AUDITS_URL = "https://omegax.health/protocol/audit";
 
-function buildFooterMetadata(): { version: string; networkLabel: string } {
-  const configuredCluster = normalizeExplorerCluster(process.env.NEXT_PUBLIC_SOLANA_EXPLORER_CLUSTER);
-  const networkLabel = NETWORK_OPTIONS.find((option) => option.id === configuredCluster)?.label ?? "Devnet";
+function buildFooterMetadata(selectedNetwork: string): { version: string; networkLabel: string } {
+  const networkLabel = NETWORK_OPTIONS.find((option) => option.id === selectedNetwork)?.label ?? "Devnet";
   const protocolVersion = (process.env.NEXT_PUBLIC_PROTOCOL_BUILD_VERSION || "").trim() || frontendPackage.version;
   return { version: `v${protocolVersion}`, networkLabel };
 }
@@ -66,12 +65,15 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
   const { snapshot } = useProtocolConsoleSnapshot();
   const workbenchMetrics = computeWorkbenchMetrics(snapshot);
   const isOverviewRoute = pathname === "/overview" || pathname.startsWith("/overview/");
+  const isCoverageRoute = pathname === "/coverage" || pathname.startsWith("/coverage/");
   const useFullscreenWorkbenchChrome = [
     "/overview",
     "/plans",
     "/capital",
     "/governance",
     "/oracles",
+    "/coverage",
+    "/magicblock-claim-room",
   ].some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
   const networkMenuRef = useRef<HTMLDivElement | null>(null);
@@ -83,11 +85,17 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
   const [epoch, setEpoch] = useState("--");
   const [slot, setSlot] = useState("--");
   const [isLive, setIsLive] = useState(false);
+  const [themeToggleHydrated, setThemeToggleHydrated] = useState(false);
 
-  const isDarkTheme = mounted && theme === "dark";
-  const ThemeIcon = isDarkTheme ? SunMedium : MoonStar;
+  const isDarkTheme = themeToggleHydrated && mounted && theme === "dark";
+  const ThemeIcon = themeToggleHydrated && isDarkTheme ? SunMedium : MoonStar;
   const nextThemeLabel = isDarkTheme ? "light" : "dark";
-  const footerMetadata = buildFooterMetadata();
+  const themeToggleLabel = themeToggleHydrated ? `Switch to ${nextThemeLabel} mode` : "Switch color theme";
+  const footerMetadata = buildFooterMetadata(selectedNetwork);
+
+  useEffect(() => {
+    setThemeToggleHydrated(true);
+  }, []);
 
   useEffect(() => {
     setIsMobileNavOpen(false);
@@ -307,8 +315,8 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
               type="button"
               className="protocol-toolbar-icon-button"
               onClick={toggleTheme}
-              aria-label={`Switch to ${nextThemeLabel} mode`}
-              title={`Switch to ${nextThemeLabel} mode`}
+              aria-label={themeToggleLabel}
+              title={themeToggleLabel}
             >
               <ThemeIcon className="h-3.5 w-3.5" strokeWidth={1.9} aria-hidden="true" />
             </button>
@@ -380,6 +388,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
         className={cn(
           "protocol-footer",
           useFullscreenWorkbenchChrome && "protocol-footer-fullscreen",
+          isCoverageRoute && "protocol-footer-document",
           isOverviewRoute && "protocol-footer-overview",
         )}
       >

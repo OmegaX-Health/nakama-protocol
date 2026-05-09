@@ -20,6 +20,24 @@ pub struct ProtocolGovernanceAuthorityRotatedEvent {
 }
 
 #[event]
+pub struct ProtocolGovernanceAuthorityTransferProposedEvent {
+    pub current_governance_authority: Pubkey,
+    pub pending_governance_authority: Pubkey,
+    pub authority: Pubkey,
+    pub proposed_at_ts: i64,
+    pub expires_at_ts: i64,
+    pub audit_nonce: u64,
+}
+
+#[event]
+pub struct ProtocolGovernanceAuthorityTransferCanceledEvent {
+    pub governance_authority: Pubkey,
+    pub canceled_governance_authority: Pubkey,
+    pub authority: Pubkey,
+    pub audit_nonce: u64,
+}
+
+#[event]
 pub struct ReserveDomainCreatedEvent {
     pub reserve_domain: Pubkey,
     pub domain_admin: Pubkey,
@@ -173,6 +191,8 @@ pub struct RedemptionRequestedEvent {
     pub owner: Pubkey,
     pub shares: u64,
     pub asset_amount: u64,
+    pub redemption_sequence: u64,
+    pub requested_at_ts: i64,
 }
 
 #[event]
@@ -188,6 +208,16 @@ pub struct ClaimCaseStateChangedEvent {
     pub claim_case: Pubkey,
     pub intake_status: u8,
     pub approved_amount: u64,
+}
+
+#[event]
+pub struct ClaimCaseSelectedAssetPayoutEvent {
+    pub claim_case: Pubkey,
+    pub claim_asset_mint: Pubkey,
+    pub payout_asset_mint: Pubkey,
+    pub claim_credit_amount: u64,
+    pub payout_amount: u64,
+    pub settlement_reason_hash: [u8; 32],
 }
 
 #[event]

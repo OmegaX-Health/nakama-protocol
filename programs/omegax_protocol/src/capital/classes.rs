@@ -18,6 +18,10 @@ pub(crate) fn create_capital_class(
         args.fee_bps <= MAX_CONFIGURED_FEE_BPS,
         OmegaXProtocolError::InvalidBps
     );
+    require!(
+        args.min_lockup_seconds >= 0,
+        OmegaXProtocolError::InvalidLockupSeconds
+    );
 
     let capital_class = &mut ctx.accounts.capital_class;
     capital_class.reserve_domain = ctx.accounts.liquidity_pool.reserve_domain;
@@ -34,14 +38,18 @@ pub(crate) fn create_capital_class(
     capital_class.fee_bps = args.fee_bps;
     capital_class.min_lockup_seconds = args.min_lockup_seconds;
     capital_class.pause_flags = args.pause_flags;
-    capital_class.queue_only_redemptions = args.pause_flags & PAUSE_FLAG_REDEMPTION_QUEUE_ONLY != 0
-        || ctx.accounts.liquidity_pool.redemption_policy == REDEMPTION_POLICY_QUEUE_ONLY;
+    capital_class.queue_only_redemptions = derive_queue_only_redemptions(
+        args.pause_flags,
+        ctx.accounts.liquidity_pool.redemption_policy,
+    );
     capital_class.total_shares = 0;
     capital_class.nav_assets = 0;
     capital_class.allocated_assets = 0;
     capital_class.reserved_assets = 0;
     capital_class.impaired_assets = 0;
     capital_class.pending_redemptions = 0;
+    capital_class.next_redemption_sequence = 0;
+    capital_class.next_redemption_to_process = 0;
     capital_class.active = true;
     capital_class.bump = ctx.bumps.capital_class;
 
@@ -68,7 +76,10 @@ pub(crate) fn update_capital_class_controls(
 
     let capital_class = &mut ctx.accounts.capital_class;
     capital_class.pause_flags = args.pause_flags;
-    capital_class.queue_only_redemptions = args.queue_only_redemptions;
+    capital_class.queue_only_redemptions = derive_queue_only_redemptions(
+        args.pause_flags,
+        ctx.accounts.liquidity_pool.redemption_policy,
+    );
     capital_class.active = args.active;
 
     emit!(ScopedControlChangedEvent {

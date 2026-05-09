@@ -15,6 +15,7 @@ const { DEVNET_PROTOCOL_FIXTURE_STATE } =
 
 const {
   buildDepositCommitmentTx,
+  buildRefundCommitmentTx,
   deriveProtocolGovernancePda,
   listProtocolInstructionAccounts,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
@@ -47,5 +48,37 @@ test("[CSO-2026-05-04] deposit commitment builder carries protocol governance", 
   });
 
   assert.equal(tx.instructions[0]!.keys.length, listProtocolInstructionAccounts("deposit_commitment").length);
+  assert.equal(tx.instructions[0]!.keys[1]!.pubkey.toBase58(), deriveProtocolGovernancePda().toBase58());
+});
+
+test("[ALMANAX-2026-05-06] commitment refunds check global emergency pause", () => {
+  const body = extractRustFunctionBody("refund_commitment");
+
+  assert.match(body, /require_protocol_not_paused\(&ctx\.accounts\.protocol_governance\)\?/);
+  assert.match(
+    programSource,
+    /pub struct RefundCommitment<'info>[\s\S]+pub protocol_governance: Box<Account<'info, ProtocolGovernance>>/,
+  );
+});
+
+test("[ALMANAX-2026-05-06] refund commitment builder carries protocol governance", () => {
+  const fixture = DEVNET_PROTOCOL_FIXTURE_STATE;
+  const plan = fixture.healthPlans[0]!;
+  const fundingLine = fixture.fundingLines.find((row) => row.healthPlan === plan.address)
+    ?? fixture.fundingLines[0]!;
+  const depositor = fixture.wallets[0]!.address;
+  const recipient = fixture.wallets[1]!.address;
+  const tx = buildRefundCommitmentTx({
+    depositor,
+    healthPlanAddress: plan.address,
+    campaignId: "security-pause-regression",
+    reserveDomainAddress: plan.reserveDomain,
+    paymentAssetMint: fundingLine.assetMint,
+    recipientTokenAccountAddress: recipient,
+    beneficiary: recipient,
+    recentBlockhash: "11111111111111111111111111111111",
+  });
+
+  assert.equal(tx.instructions[0]!.keys.length, listProtocolInstructionAccounts("refund_commitment").length);
   assert.equal(tx.instructions[0]!.keys[1]!.pubkey.toBase58(), deriveProtocolGovernancePda().toBase58());
 });

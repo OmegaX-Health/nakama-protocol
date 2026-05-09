@@ -596,6 +596,8 @@ async function main() {
       accounts: [
         { pubkey: governance.publicKey, isSigner: true, isWritable: true },
         { pubkey: governanceAddress, isWritable: true },
+        { pubkey: protocol.getProgramId() },
+        { pubkey: protocol.deriveProgramDataAddress() },
         { pubkey: SystemProgram.programId },
       ],
     });
@@ -696,6 +698,127 @@ async function main() {
       ],
     });
   }
+
+  const ensureReserveAssetRail = async (params: {
+    label: string;
+    reserveDomain: string;
+    assetMint: string;
+    assetSymbol: string;
+    role: number;
+    payoutPriority: number;
+    priceUsd1e8: bigint;
+    maxConfidenceBps: number;
+    depositEnabled: boolean;
+    payoutEnabled: boolean;
+    capacityEnabled: boolean;
+  }) => {
+    const nowTs = BigInt(Math.floor(Date.now() / 1000));
+    await sendProtocolInstruction({
+      protocol,
+      connection,
+      feePayer: governance,
+      label: `configure_reserve_asset_rail:${params.label}`,
+      instructionName: "configure_reserve_asset_rail",
+      args: {
+        asset_mint: new PublicKey(params.assetMint),
+        oracle_authority: governance.publicKey,
+        asset_symbol: params.assetSymbol,
+        role: params.role,
+        payout_priority: params.payoutPriority,
+        oracle_source: protocol.RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED,
+        oracle_feed_id: sha256Bytes(`devnet-reserve-rail:${params.label}:feed`),
+        max_staleness_seconds: 86_400n,
+        max_confidence_bps: params.maxConfidenceBps,
+        haircut_bps: 0,
+        max_exposure_bps: 10_000,
+        deposit_enabled: params.depositEnabled,
+        payout_enabled: params.payoutEnabled,
+        capacity_enabled: params.capacityEnabled,
+        active: true,
+        reason_hash: sha256Bytes(`devnet-reserve-rail:${params.label}:configure`),
+      },
+      accounts: [
+        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
+        { pubkey: governanceAddress },
+        { pubkey: params.reserveDomain },
+        {
+          pubkey: protocol.deriveReserveAssetRailPda({
+            reserveDomain: params.reserveDomain,
+            assetMint: params.assetMint,
+          }),
+          isWritable: true,
+        },
+        { pubkey: SystemProgram.programId },
+      ],
+    });
+    if (!params.capacityEnabled && !params.payoutEnabled) {
+      return;
+    }
+    await sendProtocolInstruction({
+      protocol,
+      connection,
+      feePayer: governance,
+      label: `publish_reserve_asset_rail_price:${params.label}`,
+      instructionName: "publish_reserve_asset_rail_price",
+      args: {
+        price_usd_1e8: params.priceUsd1e8,
+        confidence_bps: Math.min(25, params.maxConfidenceBps),
+        published_at_ts: nowTs,
+        proof_hash: sha256Bytes(`devnet-reserve-rail:${params.label}:price:${nowTs}`),
+      },
+      accounts: [
+        { pubkey: governance.publicKey, isSigner: true },
+        { pubkey: governanceAddress },
+        {
+          pubkey: protocol.deriveReserveAssetRailPda({
+            reserveDomain: params.reserveDomain,
+            assetMint: params.assetMint,
+          }),
+          isWritable: true,
+        },
+      ],
+    });
+  };
+
+  await ensureReserveAssetRail({
+    label: "open-settlement",
+    reserveDomain: openReserveDomain.address,
+    assetMint: fixtureState.settlementMint,
+    assetSymbol: "USDC",
+    role: protocol.RESERVE_ASSET_ROLE_PRIMARY_STABLE,
+    payoutPriority: 0,
+    priceUsd1e8: 100_000_000n,
+    maxConfidenceBps: 50,
+    depositEnabled: true,
+    payoutEnabled: true,
+    capacityEnabled: true,
+  });
+  await ensureReserveAssetRail({
+    label: "open-reward",
+    reserveDomain: openReserveDomain.address,
+    assetMint: fixtureState.rewardMint,
+    assetSymbol: "OMEGAX",
+    role: protocol.RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT,
+    payoutPriority: 20,
+    priceUsd1e8: 100_000_000n,
+    maxConfidenceBps: 500,
+    depositEnabled: true,
+    payoutEnabled: false,
+    capacityEnabled: false,
+  });
+  await ensureReserveAssetRail({
+    label: "wrapper-settlement",
+    reserveDomain: wrapperReserveDomain.address,
+    assetMint: fixtureState.wrapperSettlementMint,
+    assetSymbol: "USDC",
+    role: protocol.RESERVE_ASSET_ROLE_PRIMARY_STABLE,
+    payoutPriority: 0,
+    priceUsd1e8: 100_000_000n,
+    maxConfidenceBps: 50,
+    depositEnabled: true,
+    payoutEnabled: true,
+    capacityEnabled: true,
+  });
 
   const planSpecs = [
     {
@@ -1620,6 +1743,12 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: seekerPlan.address },
+          {
+            pubkey: protocol.deriveReserveAssetRailPda({
+              reserveDomain: openReserveDomain.address,
+              assetMint: fixtureState.rewardMint,
+            }),
+          },
           { pubkey: openRewardDomainVault, isWritable: true },
           { pubkey: openRewardDomainLedger, isWritable: true },
           { pubkey: seekerSponsorLine.address, isWritable: true },
@@ -1661,6 +1790,12 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: seekerPlan.address },
+          {
+            pubkey: protocol.deriveReserveAssetRailPda({
+              reserveDomain: openReserveDomain.address,
+              assetMint: fixtureState.rewardMint,
+            }),
+          },
           { pubkey: openRewardDomainVault, isWritable: true },
           { pubkey: openRewardDomainLedger, isWritable: true },
           { pubkey: seekerSponsorLine.address, isWritable: true },
@@ -1862,6 +1997,12 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: blendedPlan.address },
+          {
+            pubkey: protocol.deriveReserveAssetRailPda({
+              reserveDomain: openReserveDomain.address,
+              assetMint: fixtureState.settlementMint,
+            }),
+          },
           { pubkey: fixtureState.domainAssetVaults[0]!.address, isWritable: true },
           { pubkey: fixtureState.domainAssetLedgers[0]!.address, isWritable: true },
           { pubkey: blendedPremiumLine.address, isWritable: true },
@@ -1901,6 +2042,12 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: blendedPlan.address },
+          {
+            pubkey: protocol.deriveReserveAssetRailPda({
+              reserveDomain: openReserveDomain.address,
+              assetMint: fixtureState.settlementMint,
+            }),
+          },
           { pubkey: fixtureState.domainAssetVaults[0]!.address, isWritable: true },
           { pubkey: fixtureState.domainAssetLedgers[0]!.address, isWritable: true },
           { pubkey: blendedPremiumLine.address, isWritable: true },
@@ -1942,7 +2089,7 @@ async function main() {
         protocol,
         connection,
         feePayer: governance,
-        label: "rotate_protocol_governance_authority",
+        label: "rotate_protocol_governance_authority:propose",
         instructionName: "rotate_protocol_governance_authority",
         args: {
           new_governance_authority: new PublicKey(configuredGovernanceControl),
@@ -1952,6 +2099,15 @@ async function main() {
           { pubkey: governanceAddress, isWritable: true },
         ],
       });
+      const pendingConfig = await protocol.fetchProtocolConfig({ connection });
+      if (pendingConfig?.pendingGovernanceAuthority !== configuredGovernanceControl) {
+        throw new Error(
+          `Protocol governance transfer proposal did not persist. Pending authority is ${pendingConfig?.pendingGovernanceAuthority ?? "unset"}.`,
+        );
+      }
+      console.log(
+        `[bootstrap] proposed protocol governance authority transfer to ${configuredGovernanceControl}; execute accept_protocol_governance_authority from that authority before treating the handoff as complete.`,
+      );
     }
   }
 
@@ -1963,6 +2119,7 @@ async function main() {
     JSON.stringify(
       {
         protocolGovernance: finalSnapshot.protocolGovernance?.address ?? null,
+        pendingGovernanceAuthority: finalSnapshot.protocolGovernance?.pendingGovernanceAuthority ?? null,
         reserveDomains: finalSnapshot.reserveDomains.length,
         domainAssetLedgers: finalSnapshot.domainAssetLedgers.length,
         healthPlans: finalSnapshot.healthPlans.length,

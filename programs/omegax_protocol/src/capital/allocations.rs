@@ -18,6 +18,40 @@ pub(crate) fn create_allocation_position(
         ctx.accounts.liquidity_pool.deposit_asset_mint,
         OmegaXProtocolError::AllocationAssetMismatch
     );
+    require_keys_eq!(
+        ctx.accounts.capital_class.reserve_domain,
+        ctx.accounts.liquidity_pool.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.capital_class.liquidity_pool,
+        ctx.accounts.liquidity_pool.key(),
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.health_plan.reserve_domain,
+        ctx.accounts.liquidity_pool.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.funding_line.reserve_domain,
+        ctx.accounts.health_plan.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.funding_line.health_plan,
+        ctx.accounts.health_plan.key(),
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.funding_line.policy_series,
+        args.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require!(
+        ctx.accounts.funding_line.status == FUNDING_LINE_STATUS_OPEN,
+        OmegaXProtocolError::FundingLineMismatch
+    );
 
     let allocation = &mut ctx.accounts.allocation_position;
     allocation.reserve_domain = ctx.accounts.liquidity_pool.reserve_domain;
@@ -59,6 +93,11 @@ pub(crate) fn update_allocation_caps(
     ctx: Context<UpdateAllocationCaps>,
     args: UpdateAllocationCapsArgs,
 ) -> Result<()> {
+    require_keys_eq!(
+        ctx.accounts.allocation_position.liquidity_pool,
+        ctx.accounts.liquidity_pool.key(),
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
     require_allocator(
         &ctx.accounts.authority.key(),
         &ctx.accounts.protocol_governance,

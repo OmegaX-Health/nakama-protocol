@@ -1,6 +1,7 @@
 # IDL
 
-This directory contains the checked-in Anchor IDL snapshot for the protocol program.
+This directory contains checked-in Anchor IDL snapshots for the protocol
+program and public adjunct programs.
 
 ## Purpose
 
@@ -13,3 +14,11 @@ Regenerate it from the repository root with:
 ```bash
 npm run anchor:idl
 ```
+
+The command copies both checked-in public IDLs:
+
+- `target/idl/omegax_protocol.json` -> `idl/omegax_protocol.json`
+- `target/idl/omegax_private_claim_review.json` -> `idl/omegax_private_claim_review.json`
+
+It also refreshes both source-hash files. Do not copy the MagicBlock adjunct
+IDL manually; `npm run idl:freshness:check` gates both programs in CI.

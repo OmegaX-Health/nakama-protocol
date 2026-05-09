@@ -36,6 +36,9 @@ function configuredProtocolProgramId(): string {
 }
 
 const PROGRAM_ID = new PublicKey(configuredProtocolProgramId());
+export const BPF_UPGRADEABLE_LOADER_PROGRAM_ID = new PublicKey(
+  "BPFLoaderUpgradeab1e11111111111111111111111",
+);
 
 export const ZERO_PUBKEY = "11111111111111111111111111111111";
 export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
@@ -51,6 +54,7 @@ export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
 export const NATIVE_SOL_MINT = "So11111111111111111111111111111111111111112";
 export const NATIVE_SOL_MINT_KEY = new PublicKey(NATIVE_SOL_MINT);
 export const MAX_ID_SEED_BYTES = 32;
+export const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS = 50;
 
 export function classicTokenProgramId(tokenProgramId?: PublicKeyish | null): PublicKey {
   const candidate = toPublicKey(tokenProgramId ?? TOKEN_PROGRAM_ID);
@@ -291,6 +295,7 @@ export type ReserveAssetRailSnapshot = {
   oracleSource: number;
   oracleFeedIdHex: string;
   maxStalenessSeconds: number;
+  maxConfidenceBps: number;
   haircutBps: number;
   maxExposureBps: number;
   depositEnabled: boolean;
@@ -402,6 +407,7 @@ export type CommitmentCampaignSnapshot = {
   status: number;
   depositAmount: BigNumberish;
   coverageAmount: BigNumberish;
+  /** Optional per-payment-rail commitment intake limit. Zero means uncapped. */
   hardCapAmount: BigNumberish;
   startsAtTs: number;
   refundAfterTs: number;
@@ -423,6 +429,7 @@ export type CommitmentPaymentRailSnapshot = {
   status: number;
   depositAmount: BigNumberish;
   coverageAmount: BigNumberish;
+  /** Optional per-payment-rail commitment intake limit. Zero means uncapped. */
   hardCapAmount: BigNumberish;
   auditNonce: BigNumberish;
   bump: number;
@@ -559,6 +566,8 @@ export type CapitalClassSnapshot = {
   navAssets: BigNumberish;
   allocatedAssets?: BigNumberish;
   pendingRedemptions?: BigNumberish;
+  nextRedemptionSequence?: BigNumberish;
+  nextRedemptionToProcess?: BigNumberish;
   minLockupSeconds?: number;
   queueOnlyRedemptions?: boolean;
   active: boolean;
@@ -587,6 +596,8 @@ export type LPPositionSnapshot = {
   lockupEndsAt?: number;
   credentialed?: boolean;
   queueStatus?: number;
+  redemptionSequence?: BigNumberish;
+  redemptionRequestedAt?: number;
 };
 
 export type AllocationPositionSnapshot = {
@@ -619,6 +630,9 @@ export type AllocationLedgerSnapshot = {
 export type ProtocolGovernanceSnapshot = {
   address: string;
   governanceAuthority: string;
+  pendingGovernanceAuthority: string;
+  pendingGovernanceProposedAt: number;
+  pendingGovernanceExpiresAt: number;
   protocolFeeBps: number;
   emergencyPause: boolean;
   auditNonce: BigNumberish;
@@ -850,12 +864,15 @@ export type ClaimFundingReadinessOtherReserveAsset = {
   reserveDomain: string;
   assetMint: string;
   assetSymbol: string;
+  payoutEnabled: boolean;
+  payoutPriority: number;
   freeAmountRaw: bigint;
   priceFresh: boolean;
   priceUsd1e8: bigint | null;
   haircutBps: number;
   estimatedValueUsd1e8: bigint | null;
   haircutAdjustedValueUsd1e8: bigint | null;
+  selectedForPayout: boolean;
   immediatelySettleable: false;
   warnings: string[];
 };
@@ -872,6 +889,8 @@ export type ClaimFundingReadiness = {
   queuedRedemptionsAmount: bigint;
   availableLpAllocationCapacityAmount: bigint;
   otherReserveAssets: ClaimFundingReadinessOtherReserveAsset[];
+  selectedPayoutAsset: ClaimFundingReadinessOtherReserveAsset | null;
+  estimatedSelectedPayoutAmountRaw: bigint | null;
   readiness: ClaimFundingReadinessState;
   warnings: string[];
 };
@@ -1013,6 +1032,8 @@ export type ProtocolConfigSummary = {
   address: string;
   admin: string;
   governanceAuthority: string;
+  pendingGovernanceAuthority?: string | null;
+  pendingGovernanceExpiresAt?: number;
   governanceRealm: string;
   governanceConfig: string;
   protocolFeeBps: number;
@@ -1146,6 +1167,10 @@ function stringSeed(value: string, label: string): Uint8Array {
 
 export function deriveProtocolGovernancePda(programId = PROGRAM_ID): PublicKey {
   return derivePda([TEXT_ENCODER.encode(SEED_PROTOCOL_GOVERNANCE)], programId);
+}
+
+export function deriveProgramDataAddress(programId = PROGRAM_ID): PublicKey {
+  return derivePda([programId.toBuffer()], BPF_UPGRADEABLE_LOADER_PROGRAM_ID);
 }
 
 export function deriveReserveDomainPda(params: {
@@ -1771,10 +1796,17 @@ export function buildMixedReserveWaterfallModel(params: {
     const price = toBigIntAmount(rail.lastPriceUsd1e8);
     const publishedAt = Number(rail.lastPricePublishedAtTs ?? 0);
     const maxStaleness = Number(rail.maxStalenessSeconds ?? 0);
+    const confidenceBps = Number(rail.lastPriceConfidenceBps ?? 0);
+    const maxConfidenceBps = Number(rail.maxConfidenceBps ?? 0);
     const priceFresh =
       rail.capacityEnabled
       && price > 0n
-      && (maxStaleness === 0 || (publishedAt > 0 && nowTs - publishedAt <= maxStaleness));
+      && maxStaleness > 0
+      && maxConfidenceBps > 0
+      && confidenceBps <= maxConfidenceBps
+      && publishedAt > 0
+      && publishedAt <= nowTs
+      && nowTs - publishedAt <= maxStaleness;
     const decimals = Math.max(0, Math.min(18, params.assetDecimalsByMint?.[rail.assetMint] ?? 6));
     const decimalFactor = 10n ** BigInt(decimals);
     const haircutNumerator = BigInt(Math.max(0, 10_000 - rail.haircutBps));
@@ -1830,12 +1862,21 @@ function clampDecimals(value: number | undefined): number {
 }
 
 function freshRailPrice(rail: ReserveAssetRailSnapshot | null | undefined, nowTs: number): boolean {
-  if (!rail || !rail.active || !rail.capacityEnabled) return false;
+  if (!rail || !rail.active || (!rail.capacityEnabled && !rail.payoutEnabled)) return false;
   const price = toBigIntAmount(rail.lastPriceUsd1e8);
   if (price <= 0n) return false;
   const publishedAt = Number(rail.lastPricePublishedAtTs ?? 0);
   const maxStaleness = Number(rail.maxStalenessSeconds ?? 0);
-  return maxStaleness === 0 || (publishedAt > 0 && nowTs - publishedAt <= maxStaleness);
+  const confidenceBps = Number(rail.lastPriceConfidenceBps ?? 0);
+  const maxConfidenceBps = Number(rail.maxConfidenceBps ?? 0);
+  return (
+    maxStaleness > 0 &&
+    maxConfidenceBps > 0 &&
+    confidenceBps <= maxConfidenceBps &&
+    publishedAt > 0 &&
+    publishedAt <= nowTs &&
+    nowTs - publishedAt <= maxStaleness
+  );
 }
 
 function amountToUsd1e8(params: {
@@ -1848,6 +1889,24 @@ function amountToUsd1e8(params: {
   const price = toBigIntAmount(params.rail?.lastPriceUsd1e8);
   const decimalFactor = 10n ** BigInt(clampDecimals(params.decimals));
   return (params.amountRaw * price) / decimalFactor;
+}
+
+function ceilDivBigInt(numerator: bigint, denominator: bigint): bigint {
+  if (denominator <= 0n) return 0n;
+  return numerator === 0n ? 0n : ((numerator - 1n) / denominator) + 1n;
+}
+
+function usd1e8ToAmountRaw(params: {
+  usd1e8: bigint;
+  rail: ReserveAssetRailSnapshot | null | undefined;
+  decimals: number;
+  nowTs: number;
+}): bigint | null {
+  if (!freshRailPrice(params.rail, params.nowTs)) return null;
+  const price = toBigIntAmount(params.rail?.lastPriceUsd1e8);
+  if (price <= 0n) return null;
+  const decimalFactor = 10n ** BigInt(clampDecimals(params.decimals));
+  return ceilDivBigInt(params.usd1e8 * decimalFactor, price);
 }
 
 function fundingLineFreeForReadiness(line: FundingLineSnapshot): bigint {
@@ -2042,10 +2101,12 @@ export function buildClaimFundingReadiness(params: ClaimFundingReadinessInput): 
         ? null
         : (estimatedValueUsd1e8 * BigInt(Math.max(0, 10_000 - haircutBps))) / 10_000n;
       const assetWarnings: string[] = [
-        "Non-settlement reserve asset; explicit conversion or funding action is required before settlement-mint payout.",
+        "Non-preferred reserve asset; it can only settle claims when the router selects this asset and the payout rail is enabled with a fresh price.",
       ];
       if (!rail) {
         assetWarnings.push("No reserve asset rail exists for this asset.");
+      } else if (!rail.payoutEnabled) {
+        assetWarnings.push("Payout rail is disabled for this asset.");
       } else if (!freshRailPrice(rail, nowTs)) {
         assetWarnings.push("No fresh published price is available, so haircut-adjusted value is not counted.");
       }
@@ -2054,12 +2115,15 @@ export function buildClaimFundingReadiness(params: ClaimFundingReadinessInput): 
         reserveDomain: reserveDomain ?? rail?.reserveDomain ?? "",
         assetMint,
         assetSymbol: rail?.assetSymbol ?? assetMint.slice(0, 4),
+        payoutEnabled: Boolean(rail?.payoutEnabled),
+        payoutPriority: rail?.payoutPriority ?? 255,
         freeAmountRaw,
         priceFresh: freshRailPrice(rail, nowTs),
         priceUsd1e8: rail ? toBigIntAmount(rail.lastPriceUsd1e8) : null,
         haircutBps,
         estimatedValueUsd1e8,
         haircutAdjustedValueUsd1e8,
+        selectedForPayout: false,
         immediatelySettleable: false,
         warnings: assetWarnings,
       };
@@ -2079,15 +2143,49 @@ export function buildClaimFundingReadiness(params: ClaimFundingReadinessInput): 
     (sum, asset) => sum + (asset.haircutAdjustedValueUsd1e8 ?? 0n),
     0n,
   );
+  const eligibleSelectedAsset = shortfallUsd1e8 === null
+    ? null
+    : otherReserveAssets
+      .filter((asset) =>
+        asset.payoutEnabled
+        && asset.priceFresh
+        && asset.haircutAdjustedValueUsd1e8 !== null
+        && asset.haircutAdjustedValueUsd1e8 >= shortfallUsd1e8,
+      )
+      .sort((left, right) => {
+        const priorityDelta = left.payoutPriority - right.payoutPriority;
+        if (priorityDelta !== 0) return priorityDelta;
+        const leftValue = left.haircutAdjustedValueUsd1e8 ?? 0n;
+        const rightValue = right.haircutAdjustedValueUsd1e8 ?? 0n;
+        return rightValue > leftValue ? 1 : rightValue < leftValue ? -1 : 0;
+      })[0] ?? null;
+  const estimatedSelectedPayoutAmountRaw = eligibleSelectedAsset && shortfallUsd1e8 !== null
+    ? usd1e8ToAmountRaw({
+      usd1e8: shortfallUsd1e8,
+      rail: railsByMint.get(eligibleSelectedAsset.assetMint) ?? null,
+      decimals: clampDecimals(params.assetDecimalsByMint?.[eligibleSelectedAsset.assetMint]),
+      nowTs,
+    })
+    : null;
+  const otherReserveAssetsWithSelection = otherReserveAssets.map((asset) => ({
+    ...asset,
+    selectedForPayout: eligibleSelectedAsset?.assetMint === asset.assetMint,
+  }));
+  const selectedPayoutAsset = eligibleSelectedAsset
+    ? otherReserveAssetsWithSelection.find((asset) => asset.assetMint === eligibleSelectedAsset.assetMint) ?? null
+    : null;
 
   if (shortfallAmount > 0n) {
     warnings.push("Settlement-mint capacity is below the requested amount.");
   }
   if (otherReserveAssets.some((asset) => asset.freeAmountRaw > 0n)) {
-    warnings.push("Other reserve assets are valuation context only; they do not increase immediately-settleable settlement-mint capacity.");
+    warnings.push("Other reserve assets do not increase preferred settlement-mint capacity; they require selected-asset payout or conversion before use.");
   }
   if (shortfallAmount > 0n && shortfallUsd1e8 === null && otherReserveHaircutValueUsd1e8 > 0n) {
     warnings.push("Settlement-mint shortfall cannot be compared to other assets without a fresh settlement asset price.");
+  }
+  if (selectedPayoutAsset) {
+    warnings.push(`Selected-asset payout candidate: ${selectedPayoutAsset.assetSymbol}. This pays that token directly; it is not a swap or USDC conversion.`);
   }
 
   let readiness: ClaimFundingReadinessState;
@@ -2095,7 +2193,7 @@ export function buildClaimFundingReadiness(params: ClaimFundingReadinessInput): 
     readiness = "settle_now";
   } else if (requestedAmount <= immediatelySettleableAmount + availableLpAllocationCapacityAmount) {
     readiness = "reserve_then_settle";
-  } else if (otherReserveHaircutValueUsd1e8 > 0n && (shortfallUsd1e8 === null || otherReserveHaircutValueUsd1e8 >= shortfallUsd1e8)) {
+  } else if (selectedPayoutAsset || (otherReserveHaircutValueUsd1e8 > 0n && (shortfallUsd1e8 === null || otherReserveHaircutValueUsd1e8 >= shortfallUsd1e8))) {
     readiness = "operator_action_required";
   } else {
     readiness = "queue_or_refund";
@@ -2112,7 +2210,9 @@ export function buildClaimFundingReadiness(params: ClaimFundingReadinessInput): 
     pendingObligationsAmount,
     queuedRedemptionsAmount,
     availableLpAllocationCapacityAmount,
-    otherReserveAssets,
+    otherReserveAssets: otherReserveAssetsWithSelection,
+    selectedPayoutAsset,
+    estimatedSelectedPayoutAmountRaw,
     readiness,
     warnings,
   };
@@ -2721,6 +2821,9 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
         snapshot.protocolGovernance = {
           address,
           governanceAuthority: asAddress(decodedField(decoded, "governanceAuthority")),
+          pendingGovernanceAuthority: asAddress(decodedField(decoded, "pendingGovernanceAuthority")),
+          pendingGovernanceProposedAt: numberFromAnchorValue(decodedField(decoded, "pendingGovernanceProposedAt")),
+          pendingGovernanceExpiresAt: numberFromAnchorValue(decodedField(decoded, "pendingGovernanceExpiresAt")),
           protocolFeeBps: Number(decodedField(decoded, "protocolFeeBps") ?? 0),
           emergencyPause: Boolean(decodedField(decoded, "emergencyPause")),
           auditNonce: bigintFromAnchorValue(decodedField(decoded, "auditNonce")),
@@ -2759,6 +2862,7 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           oracleSource: Number(decodedField(decoded, "oracleSource", "oracle_source") ?? 0),
           oracleFeedIdHex: bytesToHex(decodedField(decoded, "oracleFeedId", "oracle_feed_id")),
           maxStalenessSeconds: numberFromAnchorValue(decodedField(decoded, "maxStalenessSeconds", "max_staleness_seconds")),
+          maxConfidenceBps: Number(decodedField(decoded, "maxConfidenceBps", "max_confidence_bps") ?? 0),
           haircutBps: Number(decodedField(decoded, "haircutBps", "haircut_bps") ?? 0),
           maxExposureBps: Number(decodedField(decoded, "maxExposureBps", "max_exposure_bps") ?? 0),
           depositEnabled: Boolean(decodedField(decoded, "depositEnabled", "deposit_enabled")),
@@ -3065,6 +3169,8 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           navAssets: bigintFromAnchorValue(decodedField(decoded, "navAssets")),
           allocatedAssets: bigintFromAnchorValue(decodedField(decoded, "allocatedAssets")),
           pendingRedemptions: bigintFromAnchorValue(decodedField(decoded, "pendingRedemptions")),
+          nextRedemptionSequence: bigintFromAnchorValue(decodedField(decoded, "nextRedemptionSequence")),
+          nextRedemptionToProcess: bigintFromAnchorValue(decodedField(decoded, "nextRedemptionToProcess")),
           minLockupSeconds: numberFromAnchorValue(decodedField(decoded, "minLockupSeconds")),
           queueOnlyRedemptions: Boolean(decodedField(decoded, "queueOnlyRedemptions")),
           active: Boolean(decodedField(decoded, "active")),
@@ -3084,6 +3190,8 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           lockupEndsAt: numberFromAnchorValue(decodedField(decoded, "lockupEndsAt")),
           credentialed: Boolean(decodedField(decoded, "credentialed")),
           queueStatus: Number(decodedField(decoded, "queueStatus") ?? 0),
+          redemptionSequence: bigintFromAnchorValue(decodedField(decoded, "redemptionSequence")),
+          redemptionRequestedAt: numberFromAnchorValue(decodedField(decoded, "redemptionRequestedAt")),
         });
         break;
       case "AllocationPosition":
@@ -3444,13 +3552,28 @@ function optionalProtocolAccount(
     : { pubkey: undefined, isWritable: false };
 }
 
+function isMissingOrZeroPublicKey(pubkey?: PublicKeyish | null): boolean {
+  return !pubkey || toPublicKey(pubkey).equals(ZERO_PUBKEY_KEY);
+}
+
+function optionalNonZeroProtocolAccount(
+  pubkey?: PublicKeyish | null,
+  isWritable = false,
+): ProtocolInstructionAccountInput {
+  return isMissingOrZeroPublicKey(pubkey)
+    ? optionalProtocolAccount(undefined)
+    : optionalProtocolAccount(pubkey, isWritable);
+}
+
 function optionalSeriesReserveLedgerAccount(
   policySeriesAddress: PublicKeyish | null | undefined,
   assetMint: PublicKeyish | null | undefined,
 ): ProtocolInstructionAccountInput {
   if (!policySeriesAddress || !assetMint) return optionalProtocolAccount(undefined);
+  const policySeries = toPublicKey(policySeriesAddress);
+  if (policySeries.equals(ZERO_PUBKEY_KEY)) return optionalProtocolAccount(undefined);
   return optionalProtocolAccount(
-    deriveSeriesReserveLedgerPda({ policySeries: policySeriesAddress, assetMint }),
+    deriveSeriesReserveLedgerPda({ policySeries, assetMint }),
     true,
   );
 }
@@ -3627,6 +3750,10 @@ function protocolConfigFromSnapshot(snapshot: ProtocolConsoleSnapshot): Protocol
     address: snapshot.protocolGovernance.address,
     admin: snapshot.protocolGovernance.governanceAuthority,
     governanceAuthority: snapshot.protocolGovernance.governanceAuthority,
+    pendingGovernanceAuthority: snapshot.protocolGovernance.pendingGovernanceAuthority === ZERO_PUBKEY
+      ? null
+      : snapshot.protocolGovernance.pendingGovernanceAuthority,
+    pendingGovernanceExpiresAt: snapshot.protocolGovernance.pendingGovernanceExpiresAt,
     governanceRealm,
     governanceConfig,
     protocolFeeBps: snapshot.protocolGovernance.protocolFeeBps,
@@ -4153,6 +4280,8 @@ export function buildInitializeProtocolGovernanceTx(params: {
     accounts: [
       { pubkey: governanceAuthority, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda(), isWritable: true },
+      { pubkey: getProgramId() },
+      { pubkey: deriveProgramDataAddress() },
       { pubkey: SystemProgram.programId },
     ],
   });
@@ -4172,6 +4301,40 @@ export function buildRotateGovernanceAuthorityTx(params: {
     args: {
       new_governance_authority: newAuthority,
     },
+    accounts: [
+      { pubkey: governanceAuthority, isSigner: true, isWritable: true },
+      { pubkey: deriveProtocolGovernancePda(), isWritable: true },
+    ],
+  });
+}
+
+export function buildAcceptGovernanceAuthorityTx(params: {
+  pendingAuthority: PublicKeyish;
+  recentBlockhash: string;
+}): Transaction {
+  const pendingAuthority = toPublicKey(params.pendingAuthority);
+  return buildProtocolTransactionFromInstruction({
+    feePayer: pendingAuthority,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "accept_protocol_governance_authority",
+    args: {},
+    accounts: [
+      { pubkey: pendingAuthority, isSigner: true, isWritable: true },
+      { pubkey: deriveProtocolGovernancePda(), isWritable: true },
+    ],
+  });
+}
+
+export function buildCancelGovernanceAuthorityTransferTx(params: {
+  governanceAuthority: PublicKeyish;
+  recentBlockhash: string;
+}): Transaction {
+  const governanceAuthority = toPublicKey(params.governanceAuthority);
+  return buildProtocolTransactionFromInstruction({
+    feePayer: governanceAuthority,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "cancel_protocol_governance_authority_transfer",
+    args: {},
     accounts: [
       { pubkey: governanceAuthority, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda(), isWritable: true },
@@ -4280,6 +4443,7 @@ export function buildConfigureReserveAssetRailTx(params: {
   oracleSource: number;
   oracleFeedIdHex?: string | null;
   maxStalenessSeconds: bigint;
+  maxConfidenceBps: number;
   haircutBps: number;
   maxExposureBps: number;
   depositEnabled: boolean;
@@ -4304,6 +4468,7 @@ export function buildConfigureReserveAssetRailTx(params: {
       oracle_source: params.oracleSource,
       oracle_feed_id: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.oracleFeedIdHex), 32)),
       max_staleness_seconds: params.maxStalenessSeconds,
+      max_confidence_bps: params.maxConfidenceBps,
       haircut_bps: params.haircutBps,
       max_exposure_bps: params.maxExposureBps,
       deposit_enabled: params.depositEnabled,
@@ -4970,6 +5135,7 @@ export function buildOpenFundingLineTx(params: {
         }),
         isWritable: true,
       },
+      optionalNonZeroProtocolAccount(params.policySeriesAddress),
       optionalSeriesReserveLedgerAccount(params.policySeriesAddress, assetMint),
       { pubkey: SystemProgram.programId },
     ],
@@ -5394,6 +5560,7 @@ export function buildRefundCommitmentTx(params: {
     },
     accounts: [
       { pubkey: depositor, isSigner: true, isWritable: true },
+      { pubkey: deriveProtocolGovernancePda() },
       { pubkey: campaign, isWritable: true },
       { pubkey: paymentRail },
       { pubkey: ledger, isWritable: true },
@@ -5489,6 +5656,7 @@ export function buildOpenMemberPositionTx(params: {
       { pubkey: wallet, isSigner: true, isWritable: true },
       { pubkey: deriveProtocolGovernancePda() },
       { pubkey: params.healthPlanAddress },
+      optionalNonZeroProtocolAccount(params.seriesScopeAddress),
       { pubkey: memberPosition, isWritable: true },
       optionalProtocolAccount(membershipAnchorSeat, true),
       optionalProtocolAccount(params.tokenGateAccountAddress),
@@ -5746,7 +5914,10 @@ export function buildCreateObligationTx(params: {
         isWritable: true,
       },
       optionalSeriesReserveLedgerAccount(params.policySeriesAddress, params.assetMint),
-      optionalPoolClassLedgerAccount(params.capitalClassAddress, params.poolAssetMint),
+      optionalProtocolAccount(params.liquidityPoolAddress),
+      optionalProtocolAccount(params.capitalClassAddress),
+      optionalPoolClassLedgerAccount(params.capitalClassAddress, params.poolAssetMint ?? params.assetMint),
+      optionalProtocolAccount(params.allocationPositionAddress),
       optionalAllocationLedgerAccount(params.allocationPositionAddress, params.assetMint),
       { pubkey: obligation, isWritable: true },
       { pubkey: SystemProgram.programId },
@@ -6018,6 +6189,12 @@ function buildObligationFlowTx(params: {
       { pubkey: authority, isSigner: true },
       { pubkey: deriveProtocolGovernancePda() },
       { pubkey: params.healthPlanAddress },
+      ...(params.instructionName === "settle_obligation" ? [{
+        pubkey: deriveReserveAssetRailPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+      }] : []),
       ...(params.includeVault ? [{
         pubkey: deriveDomainAssetVaultPda({
           reserveDomain: params.reserveDomainAddress,
@@ -6183,6 +6360,12 @@ export function buildSettleClaimCaseTx(params: {
       { pubkey: deriveProtocolGovernancePda() },
       { pubkey: params.healthPlanAddress },
       {
+        pubkey: deriveReserveAssetRailPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+      },
+      {
         pubkey: deriveDomainAssetVaultPda({
           reserveDomain: params.reserveDomainAddress,
           assetMint: params.assetMint,
@@ -6232,6 +6415,98 @@ export function buildSettleClaimCaseTx(params: {
       optionalProtocolAccount(params.vaultTokenAccountAddress, true),
       optionalProtocolAccount(params.recipientTokenAccountAddress, true),
       { pubkey: params.memberPositionAddress && params.vaultTokenAccountAddress && params.recipientTokenAccountAddress ? tokenProgramId : getProgramId() },
+    ],
+  });
+}
+
+export function buildSettleClaimCaseSelectedAssetTx(params: {
+  authority: PublicKeyish;
+  healthPlanAddress: PublicKeyish;
+  reserveDomainAddress: PublicKeyish;
+  payoutFundingLineAddress: PublicKeyish;
+  claimAssetMint: PublicKeyish;
+  payoutAssetMint: PublicKeyish;
+  claimCaseAddress: PublicKeyish;
+  memberPositionAddress: PublicKeyish;
+  payoutVaultTokenAccountAddress: PublicKeyish;
+  recipientTokenAccountAddress: PublicKeyish;
+  recentBlockhash: string;
+  claimCreditAmount: bigint;
+  payoutAmount: bigint;
+  maxOverpayBps?: number | null;
+  policySeriesAddress?: PublicKeyish | null;
+  settlementReasonHashHex?: string | null;
+  tokenProgramId?: PublicKeyish | null;
+}): Transaction {
+  const authority = toPublicKey(params.authority);
+  const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
+  const maxOverpayBps = params.maxOverpayBps ?? MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS;
+  if (maxOverpayBps > MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS) {
+    throw new Error(`maxOverpayBps cannot exceed ${MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS}`);
+  }
+  return buildProtocolTransactionFromInstruction({
+    feePayer: authority,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "settle_claim_case_selected_asset",
+    args: {
+      claim_credit_amount: params.claimCreditAmount,
+      payout_amount: params.payoutAmount,
+      max_overpay_bps: maxOverpayBps,
+      settlement_reason_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.settlementReasonHashHex), 32)),
+    },
+    accounts: [
+      { pubkey: authority, isSigner: true },
+      { pubkey: deriveProtocolGovernancePda() },
+      { pubkey: params.healthPlanAddress },
+      {
+        pubkey: deriveReserveAssetRailPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.claimAssetMint,
+        }),
+      },
+      {
+        pubkey: deriveReserveAssetRailPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.payoutAssetMint,
+        }),
+      },
+      {
+        pubkey: deriveDomainAssetVaultPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.payoutAssetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: deriveDomainAssetLedgerPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.payoutAssetMint,
+        }),
+        isWritable: true,
+      },
+      { pubkey: params.payoutFundingLineAddress, isWritable: true },
+      {
+        pubkey: deriveFundingLineLedgerPda({
+          fundingLine: params.payoutFundingLineAddress,
+          assetMint: params.payoutAssetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: derivePlanReserveLedgerPda({
+          healthPlan: params.healthPlanAddress,
+          assetMint: params.payoutAssetMint,
+        }),
+        isWritable: true,
+      },
+      optionalSeriesReserveLedgerAccount(params.policySeriesAddress, params.payoutAssetMint),
+      { pubkey: params.claimCaseAddress, isWritable: true },
+      { pubkey: params.memberPositionAddress },
+      { pubkey: params.claimAssetMint },
+      { pubkey: params.payoutAssetMint },
+      { pubkey: params.payoutVaultTokenAccountAddress, isWritable: true },
+      { pubkey: params.recipientTokenAccountAddress, isWritable: true },
+      { pubkey: tokenProgramId },
     ],
   });
 }

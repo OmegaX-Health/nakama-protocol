@@ -31,6 +31,8 @@ Hash the checked-in generated artifacts at this commit. Drift between any of the
 shasum -a 256 \
   idl/omegax_protocol.json \
   idl/omegax_protocol.source-hash \
+  idl/omegax_private_claim_review.json \
+  idl/omegax_private_claim_review.source-hash \
   shared/protocol_contract.json \
   frontend/lib/generated/protocol-contract.ts \
   frontend/lib/generated/protocol-contract.js
@@ -40,6 +42,8 @@ shasum -a 256 \
 |----------|---------|
 | `idl/omegax_protocol.json` | `<sha256>` |
 | `idl/omegax_protocol.source-hash` (value, not file hash) | `<the hex hash inside the file>` |
+| `idl/omegax_private_claim_review.json` | `<sha256>` |
+| `idl/omegax_private_claim_review.source-hash` (value, not file hash) | `<the hex hash inside the file>` |
 | `shared/protocol_contract.json` | `<sha256>` |
 | `frontend/lib/generated/protocol-contract.ts` | `<sha256>` |
 | `frontend/lib/generated/protocol-contract.js` | `<sha256>` |
@@ -94,6 +98,19 @@ Each lane is a separate evidence point. Run them on the candidate commit in a cl
 | Repo baseline health | `npm run verify:public` | `<0>` | n/a |
 | Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | `<0>` | `<artifacts/localnet-e2e-summary-*.json>` |
 | Operator drawer simulation | `npm run devnet:operator:drawer:sim` | `<0>` | `<simulate-only output, none on disk>` |
+
+Optional formal-verification evidence, when relevant to the release-candidate:
+
+| Tool | Command | Rule / target | Result | Artifact / job URL |
+|------|---------|---------------|--------|--------------------|
+| Certora Solana | `npm run certora:solana:check` | prerequisites only | `<pass / fail / skipped>` | n/a |
+| Certora Solana | `npm run certora:solana:sanity -- --wait_for_results` | `<rule name(s)>` | `<pass / fail / skipped>` | `<https://prover.certora.com/output/... or n/a>` |
+| Certora Solana | `npm run certora:solana:status` | `<rule verdicts>` | `<pass / fail / skipped>` | `<redacted / local-only report URL>` |
+
+Certora rows are manual evidence. They do not replace external audit posture in
+section 8 and must not be used to claim the release was Certora-audited. The
+current lane records constrained kernel/scalar CVLR evidence, not full Anchor
+handler or account-flow proofs.
 
 ## 6. Dependency scan
 
@@ -170,10 +187,13 @@ date -u +%Y-%m-%dT%H:%M:%SZ
 shasum -a 256 \
   idl/omegax_protocol.json \
   idl/omegax_protocol.source-hash \
+  idl/omegax_private_claim_review.json \
+  idl/omegax_private_claim_review.source-hash \
   shared/protocol_contract.json \
   frontend/lib/generated/protocol-contract.ts \
   frontend/lib/generated/protocol-contract.js
 head -1 idl/omegax_protocol.source-hash
+head -1 idl/omegax_private_claim_review.source-hash
 npm run idl:freshness:check
 npm run protocol:contract:check
 

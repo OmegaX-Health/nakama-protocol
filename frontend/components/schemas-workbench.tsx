@@ -10,6 +10,7 @@ import { PoolSchemasPanel } from "@/components/pool-schemas-panel";
 import { useWorkspacePersona } from "@/components/workspace-persona";
 import { formatAmount, poolAddressForSeries, seriesOutcomeCount } from "@/lib/canonical-ui";
 import { cn } from "@/lib/cn";
+import { schemaKeyForSeries, schemaParamForSeriesSelection } from "@/lib/schema-selection";
 import { firstSearchParamValue, type RouteSearchParams, toURLSearchParams } from "@/lib/search-params";
 import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
 import {
@@ -126,10 +127,6 @@ function HeroSelector<T extends { address: string }>(props: HeroSelectorProps<T>
   );
 }
 
-function schemaKeyForSeries(series: { termsVersion: string; comparabilityHashHex?: string; comparabilityKey: string }): string {
-  return `${series.termsVersion}:${series.comparabilityHashHex ?? series.comparabilityKey}`;
-}
-
 export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -204,7 +201,9 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
   const hasInvalidSeries = Boolean(requestedSeries) && !selectedSeries;
   const hasInvalidSchema = Boolean(requestedSchema) && snapshot.outcomeSchemas.length > 0 && !selectedSchema;
   const effectiveSchema = selectedSchema ?? (selectedSeries ? schemaForSeries(selectedSeries) : null);
-  const effectiveSchemaKey = effectiveSchema?.address ?? (selectedSeries ? schemaKeyForSeries(selectedSeries) : "");
+  const effectiveSchemaKey = selectedSeries
+    ? (schemaParamForSeriesSelection(selectedSeries, effectiveSchema, snapshot.outcomeSchemas.length) ?? "")
+    : "";
   const selectedSchemaOption = useMemo<SchemaSelectorOption | null>(() => {
     if (effectiveSchema) {
       return {
@@ -321,7 +320,18 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
     const bar = tabBarRef.current;
     if (!bar) return;
     const activeButton = bar.querySelector<HTMLButtonElement>(`[data-tab-id="${activePanel}"]`);
-    if (activeButton) activeButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    if (!activeButton) return;
+
+    const activeStart = activeButton.offsetLeft;
+    const activeEnd = activeStart + activeButton.offsetWidth;
+    const visibleStart = bar.scrollLeft;
+    const visibleEnd = visibleStart + bar.clientWidth;
+
+    if (activeStart < visibleStart) {
+      bar.scrollTo({ left: activeStart, behavior: "smooth" });
+    } else if (activeEnd > visibleEnd) {
+      bar.scrollTo({ left: activeEnd - bar.clientWidth, behavior: "smooth" });
+    }
   }, [activePanel]);
 
   return (
@@ -382,7 +392,9 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
                 const nextSeries = seriesRows.find((series) => series.address === value) ?? null;
                 updateParams({
                   series: value,
-                  schema: nextSeries ? (schemaForSeries(nextSeries)?.address ?? schemaKeyForSeries(nextSeries)) : null,
+                  schema: nextSeries
+                    ? schemaParamForSeriesSelection(nextSeries, schemaForSeries(nextSeries), snapshot.outcomeSchemas.length)
+                    : null,
                 });
               }}
             />
@@ -625,10 +637,10 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
             <aside className="plans-rail">
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">SELECTED_SCHEMA</span>
+                  <span className="plans-rail-tag">Selected schema</span>
                   <span className="plans-rail-subtag">
                     <span className="plans-live-dot" aria-hidden="true" />
-                    LIVE
+                    Live
                   </span>
                 </div>
                 <div className="plans-rail-hero">
@@ -651,8 +663,8 @@ export function SchemasWorkbench({ searchParams = {} }: SchemasWorkbenchProps) {
 
               <section className="plans-rail-card heavy-glass">
                 <div className="plans-rail-head">
-                  <span className="plans-rail-tag">FIELD_LOG</span>
-                  <span className="plans-rail-subtag">LIVE_AUDIT</span>
+                  <span className="plans-rail-tag">Field log</span>
+                  <span className="plans-rail-subtag">Activity log</span>
                 </div>
                 <div className="plans-rail-trail">
                   {auditTrail.map((item) => (

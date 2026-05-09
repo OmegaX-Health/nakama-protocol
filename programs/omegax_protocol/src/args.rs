@@ -60,6 +60,7 @@ pub struct ConfigureReserveAssetRailArgs {
     pub oracle_source: u8,
     pub oracle_feed_id: [u8; 32],
     pub max_staleness_seconds: i64,
+    pub max_confidence_bps: u16,
     pub haircut_bps: u16,
     pub max_exposure_bps: u16,
     pub deposit_enabled: bool,
@@ -266,6 +267,7 @@ pub struct CreateCommitmentCampaignArgs {
     pub mode: u8,
     pub deposit_amount: u64,
     pub coverage_amount: u64,
+    /// Optional per-payment-rail commitment intake limit. Zero means uncapped.
     pub hard_cap_amount: u64,
     pub starts_at_ts: i64,
     pub refund_after_ts: i64,
@@ -282,6 +284,7 @@ pub struct CreateCommitmentPaymentRailArgs {
     pub mode: u8,
     pub deposit_amount: u64,
     pub coverage_amount: u64,
+    /// Optional per-payment-rail commitment intake limit. Zero means uncapped.
     pub hard_cap_amount: u64,
 }
 
@@ -381,6 +384,14 @@ pub struct AdjudicateClaimCaseArgs {
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub struct SettleClaimCaseArgs {
     pub amount: u64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub struct SettleClaimCaseSelectedAssetArgs {
+    pub claim_credit_amount: u64,
+    pub payout_amount: u64,
+    pub max_overpay_bps: u16,
+    pub settlement_reason_hash: [u8; 32],
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]

@@ -12,6 +12,7 @@ import {
   assertProtocolGovernanceAuthorityMatches,
   chainInputsFromSnapshot,
   evaluateChainActuarialGate,
+  fundingLineCommittedAmountForActivation,
   fundingLineIdForAsset,
   parseRehearsalArgs,
   rawAmountForUsd,
@@ -112,6 +113,31 @@ test("devnet founder rehearsal maps one UI campaign to per-asset funding lines u
   assert.equal(new Set(ids).size, FOUNDER_ASSET_RAILS.length);
 });
 
+test("devnet founder funding lines cover the haircut-adjusted activation capacity", () => {
+  for (const asset of FOUNDER_ASSET_RAILS) {
+    const depositAmount = rawAmountForUsd({
+      usd: 99,
+      decimals: asset.decimals,
+      priceUsd1e8: asset.priceUsd1e8,
+    });
+    const capacityAmount =
+      (depositAmount * BigInt(10_000 - asset.haircutBps)) / 10_000n;
+    const committedAmount = fundingLineCommittedAmountForActivation({
+      depositAmount,
+      haircutBps: asset.haircutBps,
+      maxExposureBps: asset.maxExposureBps,
+    });
+    const exposureCap =
+      (committedAmount * BigInt(asset.maxExposureBps)) / 10_000n;
+
+    assert.ok(committedAmount > 0n, `${asset.symbol} committed amount must be non-zero`);
+    assert.ok(
+      exposureCap >= capacityAmount,
+      `${asset.symbol} exposure cap must cover activation capacity`,
+    );
+  }
+});
+
 test("devnet founder rehearsal redacts evidence without hiding public addresses", () => {
   const redacted = redactEvidence({
     signer: "oxhocTdPyENqy9RS13iaq2upoNAovMJHu9PMaBxrK8h",
@@ -141,6 +167,7 @@ test("devnet founder chain actuarial capacity excludes pending and refunded comm
         payoutPriority: usdc.payoutPriority,
         haircutBps: usdc.haircutBps,
         maxExposureBps: usdc.maxExposureBps,
+        maxConfidenceBps: usdc.maxConfidenceBps,
         priceUsd1e8: usdc.priceUsd1e8,
         fundedRaw: 10_000_000_000n,
         pendingRaw: 1_000_000_000_000n,
@@ -148,6 +175,7 @@ test("devnet founder chain actuarial capacity excludes pending and refunded comm
         reservedRaw: 1_000_000_000n,
         active: true,
         capacityEnabled: true,
+        priceConfidenceBps: 5,
         pricePublishedAtTs: nowTs,
         maxStalenessSeconds: 86_400,
       },
@@ -158,10 +186,12 @@ test("devnet founder chain actuarial capacity excludes pending and refunded comm
         payoutPriority: 7,
         haircutBps: 7_500,
         maxExposureBps: 2_000,
+        maxConfidenceBps: 500,
         priceUsd1e8: 10_000_000n,
         fundedRaw: 1_000_000_000_000n,
         active: true,
         capacityEnabled: false,
+        priceConfidenceBps: 500,
         pricePublishedAtTs: nowTs,
         maxStalenessSeconds: 86_400,
       },
@@ -182,6 +212,44 @@ test("devnet founder chain actuarial capacity excludes pending and refunded comm
   assert.deepEqual(report.countedAssets, ["USDC"]);
   assert.deepEqual(report.excludedAssets, [{ symbol: "OMEGAX", reason: "capacity disabled" }]);
   assert.match(report.notes.join("\n"), /Pending commitments are excluded/);
+});
+
+test("devnet founder chain actuarial capacity rejects unsafe oracle confidence", () => {
+  const usdc = FOUNDER_ASSET_RAILS.find((asset) => asset.symbol === "USDC")!;
+  const nowTs = 1_777_000_000;
+  const report = evaluateChainActuarialGate({
+    nowTs,
+    activatedTravel30Members: 10,
+    assets: [{
+      symbol: "USDC",
+      mint: "USDC111111111111111111111111111111111111111",
+      decimals: usdc.decimals,
+      payoutPriority: usdc.payoutPriority,
+      haircutBps: usdc.haircutBps,
+      maxExposureBps: usdc.maxExposureBps,
+      maxConfidenceBps: 50,
+      priceUsd1e8: usdc.priceUsd1e8,
+      fundedRaw: 10_000_000_000n,
+      active: true,
+      capacityEnabled: true,
+      priceConfidenceBps: 51,
+      pricePublishedAtTs: nowTs,
+      maxStalenessSeconds: 86_400,
+    }],
+    assumptions: {
+      seed: 7,
+      trials: 1_000,
+      baselineClaimFrequency: 0.04,
+      maxPayoutUsd: 3_000,
+      severityMinUsd: 75,
+      severityModeUsd: 650,
+      severityP95Usd: 2_250,
+      severityMaxUsd: 3_000,
+    },
+  });
+
+  assert.equal(report.freeReserveUsd, 0);
+  assert.deepEqual(report.excludedAssets, [{ symbol: "USDC", reason: "price confidence too wide" }]);
 });
 
 test("devnet founder chain inputs derive activated reserve while leaving pending/refunded out", () => {
@@ -212,6 +280,7 @@ test("devnet founder chain inputs derive activated reserve while leaving pending
       oracleSource: 3,
       oracleFeedIdHex: "11".repeat(32),
       maxStalenessSeconds: 86_400,
+      maxConfidenceBps: 50,
       haircutBps: 0,
       maxExposureBps: 10_000,
       depositEnabled: true,
@@ -288,6 +357,7 @@ test("devnet founder chain inputs parse Anchor BN balance sheets before actuaria
       oracleSource: 3,
       oracleFeedIdHex: "11".repeat(32),
       maxStalenessSeconds: 86_400,
+      maxConfidenceBps: 50,
       haircutBps: 0,
       maxExposureBps: 10_000,
       depositEnabled: true,

@@ -339,13 +339,7 @@ pub(crate) fn deposit_commitment(
 
     let now_ts = Clock::get()?.unix_timestamp;
     let queue_index = ctx.accounts.ledger.next_queue_index;
-    let accepted_amount = accepted_commitment_amount(&ctx.accounts.ledger)?;
-    if ctx.accounts.payment_rail.hard_cap_amount > 0 {
-        require!(
-            checked_add(accepted_amount, amount)? <= ctx.accounts.payment_rail.hard_cap_amount,
-            OmegaXProtocolError::CommitmentCapExceeded
-        );
-    }
+    require_commitment_intake_capacity(&ctx.accounts.ledger, &ctx.accounts.payment_rail, amount)?;
 
     let ledger_key = ctx.accounts.ledger.key();
     let ledger = &mut ctx.accounts.ledger;
@@ -666,7 +660,7 @@ pub(crate) fn activate_waterfall_commitment(
         &mut ctx.accounts.ledger,
         &mut ctx.accounts.position,
         COMMITMENT_POSITION_WATERFALL_RESERVE_ACTIVATED,
-        capacity_amount,
+        amount,
     )?;
 
     emit!(FundingFlowRecordedEvent {
@@ -715,6 +709,7 @@ pub(crate) fn refund_commitment(
     args: RefundCommitmentArgs,
 ) -> Result<()> {
     let _reason_hash = args.refund_reason_hash;
+    require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
     require_pending_commitment_position(&ctx.accounts.position)?;
     require_matching_payment_rail(
         ctx.accounts.campaign.key(),
@@ -1026,6 +1021,23 @@ pub(crate) fn accepted_commitment_amount(ledger: &CommitmentLedger) -> Result<u6
     )
 }
 
+pub(crate) fn require_commitment_intake_capacity(
+    ledger: &CommitmentLedger,
+    payment_rail: &CommitmentPaymentRail,
+    amount: u64,
+) -> Result<()> {
+    if payment_rail.hard_cap_amount == 0 {
+        return Ok(());
+    }
+
+    let accepted_amount = accepted_commitment_amount(ledger)?;
+    require!(
+        checked_add(accepted_amount, amount)? <= payment_rail.hard_cap_amount,
+        OmegaXProtocolError::CommitmentCapExceeded
+    );
+    Ok(())
+}
+
 pub(crate) fn activate_commitment_position(
     ledger: &mut CommitmentLedger,
     position: &mut CommitmentPosition,
@@ -1266,6 +1278,8 @@ pub struct ActivateWaterfallCommitment<'info> {
 pub struct RefundCommitment<'info> {
     #[account(mut)]
     pub depositor: Signer<'info>,
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(mut, seeds = [SEED_COMMITMENT_CAMPAIGN, campaign.health_plan.as_ref(), campaign.campaign_id.as_bytes()], bump = campaign.bump)]
     pub campaign: Box<Account<'info, CommitmentCampaign>>,
     #[account(seeds = [SEED_COMMITMENT_PAYMENT_RAIL, campaign.key().as_ref(), payment_rail.payment_asset_mint.as_ref()], bump = payment_rail.bump)]

@@ -10,6 +10,10 @@ const frontendProtocolSource = readFileSync(
   new URL("../../frontend/lib/protocol.ts", import.meta.url),
   "utf8",
 );
+const founderRehearsalSource = readFileSync(
+  new URL("../../scripts/devnet_founder_rehearsal.ts", import.meta.url),
+  "utf8",
+);
 const idl = JSON.parse(
   readFileSync(new URL("../../idl/omegax_protocol.json", import.meta.url), "utf8"),
 ) as { errors?: Array<{ name: string }> };
@@ -26,6 +30,95 @@ test("[CSO-2026-05-04] LP allocation is same-asset only in v1", () => {
   assert.match(extractRustFunctionBody("create_allocation_position"), /AllocationAssetMismatch/);
   assert.match(extractRustFunctionBody("allocate_capital"), /AllocationAssetMismatch/);
   assert.match(extractRustFunctionBody("deallocate_capital"), /AllocationAssetMismatch/);
+});
+
+test("[ALMANAX-d333108a] capital class update keeps pool queue-only policy as a floor", () => {
+  const deriveQueueOnly =
+    /derive_queue_only_redemptions\(\s*args\.pause_flags,\s*ctx\.accounts\.liquidity_pool\.redemption_policy,\s*\)/;
+
+  assert.match(extractRustFunctionBody("create_capital_class"), deriveQueueOnly);
+  assert.match(extractRustFunctionBody("update_capital_class_controls"), deriveQueueOnly);
+  assert.doesNotMatch(
+    extractRustFunctionBody("update_capital_class_controls"),
+    /queue_only_redemptions\s*=\s*args\.queue_only_redemptions/,
+  );
+});
+
+test("[ALMANAX-e529c167] capital class lockups cannot be negative", () => {
+  const createBody = extractRustFunctionBody("create_capital_class");
+  const depositBody = extractRustFunctionBody("apply_lp_position_deposit");
+
+  assert.match(createBody, /args\.min_lockup_seconds >= 0[\s\S]+InvalidLockupSeconds/);
+  assert.match(depositBody, /min_lockup_seconds >= 0[\s\S]+InvalidLockupSeconds/);
+  assert.ok(idl.errors?.some((error) => error.name === "InvalidLockupSeconds"));
+});
+
+test("[ALMANAX-0bc4e15d] impairment PnL debits avoid lossy u64 to i64 casts", () => {
+  const body = extractRustFunctionBody("mark_impairment");
+
+  assert.doesNotMatch(body, /amount\s+as\s+i64/);
+  assert.match(body, /debit_realized_pnl_for_loss\(allocation_position\.realized_pnl,\s*amount\)/);
+  assert.match(body, /debit_realized_pnl_for_loss\(allocation_ledger\.realized_pnl,\s*amount\)/);
+  assert.match(extractRustFunctionBody("debit_realized_pnl_for_loss"), /i64::try_from\(amount\)/);
+  assert.match(extractRustFunctionBody("debit_realized_pnl_for_loss"), /checked_sub\(amount\)/);
+});
+
+test("[ALMANAX-675488d9] allocation creation binds plan, pool, funding line, and series", () => {
+  const body = extractRustFunctionBody("create_allocation_position");
+
+  assert.match(body, /capital_class\.reserve_domain[\s\S]+liquidity_pool\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(body, /health_plan\.reserve_domain[\s\S]+liquidity_pool\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(body, /funding_line\.reserve_domain[\s\S]+health_plan\.reserve_domain[\s\S]+ReserveDomainMismatch/);
+  assert.match(body, /funding_line\.health_plan[\s\S]+health_plan\.key\(\)[\s\S]+HealthPlanMismatch/);
+  assert.match(body, /funding_line\.policy_series[\s\S]+args\.policy_series[\s\S]+PolicySeriesMismatch/);
+});
+
+test("[ALMANAX-c46c7b81/5a8f554b] nonzero policy series must be canonical for members and funding lines", () => {
+  assert.match(
+    extractRustFunctionBody("open_member_position"),
+    /validate_optional_policy_series\([\s\S]+args\.series_scope[\s\S]+true/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_funding_line"),
+    /validate_optional_policy_series\([\s\S]+args\.policy_series[\s\S]+false/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_funding_line"),
+    /args\.policy_series == ZERO_PUBKEY[\s\S]+series_reserve_ledger\.is_none\(\)/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_funding_line"),
+    /series_reserve_ledger[\s\S]+ok_or\(OmegaXProtocolError::PolicySeriesMissing\)/,
+  );
+  assert.match(
+    extractRustFunctionBody("create_obligation"),
+    /funding_line\.policy_series[\s\S]+args\.policy_series[\s\S]+PolicySeriesMismatch/,
+  );
+});
+
+test("[QEDGEN-2026-05-07] inactive plans and classes reject fresh intake before exposure", () => {
+  assert.match(
+    extractRustFunctionBody("open_member_position"),
+    /require_health_plan_active\(&ctx\.accounts\.health_plan\)\?/,
+  );
+  assert.match(
+    extractRustFunctionBody("open_claim_case"),
+    /require_health_plan_active\(&ctx\.accounts\.health_plan\)\?/,
+  );
+
+  const depositBody = extractRustFunctionBody("deposit_into_capital_class");
+  const activeGuardIndex = depositBody.indexOf("require_capital_class_active");
+  const transferIndex = depositBody.indexOf("transfer_to_domain_vault");
+  assert.notEqual(activeGuardIndex, -1);
+  assert.notEqual(transferIndex, -1);
+  assert.ok(
+    activeGuardIndex < transferIndex,
+    "capital class active guard must run before any SPL transfer",
+  );
+
+  const errorNames = new Set((idl.errors ?? []).map((error) => error.name));
+  assert.ok(errorNames.has("HealthPlanInactive"), "IDL must expose HealthPlanInactive");
+  assert.ok(errorNames.has("CapitalClassInactive"), "IDL must expose CapitalClassInactive");
 });
 
 test("[CSO-2026-05-04] allocation and reserve booking require free capacity", () => {
@@ -96,7 +189,13 @@ test("[CSO-2026-05-05] waterfall activation books only haircut and cap bounded r
   assert.ok(exposureCapIndex < fundedMutationIndex, "exposure cap must be computed before funding mutation");
   assert.ok(fundedMutationIndex < ledgerMutationIndex, "cap check must run before reserve ledger booking");
   assert.match(body, /next_funded <= exposure_cap[\s\S]+InsufficientFreeReserveCapacity/);
-  assert.match(body, /activate_commitment_position\([\s\S]+capacity_amount/);
+  assert.match(
+    body,
+    /activate_commitment_position\(\s*&mut ctx\.accounts\.ledger,\s*&mut ctx\.accounts\.position,\s*COMMITMENT_POSITION_WATERFALL_RESERVE_ACTIVATED,\s*amount,/,
+  );
+  assert.doesNotMatch(body, /COMMITMENT_POSITION_WATERFALL_RESERVE_ACTIVATED,\s*capacity_amount/);
+  assert.doesNotMatch(founderRehearsalSource, /committedAmount:\s*0n/);
+  assert.match(founderRehearsalSource, /committedAmount:\s*fundingLineCommittedAmountForActivation/);
   assert.match(programSource, /fn reserve_capacity_amount\(amount: u64, haircut_bps: u16, max_exposure_bps: u16\)/);
   assert.match(programSource, /checked_sub\(u64::from\(haircut_bps\)\)/);
   assert.match(programSource, /fn checked_mul_div_u64\(value: u64, numerator: u64, denominator: u64\)/);
@@ -110,6 +209,29 @@ test("[CSO-2026-05-04] broad pool authority helper is removed from mutation path
   assert.match(extractRustFunctionBody("set_pool_oracle_permissions"), /require_curator_control\(/);
   assert.match(extractRustFunctionBody("set_pool_oracle_policy"), /require_curator_control\(/);
   assert.match(extractRustFunctionBody("update_allocation_caps"), /require_allocator\(/);
+});
+
+test("[CSO-2026-05-06] allocation cap updates bind authorization to the allocation pool", () => {
+  const body = extractRustFunctionBody("update_allocation_caps");
+  const poolBindingIndex = body.indexOf("ctx.accounts.allocation_position.liquidity_pool");
+  const authIndex = body.indexOf("require_allocator(");
+  const mutationIndex = body.indexOf("allocation.cap_amount");
+
+  assert.notEqual(poolBindingIndex, -1);
+  assert.notEqual(authIndex, -1);
+  assert.notEqual(mutationIndex, -1);
+  assert.ok(
+    poolBindingIndex < authIndex,
+    "allocation position must be bound to the provided pool before allocator authorization",
+  );
+  assert.ok(
+    poolBindingIndex < mutationIndex,
+    "allocation position must be bound to the provided pool before cap mutation",
+  );
+  assert.match(
+    body,
+    /require_keys_eq!\([\s\S]*ctx\.accounts\.allocation_position\.liquidity_pool[\s\S]*ctx\.accounts\.liquidity_pool\.key\(\)[\s\S]*OmegaXProtocolError::LiquidityPoolMismatch/,
+  );
 });
 
 test("[CSO-2026-05-05] obligation lifecycle transitions reject partial amounts before mutation", () => {

@@ -25,6 +25,18 @@ pub(crate) fn require_class_access_mode(restriction_mode: u8, credentialed: bool
     }
 }
 
+pub(crate) fn derive_queue_only_redemptions(pause_flags: u32, redemption_policy: u8) -> bool {
+    pause_flags & PAUSE_FLAG_REDEMPTION_QUEUE_ONLY != 0
+        || redemption_policy == REDEMPTION_POLICY_QUEUE_ONLY
+}
+
+pub(crate) fn debit_realized_pnl_for_loss(realized_pnl: i64, amount: u64) -> Result<i64> {
+    let amount = i64::try_from(amount).map_err(|_| OmegaXProtocolError::ArithmeticError)?;
+    realized_pnl
+        .checked_sub(amount)
+        .ok_or_else(|| OmegaXProtocolError::ArithmeticError.into())
+}
+
 pub(crate) fn ensure_lp_position_binding(
     lp_position: &mut LPPosition,
     capital_class: Pubkey,
@@ -43,6 +55,8 @@ pub(crate) fn ensure_lp_position_binding(
         lp_position.lockup_ends_at = 0;
         lp_position.credentialed = false;
         lp_position.queue_status = LP_QUEUE_STATUS_NONE;
+        lp_position.redemption_sequence = 0;
+        lp_position.redemption_requested_at = 0;
         lp_position.bump = bump;
         return Ok(());
     }
@@ -85,6 +99,10 @@ pub(crate) fn apply_lp_position_deposit(
     min_lockup_seconds: i64,
     now_ts: i64,
 ) -> Result<()> {
+    require!(
+        min_lockup_seconds >= 0,
+        OmegaXProtocolError::InvalidLockupSeconds
+    );
     lp_position.shares = checked_add(lp_position.shares, shares)?;
     lp_position.subscription_basis = checked_add(lp_position.subscription_basis, amount)?;
     lp_position.lockup_ends_at = now_ts
@@ -176,4 +194,52 @@ pub(crate) fn redemption_assets_to_process(
     } else {
         prorata_amount(shares, pending_redemption_shares, pending_redemption_assets)
     }
+}
+
+pub(crate) fn assign_redemption_queue_ticket(
+    capital_class: &mut CapitalClass,
+    lp_position: &mut LPPosition,
+    now_ts: i64,
+) -> Result<u64> {
+    if lp_position.pending_redemption_shares == 0 {
+        let sequence = capital_class.next_redemption_sequence;
+        lp_position.redemption_sequence = sequence;
+        lp_position.redemption_requested_at = now_ts;
+        capital_class.next_redemption_sequence =
+            checked_add(capital_class.next_redemption_sequence, 1)?;
+        return Ok(sequence);
+    }
+
+    Ok(lp_position.redemption_sequence)
+}
+
+pub(crate) fn require_redemption_queue_head(
+    capital_class: &CapitalClass,
+    lp_position: &LPPosition,
+) -> Result<()> {
+    require!(
+        lp_position.queue_status == LP_QUEUE_STATUS_PENDING
+            && lp_position.pending_redemption_shares > 0,
+        OmegaXProtocolError::AmountExceedsPendingRedemption
+    );
+    require!(
+        lp_position.redemption_sequence == capital_class.next_redemption_to_process,
+        OmegaXProtocolError::RedemptionQueueOutOfOrder
+    );
+    Ok(())
+}
+
+pub(crate) fn resolve_redemption_queue_status_after_process(
+    capital_class: &mut CapitalClass,
+    lp_position: &mut LPPosition,
+) -> Result<()> {
+    if lp_position.pending_redemption_shares == 0 {
+        lp_position.queue_status = LP_QUEUE_STATUS_PROCESSED;
+        capital_class.next_redemption_to_process =
+            checked_add(capital_class.next_redemption_to_process, 1)?;
+    } else {
+        lp_position.queue_status = LP_QUEUE_STATUS_PENDING;
+    }
+
+    Ok(())
 }

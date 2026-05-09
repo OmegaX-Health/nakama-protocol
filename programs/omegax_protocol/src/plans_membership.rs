@@ -258,14 +258,18 @@ pub(crate) fn open_member_position(
     ctx: Context<OpenMemberPosition>,
     args: OpenMemberPositionArgs,
 ) -> Result<()> {
-    require!(
-        !ctx.accounts.protocol_governance.emergency_pause,
-        OmegaXProtocolError::ProtocolEmergencyPaused
-    );
+    require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
+    require_health_plan_active(&ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.health_plan.pause_flags & PAUSE_FLAG_PLAN_OPERATIONS == 0,
         OmegaXProtocolError::HealthPlanPaused
     );
+    validate_optional_policy_series(
+        ctx.accounts.policy_series.as_deref(),
+        args.series_scope,
+        ctx.accounts.health_plan.key(),
+        true,
+    )?;
     validate_membership_proof(&ctx, &args)?;
 
     let now_ts = Clock::get()?.unix_timestamp;
@@ -480,6 +484,7 @@ pub struct OpenMemberPosition<'info> {
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Account<'info, HealthPlan>,
+    pub policy_series: Option<Box<Account<'info, PolicySeries>>>,
     #[account(
         init,
         payer = wallet,

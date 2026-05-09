@@ -41,12 +41,12 @@ CodeQL after merge.
 
 | Artifact | SHA-256 |
 |----------|---------|
-| `idl/omegax_protocol.json` | `c56e25b8e21240a053fac835ab148f2973aa7311a7fe2230ce4c70c3adee736b` |
-| `idl/omegax_protocol.source-hash` file | `081a79ef7df8b521e913efd5de3f1a136fe741adad423ce961e4a865e98b01f6` |
-| `idl/omegax_protocol.source-hash` value | `18e706864b7fb32783c27a380107c3ebff786a5cbac4b341867d990b1e10c61c` |
-| `shared/protocol_contract.json` | `14157588296844e66f7618fd96e46a5031c53e3c0207b6e6de193d8d96aa0082` |
-| `frontend/lib/generated/protocol-contract.ts` | `4a0153cdfc5a4513cf3cd0a680a1e797b910c08449b9d95da9165f97bc83a8fa` |
-| `frontend/lib/generated/protocol-contract.js` | `aba0d1fdf84bf9aa1f3c26405baef2174a05c12227d977ac99120aae78ce1e0c` |
+| `idl/omegax_protocol.json` | `8f125d44dd7d3a42b8e97dbc95ed5644cd2bb69b10ed30481dce8fd118dabf82` |
+| `idl/omegax_protocol.source-hash` file | `91217de7d3d43b83ebec95ac27edbd6a02a97207831198d00b953ad48cee2b66` |
+| `idl/omegax_protocol.source-hash` value | `b6b759e8d453ff0b03ee3e0b56de3758d9a697fc5a71aa182bb0c64e3aaecf1c` |
+| `shared/protocol_contract.json` | `d4d46a73a199bfa2035785856bc9d4badf3d3326a307200c651d7046766f3076` |
+| `frontend/lib/generated/protocol-contract.ts` | `ecdb19541f8457ec721739f1e2911662631e8266e754402eb1cf59c9617d7933` |
+| `frontend/lib/generated/protocol-contract.js` | `5c682f1fd138654cedf5dbd21a966edb6624c50c00dddec07096313dfb90e5e1` |
 
 | Drift gate | Result |
 |------------|--------|
@@ -98,27 +98,28 @@ Last remote `main` baseline before this local commit:
 | Setting | Expected | Actual |
 |---------|----------|--------|
 | Branch protection enabled on `main` | yes | yes |
-| Required PR review approvals | `0` until another write collaborator/reviewer exists | `0` |
-| CODEOWNERS review | not enforceable with one write collaborator who is also PR author | no |
+| Required PR review approvals | `1` independent approval for release landing | `1` |
+| CODEOWNERS review | required for protocol/security-owned paths | yes |
 | Stale review dismissal | yes | yes |
-| Required status checks | `verify` | `verify` |
+| Last-push approval | yes | yes |
+| Required status checks | `verify`, `qedgen`, `localnet-e2e` | `verify`, `qedgen`, `localnet-e2e` |
 | Strict status checks | yes | yes |
 | Admin enforcement | yes | yes |
 | Force pushes blocked | yes | yes |
 | Branch deletion blocked | yes | yes |
 
-Branch-protection API snapshot, `2026-05-04T18:10:14Z`:
+Branch-protection API snapshot, `2026-05-08T14:28:12Z`:
 
 ```json
 {
   "required_pull_request_reviews": {
     "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": false,
-    "require_last_push_approval": false,
-    "required_approving_review_count": 0
+    "require_code_owner_reviews": true,
+    "require_last_push_approval": true,
+    "required_approving_review_count": 1
   },
   "required_status_checks": {
-    "contexts": ["verify"],
+    "contexts": ["verify", "qedgen", "localnet-e2e"],
     "strict": true
   },
   "enforce_admins": true,
@@ -127,23 +128,22 @@ Branch-protection API snapshot, `2026-05-04T18:10:14Z`:
 }
 ```
 
-Review-operations note: the GitHub collaborator list visible to the maintainer
-token currently contains only `marinosabijan`. GitHub rejected self-approval
-with `Review Can not approve your own pull request`. A future team-review policy
-requires adding at least one non-author collaborator, team, or outside reviewer
-with repository review permission.
+Review-operations note: this policy intentionally blocks zero-review release
+landing. If a PR author cannot self-approve, a non-author collaborator, team, or
+outside reviewer with repository review permission must approve before merge.
 
 ## 5. Local Validation Lanes
 
 | Lane | Command | Result | Artifact |
 |------|---------|--------|----------|
-| Liability-state Rust regression | `npm run rust:test` | PASS: `80 passed`, `0 failed` | console output |
-| Liability-state Node/static regression | `npm run test:node` | PASS: `243 passed`, `0 failed` | console output |
+| Liability-state Rust regression | `npm run rust:test` | PASS: `84 passed`, `0 failed` | console output |
+| Liability-state Node/static regression | `npm run test:node` | PASS: `251 passed`, `0 failed` | console output |
 | Repo baseline health | `npm run verify:public` | PASS | SBOM under `artifacts/sbom/` |
-| Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | PASS | `artifacts/localnet-e2e-summary-2026-05-05T08-38-38-317Z.json` |
-| Executable adversarial localnet | included in localnet E2E | PASS: `57 blocked`, `0 unexpectedSuccess`, `0 inconclusive` | `artifacts/localnet-adversarial-matrix-2026-05-05T08-38-38-317Z.json` |
+| Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | PASS: `68/68` live instructions owned | `artifacts/localnet-e2e-summary-2026-05-06T07-38-44-043Z.json` |
+| Asset-agnostic commitment custody | included in localnet E2E | PASS: `3 payment assets`, `300 exact refunds`, `27 blocked custody/outflow probes`, `9 activation checks` | `artifacts/localnet-commitment-custody-2026-05-06T07-38-44-043Z.json` |
+| Executable adversarial localnet | included in localnet E2E | PASS: `62 blocked`, `0 unexpectedSuccess`, `0 inconclusive` | `artifacts/localnet-adversarial-matrix-2026-05-06T07-38-44-044Z.json` |
 | Operator drawer simulation | `SOLANA_KEYPAIR=<devnet governance keypair> npm run devnet:operator:drawer:sim` | PASS: `FAIL=0`; expected idempotent collisions and fixture skips only | console output |
-| Mainnet preflight, no sends | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 OMEGAX_LIVE_SETTLEMENT_MINT=4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump npm run protocol:bootstrap:genesis-live -- --plan` | BLOCKER: current operator env is missing `OMEGAX_LIVE_ORACLE_KEYPAIR_PATH`; command failed before send path | console error; no transactions sent |
+| Mainnet preflight, no sends | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 OMEGAX_LIVE_SETTLEMENT_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v npm run protocol:bootstrap:genesis-live -- --plan` | BLOCKER: current operator env is missing `OMEGAX_LIVE_ORACLE_KEYPAIR_PATH`; command failed before send path | console error; no transactions sent |
 | Mainnet unsafe config tests | `npm run verify:public` node suite | PASS | `tests/genesis_live_bootstrap_config.test.ts`, `tests/genesis_live_bootstrap_plan_cli.test.ts` |
 
 ## 6. Dependency Scan
@@ -173,12 +173,12 @@ actual settlement-asset reserve/funding/allocation capacity.
 
 | Field | Value |
 |-------|-------|
-| Devnet bootstrap | PASS against merged hardened binary at `BtLPiswEfzwxenWM3GR6hihViZHpXLU6Pygw3nmH3B2s`; `OMEGAX_DEVNET_ROLE_MIN_LAMPORTS=100000000 npm run protocol:bootstrap:devnet-live` |
+| Devnet bootstrap | PASS against post-PR `#70` merged binary at `mBQYJkivNJFT5egjQ2VGFb8sBMiaZMUr5GDNvKkxp1f`; `OMEGAX_DEVNET_ROLE_MIN_LAMPORTS=100000000 npm run protocol:bootstrap:devnet-live` |
 | Canary seeding | PASS, all required treasury canaries seeded against the new devnet program |
-| Strict pen-test | PASS, `npm run devnet:treasury:pen-test -- --strict --out-dir artifacts/devnet-security-rehearsal-hardened-2026-05-05` |
+| Strict pen-test | PASS, `npm run devnet:treasury:pen-test -- --strict --out-dir artifacts/devnet-security-rehearsal-post-merge-2026-05-06` |
 | Strict result | `8 blocked`, `0 vulnerable`, `0 skipped`, `0 inconclusive` |
-| Evidence | `artifacts/devnet-security-rehearsal-hardened-2026-05-05/devnet-treasury-pen-test-2026-05-04T18-49-38-251Z.json`, `artifacts/devnet-security-rehearsal-hardened-2026-05-05/devnet-treasury-pen-test-2026-05-04T18-49-38-251Z.md`, tracked summary `docs/security/devnet-treasury-pen-test-2026-05-05.md` |
-| Hardened binary replay | PASS: merged hardened binary was redeployed, bootstrapped, seeded, and strict-tested on devnet |
+| Evidence | `artifacts/devnet-security-rehearsal-post-merge-2026-05-06/devnet-treasury-pen-test-2026-05-06T05-01-11-114Z.json`, `artifacts/devnet-security-rehearsal-post-merge-2026-05-06/devnet-treasury-pen-test-2026-05-06T05-01-11-114Z.md`, tracked summary `docs/security/devnet-treasury-pen-test-2026-05-06.md` |
+| Hardened binary replay | PASS: PR `#70` merge commit `63e6f4cc7a7a3b59ab1b8fa39cfa607cb78f9bfb` was redeployed, bootstrapped, seeded, and strict-tested on devnet |
 
 ## 9. Mainnet Preflight
 
@@ -194,7 +194,7 @@ oracle keypair path and final role-map inputs.
 |-------|-------|
 | RPC | `https://api.mainnet-beta.solana.com` |
 | Program ID planned | `Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B` |
-| Settlement mint supplied for current replay | `4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump` |
+| Settlement mint supplied for current replay | `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` (mainnet USDC) |
 | Governance authority used for plan | `AiNPYZQkbfcTkSh3r9vPKAMgMa3TbU47Jk3TaKTCB4Sg` |
 | Governance config address | `CsBxTVjC4Y8oWuoU9xdp91du7WCaQWEbGyNBTuc7weDU` |
 | Reserve domain | `WfQ7PjCTwuTCn3KM4mxUmyjQSw3RvcnyT3Gfdg2WUoq` |
@@ -211,7 +211,7 @@ Current no-send replay:
 
 ```sh
 OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 \
-OMEGAX_LIVE_SETTLEMENT_MINT=4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump \
+OMEGAX_LIVE_SETTLEMENT_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
 npm run protocol:bootstrap:genesis-live -- --plan
 ```
 
@@ -240,10 +240,18 @@ Unsafe config proof:
 | Outstanding high/critical internal findings | none known after the strict devnet run; external review still missing |
 | Independent-review packet | `docs/security/mainnet-money-control-review-packet-v0.3.2.md` |
 
-Public messaging must not claim audited, fully decentralized claims, uncapped
-solvency, or mixed-asset settlement. Other reserve assets may be shown as
-reserve context only; they do not settle USDC claims without an explicit
-priced/haircut/conversion or funding action.
+Public messaging must not claim audited, fully decentralized claims, or uncapped
+solvency. Multi-asset payout support is explicit selected-asset settlement:
+the router/oracle service chooses an approved payout asset before settlement,
+and the on-chain settlement path requires that asset's active, payout-enabled,
+fresh confidence-bounded `ReserveAssetRail`. The program does not silently mutate a USDC
+claim ledger while draining a WBTC/SOL/WETH vault and does not perform DEX
+swaps in this pass.
+
+`$OMEGAX` (`4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump`) is not the
+default claims settlement mint. It may be configured as a commitment payment
+rail or a last-resort selected payout rail only when explicitly enabled,
+payout-enabled, and fresh confidence-bounded.
 
 ## 11. Liability-State Hardening Addendum
 
@@ -264,7 +272,29 @@ These fixes are locally proven by `npm run rust:test`, `npm run test:node`,
 `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet`. Remote PR CI is also
 green on `d9fa872dc289dcba6886f81551d21ba0d2016bb7`.
 
-## 12. Sign-off
+## 12. Asset-Agnostic Commitment Custody Addendum
+
+The preorder custody closure was refreshed on `2026-05-06T04:02:51Z` across
+three localnet payment rails: an OMEGAX-like token, a stable/settlement-like SPL
+token, and a non-settlement reserve asset. The suite proves the pooled
+`DomainAssetVault` custody model before activation without relying on
+OMEGAX-specific names or decimals.
+
+- Each asset seeded `100` pending commitment positions and verified exact
+  equality across the SPL vault balance, `DomainAssetVault.total_assets`, and
+  `CommitmentLedger.pending_amount`.
+- The refund matrix returned `300` exact user refunds and rejected attacker
+  refund, wrong recipient, wrong mint, wrong token program, fake vault token
+  account, and zero-accrual fee-withdrawal probes.
+- The same-mint outflow matrix rejected fee-withdrawal, claim-settlement,
+  obligation-settlement, and LP-redemption attempts against vaults containing
+  pending commitment deposits.
+- Activation coverage now checks `DIRECT_PREMIUM`, `TREASURY_CREDIT`, and
+  `WATERFALL_RESERVE` for every payment rail. Waterfall activation decrements
+  pending token liability by the full deposited token amount while reserve
+  funding/capacity accounting remains haircut-adjusted.
+
+## 13. Sign-off
 
 This evidence is sufficient for local pre-mainnet readiness review only. It is
 not sufficient for public mainnet funding until Squads V4 2-of-3 governance and

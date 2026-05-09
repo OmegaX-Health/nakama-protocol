@@ -108,7 +108,7 @@ async function assertProtocolGovernanceAuthorityMatches(params: {
   }
   if (protocolConfig.governanceAuthority !== params.expectedGovernanceAuthority) {
     throw new Error(
-      `Protocol governance authority mismatch: ${protocolConfig.governanceAuthority} !== ${params.expectedGovernanceAuthority}. Rerun \`npm run protocol:bootstrap:devnet-live\` to complete the governance handoff before running governance smoke.`,
+      `Protocol governance authority mismatch: ${protocolConfig.governanceAuthority} !== ${params.expectedGovernanceAuthority}. Complete the pending accept_protocol_governance_authority step for the configured governance authority before running governance smoke.`,
     );
   }
 }

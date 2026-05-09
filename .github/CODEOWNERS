@@ -3,6 +3,7 @@
 * @marinosabijan
 
 /programs/omegax_protocol/ @marinosabijan
+/programs/omegax_private_claim_review/ @marinosabijan
 /idl/ @marinosabijan
 /shared/ @marinosabijan
 /frontend/lib/generated/ @marinosabijan
@@ -12,5 +13,7 @@
 
 /frontend/ @marinosabijan
 /scripts/ @marinosabijan
+/formal_verification/ @marinosabijan
+/.qed/ @marinosabijan
 /docs/ @marinosabijan
 /.github/ @marinosabijan

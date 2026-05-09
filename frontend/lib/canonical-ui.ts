@@ -19,6 +19,15 @@ export function formatAmount(value: bigint | number | string | null | undefined)
   }
 }
 
+export function formatSettlementUnits(value: bigint | number | string | null | undefined): string {
+  const formatted = formatAmount(value);
+  return `${formatted} settlement units`;
+}
+
+export function rawAmountTitle(value: bigint | number | string | null | undefined): string {
+  return `Raw protocol amount: ${formatAmount(value)}`;
+}
+
 export function walletFixtureFor(address?: string | null): DevnetFixtureWallet | null {
   const normalized = (address ?? "").trim();
   if (!normalized) return null;

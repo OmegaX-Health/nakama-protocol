@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 
-import { formatAmount } from "@/lib/canonical-ui";
+import { formatSettlementUnits, rawAmountTitle } from "@/lib/canonical-ui";
 import {
   CLAIM_ATTESTATION_DECISION_ABSTAIN,
   CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW,
@@ -23,6 +23,7 @@ type GenesisProtectAcuteClaimsConsolePanelProps = {
   onSelectFilter?: (filter: GenesisProtectAcuteClaimQueueFilter) => void;
   onSelectClaim?: (address: string, panel: GenesisProtectAcuteClaimActionPanel) => void;
   poolAddress?: string | null;
+  actionsEnabled?: boolean;
 };
 
 const CLAIM_FILTER_LABELS: Record<GenesisProtectAcuteClaimQueueFilter, string> = {
@@ -83,7 +84,7 @@ export function GenesisProtectAcuteClaimsConsolePanel(props: GenesisProtectAcute
           <div>
             <p className="plans-card-eyebrow">GENESIS_CLAIM_CONSOLE</p>
             <h2 className="plans-card-title plans-card-title-display">
-              Operator claim <em>queue</em>
+              Claim <em>review queue</em>
             </h2>
           </div>
           <span className="plans-card-meta">
@@ -91,7 +92,7 @@ export function GenesisProtectAcuteClaimsConsolePanel(props: GenesisProtectAcute
           </span>
         </div>
         <p className="plans-card-body">
-          This queue stays operator-first: intake, attestation posture, linked obligation state, and reserve follow-through all stay visible before the raw transaction forms below.
+          Review intake status, evidence posture, linked liability, and reserve follow-through before opening any operator-only transaction controls.
         </p>
 
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
@@ -119,14 +120,14 @@ export function GenesisProtectAcuteClaimsConsolePanel(props: GenesisProtectAcute
           <article className="plans-wizard-support-card">
             <p className="plans-card-eyebrow">Reserved exposure</p>
             <strong className="text-2xl font-semibold text-[var(--foreground)]">
-              {formatAmount(props.model.summary.reservedExposure)}
+              {formatSettlementUnits(props.model.summary.reservedExposure)}
             </strong>
             <p className="plans-wizard-support-note">Capital already held against the currently visible Genesis claim queue.</p>
           </article>
           <article className="plans-wizard-support-card">
             <p className="plans-card-eyebrow">Payout in flight</p>
             <strong className="text-2xl font-semibold text-[var(--foreground)]">
-              {formatAmount(props.model.summary.payoutInFlightAmount)}
+              {formatSettlementUnits(props.model.summary.payoutInFlightAmount)}
             </strong>
             <p className="plans-wizard-support-note">
               {props.model.summary.payoutInFlightCount} case{props.model.summary.payoutInFlightCount === 1 ? "" : "s"} still claimable or payable.
@@ -244,14 +245,14 @@ export function GenesisProtectAcuteClaimsConsolePanel(props: GenesisProtectAcute
               <div className="plans-settings-grid">
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">CLAIMANT</span>
+                    <span className="plans-settings-label">Claimant</span>
                     <span className="plans-settings-lane">Submitting wallet</span>
                   </div>
                   <span className="plans-settings-address">{shortenAddress(selected.claimant, 6)}</span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">MEMBER_POSITION</span>
+                    <span className="plans-settings-label">Member position</span>
                     <span className="plans-settings-lane">Member and register context</span>
                   </div>
                   <span className="plans-settings-address">
@@ -267,7 +268,7 @@ export function GenesisProtectAcuteClaimsConsolePanel(props: GenesisProtectAcute
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">ATTESTATION</span>
+                    <span className="plans-settings-label">Evidence status</span>
                     <span className="plans-settings-lane">Latest visible oracle posture</span>
                   </div>
                   <span className="plans-settings-address">{selected.attestationStatusLabel}</span>
@@ -281,24 +282,30 @@ export function GenesisProtectAcuteClaimsConsolePanel(props: GenesisProtectAcute
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">APPROVED</span>
+                    <span className="plans-settings-label">Approved amount</span>
                     <span className="plans-settings-lane">Decisioned claim amount</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(selected.approvedAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(selected.approvedAmount)}>
+                    {formatSettlementUnits(selected.approvedAmount)}
+                  </span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">RESERVED</span>
+                    <span className="plans-settings-label">Reserved amount</span>
                     <span className="plans-settings-lane">Capital still encumbered</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(selected.reservedAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(selected.reservedAmount)}>
+                    {formatSettlementUnits(selected.reservedAmount)}
+                  </span>
                 </div>
                 <div className="plans-settings-row">
                   <div>
-                    <span className="plans-settings-label">PAYOUT_IN_FLIGHT</span>
+                    <span className="plans-settings-label">Payout in flight</span>
                     <span className="plans-settings-lane">Claimable or payable amount still outstanding</span>
                   </div>
-                  <span className="plans-settings-address">{formatAmount(selected.payoutInFlightAmount)}</span>
+                  <span className="plans-settings-address" title={rawAmountTitle(selected.payoutInFlightAmount)}>
+                    {formatSettlementUnits(selected.payoutInFlightAmount)}
+                  </span>
                 </div>
               </div>
 
@@ -310,14 +317,21 @@ export function GenesisProtectAcuteClaimsConsolePanel(props: GenesisProtectAcute
               ) : null}
 
               <div className="plans-wizard-support-actions">
-                <button
-                  type="button"
-                  className="plans-primary-cta"
-                  onClick={() => props.onSelectClaim?.(selected.claimAddress, selected.recommendedPanel)}
-                >
-                  <span className="material-symbols-outlined" aria-hidden="true">bolt</span>
-                  {operatorActionLabel(selected.recommendedPanel)}
-                </button>
+                {props.actionsEnabled ? (
+                  <button
+                    type="button"
+                    className="plans-primary-cta"
+                    onClick={() => props.onSelectClaim?.(selected.claimAddress, selected.recommendedPanel)}
+                  >
+                    <span className="material-symbols-outlined" aria-hidden="true">bolt</span>
+                    {operatorActionLabel(selected.recommendedPanel)}
+                  </button>
+                ) : (
+                  <span className="plans-secondary-cta plans-action-disabled" aria-disabled="true">
+                    <span className="material-symbols-outlined" aria-hidden="true">visibility</span>
+                    Read-only Phase 0
+                  </span>
+                )}
                 <Link href={attestationHref(props.poolAddress, selected)} className="plans-secondary-cta">
                   <span className="material-symbols-outlined" aria-hidden="true">verified</span>
                   Open oracle feed

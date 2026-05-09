@@ -179,6 +179,33 @@ Run the public verification gate:
 npm run verify:public
 ```
 
+## QEDGen Verification Lane
+
+The QEDGen spec lives at [`omegax_protocol.qedspec`](./omegax_protocol.qedspec)
+and `.qed/config.json` pins it for local commands. Generated verification code
+is intentionally isolated under [`formal_verification/`](./formal_verification/)
+so the live Anchor program in `programs/omegax_protocol/` is not overwritten by
+QEDGen scaffolding.
+
+```bash
+npm run qedgen:check
+npm run qedgen:codegen
+npm run qedgen:verify
+npm run qedgen:reconcile
+```
+
+`npm run qedgen:codegen` writes the Anchor verification model to
+`formal_verification/anchor_model/`, the Lean proof surface to
+`formal_verification/Spec.lean`, and the generated Kani/proptest harnesses to
+`formal_verification/anchor_model/tests/`.
+
+The only currently accepted warning is
+`missing_cpi_for_token_context` on `create_domain_asset_vault`.
+That handler uses `token_program` for token-account initialization, not for a
+token transfer. The modeling gap is tracked in
+[`.qed/plan/findings/001-domain-vault-init-token-program.md`](./.qed/plan/findings/001-domain-vault-init-token-program.md)
+and [`.qed/plan/gaps.md`](./.qed/plan/gaps.md).
+
 ## Maintainer and Devnet Operations
 
 These helpers are for repo maintainers and shared-devnet operators rather than first-time SDK consumers.

@@ -199,9 +199,9 @@ const STEP_COPY: Record<StepId, StepCopy> = {
   },
   review: {
     headline: "Review and",
-    emphasis: "launch.",
+    emphasis: "create.",
     body: "Final check before the plan, series, and funding lines are created on-chain.",
-    tip: "If launch partially succeeds, rerunning is safe — existing accounts are skipped.",
+    tip: "If creation partially succeeds, rerunning is safe — existing accounts are skipped.",
   },
 };
 
@@ -238,6 +238,17 @@ function protocolToken(value: string): string {
   return normalized || "PENDING";
 }
 
+function humanizeChoice(value: string): string {
+  const normalized = normalize(value).replace(/[_-]+/g, " ").trim();
+  if (!normalized) return "Pending";
+  if (normalized === "defi native") return "DeFi native";
+  if (normalized === "rwa policy") return "RWA policy";
+  if (normalized === "spl") return "SPL";
+  if (normalized === "sol") return "SOL";
+  if (normalized === "nft anchor") return "NFT anchor";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 function seedDefault(value: string, fallback: string): string {
   const normalized = normalize(value)
     .toLowerCase()
@@ -271,7 +282,7 @@ function toUiAmountBaseUnits(value: string, mode: PayoutAssetMode, splDecimals: 
 
 function baseUnitsPreview(value: string, mode: PayoutAssetMode, splDecimals: number | null): string {
   try {
-    return toUiAmountBaseUnits(value, mode, splDecimals).toString();
+    return `${toUiAmountBaseUnits(value, mode, splDecimals).toLocaleString()} base units`;
   } catch {
     return "n/a";
   }
@@ -327,14 +338,17 @@ function buildLaunchOracleOptions(
 function FieldGroup({
   label,
   children,
+  hint,
 }: {
   label: string;
   children: ReactNode;
+  hint?: ReactNode;
 }) {
   return (
     <label className="plans-wizard-field-group">
       <span className="plans-wizard-field-label">{label}</span>
       {children}
+      {hint ? <span className="plans-wizard-field-hint">{hint}</span> : null}
     </label>
   );
 }
@@ -353,6 +367,28 @@ function ReviewRow({
       <span className="plans-wizard-review-label">{label}</span>
       <strong className={cn("plans-wizard-review-value", muted && "opacity-70")}>{value}</strong>
     </div>
+  );
+}
+
+function ReviewSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="plans-wizard-review-section">
+      <div className="plans-wizard-review-section-head">
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+      <div className="plans-wizard-review-section-rows">
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -383,18 +419,19 @@ export function PlanCreationWizard() {
   const searchParams = useSearchParams();
   const { connection } = useConnection();
   const { connected, publicKey, sendTransaction } = useWallet();
-  const { selectedNetwork } = useNetworkContext();
+  const { selectedNetwork, executionClusterVerified } = useNetworkContext();
   const { snapshot } = useProtocolConsoleSnapshot();
   const genesisTemplateMode = isGenesisProtectAcuteTemplate(searchParams.get("template"));
   const phase0Profile = useMemo(
-    () => resolveGenesisPhase0LaunchProfile({ network: selectedNetwork }),
-    [selectedNetwork],
+    () => resolveGenesisPhase0LaunchProfile({ network: selectedNetwork, executionClusterVerified }),
+    [executionClusterVerified, selectedNetwork],
   );
   const rewardLaunchEnabled = isGenesisPhase0SurfaceActionable(phase0Profile, "rewardLaunch");
   const hybridLaunchEnabled = isGenesisPhase0SurfaceActionable(phase0Profile, "hybridLaunch");
   const rwaPolicyLaunchEnabled = isGenesisPhase0SurfaceActionable(phase0Profile, "rwaPolicyLaunch")
     && isRwaPolicyLaunchEnabled();
   const { confirmReview, reviewPrompt } = useProtocolTransactionReviewPrompt();
+  const walletLaunchReady = Boolean(connected && publicKey && sendTransaction);
 
   const [launchIntent, setLaunchIntent] = useState<LaunchIntent>("insurance");
   const [stepIndex, setStepIndex] = useState(0);
@@ -1014,8 +1051,8 @@ export function PlanCreationWizard() {
       ...protectionLaneErrors,
     ];
 
-    if (!connected || !publicKey || !sendTransaction) {
-      errors.push("Connect a wallet with plan-control authority before launch.");
+    if (!walletLaunchReady) {
+      errors.push("Connect an authorized plan wallet before creating this plan.");
     }
     if (!addressPreview.healthPlanAddress) {
       errors.push("Plan address preview is unavailable. Check the plan ID and reserve domain.");
@@ -1039,21 +1076,19 @@ export function PlanCreationWizard() {
   }, [
     addressPreview.healthPlanAddress,
     basicsErrors,
-    connected,
     membershipErrors,
     payoutAssetMode,
     payoutMintPk,
     protectionLaneErrors,
-    publicKey,
     reserveDomainAddress,
     reserveDomainPk,
     availableRailMints,
     rewardLaneErrors,
     rewardLaneRequired,
-    sendTransaction,
     selectedSchema,
     splDecimals,
     verificationErrors,
+    walletLaunchReady,
   ]);
 
   const currentStepErrors = useMemo(() => {
@@ -1247,12 +1282,12 @@ export function PlanCreationWizard() {
     }
     if (!publicKey || !sendTransaction || !reserveDomainPk || !payoutMintPk) {
       setStatusTone("error");
-      setStatusMessage("Connect a wallet and resolve the reserve domain and payout mint before launch.");
+      setStatusMessage("Connect a wallet and resolve the reserve domain and payout mint before creating this plan.");
       return;
     }
     if (rewardLaneRequired && !selectedSchema) {
       setStatusTone("error");
-      setStatusMessage("Select a live outcome schema before launching a reward lane.");
+      setStatusMessage("Select a live outcome schema before creating a reward lane.");
       return;
     }
     if (!addressPreview.healthPlanAddress) {
@@ -1354,7 +1389,7 @@ export function PlanCreationWizard() {
     const nextRecentBlockhash = async () => (await connection.getLatestBlockhash("confirmed")).blockhash;
 
     try {
-      setBusyAction("Launching canonical health plan");
+      setBusyAction("Creating canonical health plan");
       setStatusMessage(null);
       setStatusTone(null);
 
@@ -1669,6 +1704,7 @@ export function PlanCreationWizard() {
                 reserveDomain: reserveDomainPk,
                 healthPlan: genesisPlanPk,
                 assetMint: assetMintPk,
+                policySeries: seriesPk,
                 fundingLine: fundingLinePk,
                 fundingLineLedger: ledgers.fundingLineLedger,
                 planReserveLedger: ledgers.planReserveLedger,
@@ -1975,6 +2011,7 @@ export function PlanCreationWizard() {
               reserveDomain: reserveDomainPk,
               healthPlan: healthPlanPk,
               assetMint: assetMintPk,
+              policySeries: rewardSeriesPk,
               fundingLine: rewardFundingLinePk,
               fundingLineLedger: rewardLedgers.fundingLineLedger,
               planReserveLedger: rewardLedgers.planReserveLedger,
@@ -2086,6 +2123,7 @@ export function PlanCreationWizard() {
               reserveDomain: reserveDomainPk,
               healthPlan: healthPlanPk,
               assetMint: assetMintPk,
+              policySeries: protectionSeriesPk,
               fundingLine: protectionFundingLinePk,
               fundingLineLedger: protectionLedgers.fundingLineLedger,
               planReserveLedger: protectionLedgers.planReserveLedger,
@@ -2232,6 +2270,25 @@ export function PlanCreationWizard() {
     setStepIndex((current) => Math.max(0, current - 1));
   }, [isFirstStep]);
 
+  const reviewLaunchBlocked = activeStep.id === "review" && !createdArtifacts && !walletLaunchReady;
+  const nextButtonDisabled = Boolean(busyAction) || reviewLaunchBlocked;
+  const nextButtonIcon = activeStep.id === "review"
+    ? createdArtifacts
+      ? "open_in_new"
+      : reviewLaunchBlocked
+        ? "account_balance_wallet"
+        : "bolt"
+    : "arrow_forward";
+  const nextButtonLabel = busyAction
+    ? "Working..."
+    : activeStep.id === "review"
+      ? createdArtifacts
+        ? "Open workspace"
+        : reviewLaunchBlocked
+          ? "Connect wallet to create plan"
+          : "Create plan on-chain"
+      : `Next · ${steps[stepIndex + 1]!.label}`;
+
   return (
     <div className="plans-shell">
       {reviewPrompt}
@@ -2247,6 +2304,10 @@ export function PlanCreationWizard() {
         </header>
 
         <nav className="plans-wizard-progress-wrap" aria-label="Plan wizard steps">
+          <div className="plans-wizard-progress-mobile" aria-hidden="true">
+            <span>Step {activeStep.number} of {steps.length}</span>
+            <strong>{activeStep.label}</strong>
+          </div>
           <div className="plans-wizard-progress liquid-glass">
             <div
               className="plans-wizard-progress-indicator"
@@ -2373,7 +2434,10 @@ export function PlanCreationWizard() {
                       disabled={genesisTemplateMode}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Reserve Domain">
+                  <FieldGroup
+                    label="Reserve Domain"
+                    hint={reserveDomainAddress ? `Selected account: ${reserveDomainAddress}` : "Choose a live reserve domain before launch."}
+                  >
                     <select
                       className="plans-wizard-input"
                       value={reserveDomainAddress}
@@ -2420,7 +2484,14 @@ export function PlanCreationWizard() {
                       </button>
                     </div>
                   </FieldGroup>
-                  <FieldGroup label="Payout Mint">
+                  <FieldGroup
+                    label="Payout Mint"
+                    hint={payoutAssetMode === "sol"
+                      ? "Native SOL payout rail uses the zero mint placeholder."
+                      : payoutMint
+                        ? `Selected mint: ${payoutMint}`
+                        : "Choose the domain rail mint before launch."}
+                  >
                     <div className="space-y-2">
                       <input
                         type="text"
@@ -2463,7 +2534,7 @@ export function PlanCreationWizard() {
                           className={cn("plans-wizard-chip", coveragePathway === "defi_native" && "plans-wizard-chip-active")}
                           onClick={() => handleCoveragePathwayChange("defi_native")}
                         >
-                          DEFI_NATIVE
+                          DeFi native
                         </button>
                         <button
                           type="button"
@@ -2479,7 +2550,7 @@ export function PlanCreationWizard() {
                           disabled={!rwaPolicyLaunchEnabled}
                           title={rwaPolicyLaunchEnabled ? undefined : "RWA policy launch is preview-only in Phase 0."}
                         >
-                          RWA_POLICY
+                          RWA policy
                         </button>
                       </div>
                     </FieldGroup>
@@ -2493,7 +2564,7 @@ export function PlanCreationWizard() {
                               className={cn("plans-wizard-chip", defiSettlementMode === "onchain_programmatic" && "plans-wizard-chip-active")}
                               onClick={() => setDefiSettlementMode("onchain_programmatic")}
                             >
-                              ONCHAIN_PROGRAMMATIC
+                              On-chain programmatic
                             </button>
                             <button
                               type="button"
@@ -2509,13 +2580,16 @@ export function PlanCreationWizard() {
                               disabled={!hybridLaunchEnabled}
                               title={hybridLaunchEnabled ? undefined : "Hybrid rails are preview-only in Phase 0."}
                             >
-                              HYBRID_RAILS
+                              Hybrid rails
                             </button>
                           </div>
                         </FieldGroup>
 
                         <div className="plans-wizard-row">
-                          <FieldGroup label="Technical Terms URL">
+                          <FieldGroup
+                            label="Technical Terms URL"
+                            hint={defiTechnicalTermsUri ? `Full URL: ${defiTechnicalTermsUri}` : "Add the public terms URL members can inspect."}
+                          >
                             <input
                               type="text"
                               className="plans-wizard-input"
@@ -2523,7 +2597,10 @@ export function PlanCreationWizard() {
                               onChange={(event) => setDefiTechnicalTermsUri(event.target.value)}
                             />
                           </FieldGroup>
-                          <FieldGroup label="Risk Disclosure URL">
+                          <FieldGroup
+                            label="Risk Disclosure URL"
+                            hint={defiRiskDisclosureUri ? `Full URL: ${defiRiskDisclosureUri}` : "Add the public risk disclosure URL members can inspect."}
+                          >
                             <input
                               type="text"
                               className="plans-wizard-input"
@@ -2609,7 +2686,7 @@ export function PlanCreationWizard() {
                         className={cn("plans-wizard-chip", membershipMode === mode && "plans-wizard-chip-active")}
                         onClick={() => handleMembershipModeChange(mode)}
                       >
-                        {mode.toUpperCase()}
+                        {mode === "token_gate" ? "Token gate" : mode === "invite_only" ? "Invite only" : "Open"}
                       </button>
                     ))}
                   </div>
@@ -2682,16 +2759,16 @@ export function PlanCreationWizard() {
                 ) : null}
 
                 <div className="plans-wizard-review-grid">
-                  <ReviewRow label="MEMBERSHIP_POSTURE" value={membershipMode.toUpperCase()} />
-                  <ReviewRow label="GATE_CLASS" value={membershipGateKind.toUpperCase()} />
+                  <ReviewRow label="Membership posture" value={humanizeChoice(membershipMode)} />
+                  <ReviewRow label="Gate class" value={humanizeChoice(membershipGateKind)} />
                   <ReviewRow
-                    label="JOIN_GATING"
+                    label="Join gating"
                     value={
                       membershipMode === "token_gate"
-                        ? `${membershipGateKind.toUpperCase()} · ${shortAddress(tokenGateMint)} · ${tokenGateMinBalance}`
+                        ? `${humanizeChoice(membershipGateKind)} · ${shortAddress(tokenGateMint)} · ${tokenGateMinBalance}`
                         : membershipMode === "invite_only"
                           ? shortAddress(inviteIssuer)
-                          : "OPEN"
+                          : "Open"
                     }
                   />
                 </div>
@@ -3047,43 +3124,67 @@ export function PlanCreationWizard() {
             {activeStep.id === "review" ? (
               <div className="plans-wizard-step-body">
                 <div className="plans-wizard-review-grid">
-                  <ReviewRow label="Plan type" value={launchIntent.charAt(0).toUpperCase() + launchIntent.slice(1)} />
-                  <ReviewRow
-                    label="Lanes"
-                    value={
-                      genesisTemplateMode
-                        ? "Event 7 + Travel 30"
-                        : requiresRewardLane(launchIntent) && requiresProtectionLane(launchIntent)
-                          ? "Reward + Protection"
-                          : requiresRewardLane(launchIntent)
-                            ? "Reward"
-                            : "Protection"
-                    }
-                  />
-                  <ReviewRow
-                    label="Plan address"
-                    value={genesisTemplateMode ? genesisArtifactPreview?.healthPlanAddress ?? "pending" : addressPreview.healthPlanAddress ?? "pending"}
-                    muted={genesisTemplateMode ? !genesisArtifactPreview?.healthPlanAddress : !addressPreview.healthPlanAddress}
-                  />
+                  <ReviewSection
+                    title="Plan shape"
+                    description="The human-facing coverage surface this transaction will create."
+                  >
+                    <ReviewRow label="Plan type" value={launchIntent.charAt(0).toUpperCase() + launchIntent.slice(1)} />
+                    <ReviewRow
+                      label="Coverage products"
+                      value={
+                        genesisTemplateMode
+                          ? "Event 7 + Travel 30"
+                          : requiresRewardLane(launchIntent) && requiresProtectionLane(launchIntent)
+                            ? "Reward + Protection"
+                            : requiresRewardLane(launchIntent)
+                              ? "Reward"
+                              : "Protection"
+                      }
+                    />
+                  </ReviewSection>
+                  <ReviewSection
+                    title="Created accounts"
+                    description="Full account addresses are shown for audit; they wrap instead of truncating."
+                  >
+                    <ReviewRow
+                      label="Plan account"
+                      value={genesisTemplateMode ? genesisArtifactPreview?.healthPlanAddress ?? "pending" : addressPreview.healthPlanAddress ?? "pending"}
+                      muted={genesisTemplateMode ? !genesisArtifactPreview?.healthPlanAddress : !addressPreview.healthPlanAddress}
+                    />
                   {genesisTemplateMode ? (
                     <>
                       <ReviewRow label="Event 7 series" value={genesisArtifactPreview?.seriesAddresses.event7 ?? "pending"} muted={!genesisArtifactPreview?.seriesAddresses.event7} />
                       <ReviewRow label="Travel 30 series" value={genesisArtifactPreview?.seriesAddresses.travel30 ?? "pending"} muted={!genesisArtifactPreview?.seriesAddresses.travel30} />
                       <ReviewRow label="Capital pool" value={genesisArtifactPreview?.poolAddress ?? "pending"} muted={!genesisArtifactPreview?.poolAddress} />
+                    </>
+                  ) : (
+                    <>
+                      <ReviewRow label="Reward series" value={addressPreview.rewardSeriesAddress ?? "n/a"} muted={!addressPreview.rewardSeriesAddress} />
+                      <ReviewRow label="Protection series" value={addressPreview.protectionSeriesAddress ?? "n/a"} muted={!addressPreview.protectionSeriesAddress} />
+                      <ReviewRow label="Sponsor funding line" value={addressPreview.rewardFundingLineAddress ?? "n/a"} muted={!addressPreview.rewardFundingLineAddress} />
+                      <ReviewRow label="Premium funding line" value={addressPreview.protectionFundingLineAddress ?? "n/a"} muted={!addressPreview.protectionFundingLineAddress} />
+                    </>
+                  )}
+                  </ReviewSection>
+                  <ReviewSection
+                    title={genesisTemplateMode ? "Bootstrap footprint" : "Funding commitments"}
+                    description={genesisTemplateMode
+                      ? "Counts are shown before the Genesis shell is created so the launch footprint is understandable."
+                      : "Amounts are shown in base units so operators can compare them with the transaction payload."}
+                  >
+                    {genesisTemplateMode ? (
+                      <>
                       <ReviewRow label="Funding lines" value={String(Object.keys(genesisArtifactPreview?.fundingLineAddresses ?? {}).length)} muted={!genesisArtifactPreview} />
                       <ReviewRow label="Capital classes" value={String(genesisProtectAcuteBootstrapCapitalClasses().length)} muted={!genesisArtifactPreview} />
                       <ReviewRow label="Allocations" value={String(genesisProtectAcuteBootstrapAllocations().length)} muted={!genesisArtifactPreview} />
                     </>
                   ) : (
                     <>
-                      <ReviewRow label="Reward series" value={addressPreview.rewardSeriesAddress ?? "n/a"} muted={!addressPreview.rewardSeriesAddress} />
-                      <ReviewRow label="Protection series" value={addressPreview.protectionSeriesAddress ?? "n/a"} muted={!addressPreview.protectionSeriesAddress} />
-                      <ReviewRow label="Sponsor line" value={addressPreview.rewardFundingLineAddress ?? "n/a"} muted={!addressPreview.rewardFundingLineAddress} />
-                      <ReviewRow label="Premium line" value={addressPreview.protectionFundingLineAddress ?? "n/a"} muted={!addressPreview.protectionFundingLineAddress} />
                       <ReviewRow label="Reward commitment" value={rewardLaneRequired ? baseUnitsPreview(rewardCommittedBudgetUi, payoutAssetMode, splDecimals) : "n/a"} muted={!rewardLaneRequired} />
                       <ReviewRow label="Premium commitment" value={protectionLaneRequired ? baseUnitsPreview(protectionExpectedPremiumUi, payoutAssetMode, splDecimals) : "n/a"} muted={!protectionLaneRequired} />
                     </>
                   )}
+                  </ReviewSection>
                 </div>
 
                 <div className="plans-wizard-divider" aria-hidden="true" />
@@ -3095,7 +3196,7 @@ export function PlanCreationWizard() {
                       <p className="plans-wizard-support-copy">
                         {genesisTemplateMode
                           ? "Genesis template runs land in the bounded-launch workspace so the remaining treasury, reserve, and oracle items stay visible."
-                          : "New artifacts open with the created plan and series context after the launch confirms."}
+                          : "New artifacts open with the created plan and series context after the create-plan transaction confirms."}
                       </p>
                     </div>
                     {reviewLinks ? (
@@ -3115,7 +3216,7 @@ export function PlanCreationWizard() {
                         ) : null}
                       </div>
                     ) : (
-                      <p className="plans-wizard-support-note">Links appear after the launch confirms.</p>
+                      <p className="plans-wizard-support-note">Links appear after the create-plan transaction confirms.</p>
                     )}
                   </section>
 
@@ -3125,7 +3226,7 @@ export function PlanCreationWizard() {
                       <p className="plans-wizard-support-copy">
                         {genesisTemplateMode
                           ? "Bootstrap transactions only create the canonical Genesis shell. Reserve posting, pool settings, and final operator sign-off still happen from the live workspace before any bounded launch window opens."
-                          : "Protection enrollment gates decide who can activate coverage seats. Active-cycle claim rights follow coverage and premium status, not live wallet possession checks at claim time."}
+                          : "Enrollment rules decide who can activate coverage. Once coverage is active, claim rights follow coverage and premium status."}
                       </p>
                     </div>
                     {createdArtifacts ? (
@@ -3152,7 +3253,14 @@ export function PlanCreationWizard() {
                     ) : null}
 
                     {actionLog.length === 0 ? (
-                      <p className="plans-wizard-support-note">No launch transactions yet.</p>
+                      <div className="space-y-2">
+                        {!walletLaunchReady ? (
+                          <p id="plans-wizard-wallet-required-note" className="plans-wizard-support-note">
+                            Connect an authorized plan wallet to create this plan on-chain.
+                          </p>
+                        ) : null}
+                        <p className="plans-wizard-support-note">No create-plan transactions yet.</p>
+                      </div>
                     ) : (
                       <div className="plans-wizard-log-list">
                         {actionLog.map((entry) => (
@@ -3187,20 +3295,12 @@ export function PlanCreationWizard() {
                 type="button"
                 className="plans-wizard-next"
                 onClick={handleNext}
-                disabled={Boolean(busyAction)}
+                disabled={nextButtonDisabled}
+                aria-describedby={reviewLaunchBlocked ? "plans-wizard-wallet-required-note" : undefined}
+                title={reviewLaunchBlocked ? "Connect an authorized plan wallet to create this plan on-chain." : undefined}
               >
-                <span className="material-symbols-outlined" aria-hidden="true">
-                  {activeStep.id === "review" ? (createdArtifacts ? "open_in_new" : "bolt") : "arrow_forward"}
-                </span>
-                <span className="plans-wizard-next-label">
-                  {busyAction
-                    ? busyAction.toUpperCase()
-                    : activeStep.id === "review"
-                      ? createdArtifacts
-                        ? "OPEN_WORKSPACE"
-                        : "LAUNCH_CANONICAL_PLAN"
-                      : `NEXT · ${steps[stepIndex + 1]!.label.toUpperCase()}`}
-                </span>
+                <span className="material-symbols-outlined" aria-hidden="true">{nextButtonIcon}</span>
+                <span className="plans-wizard-next-label">{nextButtonLabel}</span>
               </button>
             </div>
           </div>

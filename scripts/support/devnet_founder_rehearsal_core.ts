@@ -47,6 +47,7 @@ export type FounderAssetRail = {
   payoutPriority: number;
   haircutBps: number;
   maxExposureBps: number;
+  maxConfidenceBps: number;
   role: number;
   priceUsd1e8: bigint;
   depositEnabled: boolean;
@@ -64,6 +65,7 @@ export const FOUNDER_ASSET_RAILS: readonly FounderAssetRail[] = [
     payoutPriority: 1,
     haircutBps: 0,
     maxExposureBps: 10_000,
+    maxConfidenceBps: 50,
     role: RESERVE_ASSET_ROLE_PRIMARY_STABLE,
     priceUsd1e8: 100_000_000n,
     depositEnabled: true,
@@ -78,6 +80,7 @@ export const FOUNDER_ASSET_RAILS: readonly FounderAssetRail[] = [
     payoutPriority: 2,
     haircutBps: 50,
     maxExposureBps: 9_000,
+    maxConfidenceBps: 50,
     role: RESERVE_ASSET_ROLE_SECONDARY_STABLE,
     priceUsd1e8: 100_000_000n,
     depositEnabled: true,
@@ -92,6 +95,7 @@ export const FOUNDER_ASSET_RAILS: readonly FounderAssetRail[] = [
     payoutPriority: 3,
     haircutBps: 50,
     maxExposureBps: 9_000,
+    maxConfidenceBps: 50,
     role: RESERVE_ASSET_ROLE_SECONDARY_STABLE,
     priceUsd1e8: 100_000_000n,
     depositEnabled: true,
@@ -106,6 +110,7 @@ export const FOUNDER_ASSET_RAILS: readonly FounderAssetRail[] = [
     payoutPriority: 4,
     haircutBps: 2_000,
     maxExposureBps: 5_000,
+    maxConfidenceBps: 150,
     role: RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL,
     priceUsd1e8: 15_000_000_000n,
     depositEnabled: true,
@@ -120,6 +125,7 @@ export const FOUNDER_ASSET_RAILS: readonly FounderAssetRail[] = [
     payoutPriority: 5,
     haircutBps: 2_500,
     maxExposureBps: 4_000,
+    maxConfidenceBps: 150,
     role: RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL,
     priceUsd1e8: 10_000_000_000_000n,
     depositEnabled: true,
@@ -134,6 +140,7 @@ export const FOUNDER_ASSET_RAILS: readonly FounderAssetRail[] = [
     payoutPriority: 6,
     haircutBps: 2_500,
     maxExposureBps: 4_000,
+    maxConfidenceBps: 150,
     role: RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL,
     priceUsd1e8: 300_000_000_000n,
     depositEnabled: true,
@@ -148,11 +155,12 @@ export const FOUNDER_ASSET_RAILS: readonly FounderAssetRail[] = [
     payoutPriority: 7,
     haircutBps: 7_500,
     maxExposureBps: 2_000,
+    maxConfidenceBps: 500,
     role: RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT,
     priceUsd1e8: 10_000_000n,
     depositEnabled: true,
-    payoutEnabled: true,
-    capacityEnabled: true,
+    payoutEnabled: false,
+    capacityEnabled: false,
     mintEnv: "OMEGAX_DEVNET_OMEGAX_MINT",
     localMintLabel: "omegax-mint",
   },
@@ -250,6 +258,31 @@ export function rawAmountForUsd(params: {
   return (usd1e8 * scale + params.priceUsd1e8 / 2n) / params.priceUsd1e8;
 }
 
+export function fundingLineCommittedAmountForActivation(params: {
+  depositAmount: bigint;
+  haircutBps: number;
+  maxExposureBps: number;
+}): bigint {
+  if (params.depositAmount <= 0n) {
+    throw new Error("depositAmount must be positive.");
+  }
+  if (params.haircutBps < 0 || params.haircutBps >= 10_000) {
+    throw new Error("haircutBps must be less than 10000.");
+  }
+  if (params.maxExposureBps <= 0 || params.maxExposureBps > 10_000) {
+    throw new Error("maxExposureBps must be between 1 and 10000.");
+  }
+
+  const netBps = BigInt(10_000 - params.haircutBps);
+  const capacityAmount = (params.depositAmount * netBps) / 10_000n;
+  if (capacityAmount <= 0n) {
+    throw new Error("capacityAmount must be positive.");
+  }
+
+  const maxExposureBps = BigInt(params.maxExposureBps);
+  return (capacityAmount * 10_000n + maxExposureBps - 1n) / maxExposureBps;
+}
+
 export function usd1e8ForRaw(params: {
   amountRaw: BigNumberish;
   decimals: number;
@@ -339,6 +372,8 @@ export type ChainAssetCapacityInput = {
   settledRaw?: BigNumberish;
   active: boolean;
   capacityEnabled: boolean;
+  priceConfidenceBps: number;
+  maxConfidenceBps: number;
   pricePublishedAtTs: number;
   maxStalenessSeconds: number;
 };
@@ -458,8 +493,8 @@ export function evaluateChainActuarialGate(
     notes: [
       "Pending commitments are excluded from claims-paying reserve.",
       "Refunded commitments are excluded from claims-paying reserve.",
-      "Capacity uses on-chain reserve rail prices, freshness, haircuts, and exposure caps.",
-      "OMEGAX counts only when active, capacity-enabled, fresh-priced, haircut-adjusted, and cap-compliant.",
+      "Capacity uses on-chain reserve rail prices, freshness, confidence thresholds, haircuts, and exposure caps.",
+      "OMEGAX counts only when governance explicitly enables capacity with a fresh, confidence-bounded price.",
     ],
   };
 }
@@ -475,8 +510,13 @@ function assetCapacity(
   const payableRaw = toBigInt(asset.payableRaw);
   const settledRaw = toBigInt(asset.settledRaw);
   const stale =
-    asset.maxStalenessSeconds > 0 &&
+    asset.maxStalenessSeconds <= 0 ||
+    asset.pricePublishedAtTs <= 0 ||
+    asset.pricePublishedAtTs > nowTs ||
     nowTs - asset.pricePublishedAtTs > asset.maxStalenessSeconds;
+  const confidenceUnsafe =
+    asset.maxConfidenceBps <= 0 ||
+    asset.priceConfidenceBps > asset.maxConfidenceBps;
   const base = {
     ...asset,
     grossUsd: 0,
@@ -492,6 +532,12 @@ function assetCapacity(
   if (price <= 0n)
     return { ...base, counted: false, exclusionReason: "missing price" };
   if (stale) return { ...base, counted: false, exclusionReason: "stale price" };
+  if (confidenceUnsafe)
+    return {
+      ...base,
+      counted: false,
+      exclusionReason: "price confidence too wide",
+    };
 
   const encumberedRaw = reservedRaw + claimableRaw + payableRaw + settledRaw;
   const freeRaw = fundedRaw > encumberedRaw ? fundedRaw - encumberedRaw : 0n;
@@ -607,6 +653,9 @@ export function chainInputsFromSnapshot(params: {
       settledRaw: toBigInt(sheetField(sheet, "settled")),
       active: rail?.active ?? asset.capacityEnabled,
       capacityEnabled: rail?.capacityEnabled ?? asset.capacityEnabled,
+      priceConfidenceBps:
+        rail?.lastPriceConfidenceBps ?? asset.maxConfidenceBps,
+      maxConfidenceBps: rail?.maxConfidenceBps ?? asset.maxConfidenceBps,
       pricePublishedAtTs: rail?.lastPricePublishedAtTs ?? params.nowTs,
       maxStalenessSeconds: rail?.maxStalenessSeconds ?? 86_400,
     };

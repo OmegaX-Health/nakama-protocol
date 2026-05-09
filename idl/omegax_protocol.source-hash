@@ -1,4 +1,4 @@
-d69c5baf5e417b5d2766f0bba817ad675ea62344da3364c58fb4d85d3cc135a2
+5f1623164931214ab715b4a641e630a3a05515341ba5a2c5bd4ad1690689eba0
   Cargo.toml
   programs/omegax_protocol/Cargo.toml
   programs/omegax_protocol/src/args.rs
@@ -9,6 +9,7 @@ d69c5baf5e417b5d2766f0bba817ad675ea62344da3364c58fb4d85d3cc135a2
   programs/omegax_protocol/src/capital/lp_positions.rs
   programs/omegax_protocol/src/capital/mod.rs
   programs/omegax_protocol/src/capital/redemptions.rs
+  programs/omegax_protocol/src/certora.rs
   programs/omegax_protocol/src/claims.rs
   programs/omegax_protocol/src/commitments.rs
   programs/omegax_protocol/src/constants.rs

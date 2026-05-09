@@ -287,7 +287,7 @@ async function main(): Promise<void> {
   await sendTransaction({
     connection,
     feePayer: currentSigner,
-    label: "rotate_protocol_governance_authority:devnet-rehearsal",
+    label: "rotate_protocol_governance_authority:propose-devnet-rehearsal",
     tx: protocol.buildRotateGovernanceAuthorityTx({
       governanceAuthority: currentSigner.publicKey,
       newAuthority: newGovernance.publicKey,
@@ -297,9 +297,26 @@ async function main(): Promise<void> {
   });
 
   snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
+  const pendingAuthority = snapshot.protocolGovernance?.pendingGovernanceAuthority ?? "";
+  if (pendingAuthority !== newGovernance.publicKey.toBase58()) {
+    throw new Error(`Governance transfer proposal did not persist. Pending authority is ${pendingAuthority || "unset"}.`);
+  }
+
+  await sendTransaction({
+    connection,
+    feePayer: newGovernance,
+    label: "accept_protocol_governance_authority:devnet-rehearsal",
+    tx: protocol.buildAcceptGovernanceAuthorityTx({
+      pendingAuthority: newGovernance.publicKey,
+      recentBlockhash: "11111111111111111111111111111111",
+    }),
+    signers: [newGovernance],
+  });
+
+  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
   const afterAuthority = snapshot.protocolGovernance?.governanceAuthority ?? "";
   if (afterAuthority !== newGovernance.publicKey.toBase58()) {
-    throw new Error(`Governance rotation did not take effect. Live authority is ${afterAuthority}.`);
+    throw new Error(`Governance transfer acceptance did not take effect. Live authority is ${afterAuthority}.`);
   }
 
   upsertEnvFile(localEnvPath, {
@@ -309,7 +326,7 @@ async function main(): Promise<void> {
     OMEGAX_DEVNET_PENDING_PROTOCOL_GOVERNANCE_WALLET: newGovernance.publicKey.toBase58(),
     OMEGAX_DEVNET_PENDING_PROTOCOL_GOVERNANCE_KEYPAIR_PATH: newGovernancePath,
   });
-  console.log(`[governance-handoff] rotated on-chain authority to ${afterAuthority}.`);
+  console.log(`[governance-handoff] accepted on-chain authority transfer to ${afterAuthority}.`);
 }
 
 main().catch((error) => {

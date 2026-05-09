@@ -7,6 +7,7 @@ import { WalletReadyState, type WalletName } from "@solana/wallet-adapter-base";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { ConnectionProvider, WalletProvider, useWallet } from "@solana/wallet-adapter-react";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
+import { type ConnectionConfig } from "@solana/web3.js";
 import {
   ArrowLeft,
   Check,
@@ -75,6 +76,16 @@ function connectionMetaLabel(network: NetworkMode, rpcProfile: RpcProfile): stri
   return `${formatNetworkLabel(network).toUpperCase()} // ${formatRpcProfileLabel(rpcProfile).toUpperCase()}`;
 }
 
+function walletPriority(name: string): number {
+  const normalized = name.toLowerCase();
+  if (normalized.includes("phantom")) return 0;
+  if (normalized.includes("solflare")) return 1;
+  if (normalized.includes("backpack")) return 2;
+  if (normalized.includes("glow")) return 3;
+  if (normalized.includes("metamask")) return 20;
+  return 10;
+}
+
 type WalletButtonProps = {
   className?: string;
   mobile?: boolean;
@@ -86,9 +97,16 @@ type StatusTone = "error" | "success";
 export function WalletProviders({ children }: { children: React.ReactNode }) {
   const { resolvedEndpoint } = useNetworkContext();
   const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], []);
+  const connectionConfig = useMemo(
+    () => ({
+      commitment: "confirmed",
+      disableRetryOnRateLimit: true,
+    }) satisfies ConnectionConfig,
+    [],
+  );
 
   return (
-    <ConnectionProvider endpoint={resolvedEndpoint}>
+    <ConnectionProvider endpoint={resolvedEndpoint} config={connectionConfig}>
       <WalletProvider wallets={wallets} autoConnect>
         {children}
       </WalletProvider>
@@ -222,9 +240,11 @@ export function WalletButton({ className, mobile = false }: WalletButtonProps) {
       : hydratedConnected
         ? connectedLabel
         : "Connect wallet";
-  const buttonMeta = hydratedConnected
-    ? walletName
-    : connectionMetaLabel(selectedNetwork, resolvedRpcProfile);
+  const buttonMeta = !mounted
+    ? connectionMetaLabel("devnet", "public")
+    : hydratedConnected
+      ? walletName
+      : connectionMetaLabel(selectedNetwork, resolvedRpcProfile);
   const installedWallets = useMemo(
     () =>
       mounted
@@ -512,11 +532,11 @@ export function WalletButton({ className, mobile = false }: WalletButtonProps) {
               <div className="wallet-surface-body">
                 <div className="wallet-surface-summary">
                   <div className="wallet-surface-summary-copy">
-                    <span className="wallet-surface-summary-label">{connectionMetaLabel(selectedNetwork, resolvedRpcProfile)}</span>
-                    <span className="wallet-surface-summary-title">
-                      {hydratedConnected ? middleTruncate(connectedAddress, 8, 6) : "Choose a wallet to continue"}
-                    </span>
-                    <span className="wallet-surface-summary-meta">{endpointSummary(resolvedEndpoint)}</span>
+                  <span className="wallet-surface-summary-label">{connectionMetaLabel(selectedNetwork, resolvedRpcProfile)}</span>
+                  <span className="wallet-surface-summary-title">
+                      {hydratedConnected ? middleTruncate(connectedAddress, 8, 6) : "Choose a Solana wallet"}
+                  </span>
+                  <span className="wallet-surface-summary-meta">{endpointSummary(resolvedEndpoint)}</span>
                   </div>
                   {walletIcon ? <img src={walletIcon} alt="" className="wallet-surface-summary-icon" /> : <Wallet className="wallet-surface-summary-fallback" strokeWidth={1.8} />}
                 </div>
@@ -571,7 +591,11 @@ export function WalletButton({ className, mobile = false }: WalletButtonProps) {
                               <span className="wallet-wallet-name">{candidate.adapter.name}</span>
                             </span>
                             <span className="wallet-wallet-caption">
-                              {isCurrent && hydratedConnected ? "Connected wallet" : "Ready in this browser"}
+                              {isCurrent && hydratedConnected
+                                ? "Connected wallet"
+                                : candidate.adapter.name.toLowerCase().includes("metamask")
+                                  ? "Only use if it exposes a Solana account"
+                                  : "Ready for Solana in this browser"}
                             </span>
                           </span>
                           <span className="wallet-wallet-state">
@@ -646,6 +670,8 @@ function sortWallets<T extends { adapter: { name: string } }>(wallets: T[], curr
     const rightCurrent = right.adapter.name === currentWalletName;
     if (leftCurrent && !rightCurrent) return -1;
     if (!leftCurrent && rightCurrent) return 1;
+    const byPriority = walletPriority(left.adapter.name) - walletPriority(right.adapter.name);
+    if (byPriority !== 0) return byPriority;
     return left.adapter.name.localeCompare(right.adapter.name);
   });
 }

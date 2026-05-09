@@ -10,6 +10,10 @@ pub enum OmegaXProtocolError {
     Unauthorized,
     #[msg("Governance authority is invalid")]
     InvalidGovernanceAuthority,
+    #[msg("Governance authority transfer is missing")]
+    GovernanceAuthorityTransferMissing,
+    #[msg("Governance authority transfer has expired")]
+    GovernanceAuthorityTransferExpired,
     #[msg("Protocol governance is emergency paused")]
     ProtocolEmergencyPaused,
     #[msg("Reserve domain is inactive")]
@@ -52,6 +56,8 @@ pub enum OmegaXProtocolError {
     FundingLineMismatch,
     #[msg("Funding line type mismatch")]
     FundingLineTypeMismatch,
+    #[msg("Obligation account mismatch")]
+    ObligationMismatch,
     #[msg("Invalid obligation state transition")]
     InvalidObligationStateTransition,
     #[msg("Amount exceeds outstanding obligation")]
@@ -72,6 +78,8 @@ pub enum OmegaXProtocolError {
     AmountExceedsPendingRedemption,
     #[msg("Redemption amount cannot be derived from the queued share state")]
     InvalidRedemptionAmount,
+    #[msg("Redemption request is not at the head of the FIFO queue")]
+    RedemptionQueueOutOfOrder,
     #[msg("Deposit shares cannot be derived from the capital class NAV state")]
     InvalidCapitalShareState,
     #[msg("Deposit would mint zero shares")]
@@ -86,6 +94,8 @@ pub enum OmegaXProtocolError {
     LPPositionHasActiveCapital,
     #[msg("Capital class lockup is still active")]
     LockupActive,
+    #[msg("Capital class lockup seconds cannot be negative")]
+    InvalidLockupSeconds,
     #[msg("Allocation cap exceeded")]
     AllocationCapExceeded,
     #[msg("Allocation position mismatch")]
@@ -204,6 +214,8 @@ pub enum OmegaXProtocolError {
     InvalidReserveOracleSource,
     #[msg("Reserve asset rail mismatch")]
     ReserveAssetRailMismatch,
+    #[msg("Reserve domain mismatch")]
+    ReserveDomainMismatch,
     #[msg("Reserve asset rail is inactive")]
     ReserveAssetRailInactive,
     #[msg("Reserve asset rail does not allow deposits")]
@@ -216,6 +228,8 @@ pub enum OmegaXProtocolError {
     ReserveAssetPriceStale,
     #[msg("Reserve asset oracle price is invalid")]
     ReserveAssetPriceInvalid,
+    #[msg("Reserve asset oracle price confidence exceeds rail threshold")]
+    ReserveAssetPriceConfidenceTooWide,
     #[msg("Commitment payment rail mismatch")]
     CommitmentPaymentRailMismatch,
     #[msg("Commitment payment rail is inactive")]
@@ -226,4 +240,18 @@ pub enum OmegaXProtocolError {
     InvalidObligationDeliveryMode,
     #[msg("Claim adjudication is locked after payout or terminal state")]
     ClaimAdjudicationLocked,
+    #[msg("Selected-asset claim payout must use a different mint from the claim denomination")]
+    SelectedAssetPayoutSameMint,
+    #[msg("Selected-asset claim payout value is below the credited claim amount")]
+    SelectedAssetPayoutUnderpaid,
+    #[msg("Selected-asset claim payout value exceeds the configured overpay tolerance")]
+    SelectedAssetPayoutOverpaid,
+    #[msg("Selected-asset claim payout overpay bps exceeds the protocol maximum")]
+    SelectedAssetOverpayBpsTooHigh,
+    #[msg("Reserve asset mint decimals are unsupported")]
+    ReserveAssetMintDecimalsUnsupported,
+    #[msg("Health plan is inactive")]
+    HealthPlanInactive,
+    #[msg("Capital class is inactive")]
+    CapitalClassInactive,
 }

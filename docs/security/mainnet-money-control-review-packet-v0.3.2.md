@@ -32,7 +32,7 @@ audited.
 | Current PR head | `ace6317a37997ab148f78a0f817565ed323197f1` |
 | Liability hardening commit | `d9fa872dc289dcba6886f81551d21ba0d2016bb7` |
 | Final merged SHA | BLOCKER: fill after PR merge |
-| Branch protection | `main` requires 1 approval, CODEOWNERS review, stale-review dismissal, strict `verify`, admin enforcement |
+| Branch protection | `main` requires 1 approval, CODEOWNERS review, last-push approval, stale-review dismissal, strict `verify` + `qedgen` + `localnet-e2e`, admin enforcement |
 | Mainnet send status | no mainnet sends, no reserve funding |
 
 ## Evidence Files
@@ -200,8 +200,8 @@ Review focus:
 
 - protocol governance rotation
 - emergency pause and unpause boundaries
-- whether one-step authority rotation is acceptable once authority is a Squads
-  V4 2-of-3 PDA
+- two-step authority rotation proposal, acceptance, cancellation, and expiry
+  behavior once authority is a Squads V4 2-of-3 PDA
 - branch protection and CODEOWNERS as release-control plane
 
 ### Bootstrap Role Separation

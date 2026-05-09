@@ -24,6 +24,7 @@ import {
   duplicateOwnedInstructions,
   scenarioNames,
 } from "./support/surface_manifest.ts";
+import { requestConfirmedAirdrop } from "./support/airdrop.ts";
 import { instructionSurface } from "./support/surface.ts";
 
 const protocol = protocolModule as typeof import("../frontend/lib/protocol.ts");
@@ -38,6 +39,7 @@ const oracle = Keypair.generate().publicKey;
 const lpOwner = Keypair.generate().publicKey;
 const member = Keypair.generate().publicKey;
 const assetMint = Keypair.generate().publicKey;
+const fallbackAssetMint = Keypair.generate().publicKey;
 const reserveDomain = protocol.deriveReserveDomainPda({ domainId: "adv-matrix" });
 const healthPlan = protocol.deriveHealthPlanPda({
   reserveDomain,
@@ -79,7 +81,12 @@ const vaultTokenAccount = protocol.deriveDomainAssetVaultTokenAccountPda({
   reserveDomain,
   assetMint,
 });
+const fallbackVaultTokenAccount = protocol.deriveDomainAssetVaultTokenAccountPda({
+  reserveDomain,
+  assetMint: fallbackAssetMint,
+});
 const attackerAta = getAssociatedTokenAddressSync(assetMint, attacker, true, TOKEN_PROGRAM_ID);
+const fallbackAttackerAta = getAssociatedTokenAddressSync(fallbackAssetMint, attacker, true, TOKEN_PROGRAM_ID);
 const memberAta = getAssociatedTokenAddressSync(assetMint, member, true, TOKEN_PROGRAM_ID);
 const sourceAta = getAssociatedTokenAddressSync(assetMint, operator, true, TOKEN_PROGRAM_ID);
 const poolOracleFeeVault = protocol.derivePoolOracleFeeVaultPda({
@@ -383,6 +390,38 @@ const matrixRows: MatrixRow[] = [
     ],
   },
   {
+    area: "claim-settlement",
+    instruction: "settle_claim_case_selected_asset",
+    attack: "selected fallback payout asset with attacker-owned payout account",
+    expectedGuard: "claim operator role, explicit payout rail, selected mint, fresh price, and member/delegate owner binding",
+    tx: protocol.buildSettleClaimCaseSelectedAssetTx({
+      authority: attacker,
+      healthPlanAddress: healthPlan,
+      reserveDomainAddress: reserveDomain,
+      payoutFundingLineAddress: fundingLine,
+      claimAssetMint: assetMint,
+      payoutAssetMint: fallbackAssetMint,
+      claimCaseAddress: claimCase,
+      memberPositionAddress: protocol.deriveMemberPositionPda({ healthPlan, wallet: member }),
+      payoutVaultTokenAccountAddress: fallbackVaultTokenAccount,
+      recipientTokenAccountAddress: fallbackAttackerAta,
+      tokenProgramId: TOKEN_PROGRAM_ID,
+      claimCreditAmount: 1n,
+      payoutAmount: 1n,
+      policySeriesAddress: policySeries,
+      settlementReasonHashHex: SAMPLE_HASH_HEX,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [
+      protocol.deriveReserveAssetRailPda({ reserveDomain, assetMint }),
+      protocol.deriveReserveAssetRailPda({ reserveDomain, assetMint: fallbackAssetMint }),
+      protocol.deriveDomainAssetVaultPda({ reserveDomain, assetMint: fallbackAssetMint }),
+      fallbackVaultTokenAccount,
+      fallbackAttackerAta,
+      TOKEN_PROGRAM_ID,
+    ],
+  },
+  {
     area: "obligation-settlement",
     instruction: "settle_obligation",
     attack: "linked claim payout to attacker with allocation PDA substitution pressure",
@@ -470,11 +509,33 @@ const matrixRows: MatrixRow[] = [
   {
     area: "governance-control",
     instruction: "rotate_protocol_governance_authority",
-    attack: "wrong signer rotates governance to attacker",
+    attack: "wrong signer proposes governance transfer to attacker",
     expectedGuard: "current protocol governance authority",
     tx: protocol.buildRotateGovernanceAuthorityTx({
       governanceAuthority: attacker,
       newAuthority: attacker,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [protocol.deriveProtocolGovernancePda()],
+  },
+  {
+    area: "governance-control",
+    instruction: "accept_protocol_governance_authority",
+    attack: "attacker accepts governance without being the pending authority",
+    expectedGuard: "pending governance authority signer",
+    tx: protocol.buildAcceptGovernanceAuthorityTx({
+      pendingAuthority: attacker,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [protocol.deriveProtocolGovernancePda()],
+  },
+  {
+    area: "governance-control",
+    instruction: "cancel_protocol_governance_authority_transfer",
+    attack: "wrong signer cancels a pending governance transfer",
+    expectedGuard: "current protocol governance authority",
+    tx: protocol.buildCancelGovernanceAuthorityTransferTx({
+      governanceAuthority: attacker,
       recentBlockhash: STATIC_BLOCKHASH,
     }),
     mustInclude: [protocol.deriveProtocolGovernancePda()],
@@ -534,7 +595,7 @@ test("adversarial matrix owns all live instructions through the surface manifest
   assert.deepEqual(duplicateOwnedInstructions(), []);
   assert.deepEqual(blankInstructionExceptionReasons(), []);
   assert.deepEqual(missing, []);
-  assert.equal(live.length, 67);
+  assert.equal(live.length, 70);
 });
 
 test("money and control paths include adversarial signer and account-binding probes", () => {
@@ -591,12 +652,7 @@ test("executable adversarial matrix probes are blocked on localnet", async () =>
   }
 
   const connection = new Connection(rpcUrl, "confirmed");
-  const latestForAirdrop = await connection.getLatestBlockhash("confirmed");
-  const airdropSignature = await connection.requestAirdrop(attacker, 2_000_000_000);
-  await connection.confirmTransaction(
-    { signature: airdropSignature, ...latestForAirdrop },
-    "confirmed",
-  );
+  await requestConfirmedAirdrop(connection, attacker, 2_000_000_000);
 
   const probes = runtimeProbes();
   assert(probes.length >= matrixRows.length * 4, "expected runtime variants beyond the static row set");

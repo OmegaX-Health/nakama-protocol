@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import genesisProtectAcuteClaimV1 from "../public/schemas/genesis-protect-acute-claim-v1.json";
+import healthOutcomes from "../public/schemas/health_outcomes.json";
+import standardHealthOutcomesV1 from "../public/schemas/omegax-standard-health-outcomes-v1.json";
+import standardHealthOutcomesV2 from "../public/schemas/omegax-standard-health-outcomes-v2.json";
+
 export type SchemaOutcomeOption = {
   id: string;
   label: string;
@@ -48,7 +53,7 @@ export type SchemaOutcomeTemplateOption = {
 
 export type SchemaMetadataFetchErrorCode =
   | "invalid_uri"
-  | "unsupported_protocol"
+  | "unsupported_host"
   | "fetch_failed"
   | "http_error"
   | "non_json_content_type"
@@ -77,12 +82,14 @@ const COMPARATORS = new Set([">=", "<=", ">", "<", "=="]);
 const METRIC_WINDOWS = new Set(["latest", "7d", "14d", "28d"]);
 const SEVERITIES = new Set(["primary", "secondary", "informational"]);
 const EVIDENCE_QUALITIES = new Set(["ok", "good"]);
-const DEFAULT_IPFS_GATEWAY_BASES = [
-  "https://ipfs.io/ipfs",
-  "https://gateway.pinata.cloud/ipfs",
-  "https://cloudflare-ipfs.com/ipfs",
-  "https://dweb.link/ipfs",
-];
+const LOCAL_SCHEMA_METADATA_BY_PATH: Record<string, unknown> = {
+  "/schemas/genesis-protect-acute-claim-v1.json": genesisProtectAcuteClaimV1,
+  "/schemas/health_outcomes.json": healthOutcomes,
+  "/schemas/omegax-standard-health-outcomes-v1.json": standardHealthOutcomesV1,
+  "/schemas/omegax-standard-health-outcomes-v2.json": standardHealthOutcomesV2,
+  "/schemas/standard-health-outcomes-v1.json": standardHealthOutcomesV1,
+  "/schemas/standard-health-outcomes-v2.json": standardHealthOutcomesV2,
+};
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -97,198 +104,46 @@ function isHex32(value: string): boolean {
   return /^[0-9a-f]{64}$/i.test(value.trim().replace(/^0x/, ""));
 }
 
-function splitGatewayBases(rawValue: string): string[] {
-  return rawValue
-    .split(",")
-    .map((entry) => normalize(entry).replace(/\/+$/, ""))
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-}
-
-function dedupe(values: string[]): string[] {
-  const seen = new Set<string>();
-  const next: string[] = [];
-  for (const value of values) {
-    const normalized = value.trim().replace(/\/+$/, "");
-    if (!normalized) continue;
-    const key = normalized.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    next.push(normalized);
-  }
-  return next;
-}
-
-function parseIpfsUri(uri: string): string[] {
-  const trimmed = normalize(uri);
-  if (!trimmed.toLowerCase().startsWith("ipfs://")) return [];
-  const withoutScheme = trimmed.slice("ipfs://".length).replace(/^\/+/, "");
-  if (!withoutScheme) return [];
-  const cidPath = withoutScheme.toLowerCase().startsWith("ipfs/")
-    ? withoutScheme.slice("ipfs/".length)
-    : withoutScheme;
-  const sanitized = cidPath.replace(/^\/+/, "");
-  if (!sanitized) return [];
-
-  const configured = splitGatewayBases(process.env.NEXT_PUBLIC_IPFS_GATEWAY_BASE || "");
-  const gatewayBases = dedupe(
-    configured.length > 0 ? [...configured, ...DEFAULT_IPFS_GATEWAY_BASES] : DEFAULT_IPFS_GATEWAY_BASES,
-  );
-  return gatewayBases.map((gatewayBase) => `${gatewayBase}/${sanitized}`);
-}
-
-function parseIpfsGatewayHttpUri(uri: string): string[] {
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(uri);
-  } catch {
-    return [];
-  }
-  if (!["http:", "https:"].includes(parsedUrl.protocol)) return [];
-
-  const pathname = parsedUrl.pathname.replace(/^\/+/, "");
-  let cidPath = "";
-  if (pathname.toLowerCase().startsWith("ipfs/")) {
-    cidPath = pathname.slice("ipfs/".length);
-  } else {
-    const hostParts = parsedUrl.hostname.split(".");
-    const ipfsIndex = hostParts.findIndex((part) => part.toLowerCase() === "ipfs");
-    if (ipfsIndex > 0) {
-      const cid = hostParts[0]?.trim() ?? "";
-      const suffixPath = pathname ? `/${pathname}` : "";
-      cidPath = `${cid}${suffixPath}`;
-    }
-  }
-
-  const sanitized = cidPath.replace(/^\/+/, "");
-  if (!sanitized) return [];
-
-  const configured = splitGatewayBases(process.env.NEXT_PUBLIC_IPFS_GATEWAY_BASE || "");
-  const gatewayBases = dedupe(
-    configured.length > 0 ? [...configured, ...DEFAULT_IPFS_GATEWAY_BASES] : DEFAULT_IPFS_GATEWAY_BASES,
-  );
-  const suffix = `${sanitized}${parsedUrl.search || ""}${parsedUrl.hash || ""}`;
-  return dedupe([parsedUrl.toString(), ...gatewayBases.map((gatewayBase) => `${gatewayBase}/${suffix}`)]);
-}
-
-function resolveKnownSchemaMirrorUrls(uri: URL): string[] {
-  const host = uri.hostname.toLowerCase();
-  const path = uri.pathname || "";
-  if ((host === "omegax.health" || host === "www.omegax.health") && path.toLowerCase().startsWith("/schemas/")) {
-    const mirror = new URL(uri.toString());
-    mirror.hostname = "protocol.omegax.health";
-    return dedupe([uri.toString(), mirror.toString()]);
-  }
-  return [];
-}
-
-function resolveMetadataFetchUrl(metadataUri: string): { urls: string[]; error: SchemaMetadataFetchError | null } {
+function localSchemaPathFromMetadataUri(metadataUri: string): string | null {
   const uri = normalize(metadataUri);
-  if (!uri) {
-    return {
-      urls: [],
-      error: {
-        code: "invalid_uri",
-        message: "Schema metadata URI is missing or empty.",
-      },
-    };
-  }
+  if (!uri) return null;
 
-  const ipfsResolved = parseIpfsUri(uri);
-  if (ipfsResolved.length > 0) {
-    return { urls: ipfsResolved, error: null };
-  }
-
-  let parsedUrl: URL;
+  let parsed: URL;
   try {
-    parsedUrl = new URL(uri);
+    parsed = uri.startsWith("/")
+      ? new URL(uri, "https://protocol.omegax.health")
+      : new URL(uri);
   } catch {
-    return {
-      urls: [],
-      error: {
-        code: "invalid_uri",
-        message: "Schema metadata URI is invalid.",
-      },
-    };
+    return null;
   }
 
-  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-    return {
-      urls: [],
-      error: {
-        code: "unsupported_protocol",
-        message: `Unsupported schema metadata URI protocol: ${parsedUrl.protocol}`,
-      },
-    };
+  const host = parsed.hostname.toLowerCase();
+  if (host !== "protocol.omegax.health" && host !== "omegax.health" && host !== "www.omegax.health") {
+    return null;
   }
 
-  const ipfsGatewayResolved = parseIpfsGatewayHttpUri(parsedUrl.toString());
-  if (ipfsGatewayResolved.length > 0) {
-    return { urls: ipfsGatewayResolved, error: null };
-  }
-
-  const knownMirrors = resolveKnownSchemaMirrorUrls(parsedUrl);
-  if (knownMirrors.length > 0) {
-    return { urls: knownMirrors, error: null };
-  }
-
-  return { urls: [parsedUrl.toString()], error: null };
+  const pathname = parsed.pathname;
+  if (!pathname.toLowerCase().startsWith("/schemas/")) return null;
+  if (pathname.includes("..") || !/^\/schemas\/[A-Za-z0-9._/-]+$/.test(pathname)) return null;
+  return pathname;
 }
 
-async function fetchMetadataFromUrl(url: string): Promise<SchemaMetadataFetchResult> {
-  try {
-    const response = await fetch(url, { method: "GET", cache: "no-store" });
-    if (!response.ok) {
-      return {
-        metadata: null,
-        error: {
-          code: "http_error",
-          message: `Schema metadata request failed with HTTP ${response.status}.`,
-          status: response.status,
-        },
-      };
-    }
-
-    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-    const hasJsonContentType = contentType.includes("application/json") || contentType.includes("+json");
-    const body = await response.text();
-
-    try {
-      return {
-        metadata: JSON.parse(body) as unknown,
-        error: null,
-      };
-    } catch {
-      if (!hasJsonContentType) {
-        return {
-          metadata: null,
-          error: {
-            code: "non_json_content_type",
-            message: `Schema metadata endpoint returned non-JSON content type: ${contentType || "unknown"}.`,
-            status: response.status,
-            contentType,
-          },
-        };
-      }
-      return {
-        metadata: null,
-        error: {
-          code: "invalid_json",
-          message: "Schema metadata response body is not valid JSON.",
-          status: response.status,
-          contentType,
-        },
-      };
-    }
-  } catch {
+function bundledSchemaMetadataForUri(metadataUri: string): SchemaMetadataFetchResult | null {
+  const schemaPath = localSchemaPathFromMetadataUri(metadataUri);
+  if (!schemaPath) return null;
+  if (!Object.prototype.hasOwnProperty.call(LOCAL_SCHEMA_METADATA_BY_PATH, schemaPath)) {
     return {
       metadata: null,
       error: {
-        code: "fetch_failed",
-        message: "Schema metadata request failed before receiving a response.",
+        code: "invalid_uri",
+        message: "Schema metadata URI is not bundled in this console build.",
       },
     };
   }
+  return {
+    metadata: LOCAL_SCHEMA_METADATA_BY_PATH[schemaPath],
+    error: null,
+  };
 }
 
 function asNumber(value: unknown): number | null {
@@ -391,24 +246,15 @@ function parseSeverity(value: unknown): SchemaOutcomeOption["severity"] | undefi
 }
 
 async function fetchSchemaMetadataDirect(metadataUri: string): Promise<SchemaMetadataFetchResult> {
-  const resolved = resolveMetadataFetchUrl(metadataUri);
-  if (resolved.error || resolved.urls.length === 0) {
-    return { metadata: null, error: resolved.error };
-  }
-
-  let lastError: SchemaMetadataFetchError | null = null;
-  for (const currentUrl of resolved.urls) {
-    const result = await fetchMetadataFromUrl(currentUrl);
-    if (!result.error) return result;
-    lastError = result.error;
-  }
-
+  const bundled = bundledSchemaMetadataForUri(metadataUri);
+  if (bundled) return bundled;
   return {
     metadata: null,
-    error:
-      lastError
-      ?? { code: "fetch_failed", message: "Schema metadata request failed for all candidate endpoints." },
-  }
+    error: {
+      code: "unsupported_host",
+      message: "Server-side schema metadata fetches are limited to bundled OmegaX schemas.",
+    },
+  };
 }
 
 export async function fetchSchemaMetadata(metadataUri: string): Promise<SchemaMetadataFetchResult> {
@@ -442,7 +288,7 @@ export async function fetchSchemaMetadata(metadataUri: string): Promise<SchemaMe
         }
       }
     } catch {
-      // Fall through to direct fetch for local/dev resilience.
+      // Fall through to bundled metadata for local/dev resilience.
     }
   }
 

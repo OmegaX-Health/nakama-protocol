@@ -193,6 +193,14 @@ async function main() {
     String(rpcPort),
     "--faucet-port",
     String(faucetPort),
+    "--faucet-per-request-sol-cap",
+    "1000",
+    "--faucet-per-time-sol-cap",
+    "1000000",
+    "--faucet-time-slice-secs",
+    "1",
+    "--mint",
+    programUpgradeAuthority.publicKey.toBase58(),
     "--dynamic-port-range",
     `${dynamicPortStart}-${dynamicPortEnd}`,
     "--upgradeable-program",
@@ -209,21 +217,44 @@ async function main() {
   });
   validator.stdout.pipe(logStream);
   validator.stderr.pipe(logStream);
+  let validatorExited = false;
+  validator.once("exit", () => {
+    validatorExited = true;
+  });
 
   const terminateValidator = async () => {
-    if (validator.killed) {
+    const hasExited = () =>
+      validatorExited || validator.exitCode !== null || validator.signalCode !== null;
+    const waitForExit = async (timeoutMs) => {
+      if (hasExited()) {
+        return true;
+      }
+      let timedOut = false;
+      let timeout;
+      await Promise.race([
+        new Promise((resolveExit) => {
+          validator.once("exit", resolveExit);
+        }),
+        new Promise((resolveTimeout) => {
+          timeout = setTimeout(() => {
+            timedOut = true;
+            resolveTimeout();
+          }, timeoutMs);
+        }),
+      ]);
+      clearTimeout(timeout);
+      return !timedOut || hasExited();
+    };
+
+    if (hasExited()) {
       return;
     }
     validator.kill("SIGTERM");
-    await new Promise((resolveExit) => {
-      const timeout = setTimeout(() => {
-        validator.kill("SIGKILL");
-      }, 5_000);
-      validator.once("exit", () => {
-        clearTimeout(timeout);
-        resolveExit();
-      });
-    });
+    if (await waitForExit(5_000)) {
+      return;
+    }
+    validator.kill("SIGKILL");
+    await waitForExit(5_000);
   };
 
   const cleanupTemp = async () => {
@@ -252,6 +283,9 @@ async function main() {
 
     const testEnv = {
       ...process.env,
+      NODE_OPTIONS: [process.env.NODE_OPTIONS, "--max-old-space-size=6144"]
+        .filter(Boolean)
+        .join(" "),
       SOLANA_RPC_URL: rpcUrl,
       NEXT_PUBLIC_PROTOCOL_PROGRAM_ID: programId,
       PROTOCOL_PROGRAM_ID: programId,
@@ -278,6 +312,8 @@ async function main() {
           "--test-concurrency=1",
           "e2e/localnet_protocol_surface.test.ts",
           "e2e/localnet_adversarial_matrix.test.ts",
+          "e2e/localnet_omegax_commitment_balance.test.ts",
+          "e2e/localnet_selected_asset_claim_payout.test.ts",
         ],
         {
           cwd: repoRoot,
