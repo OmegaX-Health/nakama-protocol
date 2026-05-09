@@ -12,6 +12,7 @@ import {
   assertProtocolGovernanceAuthorityMatches,
   chainInputsFromSnapshot,
   evaluateChainActuarialGate,
+  fundingLineCommittedAmountForActivation,
   fundingLineIdForAsset,
   parseRehearsalArgs,
   rawAmountForUsd,
@@ -110,6 +111,31 @@ test("devnet founder rehearsal maps one UI campaign to per-asset funding lines u
     "genesis-travel30-premiums-omegax",
   ]);
   assert.equal(new Set(ids).size, FOUNDER_ASSET_RAILS.length);
+});
+
+test("devnet founder funding lines cover the haircut-adjusted activation capacity", () => {
+  for (const asset of FOUNDER_ASSET_RAILS) {
+    const depositAmount = rawAmountForUsd({
+      usd: 99,
+      decimals: asset.decimals,
+      priceUsd1e8: asset.priceUsd1e8,
+    });
+    const capacityAmount =
+      (depositAmount * BigInt(10_000 - asset.haircutBps)) / 10_000n;
+    const committedAmount = fundingLineCommittedAmountForActivation({
+      depositAmount,
+      haircutBps: asset.haircutBps,
+      maxExposureBps: asset.maxExposureBps,
+    });
+    const exposureCap =
+      (committedAmount * BigInt(asset.maxExposureBps)) / 10_000n;
+
+    assert.ok(committedAmount > 0n, `${asset.symbol} committed amount must be non-zero`);
+    assert.ok(
+      exposureCap >= capacityAmount,
+      `${asset.symbol} exposure cap must cover activation capacity`,
+    );
+  }
 });
 
 test("devnet founder rehearsal redacts evidence without hiding public addresses", () => {

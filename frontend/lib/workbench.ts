@@ -40,6 +40,7 @@ type WorkbenchProtocolSource = Pick<
   | "memberPositions"
   | "obligations"
   | "policySeries"
+  | "reserveDomains"
 >;
 
 export type WorkbenchTab = {
@@ -736,7 +737,7 @@ function buildCapitalAuditTrail(
   const pool = source.liquidityPools.find((candidate) => candidate.address === (poolAddress ?? ""))
     ?? source.liquidityPools[0]
     ?? null;
-  if (!pool) return buildOverviewAuditTrail("capital");
+  if (!pool) return buildOverviewAuditTrail("capital", [], source);
 
   const poolClasses = source.capitalClasses.filter((capitalClass) => capitalClass.liquidityPool === pool.address);
   const selectedClass = poolClasses.find((capitalClass) => capitalClass.address === (classAddress ?? ""))

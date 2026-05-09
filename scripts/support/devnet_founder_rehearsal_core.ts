@@ -258,6 +258,31 @@ export function rawAmountForUsd(params: {
   return (usd1e8 * scale + params.priceUsd1e8 / 2n) / params.priceUsd1e8;
 }
 
+export function fundingLineCommittedAmountForActivation(params: {
+  depositAmount: bigint;
+  haircutBps: number;
+  maxExposureBps: number;
+}): bigint {
+  if (params.depositAmount <= 0n) {
+    throw new Error("depositAmount must be positive.");
+  }
+  if (params.haircutBps < 0 || params.haircutBps >= 10_000) {
+    throw new Error("haircutBps must be less than 10000.");
+  }
+  if (params.maxExposureBps <= 0 || params.maxExposureBps > 10_000) {
+    throw new Error("maxExposureBps must be between 1 and 10000.");
+  }
+
+  const netBps = BigInt(10_000 - params.haircutBps);
+  const capacityAmount = (params.depositAmount * netBps) / 10_000n;
+  if (capacityAmount <= 0n) {
+    throw new Error("capacityAmount must be positive.");
+  }
+
+  const maxExposureBps = BigInt(params.maxExposureBps);
+  return (capacityAmount * 10_000n + maxExposureBps - 1n) / maxExposureBps;
+}
+
 export function usd1e8ForRaw(params: {
   amountRaw: BigNumberish;
   decimals: number;
