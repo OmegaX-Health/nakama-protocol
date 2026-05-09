@@ -240,9 +240,11 @@ export function WalletButton({ className, mobile = false }: WalletButtonProps) {
       : hydratedConnected
         ? connectedLabel
         : "Connect wallet";
-  const buttonMeta = hydratedConnected
-    ? walletName
-    : connectionMetaLabel(selectedNetwork, resolvedRpcProfile);
+  const buttonMeta = !mounted
+    ? connectionMetaLabel("devnet", "public")
+    : hydratedConnected
+      ? walletName
+      : connectionMetaLabel(selectedNetwork, resolvedRpcProfile);
   const installedWallets = useMemo(
     () =>
       mounted
