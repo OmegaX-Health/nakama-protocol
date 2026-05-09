@@ -4,7 +4,7 @@
 > **Author**: Manuel Soldatini — Protocol Verification & Claims  
 > **Status**: Draft — Internal  
 > **Date**: May 2026  
-> **Scope**: End-to-end operational flow from member onboarding through payout and provider settlement.  
+> **Scope**: End-to-end operational flow from member onboarding through Phase 0 member payout, with provider settlement noted as a Phase 1 target.
 > This document is the **operational complement** to the onchain truth chain.
 > The onchain truth chain (what changes on Solana at each step) is documented separately in
 > [`genesis-protect-claim-trace.md`](./genesis-protect-claim-trace.md).  
@@ -17,8 +17,8 @@
 
 The founder's `genesis-protect-claim-trace.md` answers: *"what changes onchain at each step?"*
 
-This document answers: *"what do the member, operator, oracle, and AI actually do at each step,
-in what sequence, with what SLA, and what happens when things go wrong?"*
+This document answers: *"what do the member, operator, oracle, and AI-assisted review tools do at each step,
+in what sequence, with what internal operating target, and what happens when things go wrong?"*
 
 Together they form the complete picture of the Genesis Protect Acute claim lifecycle — technical
 truth chain on one side, operational workflow on the other.
@@ -95,7 +95,7 @@ MEMBER JOURNEY                    OPERATOR / ORACLE WORKFLOW               ONCHA
 - Summary of benefit schedule and exclusion categories
 - Link to oracle portal for claim submission
 
-**SLA**: Onboarding is fully automated. Policy mint confirms within one Solana block (~400ms).
+**Internal target**: onboarding is automated, and policy mint confirmation should complete after normal Solana confirmation.
 
 ---
 
@@ -114,7 +114,7 @@ and seeks care at any licensed facility.
 
 ### 3.2 What the member should NOT do
 
-- Do not self-diagnose and choose a facility based on what the insurance covers — seek appropriate care first.
+- Do not self-diagnose and choose a facility based on the benefit schedule — seek appropriate care first.
 - Do not request that the facility omit or alter any diagnosis from the record.
 - Do not wait until the coverage window expires to submit — the claim must be **opened within
   the coverage window or within 14 days of expiry**, whichever is later.
@@ -193,7 +193,7 @@ If any check fails, the instruction reverts — no ClaimCase is created.
 Member receives an oracle portal notification:
 - Claim reference number (derived from ClaimCase PDA address)
 - Confirmation that the claim is under review
-- Expected review SLA (24 hours)
+- Internal review target (24 hours)
 - List of any documents still awaited
 
 ---
@@ -216,7 +216,7 @@ After intake, the claim enters the automated review pipeline before any human op
 
 ### 6.2 AI output routing
 
-| AI risk score | Queue destination | Human SLA |
+| AI risk score | Queue destination | Human review target |
 |---|---|---|
 | Low — no flags | Standard review queue | 24 hours |
 | Medium — soft flags | Enhanced review queue (senior operator) | 12 hours |
@@ -250,7 +250,7 @@ For high-sensitivity claims or when TEE-verified AI processing is required:
 1. Claims operator prepares a **redacted claim packet** (hashed, not plaintext onchain)
 2. `open_review_session` creates a review session PDA on base Solana
 3. `delegate_review_session` delegates the PDA to MagicBlock Ephemeral Rollup
-4. TEE reviewer inspects the private packet inside the TEE — raw PHI never leaves the TEE
+4. TEE reviewer inspects the private packet inside the TEE — raw PHI is not written to Solana or public endpoints
 5. TEE emits a **hash-bounded review artifact** (no clinical content)
 6. `record_private_review` records only hashes and status — only the registered reviewer can write
 7. `record_private_payment_ref` stores the private payment reference hash (if reimbursement applies)
@@ -264,7 +264,7 @@ this path in Phase 0. It demonstrates the privacy architecture for investor/part
 
 If the operator discovers an issue that was not caught by the AI:
 
-| Issue found | Operator action | SLA |
+| Issue found | Operator action | Internal target |
 |---|---|---|
 | Document quality insufficient | Contacts member via portal — requests resubmission | Member has 7 days |
 | Translation missing | Requests certified translation | 5 business days |
@@ -326,12 +326,13 @@ The operator confirms (or overrides) the AI-suggested tier classification based 
 
 | Tier | Event 7 benefit | Travel 30 fixed | Travel 30 top-up |
 |---|---|---|---|
-| T1 — ER same-day | $300 | $400 | Up to $200 (UCR) |
-| T2 — Overnight | $700 | $1,200 | Up to $800 (UCR) |
-| T3 — Surgery + ICU | $1,500 | $1,500 | Up to $1,500 (UCR) |
+| T1 — ER same-day | $150 | $250 | UCR-benchmarked top-up, total capped at $3,000 |
+| T2 — Overnight | $500 | $1,000 | UCR-benchmarked top-up, total capped at $3,000 |
+| T3 — Surgery + ICU | $1,000 | $2,500 | UCR-benchmarked top-up, total capped at $3,000 |
 
 For Travel 30 reimbursement top-up: the operator calculates
-`min(actual_itemized_cost − fixed_tier_benefit, top_up_cap)` using UCR-benchmarked line items.
+`min(UCR_eligible_itemized_cost - fixed_tier_benefit, 3000 - fixed_tier_benefit)` so the
+total approved amount remains within the $3,000 aggregate cap.
 
 ### 9.3 Denial notification timing
 
@@ -376,11 +377,13 @@ the Plan Admin is notified immediately.
 Settlement transfers atomically via `transfer_from_domain_vault`:
 - Net payout to member wallet (or `delegate_recipient` if set)
 - Protocol fee carved out to protocol fee vault
-- Oracle fee carved out to oracle fee vault (when MagicBlock path used: private payment reference confirmed)
+- Oracle fee carved out to oracle fee vault when a configured oracle fee applies
 
-### 10.3 Settlement SLA
+### 10.3 Internal Settlement Targets
 
-| Step | SLA |
+These timings are internal operating targets for staffing and queue design, not member-facing guarantees.
+
+| Step | Internal target |
 |---|---|
 | Evidence uploaded → review complete | 24 hours |
 | Approval decision → reserve booked | 2 hours |
@@ -401,12 +404,13 @@ provider directly, or the payout supplements a payment the member has already ma
 This is the correct conservative posture for Phase 0:
 - No legal relationship between OmegaX and the provider is required
 - No provider onboarding is needed to launch
-- Settlement is immediate and unconditional once approved
+- Settlement can proceed through the existing member-recipient rail once approved and once reserve,
+  oracle-quality, fee, and rail checks pass
 
 ### 11.2 Phase 1 target: direct provider settlement
 
-In Phase 1, the oracle service (`protocol-oracle-service`) will introduce direct provider
-settlement — where the payout is routed to a provider wallet rather than the member wallet.
+In Phase 1, the oracle service (`protocol-oracle-service`) may introduce direct provider
+settlement, where the member authorizes routing to a provider wallet rather than the member wallet.
 
 Requirements before Phase 1 provider settlement can launch:
 - Provider has completed OmegaX KYB (Know Your Business) process
@@ -422,11 +426,14 @@ partnership runbooks as they are developed.
 
 ---
 
-## 12. SLA Matrix (Complete Reference)
+## 12. Internal Target Matrix (Complete Reference)
 
-| Touchpoint | SLA | Responsible party | Escalation if missed |
+These targets are for operational readiness. They should not be copied into public member-facing
+copy as guaranteed service levels.
+
+| Touchpoint | Internal target | Responsible party | Escalation if missed |
 |---|---|---|---|
-| Policy mint confirmation | < 1 Solana block (~400ms) | Protocol (automated) | — |
+| Policy mint confirmation | Normal Solana confirmation | Protocol (automated) | — |
 | Oracle portal: upload confirmation | < 30 seconds | Oracle service | Engineering on-call |
 | AI pre-screening | < 5 minutes | Oracle service | Engineering on-call |
 | Standard review queue: operator picks up | < 2 hours from upload | Claims operator | Claims team lead |
@@ -446,20 +453,20 @@ partnership runbooks as they are developed.
 
 ## 13. Operator Staffing and Availability (Phase 0)
 
-Phase 0 launch requires the following minimum operator coverage to meet the above SLAs:
+Phase 0 launch requires the following minimum operator coverage to meet the above internal targets:
 
 | Role | Coverage | Responsibilities |
 |---|---|---|
 | **Claims Operator** | Business hours (5 days/week) + on-call | Standard review, evidence hash attachment, adjudication, settlement |
 | **Senior Claims Operator** | Business hours + on-call (24h for fraud hold) | Enhanced review, fraud holds, high-value approvals, member disputes |
-| **Claims Team Lead** | Business hours (available for escalations) | SLA escalations, policy ambiguities, team oversight |
+| **Claims Team Lead** | Business hours (available for escalations) | Target misses, policy ambiguities, team oversight |
 | **Oracle Authority (signing key)** | Automated (key management system) | Attestation signing (must not require human intervention per claim) |
 | **Plan Admin** | On-call (for emergency pauses, reserve alerts) | Emergency pause, FundingLine monitoring, reserve top-up |
 
-**Oracle key custody**: The oracle authority signing key must be stored in a hardware security
-module (HSM) or equivalent secure key management system. It must not be a hot wallet
-directly accessible to the claims operator. The attestation workflow submits to the oracle
-service which signs via the HSM — the operator does not hold the private key.
+**Oracle key custody production requirement**: before production automation, the oracle authority
+signing key should be held in an HSM/KMS or equivalent secure key management system rather than a
+claims-operator hot wallet. The target workflow is that operators submit attestation requests to an
+oracle service that signs through the managed key boundary.
 
 ---
 
@@ -473,7 +480,7 @@ service which signs via the HSM — the operator does not hold the private key.
 | Obligation PDA (reserve amount, FundingLine reference) | AI pre-screening logs |
 | Settlement transaction (vault delta, recipient, fees) | Fraud investigation notes |
 | Fee vault accruals | Member communications |
-| MagicBlock: review session hashes only | MagicBlock: raw evidence inside TEE only |
+| MagicBlock: review session hashes only | MagicBlock demo: private evidence packet handled by TEE/private reviewer adapter |
 
 The onchain record is the **truth** about what was decided and what was paid.
 The offchain record is the **evidence** supporting that truth.

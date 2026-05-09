@@ -54,13 +54,13 @@ dispute resolution). Phase 1 extensions (onchain dispute-case state, multi-attes
 | Premium | $39 USDC | $99 USDC |
 | Coverage duration | 7 days | 30 days |
 | Benefit mode | Fixed only | Hybrid: fixed tier + UCR reimbursement top-up |
-| Max benefit | $1,500 | $3,000 |
-| Tier 1 — ER same-day | $300 fixed | $400 fixed |
-| Tier 2 — Overnight | $700 fixed | $1,200 fixed |
-| Tier 3 — Surgery + ICU (2+ nights) | $1,500 fixed | $1,500 fixed + up to $1,500 reimbursement |
+| Max benefit | $1,000 | $3,000 |
+| Tier 1 — ER same-day | $150 fixed | $250 fixed |
+| Tier 2 — Overnight | $500 fixed | $1,000 fixed |
+| Tier 3 — Surgery + ICU (2+ nights) | $1,000 fixed | $2,500 fixed + reimbursement top-up to $3,000 aggregate |
 | Waiting period (illness onset) | 7 days pre-enrollment | 7 days pre-enrollment |
-| Claim review SLA | 24 hours | 24 hours |
-| Settlement SLA | 48 hours post-approval | 48 hours post-approval |
+| Internal claim review target | 24 hours | 24 hours |
+| Internal settlement target | 48 hours post-approval | 48 hours post-approval |
 
 ---
 
@@ -153,7 +153,7 @@ triggering oracle attestation.
 
 ### 6.2 Financial Review
 
-- [ ] Invoice total matches or is below the applicable benefit cap
+- [ ] Requested approval amount is capped by the applicable benefit schedule
 - [ ] All invoice line items are medically relevant to the acute diagnosis
 - [ ] UCR comparison completed for Travel 30 reimbursement line items
 - [ ] Proof of payment matches invoice amounts (no unexplained delta)
@@ -174,17 +174,17 @@ triggering oracle attestation.
 | Tier 2 — Overnight | Hospital admission confirmed, 1–2 nights, no surgery or ICU |
 | Tier 3 — Surgery + ICU | Surgical procedure confirmed OR ICU admission confirmed, 2+ nights |
 
-For Travel 30, after tier classification, the reimbursement top-up is calculated as:
-`min(actual_itemized_cost − tier_fixed_benefit, max_reimbursement_cap)`
+For Travel 30, after tier classification, the reimbursement top-up is calculated from
+UCR-benchmarked line items and capped so the total approved amount never exceeds $3,000.
 
 ---
 
 ## 6b. MagicBlock Private Claim Review Path (Optional Oracle Path)
 
 As of protocol v0.3.2, a **MagicBlock Ephemeral Rollup adjunct** (`omegax_private_claim_review`) is
-available as an alternative oracle attestation path for cases where standard human review requires
-enhanced privacy guarantees — for example, when evidence must be inspected by a Trusted Execution
-Environment (TEE) reviewer without exposing raw PHI to the Solana base layer.
+available as an optional oracle attestation adjunct for cases where standard human review would
+benefit from stronger privacy boundaries — for example, when evidence is inspected by a Trusted
+Execution Environment (TEE) reviewer without placing raw PHI on the Solana base layer.
 
 ### When this path applies
 
@@ -212,7 +212,7 @@ Environment (TEE) reviewer without exposing raw PHI to the Solana base layer.
 - The adjunct is **not authoritative by itself** — consumers must verify registry binding, reviewer
   binding, expected hashes, payment reference, and committed ownership before treating the result
   as valid attestation input.
-- Phase 0 production status: **demo-grade**. The production reserve kernel (USDC settlement, obligation
+- Phase 0 MagicBlock status: **demo-grade**. The production reserve kernel (USDC settlement, obligation
   reservation, claim adjudication) is not routed through this path in Phase 0. It demonstrates the
   privacy architecture for investor and partner audiences.
 
@@ -326,7 +326,7 @@ These states exist in the operator review queue only. The onchain `ClaimCase` re
 | Operator state | Meaning | Next action |
 |---|---|---|
 | `awaiting_evidence` | Member has not yet submitted documents | Await member submission (max 14 days, then deny) |
-| `evidence_review` | Operator is reviewing documents | Complete checklist within 24h SLA |
+| `evidence_review` | Operator is reviewing documents | Complete checklist within 24h internal target |
 | `fraud_hold` | Automatic or manual fraud flag triggered | Senior review within 72h |
 | `translation_pending` | Documents are not in English; awaiting certified translation | Await translation (max 5 business days) |
 | `additional_docs_required` | Checklist incomplete; member contacted for more documents | Await member response (max 7 days, then deny) |
@@ -342,12 +342,12 @@ These states exist in the operator review queue only. The onchain `ClaimCase` re
 
 | Condition | Escalation level |
 |---|---|
-| Claim amount > $1,000 (Event 7) | Senior operator review required before approval |
+| Event 7 Tier 3 or near-cap claim | Senior operator review required before approval |
 | Claim amount > $2,000 (Travel 30) | Senior operator review required before approval |
 | Any Tier 3 claim (Surgery + ICU) | Senior operator review required before approval |
 | 2+ automatic fraud flags | Senior operator review required before any action |
 | Member disputes a denial | Senior operator re-opens review (Phase 0: offchain; Phase 1: new ClaimCase) |
-| Operator checklist incomplete after 24h SLA | Escalate to claims team lead |
+| Operator checklist incomplete after 24h internal target | Escalate to claims team lead |
 | Translation pending > 5 business days | Escalate to claims team lead; consider requesting alternative documentation |
 | FundingLine free balance < 120% of reserved amount | Escalate to Plan Admin for reserve top-up |
 
@@ -355,7 +355,7 @@ These states exist in the operator review queue only. The onchain `ClaimCase` re
 
 ```
 Level 1 — Claims Operator (standard review)
-   ↓  [triggers above or 24h SLA miss]
+   ↓  [triggers above or 24h internal-target miss]
 Level 2 — Senior Claims Operator (enhanced review)
    ↓  [fraud confirmed, legal question, member dispute unresolved]
 Level 3 — Claims Team Lead (final operational decision)
@@ -379,9 +379,11 @@ In Phase 0, there is no onchain dispute-case state. Member appeals are handled a
 
 ## 11. Settlement States and Timing
 
-### 11.1 Settlement SLA
+### 11.1 Internal Settlement Targets
 
-| Stage | SLA |
+These are operating targets for staffing and queue design. They are not member-facing guarantees.
+
+| Stage | Internal target |
 |---|---|
 | Evidence review complete → adjudication | 24 hours from evidence submission |
 | Approval → reserve booking | 2 hours |
@@ -455,18 +457,18 @@ An external reviewer must be able to answer all of the following from onchain st
 
 ### 12.2 Offchain Audit Trail (operator-maintained)
 
-The following must be retained in the operator's offchain claim manifest and available to
-internal audit and, on request, to regulators or third-party reviewers:
+The following should be retained in the operator's offchain claim manifest and made available only
+through authorized internal audit or third-party review processes:
 
 | Record | Retention period |
 |---|---|
-| Raw evidence documents (PHI) | 7 years, encrypted at rest, access-logged |
-| Operator review checklist completion record | 7 years |
-| Decision rationale note (for every denial or escalation) | 7 years |
-| Fraud review notes and outcome | 7 years |
-| Member communications log (portal messages, email) | 7 years |
-| Translation records (if applicable) | 7 years |
-| Appeal and dispute records | 7 years |
+| Raw evidence documents (PHI) | Per approved compliance-retention policy, encrypted at rest, access-logged |
+| Operator review checklist completion record | Per approved compliance-retention policy |
+| Decision rationale note (for every denial or escalation) | Per approved compliance-retention policy |
+| Fraud review notes and outcome | Per approved compliance-retention policy |
+| Member communications log (portal messages, email) | Per approved compliance-retention policy |
+| Translation records (if applicable) | Per approved compliance-retention policy |
+| Appeal and dispute records | Per approved compliance-retention policy |
 
 ### 12.3 Onchain / Offchain Boundary
 
@@ -486,8 +488,8 @@ The `evidence_ref_hash` onchain is a tamper-evident commitment to the offchain p
 
 ### 12.4 Third-Party Audit Path
 
-A third-party auditor (LP, sponsor, regulator, or independent reviewer) can verify claim integrity
-without access to PHI using the following steps:
+An authorized third-party reviewer (for example, an LP, sponsor, or independent reviewer) can verify
+claim integrity without access to PHI using the following steps:
 
 1. Retrieve the `ClaimCase` PDA from any Solana RPC using the claim's transaction signature.
 2. Verify `ClaimCase.evidence_ref_hash` matches the hash of the full evidence packet (provided
