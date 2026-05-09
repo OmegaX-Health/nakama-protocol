@@ -23,6 +23,17 @@ pub struct RotateProtocolGovernanceAuthorityArgs {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub struct MigrateCapitalClassLayoutArgs {
+    #[max_len(MAX_ID_LEN)]
+    pub class_id: String,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub struct MigrateLPPositionLayoutArgs {
+    pub owner: Pubkey,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub struct CreateReserveDomainArgs {
     #[max_len(MAX_ID_LEN)]
     pub domain_id: String,

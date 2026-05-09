@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: 5988efbe9e29ff7b6da5363223ed00a8085adf5278d766e03fad94f5318b940b
+// contract_sha256: e8e736a4834ba1ffe0ecb224f27539e693cd751f9df5830a1c2b6957b735a23d
 
 export type ProtocolInstructionName =
   | "accept_protocol_governance_authority"
@@ -26,6 +26,9 @@ export type ProtocolInstructionName =
   | "create_liquidity_pool"
   | "create_obligation"
   | "create_policy_series"
+  | "migrate_protocol_governance_layout"
+  | "migrate_capital_class_layout"
+  | "migrate_lp_position_layout"
   | "create_reserve_domain"
   | "deallocate_capital"
   | "deposit_commitment"
@@ -114,6 +117,9 @@ export const PROTOCOL_INSTRUCTION_DISCRIMINATORS: Record<ProtocolInstructionName
   "create_liquidity_pool": Uint8Array.from([175, 75, 181, 165, 224, 254, 6, 131]),
   "create_obligation": Uint8Array.from([216, 144, 172, 223, 19, 106, 220, 54]),
   "create_policy_series": Uint8Array.from([70, 162, 231, 218, 211, 136, 110, 176]),
+  "migrate_protocol_governance_layout": Uint8Array.from([142, 48, 202, 237, 234, 83, 239, 134]),
+  "migrate_capital_class_layout": Uint8Array.from([92, 167, 94, 232, 0, 194, 56, 209]),
+  "migrate_lp_position_layout": Uint8Array.from([113, 230, 184, 121, 86, 153, 219, 216]),
   "create_reserve_domain": Uint8Array.from([222, 2, 8, 218, 45, 157, 193, 246]),
   "deallocate_capital": Uint8Array.from([10, 97, 97, 189, 60, 170, 102, 29]),
   "deposit_commitment": Uint8Array.from([147, 105, 226, 224, 111, 39, 63, 78]),
@@ -232,6 +238,15 @@ export const PROTOCOL_INSTRUCTION_ARGS: Record<ProtocolInstructionName, Protocol
   ],
   "create_policy_series": [
       { name: "args", type: {"defined":{"name":"CreatePolicySeriesArgs"}} },
+  ],
+  "migrate_protocol_governance_layout": [
+
+  ],
+  "migrate_capital_class_layout": [
+      { name: "args", type: {"defined":{"name":"MigrateCapitalClassLayoutArgs"}} },
+  ],
+  "migrate_lp_position_layout": [
+      { name: "args", type: {"defined":{"name":"MigrateLPPositionLayoutArgs"}} },
   ],
   "create_reserve_domain": [
       { name: "args", type: {"defined":{"name":"CreateReserveDomainArgs"}} },
@@ -591,6 +606,29 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
       { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
       { name: "policy_series", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 111, 108, 105, 99, 121, 95, 115, 101, 114, 105, 101, 115] }, { kind: "account", path: "health_plan" }, { kind: "arg", path: "args.series_id" }] },
       { name: "series_reserve_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [115, 101, 114, 105, 101, 115, 95, 114, 101, 115, 101, 114, 118, 101, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "policy_series" }, { kind: "arg", path: "args.asset_mint" }] },
+      { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
+  ],
+  "migrate_protocol_governance_layout": [
+      { name: "authority", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "protocol_governance", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [112, 114, 111, 116, 111, 99, 111, 108, 95, 103, 111, 118, 101, 114, 110, 97, 110, 99, 101] }] },
+      { name: "program", writable: false, signer: false, optional: false, address: "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B", pdaSeeds: undefined },
+      { name: "program_data", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
+  ],
+  "migrate_capital_class_layout": [
+      { name: "authority", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "liquidity_pool", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "capital_class", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "program", writable: false, signer: false, optional: false, address: "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B", pdaSeeds: undefined },
+      { name: "program_data", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
+  ],
+  "migrate_lp_position_layout": [
+      { name: "authority", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "capital_class", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "lp_position", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+      { name: "program", writable: false, signer: false, optional: false, address: "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B", pdaSeeds: undefined },
+      { name: "program_data", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
   ],
   "create_reserve_domain": [

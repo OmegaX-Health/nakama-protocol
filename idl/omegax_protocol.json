@@ -5079,6 +5079,166 @@
       ]
     },
     {
+      "name": "migrate_protocol_governance_layout",
+      "discriminator": [
+        142,
+        48,
+        202,
+        237,
+        234,
+        83,
+        239,
+        134
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "protocol_governance",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program",
+          "address": "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "migrate_capital_class_layout",
+      "discriminator": [
+        92,
+        167,
+        94,
+        232,
+        0,
+        194,
+        56,
+        209
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "liquidity_pool"
+        },
+        {
+          "name": "capital_class",
+          "writable": true
+        },
+        {
+          "name": "program",
+          "address": "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "MigrateCapitalClassLayoutArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "migrate_lp_position_layout",
+      "discriminator": [
+        113,
+        230,
+        184,
+        121,
+        86,
+        153,
+        219,
+        216
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "capital_class"
+        },
+        {
+          "name": "lp_position",
+          "writable": true
+        },
+        {
+          "name": "program",
+          "address": "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B"
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "MigrateLPPositionLayoutArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "create_reserve_domain",
       "discriminator": [
         222,
@@ -18434,6 +18594,30 @@
           {
             "name": "terms_version",
             "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MigrateCapitalClassLayoutArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "class_id",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MigrateLPPositionLayoutArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
           }
         ]
       }

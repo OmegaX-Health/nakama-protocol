@@ -1,4 +1,4 @@
-2884eae040f84777fcc6f24ee71ec268b6c5e1f4935f718b304b6257ef4b9144
+3e2418b1b2ad18bcc0079c5fdd564e315d7cce07fb7f64ddb0e16be135d492d6
   Cargo.toml
   programs/omegax_protocol/Cargo.toml
   programs/omegax_protocol/src/args.rs
@@ -37,5 +37,6 @@
   programs/omegax_protocol/src/reserve_custody.rs
   programs/omegax_protocol/src/reserve_waterfall.rs
   programs/omegax_protocol/src/state.rs
+  programs/omegax_protocol/src/state_migrations.rs
   programs/omegax_protocol/src/tests.rs
   programs/omegax_protocol/src/types.rs

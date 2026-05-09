@@ -73,6 +73,26 @@ current protocol surface.
 - [`../../docs/architecture/solana-instruction-map.md`](../../docs/architecture/solana-instruction-map.md)
 - [`../../docs/MIGRATION_MATRIX.md`](../../docs/MIGRATION_MATRIX.md)
 
+## Account layout migrations
+
+State-layout changes that enlarge an existing Anchor account must ship with a
+raw-account migration path before ordinary handlers deserialize the new layout.
+The current migration surface is intentionally upgrade-authority scoped and
+uses unchecked accounts for the account being resized so legacy deployments can
+recover before normal `Account<T>` validation runs:
+
+- `migrate_protocol_governance_layout` resizes the singleton
+  `ProtocolGovernance` PDA and initializes pending governance-transfer fields
+  to their inactive defaults.
+- `migrate_capital_class_layout` resizes an existing `CapitalClass` PDA and
+  initializes redemption FIFO cursors to zero.
+- `migrate_lp_position_layout` resizes an existing `LPPosition` PDA and
+  initializes its queued-redemption sequence/timestamp to zero.
+
+Run these migrations only as an explicit post-upgrade maintenance step for
+accounts created with the previous shorter layouts. Fresh accounts already use
+the current `INIT_SPACE` values.
+
 ## Common commands
 
 From the repository root:

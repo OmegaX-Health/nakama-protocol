@@ -24,6 +24,7 @@ pub mod plans_membership;
 pub mod reserve_custody;
 pub mod reserve_waterfall;
 pub mod state;
+pub mod state_migrations;
 pub mod types;
 
 pub use args::*;
@@ -43,6 +44,7 @@ pub use plans_membership::*;
 pub use reserve_custody::*;
 pub use reserve_waterfall::*;
 pub use state::*;
+pub use state_migrations::*;
 pub use types::*;
 
 // Anchor derives these hidden client-account modules next to each `Accounts`
@@ -74,6 +76,10 @@ pub(crate) use funding_obligations::{
 pub(crate) use reserve_waterfall::{
     __client_accounts_configure_reserve_asset_rail,
     __client_accounts_publish_reserve_asset_rail_price,
+};
+pub(crate) use state_migrations::{
+    __client_accounts_migrate_capital_class_layout, __client_accounts_migrate_lp_position_layout,
+    __client_accounts_migrate_protocol_governance_layout,
 };
 
 #[program]
@@ -111,6 +117,26 @@ pub mod omegax_protocol {
         ctx: Context<CancelProtocolGovernanceAuthorityTransfer>,
     ) -> Result<()> {
         crate::governance::cancel_protocol_governance_authority_transfer(ctx)
+    }
+
+    pub fn migrate_protocol_governance_layout(
+        ctx: Context<MigrateProtocolGovernanceLayout>,
+    ) -> Result<()> {
+        crate::state_migrations::migrate_protocol_governance_layout(ctx)
+    }
+
+    pub fn migrate_capital_class_layout(
+        ctx: Context<MigrateCapitalClassLayout>,
+        args: MigrateCapitalClassLayoutArgs,
+    ) -> Result<()> {
+        crate::state_migrations::migrate_capital_class_layout(ctx, args)
+    }
+
+    pub fn migrate_lp_position_layout(
+        ctx: Context<MigrateLPPositionLayout>,
+        args: MigrateLPPositionLayoutArgs,
+    ) -> Result<()> {
+        crate::state_migrations::migrate_lp_position_layout(ctx, args)
     }
 
     pub fn create_reserve_domain(
