@@ -62,6 +62,12 @@ test("MagicBlock adjunct uses an authority registry for review sessions", () => 
   assert.match(programSource, /operator\.active @ PrivateClaimReviewError::OperatorInactive/);
 });
 
+test("MagicBlock adjunct registry initialization is upgrade-authority gated", () => {
+  assert.match(programSource, /program\.programdata_address\(\)\? == Some\(program_data\.key\(\)\)/);
+  assert.match(programSource, /program_data\.upgrade_authority_address == Some\(authority\.key\(\)\)/);
+  assert.match(programSource, /UnauthorizedRegistryInitializer/);
+});
+
 test("review session PDA seeds bind session authority and claim case", () => {
   assert.match(
     programSource,
