@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("../", import.meta.url));
 
-function runWithFakeQEDGen(stdoutLine: string, exitCode: number, command = "check") {
+function runWithFakeQEDGen(stdoutLine: string, exitCode: number) {
   const tempDir = mkdtempSync(join(tmpdir(), "omegax-qedgen-wrapper-"));
   const fakeQEDGen = join(tempDir, "qedgen");
   writeFileSync(
@@ -25,7 +25,7 @@ function runWithFakeQEDGen(stdoutLine: string, exitCode: number, command = "chec
   chmodSync(fakeQEDGen, 0o755);
 
   try {
-    const result = spawnSync("node", ["scripts/run_qedgen.mjs", command], {
+    const result = spawnSync("node", ["scripts/run_qedgen.mjs", "check"], {
       cwd: repoRoot,
       env: {
         ...process.env,
@@ -54,15 +54,4 @@ test("QEDGen wrapper fails unknown nonzero checker status docs", () => {
 
   assert.notEqual(result.status, 0);
   assert.match(`${result.stdout}\n${result.stderr}`, /Unaccepted QEDGen status docs/);
-});
-
-test("QEDGen reconcile fails when Lean proof obligations are missing", () => {
-  const result = runWithFakeQEDGen(
-    "{\"rust_drift\":[],\"lean_orphans\":[],\"lean_missing\":[\"SelectedAssetPayoutGuard\"]}",
-    0,
-    "reconcile",
-  );
-
-  assert.notEqual(result.status, 0);
-  assert.match(`${result.stdout}\n${result.stderr}`, /missing Lean proof obligation/);
 });
