@@ -364,7 +364,18 @@ export function OraclesWorkbench({ searchParams = {} }: OraclesWorkbenchProps) {
     const bar = tabBarRef.current;
     if (!bar) return;
     const activeButton = bar.querySelector<HTMLButtonElement>(`[data-tab-id="${activeTab}"]`);
-    if (activeButton) activeButton.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    if (!activeButton) return;
+
+    const activeStart = activeButton.offsetLeft;
+    const activeEnd = activeStart + activeButton.offsetWidth;
+    const visibleStart = bar.scrollLeft;
+    const visibleEnd = visibleStart + bar.clientWidth;
+
+    if (activeStart < visibleStart) {
+      bar.scrollTo({ left: activeStart, behavior: "smooth" });
+    } else if (activeEnd > visibleEnd) {
+      bar.scrollTo({ left: activeEnd - bar.clientWidth, behavior: "smooth" });
+    }
   }, [activeTab]);
 
   const { eyebrow: heroEyebrow, subtitle: heroSubtitle } = personaHeroCopy(effectivePersona);
