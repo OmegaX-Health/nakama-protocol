@@ -1,0 +1,23 @@
+version = 1
+name = "omegax-protocol"
+
+[setup]
+script = '''
+ROOT="${CODEX_WORKTREE_PATH:-.}"
+cd "$ROOT"
+npm ci
+npm --prefix frontend ci
+'''
+
+[[actions]]
+name = "Website dev server"
+icon = "run"
+command = '''
+ROOT="${CODEX_WORKTREE_PATH:-.}"
+PORT="${PROTOCOL_FRONTEND_PORT:-3000}"
+cd "$ROOT"
+if [[ ! -d node_modules ]]; then npm ci; fi
+if [[ ! -d frontend/node_modules ]]; then npm --prefix frontend ci; fi
+NEXT_TELEMETRY_DISABLED=1 \
+npm --prefix frontend run dev -- --hostname 127.0.0.1 --port "$PORT"
+'''
