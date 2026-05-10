@@ -1280,6 +1280,1218 @@
         "obligationStatus": "RESERVED",
         "expectedResolutionNote": "Pending ICU charts from Groote Schuur Hospital (ETA 48h). Upon receipt, anticipated outcome: FULLY_SETTLED $1,500."
       }
+    },
+    {
+      "_comment": "--- EVENT 7 | TIER 1 — ER SAME-DAY (new batch, x4) ---",
+      "scenarioId": "EVT7-T1-005",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 33,
+        "sex": "F",
+        "nationality": "DE",
+        "preExistingConditions": "daily soft contact lens wearer (no prior ocular pathology)",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T1-005"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "United Arab Emirates",
+        "incidentCity": "Dubai",
+        "facilityType": "American Hospital Dubai — Ophthalmology Emergency",
+        "facilityName": "American Hospital Dubai",
+        "eventContext": "Art Dubai — international modern and contemporary art fair at Madinat Jumeirah",
+        "incidentDayOfCoverage": 2
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Traumatic corneal abrasion — right eye, contact lens related",
+        "icdCode": "S05.01XA",
+        "icdDescription": "Injury of conjunctiva and corneal abrasion without foreign body, right eye, initial encounter",
+        "clinicalNarrative": "Patient's soft contact lens shifted and became dislodged while walking through an outdoor sculpture garden in a sandstorm advisory (Shamal wind conditions). Attempted lens repositioning caused a corneal abrasion (right eye). Slit-lamp examination: linear epithelial defect 4mm × 1.5mm at 3 o'clock, fluorescein-positive. No infiltrate, no anterior chamber reaction. Topical antibiotic (ofloxacin 0.3% QID × 5 days) and lubricating drops prescribed. Contact lens wear suspended for 7 days. No eye patching (current evidence base). Discharged with ophthalmology review in 48 hours.",
+        "documentsAvailable": [
+          "ophthalmology emergency assessment note",
+          "slit-lamp examination record",
+          "fluorescein staining report",
+          "pharmacy prescription",
+          "discharge note"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 150,
+        "actualMedicalCostUSD": 520,
+        "amountClaimed": 150,
+        "amountApproved": 150,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 1. ER ophthalmology visit, same-day discharge. Corneal abrasion is an acute accidental injury — covered under genesis-acute-v1. Contact lens-related aggravation does not constitute negligence exclusion."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ophthalmology emergency assessment note",
+          "slit-lamp examination record",
+          "discharge note"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Acute traumatic corneal abrasion confirmed by slit-lamp and fluorescein staining. Same-day discharge. No overnight admission. Tier 1 criteria met. Contact lens-related mechanism does not trigger exclusion — abrasion is accidental.",
+        "reviewCompletedHours": 4.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t1-sim-005",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 300,
+        "paidAmountUsdc": 300,
+        "fundingLineCharged": "genesis-event7-premiums",
+        "fundingLineAddress": "2115rGD6zKmUhLGk9zwqbA9tdcA5nuAwRNaQDLcgSpWA",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T1-006",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 42,
+        "sex": "M",
+        "nationality": "US",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 3,
+        "memberWalletSim": "sim-member-wallet-EVT7-T1-006"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Singapore",
+        "incidentCity": "Singapore",
+        "facilityType": "Tan Tock Seng Hospital — Emergency Department",
+        "facilityName": "Tan Tock Seng Hospital (TTSH)",
+        "eventContext": "Singapore FinTech Festival — outdoor networking zone, marina promenade",
+        "incidentDayOfCoverage": 3
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Dog bite — right forearm laceration requiring wound closure and rabies post-exposure prophylaxis (PEP)",
+        "icdCode": "W54.0XXA",
+        "icdDescription": "Bitten by dog, initial encounter",
+        "clinicalNarrative": "Patient was bitten by an unleashed dog near the marina networking area. Right forearm: 3.2cm full-thickness laceration with irregular edges, minor subcutaneous fat exposure, no tendon involvement. Wound copiously irrigated with 1L normal saline. Primary wound closure: 4 × 3-0 Vicryl deep sutures + 5 × 3-0 nylon skin sutures. Tetanus toxoid (Td) booster administered — last dose >10 years prior. Dog owner identified; vaccination records unavailable. Per Singapore MOH rabies PEP protocol (dog from unknown vaccination status): rabies immunoglobulin (HRIG) 20 IU/kg infiltrated wound + day-0 rabies vaccine (PCECV) initiated. Neurovascular exam: intact. Discharged same day with wound care instructions and PEP schedule (day 3, 7, 14, 28).",
+        "documentsAvailable": [
+          "ED triage note",
+          "wound care and closure report",
+          "tetanus immunization record",
+          "HRIG and rabies vaccine administration record",
+          "PEP schedule letter",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 150,
+        "actualMedicalCostUSD": 890,
+        "amountClaimed": 150,
+        "amountApproved": 150,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 1. Acute accidental animal bite — covered. Rabies PEP initiation on day 0 is part of acute ER management, not a separate outpatient series claim. Tier 1 fixed benefit applies to this ER episode."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED triage note",
+          "wound closure report",
+          "HRIG and vaccine administration record",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Dog bite with laceration repair and same-day discharge confirmed. Rabies PEP initiation is standard acute management in Singapore for uncertain vaccination status — not an exclusion. Tier 1 criteria met. Subsequent PEP doses (day 3, 7, 14, 28) are outpatient follow-up and not additional claim events under the same policy cycle.",
+        "reviewCompletedHours": 5.5
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t1-sim-006",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 300,
+        "paidAmountUsdc": 300,
+        "fundingLineCharged": "genesis-event7-premiums",
+        "fundingLineAddress": "2115rGD6zKmUhLGk9zwqbA9tdcA5nuAwRNaQDLcgSpWA",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T1-007",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 26,
+        "sex": "M",
+        "nationality": "BR",
+        "preExistingConditions": "mild intermittent allergic rhinitis (seasonal, not on therapy at time of event)",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T1-007"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Italy",
+        "incidentCity": "Monza (Milan metropolitan area)",
+        "facilityType": "Pronto Soccorso — Ospedale San Gerardo di Monza",
+        "facilityName": "ASST Monza — Ospedale San Gerardo",
+        "eventContext": "Monza Circuit Music Festival — outdoor festival in the Autodromo grounds",
+        "incidentDayOfCoverage": 1
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Spontaneous epistaxis — anterior nasal cavity (Little's area), unilateral right",
+        "icdCode": "R04.0",
+        "icdDescription": "Epistaxis",
+        "clinicalNarrative": "Patient developed profuse right-sided epistaxis at the outdoor festival (dry, warm conditions — 32°C, low ambient humidity). Bleeding uncontrolled by pinching for 20 minutes; attended Pronto Soccorso. BP 128/80 (normal). No anticoagulant use. Anterior rhinoscopy: active bleeding from Little's area (right Kiesselbach plexus). Anterior packing with BIPP ribbon gauze × 1 strip + 20-minute compression. Bleeding controlled. Haemoglobin 13.8 g/dL (not significantly dropped). Patient observed 2 hours — no re-bleed. Packing removed in situ. Discharged with ENT clinic referral for possible cautery if recurrence.",
+        "documentsAvailable": [
+          "pronto soccorso triage note",
+          "ENT assessment note",
+          "anterior nasal packing record",
+          "discharge letter"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 150,
+        "actualMedicalCostUSD": 280,
+        "amountClaimed": 150,
+        "amountApproved": 150,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 1. Acute spontaneous epistaxis — acute event, same-day discharge. Seasonal rhinitis is a pre-existing condition but does not exclude acute epistaxis under genesis-acute-v1 terms."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "pronto soccorso triage note",
+          "ENT assessment note",
+          "discharge letter"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Acute epistaxis requiring ER anterior nasal packing. Same-day discharge. No overnight admission. Background allergic rhinitis does not constitute a pre-existing condition exclusion for an acute epistaxis event — these are distinct clinical presentations. Tier 1 criteria met.",
+        "reviewCompletedHours": 3.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t1-sim-007",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 300,
+        "paidAmountUsdc": 300,
+        "fundingLineCharged": "genesis-event7-premiums",
+        "fundingLineAddress": "2115rGD6zKmUhLGk9zwqbA9tdcA5nuAwRNaQDLcgSpWA",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T1-008",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 29,
+        "sex": "F",
+        "nationality": "SE",
+        "preExistingConditions": "known wasp venom hypersensitivity (single prior mild local reaction at age 20 — no prior systemic reaction; EpiPen never prescribed)",
+        "policyInceptionDaysAgo": 2,
+        "memberWalletSim": "sim-member-wallet-EVT7-T1-008"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Poland",
+        "incidentCity": "Warsaw",
+        "facilityType": "Emergency Department — Szpital Kliniczny im. Ks. Anny Mazowieckiej, Warsaw",
+        "facilityName": "Szpital Kliniczny im. Ks. Anny Mazowieckiej (SKAM)",
+        "eventContext": "Orange Warsaw Festival — major outdoor music festival, Legia Warsaw stadium grounds",
+        "incidentDayOfCoverage": 2
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Acute systemic allergic reaction to hymenoptera (wasp) sting — generalised urticaria with facial and lip angioedema",
+        "icdCode": "T63.461A",
+        "icdDescription": "Toxic effect of venom of wasps, accidental, initial encounter",
+        "clinicalNarrative": "Patient was stung by a wasp on the right forearm while standing near a food vendor at the outdoor festival. Within 15 minutes: extensive truncal and limb urticaria (wheals 3-8cm), bilateral lip angioedema, periorbital oedema. No stridor, no dyspnoea, no hypotension. BP 124/78, SpO2 99%, HR 102. IM epinephrine 0.3mg administered (lip angioedema encroaching on oral cavity). IV chlorphenamine 10mg + IV methylprednisolone 80mg. Observation 4 hours post-epinephrine (biphasic anaphylaxis protocol). Symptoms fully resolved within 2 hours. BP, SpO2 stable throughout. Discharged with oral prednisolone 25mg x 3 days, oral cetirizine, and EpiPen prescription with referral to allergy clinic on return to Sweden.",
+        "documentsAvailable": [
+          "ED triage note",
+          "allergy assessment and medication administration record",
+          "epinephrine and IV antihistamine record",
+          "4-hour observation chart (biphasic watch)",
+          "discharge summary with EpiPen prescription"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 150,
+        "actualMedicalCostUSD": 740,
+        "amountClaimed": 150,
+        "amountApproved": 150,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 1. Acute systemic allergic reaction to insect sting — ER management, same-day discharge. Mild prior local reaction history does not exclude the acute systemic episode under genesis-acute-v1 terms."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED triage note",
+          "allergy assessment and medication record",
+          "epinephrine administration record",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Acute systemic allergic reaction to wasp sting confirmed — urticaria with facial and lip angioedema. IM epinephrine administered. 4-hour observation post-epinephrine. Same-day discharge. Known wasp hypersensitivity (mild prior local reaction only) does not constitute pre-existing condition exclusion for a new systemic episode under genesis-acute-v1. Tier 1 confirmed.",
+        "reviewCompletedHours": 2.5
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t1-sim-008",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 300,
+        "paidAmountUsdc": 300,
+        "fundingLineCharged": "genesis-event7-premiums",
+        "fundingLineAddress": "2115rGD6zKmUhLGk9zwqbA9tdcA5nuAwRNaQDLcgSpWA",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "_comment": "--- EVENT 7 | TIER 2 — OVERNIGHT (new batch, x4) ---",
+      "scenarioId": "EVT7-T2-005",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 38,
+        "sex": "M",
+        "nationality": "AU",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T2-005"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "United Arab Emirates",
+        "incidentCity": "Dubai",
+        "facilityType": "Rashid Hospital — Emergency & Internal Medicine",
+        "facilityName": "Rashid Hospital (Dubai Health Authority)",
+        "eventContext": "Standard Chartered Dubai Marathon — mass participation road race (42.195km)",
+        "incidentDayOfCoverage": 1
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Exercise-associated hyponatremia (EAH) — severe, symptomatic",
+        "icdCode": "E87.1",
+        "icdDescription": "Hypo-osmolality and hyponatraemia",
+        "clinicalNarrative": "Patient finished the full marathon in 4h 22min in 26 degrees Celsius ambient temperature. Collapsed at finish line: GCS 13, nausea, headache, confusion. Na+ on point-of-care testing: 122 mEq/L (severe hyponatraemia). No seizures at presentation. BP 106/68. IV hypertonic saline 3% — 100mL bolus over 10 minutes repeated once (Na+ target rise 5 mEq/L in first hour). Symptoms improved: GCS 15 within 90 minutes. Slow correction continued overnight: Na+ 131 mEq/L at 8h, 137 mEq/L at 16h. Overshoot prevention protocol maintained (free water restriction). Renal function preserved (Cr 88 umol/L). Discharged following morning.",
+        "documentsAvailable": [
+          "ED triage and assessment note",
+          "serial electrolyte results (Na+ trend chart)",
+          "IV fluid and hypertonic saline administration record",
+          "GCS observation chart",
+          "ward discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 500,
+        "actualMedicalCostUSD": 3100,
+        "amountClaimed": 500,
+        "amountApproved": 500,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 2. Overnight admission for acute symptomatic hyponatraemia management confirmed. Marathon participation (planned physical activity) does not constitute negligence or self-inflicted injury under genesis-acute-v1 terms."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED triage and assessment note",
+          "serial electrolyte results",
+          "IV hypertonic saline record",
+          "ward discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Severe symptomatic EAH requiring overnight admission for careful sodium correction confirmed. Na+ 122 mEq/L on arrival — clearly pathological. Overnight correction to 137 mEq/L documented. Marathon participation is recreational sport, not excluded activity. Tier 2 criteria met.",
+        "reviewCompletedHours": 7.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t2-sim-005",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 700,
+        "paidAmountUsdc": 700,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T2-006",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 51,
+        "sex": "M",
+        "nationality": "GB",
+        "preExistingConditions": "gout (on allopurinol 300mg daily — 3-year history, 2 prior flares)",
+        "policyInceptionDaysAgo": 2,
+        "memberWalletSim": "sim-member-wallet-EVT7-T2-006"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Netherlands",
+        "incidentCity": "Amsterdam",
+        "facilityType": "Amsterdam UMC — Emergency Internal Medicine",
+        "facilityName": "Amsterdam UMC (location AMC)",
+        "eventContext": "Amsterdam Dance Event (ADE) — electronic music conference and festival week",
+        "incidentDayOfCoverage": 3
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Acute crystal arthropathy (gout flare) — right knee monoarthritis with septic joint exclusion workup",
+        "icdCode": "M10.061",
+        "icdDescription": "Idiopathic gout, right knee",
+        "clinicalNarrative": "Patient developed acute right knee monoarthritis overnight (day 2/3 of festival). Known gout, but flare was atypical: unusual site (knee rather than first MTP), high fever 38.9 degrees Celsius, WBC 14,200, CRP 118 mg/L. Septic arthritis could not be excluded clinically — joint aspiration performed under sterile technique: cloudy synovial fluid, WBC 42,000/uL (90% neutrophils). Polarised microscopy: strongly negative birefringent needle-shaped crystals (monosodium urate — diagnostic of gout). Gram stain: negative. Bacterial culture: no growth at 24h. Treated: colchicine + IV ketorolac (NSAIDs) + joint aspiration drained 18mL. Overnight admission for fever monitoring and culture result. Discharged day 2 on oral colchicine taper and allopurinol dose review.",
+        "documentsAvailable": [
+          "ED assessment note",
+          "joint aspirate analysis report (polarised microscopy + culture)",
+          "WBC and CRP lab results",
+          "fever observation chart",
+          "medication administration record",
+          "ward discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 500,
+        "actualMedicalCostUSD": 2400,
+        "amountClaimed": 500,
+        "amountApproved": 500,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 2. Overnight admission clinically justified: septic arthritis could not be excluded without culture result. Pre-existing gout does not exclude the acute flare episode — genesis-acute-v1 covers acute events even when an underlying condition pre-exists, provided the acute presentation is genuinely new."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED assessment note",
+          "joint aspirate analysis (MSU crystals confirmed, culture negative)",
+          "fever observation chart",
+          "ward discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Acute gout flare with clinically justified overnight admission for septic arthritis exclusion. Joint aspiration confirmed MSU crystals; culture negative. Overnight stay was medically necessary pending bacterial culture result — not administrative convenience. Pre-existing gout history does not trigger exclusion for the acute flare under genesis-acute-v1. Tier 2 confirmed.",
+        "reviewCompletedHours": 10.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t2-sim-006",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 700,
+        "paidAmountUsdc": 700,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T2-007",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 34,
+        "sex": "F",
+        "nationality": "US",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T2-007"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Turkey",
+        "incidentCity": "Istanbul",
+        "facilityType": "Liv Hospital Bahcesehir — Emergency & Trauma Surgery",
+        "facilityName": "Liv Hospital Bahcesehir",
+        "eventContext": "Istanbul Music Festival — outdoor venue, temporary scaffold viewing platform",
+        "incidentDayOfCoverage": 2
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Multiple left-sided rib fractures (ribs 5-8) — blunt chest trauma from fall",
+        "icdCode": "S22.40XA",
+        "icdDescription": "Multiple fractures of ribs, unspecified side, initial encounter for closed fracture",
+        "clinicalNarrative": "Patient fell approximately 1.5 metres from an overcrowded temporary scaffold platform at the festival grounds, landing left-side down on a metal barrier. On arrival: moderate left-sided chest wall pain, splinted breathing, SpO2 96% on air. BP 122/78. CT chest: displaced fractures of left ribs 5, 6, 7, 8 (posterior segments) — no pneumothorax, no haemothorax, no flail segment. Intercostal nerve block (4-level) with bupivacaine under ultrasound guidance. IV morphine PCA initiated. Incentive spirometry commenced. Overnight admission: respiratory physiotherapy, analgesia optimisation, SpO2 monitoring. SpO2 99% by morning. Discharged with rib belt, oral analgesia and respiratory physiotherapy instructions.",
+        "documentsAvailable": [
+          "ED trauma assessment note",
+          "CT chest radiology report",
+          "intercostal nerve block procedure note",
+          "PCA morphine administration log",
+          "respiratory physiotherapy note",
+          "ward discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 500,
+        "actualMedicalCostUSD": 3800,
+        "amountClaimed": 500,
+        "amountApproved": 500,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 2. Overnight admission for pain management and respiratory monitoring after multiple rib fractures — clinically appropriate. Accidental fall from scaffold: covered acute traumatic event."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED trauma assessment note",
+          "CT chest report",
+          "intercostal nerve block note",
+          "ward discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Multiple rib fractures (4 ribs, displaced) confirmed by CT — overnight admission for pain management and respiratory monitoring is clinically appropriate and expected for this injury pattern. No ICU, no surgical intervention — Tier 2 (not Tier 3) confirmed. Accidental trauma covered.",
+        "reviewCompletedHours": 8.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t2-sim-007",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 700,
+        "paidAmountUsdc": 700,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T2-008",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 22,
+        "sex": "M",
+        "nationality": "NL",
+        "preExistingConditions": "tall, lean build (189cm, 72kg) — no prior respiratory history, no known Marfan syndrome",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T2-008"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Thailand",
+        "incidentCity": "Bangkok",
+        "facilityType": "Bumrungrad International Hospital — Emergency Department",
+        "facilityName": "Bumrungrad International Hospital",
+        "eventContext": "S2O Songkran Music Festival — large outdoor electronic music event",
+        "incidentDayOfCoverage": 1
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Primary spontaneous pneumothorax (PSP) — right-sided, moderate",
+        "icdCode": "J93.11",
+        "icdDescription": "Primary spontaneous pneumothorax",
+        "clinicalNarrative": "Patient developed sudden-onset right-sided pleuritic chest pain and dyspnoea while dancing at the festival. No trauma. CXR: right pneumothorax — lung collapsed to 35% of hemithorax. SpO2 94% on air. Intercostal chest tube drain inserted under local anaesthesia: 16Fr Seldinger technique, right 4th intercostal space mid-axillary line. Immediate re-expansion confirmed on CXR post-drain. SpO2 improved to 99%. Drain placed on underwater seal. Overnight admission: drain patency and re-expansion monitoring. Repeat CXR morning: full lung re-expansion maintained. Drain clamped 4h, no recollapse — drain removed. Discharged with follow-up CXR in 2 weeks and CT thorax referral to evaluate for blebs/bullae.",
+        "documentsAvailable": [
+          "ED assessment note",
+          "CXR report (initial and post-drain)",
+          "chest drain insertion procedure note",
+          "underwater seal drainage log",
+          "ward nursing observation chart",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 500,
+        "actualMedicalCostUSD": 4200,
+        "amountClaimed": 500,
+        "amountApproved": 500,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 2. Overnight admission with chest drain for moderate spontaneous pneumothorax. No surgery, no ICU — Tier 2 (not Tier 3). Spontaneous pneumothorax is an acute event, not a pre-existing condition."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED assessment note",
+          "CXR report (initial + post-drain)",
+          "chest drain procedure note",
+          "ward discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Primary spontaneous pneumothorax — moderate, managed with intercostal chest drain and overnight admission. Confirmed by CXR. No thoracoscopic surgery, no mechanical ventilation, no ICU — Tier 2 appropriate (chest drain + overnight does not meet Tier 3 threshold without surgical intervention or ICU admission). No pre-existing condition exclusion applicable. Approved.",
+        "reviewCompletedHours": 6.5
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t2-sim-008",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 700,
+        "paidAmountUsdc": 700,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "_comment": "--- EVENT 7 | TIER 3 — SURGERY + ICU (new batch, x4) ---",
+      "scenarioId": "EVT7-T3-005",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 44,
+        "sex": "M",
+        "nationality": "KE",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 2,
+        "memberWalletSim": "sim-member-wallet-EVT7-T3-005"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Kenya",
+        "incidentCity": "Nairobi",
+        "facilityType": "The Nairobi Hospital — Emergency and General Surgery",
+        "facilityName": "The Nairobi Hospital",
+        "eventContext": "Nairobi Tech Summit — annual technology and investment conference, KICC",
+        "incidentDayOfCoverage": 3
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Perforated appendix with localised peritonitis — emergency open appendectomy and peritoneal lavage",
+        "icdCode": "K35.20",
+        "icdDescription": "Acute appendicitis with generalised peritonitis, without mention of peritoneal abscess",
+        "clinicalNarrative": "Patient had dismissed progressively worsening abdominal pain for 3 days prior (thought it was food intolerance). On day 3 of conference presented to ED: rigid abdomen, guarding and rebound, temperature 39.2 degrees Celsius, HR 112, BP 104/68. WBC 24,800, CRP 310 mg/L. CT abdomen: perforated appendix with periappendiceal free air and localised right iliac fossa collection (4.2cm). Emergency open appendectomy via Lanz incision: perforated gangrenous appendix with faecolith. Peritoneal lavage with 3L warm saline. No bowel resection required. Abdomen closed primarily. Duration 75 minutes. Post-operative ICU: 2 nights (sepsis monitoring, IV piperacillin/tazobactam, haemodynamic stability). Surgical ward: nights 3 and 4. Apyrexial and tolerating diet by day 4. Discharged day 5.",
+        "documentsAvailable": [
+          "ED assessment and surgical consultation note",
+          "CT abdomen/pelvis report",
+          "WBC and CRP laboratory results",
+          "operative note (open appendectomy + peritoneal lavage)",
+          "anaesthesia record",
+          "ICU nursing charts (nights 1-2)",
+          "surgical ward chart",
+          "discharge summary with antibiotic plan"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 1000,
+        "actualMedicalCostUSD": 7200,
+        "amountClaimed": 1000,
+        "amountApproved": 1000,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 3 maximum. Emergency surgery (appendectomy + peritoneal lavage) + ICU 2 nights confirmed. Full $1,000 benefit disbursed. Perforated appendicitis is an acute, life-threatening surgical emergency — not related to any pre-existing condition."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "CT abdomen report",
+          "operative note",
+          "ICU nursing charts (nights 1-2)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Perforated gangrenous appendicitis: emergency open surgery confirmed, ICU nights 1-2 documented. All Tier 3 criteria met (emergency surgery + ICU + minimum 2 nights in-hospital). No pre-existing condition relevant. Full fixed benefit approved.",
+        "reviewCompletedHours": 20.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t3-sim-005",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 1000,
+        "paidAmountUsdc": 1000,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T3-006",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 37,
+        "sex": "M",
+        "nationality": "MX",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T3-006"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Mexico",
+        "incidentCity": "Mexico City",
+        "facilityType": "Hospital General de Mexico Dr. Eduardo Liceaga — Neurosurgery",
+        "facilityName": "Hospital General de Mexico",
+        "eventContext": "Mexico City Design Week — gallery opening event, Colonia Roma",
+        "incidentDayOfCoverage": 1
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Acute traumatic epidural haematoma — emergency craniotomy and haematoma evacuation",
+        "icdCode": "S06.4X1A",
+        "icdDescription": "Epidural haemorrhage with loss of consciousness of 30 minutes or less, initial encounter",
+        "clinicalNarrative": "Patient slipped on wet gallery floor and struck the right temporal region against a marble display plinth (corner impact). Initial GCS 15, mild headache, no LOC witnessed — walked away from scene. 3 hours later: GCS deteriorated to 11, left-sided facial droop, unequal pupils (right 5mm sluggish, left 3mm reactive). Emergency CT head: right temporoparietal epidural haematoma 28mL, midline shift 7mm, right uncal herniation beginning. Emergency craniotomy — right pterional approach. Haematoma fully evacuated. Middle meningeal artery bleeding point identified and coagulated. Post-op GCS returned to 15 within 12 hours. Surgical ICU: 2 nights (ICP monitoring, neurological observations q1h). Neurology ward: nights 3-4. Discharged neurologically intact (GCS 15, no motor deficit) on day 5 with outpatient neurosurgery follow-up.",
+        "documentsAvailable": [
+          "ED neurological assessment note",
+          "CT head report (pre-operative)",
+          "neurosurgery consent and operative note",
+          "anaesthesia record",
+          "ICU nursing chart (nights 1-2) with GCS trend",
+          "post-operative CT head report",
+          "neurology ward chart",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 1000,
+        "actualMedicalCostUSD": 14500,
+        "amountClaimed": 1000,
+        "amountApproved": 1000,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 3 maximum. Emergency craniotomy for epidural haematoma with ICU 2 nights confirmed. Full $1,000 benefit disbursed. Classic 'talk and die' delayed deterioration pattern — acute traumatic event."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "CT head report",
+          "operative note (craniotomy + haematoma evacuation)",
+          "ICU nursing chart (nights 1-2)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Emergency craniotomy for traumatic epidural haematoma confirmed. ICU 2 nights with ICP monitoring documented. Tier 3 fully met. Delayed deterioration (lucid interval to GCS 11 over 3 hours) is classic EDH presentation — not inconsistent with the claim narrative. Accidental head trauma at gallery opening: covered.",
+        "reviewCompletedHours": 22.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t3-sim-006",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 1000,
+        "paidAmountUsdc": 1000,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T3-007",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 28,
+        "sex": "M",
+        "nationality": "JP",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T3-007"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "South Korea",
+        "incidentCity": "Seoul",
+        "facilityType": "Asan Medical Center — Emergency & Orthopedic Surgery",
+        "facilityName": "Asan Medical Center (Ulsan University Hospital of Medicine)",
+        "eventContext": "KCON Korea — K-pop and Korean culture outdoor festival, Olympic Park",
+        "incidentDayOfCoverage": 2
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Traumatic compartment syndrome — right lower leg, emergency 4-compartment fasciotomy",
+        "icdCode": "T79.A11A",
+        "icdDescription": "Traumatic compartment syndrome of right lower extremity, initial encounter",
+        "clinicalNarrative": "Patient was forcibly compressed against a metal crowd-control barrier during a sudden surge toward the main stage. Initially ambulatory post-event, but developed progressive severe right calf pain and swelling over 4 hours. On arrival to Asan MC ED: right lower leg tense, woody swelling, pain out of proportion to passive stretch of toes. Compartment pressure measured (Stryker device): anterior 44 mmHg, lateral 38 mmHg, superficial posterior 41 mmHg, deep posterior 36 mmHg. Diastolic BP 78 mmHg. Delta P (diastolic - compartment pressure): anterior 34 mmHg — below 30 mmHg threshold in anterior compartment. Urgent surgical decision: fasciotomy. Emergency 4-compartment fasciotomy performed (two-incision technique, fibulectomy not required). Fasciotomy wounds left open. Myonecrosis: not present (viable muscle confirmed intraoperatively). Wound VAC applied day 1. ICU: 2 nights for limb perfusion monitoring and haemodynamic management (IV fluid resuscitation, urine output monitoring — CK peak 18,200 U/L, renal function preserved Cr 98 umol/L). Surgical ward: nights 3-4. Delayed primary wound closure performed day 4. Discharged day 6 with wound care plan and physiotherapy referral.",
+        "documentsAvailable": [
+          "ED assessment note with compartment pressure measurements",
+          "orthopedic surgical consent and operative note (fasciotomy)",
+          "anaesthesia record",
+          "intraoperative muscle viability assessment",
+          "ICU nursing chart (nights 1-2) with CK trend and urine output",
+          "wound VAC and closure procedure note",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 1000,
+        "actualMedicalCostUSD": 11800,
+        "amountClaimed": 1000,
+        "amountApproved": 1000,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 3 maximum. Traumatic compartment syndrome — emergency fasciotomy + ICU 2 nights fully confirmed. Full $1,000 benefit disbursed. Crowd crush at festival: covered acute traumatic event."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED note with compartment pressure measurements",
+          "operative note (4-compartment fasciotomy)",
+          "ICU nursing chart (nights 1-2)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Compartment pressure measurements documented and meet surgical threshold. Emergency 4-compartment fasciotomy confirmed. ICU 2 nights for limb perfusion and rhabdomyolysis monitoring documented. All Tier 3 criteria met. Traumatic crush mechanism at music festival: covered.",
+        "reviewCompletedHours": 16.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t3-sim-007",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 1000,
+        "paidAmountUsdc": 1000,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "EVT7-T3-008",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 31,
+        "sex": "F",
+        "nationality": "FR",
+        "preExistingConditions": "none (MenACWY vaccination 4 years prior — MenB not administered)",
+        "policyInceptionDaysAgo": 2,
+        "memberWalletSim": "sim-member-wallet-EVT7-T3-008"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Germany",
+        "incidentCity": "Berlin",
+        "facilityType": "Charite Berlin — Campus Benjamin Franklin, Infectious Disease ICU",
+        "facilityName": "Charite Universitatsmedizin Berlin (CBF Campus)",
+        "eventContext": "Musikmesse Berlin — professional music industry trade fair and conference",
+        "incidentDayOfCoverage": 3
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Bacterial meningococcal meningitis (Neisseria meningitidis serogroup B) — ICU admission",
+        "icdCode": "A39.0",
+        "icdDescription": "Meningococcal meningitis",
+        "clinicalNarrative": "Patient presented to hotel reception unable to stand, with severe headache, neck stiffness, photophobia, and a non-blanching petechial rash across trunk. Ambulance called; on arrival to Charite CBF: GCS 12, meningeal signs positive, petechial rash extending to lower limbs. Temp 39.8 degrees Celsius, HR 118, BP 102/64. IV ceftriaxone 2g + IV dexamethasone 10mg administered within 30 minutes of arrival (pre-LP empirical treatment, per AWMF guideline). Lumbar puncture: turbid CSF, opening pressure 28 cmH2O, WBC 2,400/uL (94% neutrophils), glucose 1.1 mmol/L (plasma 6.2), protein 3.8 g/L. CSF and blood culture: Neisseria meningitidis serogroup B. ICU admission: 3 nights (GCS monitoring, haemodynamic support, sodium management — SIADH developed night 1, corrected with fluid restriction). Neurology ward: nights 4-5. GCS returned to 15 by day 3. Hearing test performed (bilateral mild high-frequency sensorineural loss detected — audiology referral issued). Discharged day 6 on oral amoxicillin for remaining course and audiology follow-up.",
+        "documentsAvailable": [
+          "ED triage and infectious disease assessment note",
+          "lumbar puncture report with CSF analysis",
+          "blood and CSF culture result (N. meningitidis serogroup B)",
+          "antibiotic and dexamethasone administration record",
+          "ICU nursing chart (nights 1-3) with GCS and sodium trend",
+          "neurology ward chart",
+          "audiology assessment",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 1000,
+        "actualMedicalCostUSD": 18600,
+        "amountClaimed": 1000,
+        "amountApproved": 1000,
+        "amountDenied": 0,
+        "denialReason": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Fixed-benefit Tier 3 maximum. ICU 3 nights for bacterial meningitis confirmed — no surgery required, but ICU admission of 2+ nights qualifies as Tier 3 under genesis-acute-v1 (surgery OR ICU >= 2 nights). Full $1,000 benefit disbursed."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "LP report and CSF culture (N. meningitidis serogroup B)",
+          "ICU nursing chart (nights 1-3)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Meningococcal meningitis serogroup B confirmed by CSF culture. ICU admission 3 nights documented — exceeds the 2-night minimum for Tier 3 without requiring surgery (ICU >= 2 nights independently satisfies Tier 3 criteria under genesis-acute-v1). Full benefit approved.",
+        "reviewCompletedHours": 24.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t3-sim-008",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 1000,
+        "paidAmountUsdc": 1000,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "_comment": "--- EVENT 7 | DENIAL — Outside coverage window (EXCL_WIN) ---",
+      "scenarioId": "EVT7-T1-DEN-002",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "denied": true,
+      "patientProfile": {
+        "age": 30,
+        "sex": "M",
+        "nationality": "IT",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 9,
+        "memberWalletSim": "sim-member-wallet-EVT7-T1-DEN-002"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Italy",
+        "incidentCity": "Rome",
+        "facilityType": "Pronto Soccorso — Ospedale San Giovanni Addolorata",
+        "facilityName": "Azienda Ospedaliera San Giovanni Addolorata",
+        "eventContext": "Rome Digital Festival — post-event backstage catering area (day 9 of 7-day policy)",
+        "incidentDayOfCoverage": 9
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Laceration of right thumb — catering knife injury, suture repair",
+        "icdCode": "S61.111A",
+        "icdDescription": "Open wound of right thumb with damage to nail, initial encounter",
+        "clinicalNarrative": "Patient suffered a 2.5cm laceration to the right thumb while cutting bread at a catering backstage area on the evening following the official festival close. Wound irrigated, 3 sutures placed. Discharged same day. Patient submitted claim 1 day after the incident. Investigation confirmed: Event 7 policy inception date 2026-04-10, coverage expires 2026-04-17 23:59 UTC. Incident occurred 2026-04-19 at 21:30 local Rome time (UTC+2) — equivalent to 2026-04-19 19:30 UTC. Incident is 2 days and ~20 hours outside the active coverage window.",
+        "documentsAvailable": [
+          "pronto soccorso triage note",
+          "wound repair record",
+          "discharge letter",
+          "policy certificate (inception 2026-04-10, expiry 2026-04-17)"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 150,
+        "actualMedicalCostUSD": 210,
+        "amountClaimed": 150,
+        "amountApproved": 0,
+        "amountDenied": 150,
+        "denialBreakdown": "Full claim denied. Incident timestamp (2026-04-19 19:30 UTC) falls outside the active Event 7 coverage window (2026-04-10 to 2026-04-17 23:59 UTC). The policy expired 2 days and 20 hours before the incident. Excluded under genesis-acute-v1 coverage window clause (EXCL_WIN): no coverage applies to incidents occurring after policy expiry.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "FULL DENIAL. Incident outside coverage period. Member should seek reimbursement via national health system (SSN Italy) or any other active travel or health policy."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "pronto soccorso triage note (timestamp confirmed)",
+          "policy certificate (inception and expiry dates)",
+          "discharge letter"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "DENIED",
+        "exclusionClause": "genesis-acute-v1 Coverage Window Clause (EXCL_WIN) — incident after policy expiry",
+        "reviewNotes": "Incident timestamp verified from hospital records: 2026-04-19 21:30 local (2026-04-19 19:30 UTC). Policy expired 2026-04-17 23:59 UTC. Gap: 43.5 hours post-expiry. No coverage extension applies. Denial is administrative — the clinical injury itself would have been eligible under Tier 1 criteria had it occurred within the policy window.",
+        "reviewCompletedHours": 2.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t1-den-002",
+        "intakeStatus": 5,
+        "intakeStatusLabel": "DENIED",
+        "approvedAmountUsdc": 0,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": null,
+        "fundingLineAddress": null,
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "VOID"
+      }
+    },
+    {
+      "_comment": "--- EVENT 7 | DENIAL — Chronic disease management (EXCL_5.4) ---",
+      "scenarioId": "EVT7-T2-DEN-002",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "denied": true,
+      "patientProfile": {
+        "age": 68,
+        "sex": "M",
+        "nationality": "US",
+        "preExistingConditions": "COPD GOLD Stage III (FEV1 38% predicted) — on triple inhaler therapy (LAMA/LABA/ICS); 4 documented exacerbations requiring hospitalisation in the past 12 months; home nebuliser user",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T2-DEN-002"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "United Kingdom",
+        "incidentCity": "London",
+        "facilityType": "Imperial College Healthcare NHS Trust — Respiratory Medicine",
+        "facilityName": "Charing Cross Hospital (Imperial College Healthcare NHS Trust)",
+        "eventContext": "Brit Awards — indoor ceremony at O2 Arena, London",
+        "incidentDayOfCoverage": 1
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Acute exacerbation of COPD (AECOPD) — moderate severity, overnight admission",
+        "icdCode": "J44.1",
+        "icdDescription": "Chronic obstructive pulmonary disease with acute exacerbation",
+        "clinicalNarrative": "Patient attended the awards ceremony and developed progressive dyspnoea and increased sputum production by mid-evening. SpO2 84% on air on arrival. FEV1 28% predicted (baseline 38%). CXR: hyperinflation, no consolidation, no pneumothorax. CRP 42 mg/L, WBC 10.4. Treated: nebulised salbutamol + ipratropium, IV hydrocortisone 200mg, oral prednisolone 40mg, oral doxycycline (Anthonisen Type 2 exacerbation). SpO2 improved to 92% on 2L O2. Overnight admission for continued monitoring. Discharged day 2 on prednisolone 30mg taper and updated COPD action plan. Respiratory consultant note: 'This is the patient's 5th hospitalised exacerbation in 13 months — management follows established chronic disease protocol.'",
+        "documentsAvailable": [
+          "ED respiratory assessment note",
+          "CXR report",
+          "spirometry (FEV1 on admission vs baseline)",
+          "medication administration record",
+          "respiratory consultant note",
+          "previous hospitalisation summary (4 prior AECOPDs in 12 months)",
+          "ward discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 500,
+        "actualMedicalCostUSD": 2800,
+        "amountClaimed": 500,
+        "amountApproved": 0,
+        "amountDenied": 500,
+        "denialBreakdown": "Full claim denied. Acute exacerbation of COPD in a patient with GOLD Stage III disease and 4 prior hospitalised exacerbations in 12 months constitutes management of a chronic progressive disease, not an acute de novo emergency event. The exacerbation pattern is an expected and recurrent feature of the patient's underlying condition. Excluded under genesis-acute-v1 Section 5.4 (Excluded Conditions: Chronic Disease Management) and EXCL_CTX (contextual chronic pattern). NOTE: this is factually distinct from, e.g., a non-COPD patient developing an acute viral pneumonia triggering a first-ever airway emergency — which would be covered. The determinative factor is the documented chronic recurrent pattern.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "FULL DENIAL. Recurrent AECOPD in advanced COPD — chronic disease management. genesis-acute-v1 Section 5.4 applies. Member's home insurer or Medicare/Medicaid may cover international treatment costs."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED respiratory assessment note",
+          "respiratory consultant note",
+          "prior AECOPD hospitalisation summary",
+          "ward discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "DENIED",
+        "exclusionClause": "genesis-acute-v1 Section 5.4 — Chronic Disease Management + EXCL_CTX",
+        "reviewNotes": "COPD GOLD Stage III with 4 prior hospitalisations for AECOPD in 12 months. Respiratory consultant explicitly documents this as the 5th hospitalised exacerbation — consistent with an established pattern of chronic disease management, not an acute isolated emergency event. Section 5.4 applies. Denied.",
+        "reviewCompletedHours": 9.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t2-den-002",
+        "intakeStatus": 5,
+        "intakeStatusLabel": "DENIED",
+        "approvedAmountUsdc": 0,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": null,
+        "fundingLineAddress": null,
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "VOID"
+      }
+    },
+    {
+      "_comment": "--- EVENT 7 | DENIAL — Fraudulent invoice (EXCL_8.2) ---",
+      "scenarioId": "EVT7-T3-DEN-002",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "denied": true,
+      "patientProfile": {
+        "age": 35,
+        "sex": "M",
+        "nationality": "CN",
+        "preExistingConditions": "none declared",
+        "policyInceptionDaysAgo": 1,
+        "memberWalletSim": "sim-member-wallet-EVT7-T3-DEN-002"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Malaysia",
+        "incidentCity": "Kuala Lumpur",
+        "facilityType": "Kuala Lumpur Convention Medical Clinic (alleged — address unverifiable)",
+        "facilityName": "KLCC MedCentre (alleged)",
+        "eventContext": "Malaysia Tech Expo — technology exhibition at KLCC Convention Centre",
+        "incidentDayOfCoverage": 2
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Acute appendicitis — laparoscopic appendectomy (as claimed)",
+        "icdCode": "K35.80",
+        "icdDescription": "Other and unspecified acute appendicitis without abscess (as claimed)",
+        "clinicalNarrative": "Patient submitted a claim for emergency laparoscopic appendectomy with 2-night ICU admission at 'KLCC MedCentre', Kuala Lumpur. Total invoice submitted: MYR 48,000 (~USD 10,200). INVESTIGATION FINDINGS: (1) Facility address does not exist — Malaysia MOH facility registry search returns no licensed hospital or clinic at the stated address. (2) Attending surgeon licence number (LS-2204-KL) cannot be verified against the Malaysian Medical Council register. (3) Invoice template is identical in layout and font to a fraudulent invoice template previously flagged by the Malaysian MOH Anti-Fraud Unit (case ref MOH-AF-2025-118) — known to be used by a fraud ring targeting travel insurers. (4) Patient's digital footprint (hotel check-in records, ride-share history, conference badge scans): patient was at the Petronas Towers skybridge tour and Pavilion KL shopping mall during the alleged hospitalisation period. (5) No ambulance or hospital admission record retrievable from MOH national hospital information system (MySejahtera integrated data).",
+        "documentsAvailable": [
+          "submitted invoice (KLCC MedCentre — unverifiable)",
+          "alleged operative note (suspected fabricated)",
+          "alleged ICU nursing chart (suspected fabricated)"
+        ],
+        "investigationFindings": [
+          "Facility address does not exist in Malaysia MOH registry",
+          "Surgeon licence number not found in Malaysian Medical Council database",
+          "Invoice template matches known fraud ring template (MOH-AF-2025-118)",
+          "Hotel, ride-share and conference badge records contradict claimed hospitalisation dates",
+          "No MOH hospital admission record retrievable for patient during claim period"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 1000,
+        "actualMedicalCostUSD": 10200,
+        "amountClaimed": 1000,
+        "amountApproved": 0,
+        "amountDenied": 1000,
+        "denialBreakdown": "Full claim denied. Five independent lines of investigation confirm the submitted medical invoice is fabricated. The claimed procedure did not occur. Denied under genesis-acute-v1 Section 8.2 (Fraud and Misrepresentation). Event 7 policy voided retroactively. Fraud referral initiated.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "FULL DENIAL. Fraudulent claim — fabricated invoice and non-existent facility. Policy voided under Section 8.2. Referral made to Malaysian MOH Anti-Fraud Unit and Interpol financial crime desk."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "submitted invoice (flagged as fabricated)",
+          "Malaysia MOH facility registry (negative search result)",
+          "Malaysian Medical Council register (licence not found)",
+          "MOH Anti-Fraud Unit template comparison report",
+          "hotel and ride-share records (provided by patient's accommodation)",
+          "conference badge scan log"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "DENIED",
+        "exclusionClause": "genesis-acute-v1 Section 8.2 — Fraud and Misrepresentation",
+        "reviewNotes": "Multi-source investigation completed over 48 hours. Five independent evidence lines confirm the claim is fraudulent: non-existent facility, unverifiable clinician, known fraud template, contradicting location data, and absent MOH admission records. Claim denied, policy voided. Anti-fraud referral initiated.",
+        "reviewCompletedHours": 48.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t3-den-002",
+        "intakeStatus": 5,
+        "intakeStatusLabel": "DENIED",
+        "approvedAmountUsdc": 0,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": null,
+        "fundingLineAddress": null,
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "VOID",
+        "fraudReferralInitiated": true
+      }
+    },
+    {
+      "_comment": "--- EVENT 7 | IN-FLIGHT / UNDER REVIEW — Concussion, CT motion artifact ---",
+      "scenarioId": "EVT7-T2-REVIEW-001",
+      "product": "genesis-event-7-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "inFlight": true,
+      "patientProfile": {
+        "age": 24,
+        "sex": "M",
+        "nationality": "AU",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 2,
+        "memberWalletSim": "sim-member-wallet-EVT7-T2-REVIEW-001"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "South Korea",
+        "incidentCity": "Seoul",
+        "facilityType": "Samsung Medical Center — Emergency Neurology",
+        "facilityName": "Samsung Medical Center (Sungkyunkwan University School of Medicine)",
+        "eventContext": "Seoul Ultra Music Festival — outdoor crowd surge near main stage barrier",
+        "incidentDayOfCoverage": 2
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Severe concussion with confirmed loss of consciousness — CT inconclusive (motion artifact), specialist second-read pending",
+        "icdCode": "S06.0X1A",
+        "icdDescription": "Concussion with loss of consciousness of 30 minutes or less, initial encounter",
+        "clinicalNarrative": "Patient was pushed by crowd surge and struck head-first against a metal barrier post. Bystander confirmed loss of consciousness approximately 90 seconds. GCS on paramedic arrival: 12. GCS on ED arrival: 14. Significant ongoing headache, nausea, and two vomiting episodes. CT head performed: radiology report states 'No definitive acute intracranial abnormality identified. However, study quality is degraded by motion artifact particularly in bilateral temporal windows — subtle findings cannot be excluded.' Neurology team decision: CT is non-diagnostic due to artifact. Overnight admission for neurological observation (GCS q1h). Specialist neuroradiology second-read of the CT requested (ETA 24-48h). Decision pending: if second-read confirms intracranial pathology, MRI brain will be added and tier may be upgraded to T3.",
+        "documentsAvailable": [
+          "paramedic handover record (LOC confirmed)",
+          "ED neurological assessment note",
+          "CT head report (motion artifact, non-diagnostic)"
+        ],
+        "documentsPending": [
+          "Neuroradiology specialist second-read of CT head (ETA 24-48h)",
+          "MRI brain (conditional — ordered if CT second-read shows pathology)"
+        ],
+        "claimSubmittedAt": "2026-04-22T08:10:00Z"
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 1000,
+        "tierFixedBenefit": 500,
+        "actualMedicalCostUSD": 2600,
+        "amountClaimed": 500,
+        "amountApproved": 0,
+        "amountReserved": 500,
+        "amountDenied": 0,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Claim under active review. $500 reserved on genesis-event7-liquidity FundingLine pending neuroradiology second-read. Tier classification may be upgraded to T3 (benefit $1,000) if CT second-read or MRI confirms intracranial haematoma or contusion requiring ICU."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "paramedic handover record",
+          "ED neurological assessment note",
+          "CT head report (motion artifact)"
+        ],
+        "documentsPending": [
+          "Neuroradiology specialist second-read (Samsung Medical Center radiology dept, ETA 24-48h)",
+          "MRI brain (conditional on CT second-read outcome)"
+        ],
+        "tierPreClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "PENDING",
+        "reviewBlockingReason": "CT head is non-diagnostic due to motion artifact in bilateral temporal windows. Neuroradiology specialist second-read has been formally requested. Cannot finalise tier classification without diagnostic imaging: if CT second-read or subsequent MRI reveals contusion or haematoma requiring ICU, this case will be reclassified to Tier 3. Currently pre-classified as Tier 2 (overnight admission confirmed; LOC <30 min confirmed by bystander account).",
+        "reviewSlaDeadlineHours": 24,
+        "reviewElapsedHours": 14,
+        "reviewCompletedHours": null,
+        "anticipatedApprovedRange": "$500 (T2) or $1,000 (T3) depending on imaging outcome"
+      },
+      "onChainOutcome": {
+        "claimCaseId": "evt7-t2-review-001",
+        "intakeStatus": 1,
+        "intakeStatusLabel": "UNDER_REVIEW",
+        "approvedAmountUsdc": 0,
+        "reservedAmountUsdc": 500,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": "genesis-event7-liquidity",
+        "fundingLineAddress": "Hw6LdQpUqiUShzocvt7R1qxkkiiZiWeWjEoR1Ehx3SLw",
+        "policySeries": "6ZfyGQUcW132mEmYBmT5RtoagZyTHi2gTuGQUHW2qTLX",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "RESERVED",
+        "expectedResolutionNote": "Pending neuroradiology CT second-read (ETA 24-48h). Anticipated outcome: FULLY_SETTLED $500 (Tier 2) if imaging negative; upgraded to FULLY_SETTLED $1,000 (Tier 3) if haematoma/contusion confirmed."
+      }
     }
   ],
   "travel30Scenarios": [
@@ -2565,6 +3777,1296 @@
         "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
         "obligationStatus": "RESERVED",
         "expectedResolutionNote": "Pending CT translation (ETA 72h) and invoice itemization (ETA 48-72h). Anticipated outcome upon document receipt: APPROVED_PARTIAL in range $3,800–$5,000 after UCR review."
+      }
+    },
+    {
+      "_comment": "--- TRAVEL 30 | TIER 1 — ER SAME-DAY (new batch, x4) ---",
+      "scenarioId": "TRV30-T1-005",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 52,
+        "sex": "F",
+        "nationality": "GB",
+        "originCountry": "United Kingdom",
+        "destinationCountry": "New Zealand",
+        "preExistingConditions": "mild seasonal hay fever (UK, spring — no NZ travel history)",
+        "policyInceptionDaysAgo": 10,
+        "memberWalletSim": "sim-member-wallet-TRV30-T1-005"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "New Zealand",
+        "incidentCity": "Auckland",
+        "facilityType": "Auckland City Hospital — Emergency Department",
+        "facilityName": "Auckland City Hospital (Te Whatu Ora — Health New Zealand)",
+        "eventContext": "Leisure travel — cultural and nature tourism, Auckland waterfront",
+        "incidentDayOfCoverage": 10
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Acute bilateral allergic conjunctivitis — pohutukawa pollen exposure",
+        "icdCode": "H10.13",
+        "icdDescription": "Acute atopic conjunctivitis, bilateral",
+        "clinicalNarrative": "Patient developed sudden-onset bilateral eye redness, intense pruritus, profuse watery discharge, and periorbital swelling after walking through Auckland Botanic Gardens during the pohutukawa (Metrosideros excelsa) bloom season. Symptoms onset within 30 minutes of pollen exposure. Unable to open eyes on ED arrival. Slit-lamp examination: bilateral papillary conjunctival reaction, chemosis (3+), no corneal involvement, no fluorescein staining. Treatment: topical olopatadine 0.1% (antihistamine/mast cell stabiliser) bilateral, oral cetirizine 10mg, cool compresses. IV chlorphenamine 10mg for rapid symptom relief given severity on presentation. Symptoms reduced to mild within 3 hours. Discharged same day with 7-day topical antihistamine course and pollen avoidance advice.",
+        "documentsAvailable": [
+          "ED triage note",
+          "ophthalmology assessment (slit-lamp findings)",
+          "medication administration record",
+          "discharge summary with pollen avoidance advice"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 420,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 420,
+        "amountClaimed": 420,
+        "amountApproved": 420,
+        "amountDenied": 0,
+        "denialBreakdown": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid mode. Acute allergic conjunctivitis — ER same-day. All invoiced costs are medical and within NZ UCR schedule. Full amount approved. Background UK hay fever does not exclude an acute reaction to a novel allergen (NZ pohutukawa pollen)."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED triage note",
+          "ophthalmology assessment",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Acute bilateral allergic conjunctivitis with chemosis — ER same-day discharge. NZ pohutukawa pollen is a distinct allergen from UK grass/tree pollens; the pre-existing hay fever does not constitute a pre-existing condition exclusion for this acute episode. Full invoice within UCR. Approved.",
+        "reviewCompletedHours": 4.5
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t1-sim-005",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 420,
+        "paidAmountUsdc": 420,
+        "fundingLineCharged": "genesis-travel30-premiums",
+        "fundingLineAddress": "8548dWwZAxPLR9mX4FWWASA1qatNj4hEgLDAmjRVWwLe",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T1-006",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 61,
+        "sex": "F",
+        "nationality": "DE",
+        "originCountry": "Germany",
+        "destinationCountry": "Caribbean (cruise)",
+        "preExistingConditions": "mild motion susceptibility (car sickness history — no prior severe episodes at sea)",
+        "policyInceptionDaysAgo": 3,
+        "memberWalletSim": "sim-member-wallet-TRV30-T1-006"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Barbados",
+        "incidentCity": "Bridgetown",
+        "facilityType": "Queen Elizabeth Hospital Barbados — Emergency Department",
+        "facilityName": "Queen Elizabeth Hospital (QEH), Barbados",
+        "eventContext": "Caribbean cruise — transatlantic crossing, Force 7 sea state day 3",
+        "incidentDayOfCoverage": 3
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Severe motion sickness with dehydration — IV rehydration required",
+        "icdCode": "T75.3XXA",
+        "icdDescription": "Motion sickness, initial encounter",
+        "clinicalNarrative": "Patient experienced severe continuous vomiting (12+ episodes over 8 hours) during Force 7 (near-gale) sea conditions in the mid-Atlantic. Ship's medical officer assessed: unable to retain oral fluids, clinical dehydration with orthostatic hypotension (BP supine 112/70, BP standing 84/52). IV access established on board but IV antiemetic supply depleted. Decision: emergency disembarkation at Bridgetown port. QEH Barbados ED: IV ondansetron 4mg + IV Ringer's lactate 2.5L over 4 hours. Oral fluid tolerated by hour 3. Orthostasis resolved. Scopolamine transdermal patch applied for continued prophylaxis. Discharged same day with oral ondansetron and instructions.",
+        "documentsAvailable": [
+          "ship medical officer assessment note",
+          "QEH ED triage and assessment note",
+          "IV fluid and antiemetic administration record",
+          "orthostatic BP measurements",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 780,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 780,
+        "amountClaimed": 780,
+        "amountApproved": 640,
+        "amountDenied": 140,
+        "denialBreakdown": "Port disembarkation transport surcharge $140 denied — vessel transfer to shore is classified as a logistical cost, not a medical service, under Travel 30 UCR schedule.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid. Acute dehydration from motion sickness requiring IV rehydration in hospital — covered acute event. Transport surcharge excluded per UCR."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ship medical officer note",
+          "QEH ED assessment note",
+          "IV fluid record",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED_PARTIAL",
+        "reviewNotes": "Severe motion sickness with clinical dehydration — IV rehydration required, same-day discharge. Medical costs $640 approved per Barbados UCR schedule. Port transfer surcharge $140 is a logistical cost, not a medical service — denied.",
+        "reviewCompletedHours": 5.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t1-sim-006",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 640,
+        "paidAmountUsdc": 640,
+        "fundingLineCharged": "genesis-travel30-premiums",
+        "fundingLineAddress": "8548dWwZAxPLR9mX4FWWASA1qatNj4hEgLDAmjRVWwLe",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T1-007",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 39,
+        "sex": "M",
+        "nationality": "US",
+        "originCountry": "United States",
+        "destinationCountry": "Czech Republic",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 4,
+        "memberWalletSim": "sim-member-wallet-TRV30-T1-007"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Czech Republic",
+        "incidentCity": "Prague",
+        "facilityType": "Motol University Hospital — Emergency and Infectious Disease",
+        "facilityName": "Fakultni nemocnice v Motole (FN Motol)",
+        "eventContext": "Leisure travel — hiking in Sumava National Park (Bohemian Forest)",
+        "incidentDayOfCoverage": 4
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Early localised Lyme borreliosis — erythema migrans, oral doxycycline initiated",
+        "icdCode": "A69.20",
+        "icdDescription": "Lyme disease, unspecified",
+        "clinicalNarrative": "Patient noticed an expanding annular skin lesion on left calf on day 4 of hiking in the Sumava forest area (high Ixodes ricinus tick density zone). Reported tick bite 3 days prior (removed with tweezers within 24h). On ED presentation: characteristic erythema migrans 14cm diameter, classic target morphology, no central clearing. No systemic symptoms (no fever, no arthralgias, no neurological symptoms). Infectious disease assessment: clinical diagnosis of early localised Lyme borreliosis based on EM morphology in endemic area post-tick bite. Lyme serology (ELISA) borderline IgM — confirmed clinical diagnosis. Treatment: oral doxycycline 100mg BD x 14 days. No IV treatment required (early localised presentation). Discharged same day with instructions and 2-week follow-up.",
+        "documentsAvailable": [
+          "ED triage note",
+          "infectious disease specialist assessment note",
+          "erythema migrans clinical photograph (attached to records)",
+          "Lyme serology result (IgM borderline positive)",
+          "prescription for doxycycline",
+          "discharge letter"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 360,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 360,
+        "amountClaimed": 360,
+        "amountApproved": 340,
+        "amountDenied": 20,
+        "denialBreakdown": "Administrative registration fee CZK 500 (~$20) denied — non-medical administrative charge not covered under Travel 30 UCR schedule.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid. Acute Lyme disease — ER diagnosis and prescription. Medical costs $340 approved. Administrative registration fee $20 excluded."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED triage note",
+          "infectious disease assessment note",
+          "Lyme serology result",
+          "discharge letter"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED_PARTIAL",
+        "reviewNotes": "Early Lyme borreliosis — EM confirmed clinically in endemic area, serology supportive. ER consultation and oral doxycycline prescription. Same-day discharge. $340 approved per Czech UCR schedule. Admin registration fee $20 denied.",
+        "reviewCompletedHours": 4.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t1-sim-007",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 340,
+        "paidAmountUsdc": 340,
+        "fundingLineCharged": "genesis-travel30-premiums",
+        "fundingLineAddress": "8548dWwZAxPLR9mX4FWWASA1qatNj4hEgLDAmjRVWwLe",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T1-008",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "patientProfile": {
+        "age": 44,
+        "sex": "M",
+        "nationality": "AU",
+        "originCountry": "Australia",
+        "destinationCountry": "Japan",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 6,
+        "memberWalletSim": "sim-member-wallet-TRV30-T1-008"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Japan",
+        "incidentCity": "Osaka",
+        "facilityType": "Emergency Department — Osaka Red Cross Hospital (Osaka Sekijuji Byoin)",
+        "facilityName": "Osaka Red Cross Hospital (Osaka Sekijuji Byoin)",
+        "eventContext": "Business and leisure travel — culinary tourism, Kuromon Ichiba Market area",
+        "incidentDayOfCoverage": 6
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Volar plate avulsion fracture — right index finger PIP joint, closed reduction and splinting",
+        "icdCode": "S63.644A",
+        "icdDescription": "Other injury of intrinsic muscle, fascia and tendon of right index finger at wrist and hand level, initial encounter",
+        "clinicalNarrative": "Patient slipped on a wet step at a traditional machiya guesthouse and reflexively grabbed a metal handrail, hyper-extending the right index finger. Immediate pain and swelling at right index PIP joint. Unable to flex PIP actively. X-ray at Osaka Red Cross ED: volar plate avulsion fracture at the base of the middle phalanx (PIP joint volar lip) — fragment 3mm x 2mm. No rotational deformity. Neurovascular exam: intact digital nerves and capillary refill. Hand surgeon assessment: closed injury, no indication for ORIF. Closed reduction + dorsal extension block splint (PIP at 30 degrees flexion). Tendon and nerve function confirmed intact post-splinting. Discharged same day with splint wear instructions x 4-6 weeks, NSAID analgesia, and hand therapy referral.",
+        "documentsAvailable": [
+          "ED triage note",
+          "hand surgeon assessment note",
+          "X-ray right index finger report (volar plate avulsion confirmed)",
+          "closed reduction and splinting procedure note",
+          "pharmacy prescription (NSAID)",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 510,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 510,
+        "amountClaimed": 510,
+        "amountApproved": 470,
+        "amountDenied": 40,
+        "denialBreakdown": "Outpatient pharmacy (NSAID pack) $40 denied — outpatient pharmacy costs excluded under Travel 30 Tier 1 base terms unless dispensed as part of an inpatient admission.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid. Acute finger fracture — ER same-day management. Hospital and specialist costs approved per Japan UCR schedule. Outpatient pharmacy excluded per Travel 30 base terms."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED triage note",
+          "hand surgeon assessment note",
+          "X-ray report",
+          "splinting procedure note",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_1_ER_SAME_DAY",
+        "reviewOutcome": "APPROVED_PARTIAL",
+        "reviewNotes": "Volar plate avulsion fracture — X-ray and hand surgeon note confirm. Closed reduction and extension block splinting. Same-day discharge. $470 hospital + specialist approved per Osaka UCR schedule. Outpatient NSAID pharmacy $40 denied per Travel 30 base terms.",
+        "reviewCompletedHours": 5.5
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t1-sim-008",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 470,
+        "paidAmountUsdc": 470,
+        "fundingLineCharged": "genesis-travel30-premiums",
+        "fundingLineAddress": "8548dWwZAxPLR9mX4FWWASA1qatNj4hEgLDAmjRVWwLe",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "_comment": "--- TRAVEL 30 | TIER 2 — OVERNIGHT (new batch, x4) ---",
+      "scenarioId": "TRV30-T2-005",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 49,
+        "sex": "F",
+        "nationality": "US",
+        "originCountry": "United States",
+        "destinationCountry": "Turkey",
+        "preExistingConditions": "known gallstones (cholelithiasis, diagnosed 2 years ago — asymptomatic, no prior biliary colic episodes)",
+        "policyInceptionDaysAgo": 7,
+        "memberWalletSim": "sim-member-wallet-TRV30-T2-005"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Turkey",
+        "incidentCity": "Istanbul",
+        "facilityType": "Memorial Hospital Sisli — Emergency Surgery",
+        "facilityName": "Memorial Sisli Hospital (Memorial Saglik Grubu)",
+        "eventContext": "Leisure travel — culinary and cultural tour, traditional food market visit",
+        "incidentDayOfCoverage": 7
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Acute calculous cholecystitis — conservative management, overnight admission",
+        "icdCode": "K80.00",
+        "icdDescription": "Calculous cholecystitis without obstruction",
+        "clinicalNarrative": "Patient developed severe right upper quadrant pain and fever (38.4 degrees C) after a high-fat traditional meal. Murphy's sign positive. WBC 13,800, CRP 88 mg/L. Ultrasound abdomen: gallbladder wall thickened 5.8mm, gallstone impacted in cystic duct, pericholecystic fluid — consistent with acute cholecystitis. Surgical assessment: fit for cholecystectomy, however patient declined definitive surgery in Turkey, requesting management as a bridge to home surgery. Conservative management initiated: IV piperacillin/tazobactam 4.5g TDS, IV fluids, NPO, analgesia (IV morphine + ketorolac). Overnight admission: temperature normalised by morning, WBC trending down to 10,200 at 16h. Tolerating sips by morning. Afebrile at discharge. Discharged day 2 with oral antibiotics, low-fat diet, and urgent surgical referral on return to US.",
+        "documentsAvailable": [
+          "ED assessment and surgical consultation note",
+          "abdominal ultrasound report",
+          "WBC and CRP laboratory results",
+          "IV antibiotic and fluid administration record",
+          "temperature and clinical observation chart",
+          "discharge summary with surgical referral"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 2100,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 2100,
+        "amountClaimed": 2100,
+        "amountApproved": 1850,
+        "amountDenied": 250,
+        "denialBreakdown": "Private room daily surcharge $250 denied — exceeds standard room UCR rate for Istanbul private hospital. All medical costs (IV antibiotics, ultrasound, labs, physician fees) approved.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid. Acute cholecystitis — overnight medical management. Known asymptomatic gallstones are a pre-existing finding, but the acute cholecystitis episode itself is an acute event covered under Travel 30. Medical costs $1,850 approved; private room surcharge $250 denied."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED assessment and surgical note",
+          "ultrasound report",
+          "WBC/CRP results",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED_PARTIAL",
+        "reviewNotes": "Acute cholecystitis confirmed by US + inflammatory markers. Overnight admission for conservative management appropriate — patient declined surgery in Turkey (medically valid choice). Known asymptomatic cholelithiasis: the calculous cholecystitis episode is an acute complication, not routine management of the asymptomatic stones. Medical costs $1,850 approved. Private room surcharge $250 denied. Tier 2 confirmed.",
+        "reviewCompletedHours": 9.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t2-sim-005",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 1850,
+        "paidAmountUsdc": 1850,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T2-006",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 36,
+        "sex": "M",
+        "nationality": "SG",
+        "originCountry": "Singapore",
+        "destinationCountry": "Malaysia",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 5,
+        "memberWalletSim": "sim-member-wallet-TRV30-T2-006"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Malaysia",
+        "incidentCity": "Kuala Lumpur",
+        "facilityType": "Hospital Kuala Lumpur (HKL) — Burns Unit",
+        "facilityName": "Hospital Kuala Lumpur (Ministry of Health Malaysia)",
+        "eventContext": "Business travel — cafe meeting, hot beverage spill incident",
+        "incidentDayOfCoverage": 5
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Partial-thickness (second-degree) scald burns — right forearm and anterior chest, 8% TBSA",
+        "icdCode": "T23.211A",
+        "icdDescription": "Burn of second degree of right forearm, initial encounter",
+        "clinicalNarrative": "Patient was scalded when a server accidentally spilled a full pot of boiling coffee (estimated 92-95 degrees C) across his right forearm and anterior chest. Burns assessment in ED: right forearm 5% TBSA partial thickness (blistering), anterior chest 3% TBSA partial thickness — total 8% TBSA. No circumferential burns. No inhalation injury. Wound management: blisters debrided, silver sulfadiazine cream applied, non-adherent dressings (Mepitel). IV morphine for pain control. Admission to burns unit for overnight pain management, dressing protocol and monitoring for secondary infection. Daily dressing change performed under procedural sedation. No skin grafting required. Discharged day 2 with outpatient dressing protocol and burns clinic follow-up.",
+        "documentsAvailable": [
+          "ED burns assessment note (% TBSA mapping diagram)",
+          "burns surgeon consultation note",
+          "wound management and dressing record",
+          "IV morphine administration log",
+          "burns unit nursing chart",
+          "discharge summary with outpatient dressing instructions"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 3200,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 3200,
+        "amountClaimed": 3000,
+        "amountApproved": 2700,
+        "amountDenied": 500,
+        "denialBreakdown": "Premium Mepitel dressing brand surcharge $500 denied — standard equivalent non-adherent dressing is within UCR; brand-specific premium is above UCR schedule for Kuala Lumpur burns unit.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid. Partial-thickness burns 8% TBSA — overnight burns unit admission. Medical costs $2,700 approved; premium dressing surcharge $500 denied. Accidental scald: covered acute event."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "burns assessment note (TBSA mapping)",
+          "burns surgeon note",
+          "burns unit nursing chart",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED_PARTIAL",
+        "reviewNotes": "Partial-thickness scald burns 8% TBSA — overnight burns unit admission confirmed. No grafting, no ICU — Tier 2 appropriate. $2,700 approved per KL burns unit UCR. Premium dressing brand surcharge $500 exceeds UCR — denied. Accidental event covered.",
+        "reviewCompletedHours": 8.5
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t2-sim-006",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 2700,
+        "paidAmountUsdc": 2700,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T2-007",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 57,
+        "sex": "M",
+        "nationality": "ZA",
+        "originCountry": "South Africa",
+        "destinationCountry": "United Arab Emirates",
+        "preExistingConditions": "essential hypertension (on amlodipine 10mg daily — known, controlled, not disclosed at policy purchase)",
+        "policyInceptionDaysAgo": 14,
+        "memberWalletSim": "sim-member-wallet-TRV30-T2-007"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "United Arab Emirates",
+        "incidentCity": "Abu Dhabi",
+        "facilityType": "Cleveland Clinic Abu Dhabi — Emergency Department",
+        "facilityName": "Cleveland Clinic Abu Dhabi",
+        "eventContext": "Leisure travel — corporate wellness retreat, desert resort",
+        "incidentDayOfCoverage": 14
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Hypertensive urgency — BP 218/138 mmHg with severe headache, no acute end-organ damage",
+        "icdCode": "I10",
+        "icdDescription": "Essential (primary) hypertension",
+        "clinicalNarrative": "Patient ran out of amlodipine 4 days prior. Presented to ED with severe occipital headache and visual 'greyness'. BP on arrival: 218/138 mmHg (right arm), 212/134 mmHg (left arm). Hypertensive urgency workup: ECG sinus rhythm, no LVH changes; troponin negative; creatinine 92 umol/L (baseline unknown); urine dipstick: no proteinuria; fundoscopy: grade 2 hypertensive changes only (A/V nicking, no papilloedema, no flame haemorrhages). No hypertensive emergency criteria met. IV labetalol titration protocol: BP reduced to 178/102 at 1h, 158/96 at 4h. Overnight admission for BP stabilisation and medication restart. Morning BP 142/88 on oral amlodipine + lisinopril added. Discharged with updated antihypertensive regimen and cardiology follow-up letter.",
+        "documentsAvailable": [
+          "ED triage and assessment note",
+          "serial BP measurement chart",
+          "ECG",
+          "troponin and renal function results",
+          "fundoscopy report",
+          "IV labetalol administration record",
+          "ward overnight observation chart",
+          "discharge summary with medication update"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 2800,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 2800,
+        "amountClaimed": 2800,
+        "amountApproved": 2400,
+        "amountDenied": 400,
+        "denialBreakdown": "Above-UCR specialist cardiology consultation fee $400 denied — Cleveland Clinic Abu Dhabi specialist surcharge exceeds Abu Dhabi UCR schedule for equivalent emergency hypertension management. All core ER, IV medication, and monitoring costs approved.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid. Hypertensive urgency — acute symptomatic episode requiring overnight management. Underlying hypertension is a pre-existing condition, but the acute hypertensive urgency with severe symptoms (BP 218/138, severe headache) constitutes a covered acute event under Travel 30. $2,400 approved; specialist surcharge $400 denied."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED assessment note",
+          "serial BP chart",
+          "end-organ damage workup results (ECG, troponin, renal, fundoscopy)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED_PARTIAL",
+        "reviewNotes": "Hypertensive urgency: BP 218/138 with severe headache, no end-organ damage confirmed by full workup. Overnight admission for IV BP reduction and medication restart — clinically appropriate. Pre-existing hypertension does not exclude acute symptomatic hypertensive urgency: this is an acute decompensation event (medication lapse), not routine chronic management. $2,400 approved. Specialist surcharge $400 denied.",
+        "reviewCompletedHours": 11.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t2-sim-007",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 2400,
+        "paidAmountUsdc": 2400,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T2-008",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "patientProfile": {
+        "age": 64,
+        "sex": "M",
+        "nationality": "CA",
+        "originCountry": "Canada",
+        "destinationCountry": "Portugal",
+        "preExistingConditions": "hypercholesterolaemia (on atorvastatin 40mg)",
+        "policyInceptionDaysAgo": 8,
+        "memberWalletSim": "sim-member-wallet-TRV30-T2-008"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Portugal",
+        "incidentCity": "Lisbon (Lisboa)",
+        "facilityType": "Hospital de Santa Maria — Stroke Unit (Via Verde AVC)",
+        "facilityName": "Centro Hospitalar Universitario Lisboa Norte (CHULN) — HSM",
+        "eventContext": "Leisure travel — cultural holiday, Belem riverside walk",
+        "incidentDayOfCoverage": 8
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Transient ischaemic attack (TIA) — right hand weakness and expressive aphasia, fully resolved, stroke workup admission",
+        "icdCode": "G45.9",
+        "icdDescription": "Transient cerebral ischaemia, unspecified",
+        "clinicalNarrative": "Patient developed sudden right hand weakness and word-finding difficulty lasting approximately 20 minutes while walking along the Belem riverside. Symptoms fully resolved before ambulance arrival. ABCD2 score: 5 (high-risk — age 64, BP 168/94, clinical features, duration 10-59 min, no diabetes). Admitted directly to stroke unit (Via Verde AVC) protocol. MRI DWI brain: no acute infarct. Carotid duplex: mild left internal carotid stenosis 40% (not haemodynamically significant). Cardiac: 12-lead ECG sinus rhythm; 24h Holter monitoring initiated (no AF detected on inpatient recording). Transthoracic echocardiogram: mild LV diastolic dysfunction, no thrombus, no PFO. Treatment: aspirin 300mg loading, clopidogrel co-loading, atorvastatin increased to 80mg. Discharged day 2 with neurology outpatient follow-up and 7-day Holter monitor issued for continued AF screening.",
+        "documentsAvailable": [
+          "ED triage and neurology assessment note",
+          "ABCD2 score documentation",
+          "MRI DWI brain report (no infarct)",
+          "carotid duplex ultrasound report",
+          "24h Holter monitoring result",
+          "echocardiogram report",
+          "antiplatelet and statin loading record",
+          "discharge summary with outpatient plan"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 3600,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 3600,
+        "amountClaimed": 3000,
+        "amountApproved": 2890,
+        "amountDenied": 710,
+        "denialBreakdown": "MRI brain surcharge above UCR $460 denied — public hospital private room supplement $250 denied. Core stroke workup (ED, carotid duplex, ECG, Holter, echocardiogram, medications) fully approved.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid. TIA with high-risk features — overnight stroke workup admission appropriate and covered. Hypercholesterolaemia is pre-existing but does not exclude TIA as an acute vascular event. $2,890 approved (capped at $3,000 product maximum, post-denial); above-UCR surcharges $710 denied."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "neurology assessment note with ABCD2",
+          "MRI DWI brain report",
+          "carotid duplex report",
+          "24h Holter result",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "APPROVED_PARTIAL",
+        "reviewNotes": "TIA — fully resolved symptoms, MRI confirms no infarct. ABCD2 score 5 = high-risk: overnight admission for full stroke workup is clinically mandated (Portuguese and international TIA guidelines). Pre-existing hypercholesterolaemia does not exclude TIA. $2,890 approved; MRI and room surcharges above UCR denied ($710). Tier 2 confirmed.",
+        "reviewCompletedHours": 12.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t2-sim-008",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 2890,
+        "paidAmountUsdc": 2890,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "_comment": "--- TRAVEL 30 | TIER 3 — SURGERY + ICU (new batch, x4) ---",
+      "scenarioId": "TRV30-T3-005",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 31,
+        "sex": "F",
+        "nationality": "AU",
+        "originCountry": "Australia",
+        "destinationCountry": "Thailand",
+        "preExistingConditions": "none (prior normal IUCD inserted 3 years ago, currently in situ)",
+        "policyInceptionDaysAgo": 12,
+        "memberWalletSim": "sim-member-wallet-TRV30-T3-005"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Thailand",
+        "incidentCity": "Bangkok",
+        "facilityType": "Samitivej Sukhumvit Hospital — Emergency and Gynaecology Surgery",
+        "facilityName": "Samitivej Sukhumvit Hospital",
+        "eventContext": "Leisure travel — 3-week backpacking trip through Southeast Asia",
+        "incidentDayOfCoverage": 12
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Ruptured right tubal ectopic pregnancy with haemoperitoneum — emergency laparoscopic right salpingectomy",
+        "icdCode": "O00.10",
+        "icdDescription": "Tubal ectopic pregnancy without intrauterine pregnancy",
+        "clinicalNarrative": "Patient presented with sudden severe right iliac fossa pain and syncope episode. BP 86/50 on arrival, HR 128, GCS 14. Pregnancy test: bhCG positive (4,200 IU/L). Transvaginal ultrasound: no intrauterine gestational sac; right adnexal heterogeneous mass 4.3cm; significant free fluid in Pouch of Douglas and perihepatic space (haemoperitoneum). IUCD visualised in utero. Immediate resuscitation: 2L IV crystalloid, group and crossmatch. Emergency laparoscopic surgery: right tubal ectopic confirmed, active haemorrhage from ruptured fimbrial end. Right salpingectomy performed. Estimated intraoperative blood loss 700mL. 2 units packed red blood cells transfused intraoperatively. Left tube and ovary intact; IUCD left in situ (decision deferred to patient and Australian gynaecologist). Surgical ICU: 2 nights — haemodynamic monitoring post-resuscitation, haemoglobin stability check, pain management. Haemoglobin stabilised at 10.2 g/dL. Ward nights 3-4. Fully ambulatory. Discharged day 5.",
+        "documentsAvailable": [
+          "ED triage and gynaecology assessment note",
+          "bhCG result",
+          "transvaginal ultrasound report",
+          "emergency surgical consent and operative note (right salpingectomy)",
+          "anaesthesia and blood transfusion record",
+          "ICU nursing chart (nights 1-2)",
+          "haemoglobin trend chart",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 8900,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 8900,
+        "amountClaimed": 3000,
+        "amountApproved": 3000,
+        "amountDenied": 0,
+        "denialBreakdown": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid — product maximum $3,000 reached. Ruptured ectopic pregnancy is an acute life-threatening gynaecological emergency. Emergency surgery + ICU 2 nights confirmed. Full product maximum disbursed."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "bhCG result + TVUS report",
+          "operative note (right salpingectomy)",
+          "blood transfusion record",
+          "ICU nursing chart (nights 1-2)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Ruptured ectopic pregnancy — haemodynamic instability, emergency laparoscopic salpingectomy, blood transfusion, ICU 2 nights confirmed. All Tier 3 criteria met. Full product maximum $3,000 approved.",
+        "reviewCompletedHours": 18.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t3-sim-005",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 3000,
+        "paidAmountUsdc": 3000,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T3-006",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 22,
+        "sex": "M",
+        "nationality": "US",
+        "originCountry": "United States",
+        "destinationCountry": "Mexico",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 5,
+        "memberWalletSim": "sim-member-wallet-TRV30-T3-006"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Mexico",
+        "incidentCity": "Guadalajara, Jalisco",
+        "facilityType": "Hospital Civil de Guadalajara Fray Antonio Alcalde — Neurosurgery",
+        "facilityName": "Hospital Civil de Guadalajara Fray Antonio Alcalde",
+        "eventContext": "Leisure travel — road traffic accident, pedestrian struck by vehicle",
+        "incidentDayOfCoverage": 5
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Severe traumatic brain injury — acute subdural haematoma with midline shift, emergency decompressive craniotomy and haematoma evacuation",
+        "icdCode": "S06.5X5A",
+        "icdDescription": "Traumatic subdural haemorrhage with loss of consciousness greater than 24 hours with return to pre-existing conscious level, initial encounter",
+        "clinicalNarrative": "Patient was struck as a pedestrian by a vehicle running a red light. GCS 7 on paramedic arrival. Bilateral miosis. CT head: acute subdural haematoma right hemisphere 45mL, midline shift 12mm, right uncal herniation signs, scattered cerebral contusions bilateral frontal regions. Emergency decompressive craniotomy: right-sided large craniectomy, subdural clot evacuated, haemostasis achieved. Intraoperative ICP monitor placed (Camino). Post-operative: ICU 4 nights — mechanical ventilation nights 1-2, ICP management (head of bed 30 degrees, osmotherapy, sedation protocol), extubated day 3. GCS 14 at extubation. Step-down ward nights 5-7. Neurologically: mild right-sided facial weakness resolving. Discharged day 8 to rehabilitation facility.",
+        "documentsAvailable": [
+          "paramedic and ED trauma assessment note",
+          "CT head report (pre- and post-operative)",
+          "neurosurgery operative note (decompressive craniotomy + haematoma evacuation)",
+          "anaesthesia record",
+          "ICP monitoring chart",
+          "ICU nursing chart (nights 1-4) with GCS and ventilation records",
+          "step-down ward chart",
+          "rehabilitation referral and discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 22000,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 22000,
+        "amountClaimed": 3000,
+        "amountApproved": 3000,
+        "amountDenied": 0,
+        "denialBreakdown": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid — product maximum $3,000 reached. Severe TBI with emergency neurosurgery and ICU 4 nights confirmed. Full product maximum disbursed. Accidental road traffic accident: covered."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "CT head report",
+          "neurosurgery operative note",
+          "ICU nursing chart (nights 1-4)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Severe TBI with acute SDH — emergency decompressive craniotomy, ICU 4 nights (including mechanical ventilation) confirmed. All Tier 3 criteria met and significantly exceeded. Product maximum $3,000 approved.",
+        "reviewCompletedHours": 20.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t3-sim-006",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 3000,
+        "paidAmountUsdc": 3000,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T3-007",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 40,
+        "sex": "F",
+        "nationality": "GB",
+        "originCountry": "United Kingdom",
+        "destinationCountry": "Kenya",
+        "preExistingConditions": "none (no malaria chemoprophylaxis taken — traveller declined prophylaxis)",
+        "policyInceptionDaysAgo": 16,
+        "memberWalletSim": "sim-member-wallet-TRV30-T3-007"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Kenya",
+        "incidentCity": "Nairobi",
+        "facilityType": "Aga Khan University Hospital Nairobi — Infectious Disease ICU",
+        "facilityName": "Aga Khan University Hospital Nairobi",
+        "eventContext": "Leisure travel — 3-week Kenya safari with remote lodge stays",
+        "incidentDayOfCoverage": 16
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Severe Plasmodium falciparum malaria with cerebral involvement and multi-organ dysfunction",
+        "icdCode": "B50.0",
+        "icdDescription": "Plasmodium falciparum malaria with cerebral complications",
+        "clinicalNarrative": "Patient with 4-day prodrome (fever, chills, myalgia — initially attributed to viral illness). On day 4: GCS deteriorated to 9 (cerebral malaria), jaundice, oliguria. Blood smear + rapid RDT: P. falciparum, parasitaemia 11% (high density). Multi-organ involvement: Liver: bilirubin 94 umol/L, ALT 280 IU/L. Renal: creatinine 290 umol/L (acute kidney injury KDIGO stage 2). Haematological: platelets 22,000 (severe thrombocytopaenia), Hb 7.8 g/dL (haemolytic anaemia). IV artesunate initiated immediately. Platelet transfusion: 2 adult therapeutic doses (Hb and platelets recovered). Fluid resuscitation with careful renal monitoring. ICU admission: 3 nights — GCS monitoring, renal function trend, parasitaemia clearance checks q12h. Parasitaemia cleared to <1% by 48h. Creatinine returned to 110 umol/L. Completed oral artemether-lumefantrine for consolidation. Step-down ward nights 4-5. Discharged day 6.",
+        "documentsAvailable": [
+          "ED and infectious disease assessment note",
+          "blood smear and RDT result (P. falciparum, 11% parasitaemia)",
+          "serial parasitaemia clearance results (q12h)",
+          "full blood count, liver and renal function trend chart",
+          "IV artesunate administration record",
+          "platelet transfusion record",
+          "ICU nursing chart (nights 1-3)",
+          "step-down ward chart",
+          "discharge summary"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 15200,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 15200,
+        "amountClaimed": 3000,
+        "amountApproved": 3000,
+        "amountDenied": 0,
+        "denialBreakdown": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid — product maximum $3,000 reached. Severe P. falciparum malaria with ICU 3 nights. Failure to take prophylaxis does not constitute an exclusion under genesis-acute-v1 (no negligence exclusion for prophylaxis non-adherence). Full product maximum disbursed."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "blood smear/RDT result",
+          "serial parasitaemia clearance chart",
+          "ICU nursing chart (nights 1-3)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Severe P. falciparum malaria with cerebral involvement and multi-organ dysfunction — ICU 3 nights confirmed. No surgical procedure: ICU admission >= 2 nights independently satisfies Tier 3 criteria. No prophylaxis use is not an exclusion under genesis-acute-v1 terms. Product maximum $3,000 approved.",
+        "reviewCompletedHours": 22.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t3-sim-007",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 3000,
+        "paidAmountUsdc": 3000,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "scenarioId": "TRV30-T3-008",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "patientProfile": {
+        "age": 58,
+        "sex": "M",
+        "nationality": "US",
+        "originCountry": "United States",
+        "destinationCountry": "Singapore",
+        "preExistingConditions": "hypertension (on ramipril 10mg — disclosed at policy purchase as controlled)",
+        "policyInceptionDaysAgo": 3,
+        "memberWalletSim": "sim-member-wallet-TRV30-T3-008"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Singapore",
+        "incidentCity": "Singapore",
+        "facilityType": "Singapore General Hospital — Vascular Surgery and Cardiac ICU",
+        "facilityName": "Singapore General Hospital (SGH)",
+        "eventContext": "Business travel — financial services summit, Marina Bay Sands",
+        "incidentDayOfCoverage": 3
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Stanford Type B acute aortic dissection (descending thoracic aorta) — thoracic endovascular aortic repair (TEVAR)",
+        "icdCode": "I71.10",
+        "icdDescription": "Dissection of unspecified part of aorta",
+        "clinicalNarrative": "Patient developed sudden-onset severe tearing interscapular pain during conference dinner, radiating to lumbar region. BP 188/106 (right arm). CT aortogram: Stanford Type B dissection — entry tear at 2cm distal to left subclavian artery origin, dissection extending to bilateral iliac arteries. False lumen patent (no branch vessel malperfusion identified). Entry tear maximum diameter 28mm. Medical management: IV labetalol antihypertensive protocol — target BP 100-120 systolic. Haemodynamically stable. Vascular surgery decision: TEVAR indicated (entry tear >25mm, aneurysmal false lumen risk). ICU pre-operative night 1 (BP control protocol). TEVAR performed day 2: 3-zone stent graft deployed (36mm x 200mm + 16mm x 100mm distal extension). Entry tear excluded. Spinal cord monitoring intraoperatively — no ischaemia. Post-TEVAR cardiac ICU: 2 nights — BP management, spinal cord ischaemia monitoring, renal function checks. Step-down ward nights 4-5. Discharged day 6 on oral metoprolol + amlodipine dual antihypertensive regimen.",
+        "documentsAvailable": [
+          "ED assessment and cardiology/vascular surgery note",
+          "CT aortogram report (Type B dissection, entry tear measurement)",
+          "TEVAR operative note (stent graft details and angiographic result)",
+          "anaesthesia and spinal cord monitoring record",
+          "cardiac ICU nursing chart (nights 1-3)",
+          "post-TEVAR CT aortogram (entry tear exclusion confirmed)",
+          "step-down ward chart",
+          "discharge summary with antihypertensive plan"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 45000,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 45000,
+        "amountClaimed": 3000,
+        "amountApproved": 3000,
+        "amountDenied": 0,
+        "denialBreakdown": null,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Travel 30 hybrid — product maximum $3,000 reached. Type B aortic dissection is an acute life-threatening vascular emergency. Controlled hypertension is a pre-existing condition but does not exclude the acute aortic dissection event. TEVAR + ICU 3 nights confirmed. Full product maximum disbursed."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "CT aortogram report (Type B dissection)",
+          "TEVAR operative note",
+          "cardiac ICU nursing chart (nights 1-3)",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "APPROVED",
+        "reviewNotes": "Stanford Type B aortic dissection — TEVAR and cardiac ICU 3 nights confirmed. Pre-existing controlled hypertension: does not exclude the acute dissection event under genesis-acute-v1 (acute vascular catastrophe, not routine hypertension management). All Tier 3 criteria met. Product maximum approved.",
+        "reviewCompletedHours": 24.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t3-sim-008",
+        "intakeStatus": 4,
+        "intakeStatusLabel": "FULLY_SETTLED",
+        "approvedAmountUsdc": 3000,
+        "paidAmountUsdc": 3000,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "SETTLED"
+      }
+    },
+    {
+      "_comment": "--- TRAVEL 30 | DENIAL — Elective routine check-up (EXCL_5.1) ---",
+      "scenarioId": "TRV30-T1-DEN-002",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 1,
+      "tierLabel": "ER_SAME_DAY",
+      "denied": true,
+      "patientProfile": {
+        "age": 45,
+        "sex": "F",
+        "nationality": "GB",
+        "originCountry": "United Kingdom",
+        "destinationCountry": "Philippines",
+        "preExistingConditions": "mild myopia (glasses wearer since age 12)",
+        "policyInceptionDaysAgo": 10,
+        "memberWalletSim": "sim-member-wallet-TRV30-T1-DEN-002"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Philippines",
+        "incidentCity": "Manila",
+        "facilityType": "Asian Eye Institute — Outpatient Optometry Clinic (not emergency)",
+        "facilityName": "Asian Eye Institute, Rockwell Health Center, Makati",
+        "eventContext": "Leisure travel — taking advantage of lower optometry costs in the Philippines",
+        "incidentDayOfCoverage": 10
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Routine comprehensive eye examination — myopia reassessment, new glasses and contact lens prescription",
+        "icdCode": "Z01.01",
+        "icdDescription": "Encounter for examination of eyes and vision without abnormal findings",
+        "clinicalNarrative": "Patient proactively booked an appointment at Asian Eye Institute Manila via the clinic website 2 days prior to attendance. Appointment type logged as 'Annual Eye Check' in the hospital booking system. Services provided: comprehensive refraction, automated keratometry, intraocular pressure check, fundoscopy, new spectacle prescription issued, contact lens trial fitting. No acute complaint — patient's stated reason: 'my glasses are 2 years old, checking if my prescription has changed'. No red eye, no pain, no sudden visual change, no trauma. Patient submitted the appointment invoice to Travel 30 as an 'eye emergency'.",
+        "documentsAvailable": [
+          "Asian Eye Institute Manila appointment booking confirmation (type: Annual Eye Check)",
+          "optometry assessment report",
+          "new spectacle and contact lens prescription",
+          "itemized invoice"
+        ],
+        "investigationFindings": [
+          "Appointment pre-booked 2 days in advance via clinic website",
+          "Appointment type explicitly logged as 'Annual Eye Check' in clinic system",
+          "No acute complaint documented anywhere in the clinical record",
+          "Services rendered are standard routine optometry, not emergency ophthalmology"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 310,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 310,
+        "amountClaimed": 310,
+        "amountApproved": 0,
+        "amountDenied": 310,
+        "denialBreakdown": "Full claim denied. Routine elective eye examination and prescription update is explicitly excluded under genesis-acute-v1 Section 5.1 (Excluded Conditions: Elective and Pre-Planned Procedures and Check-ups). The visit was pre-booked, non-urgent, and not triggered by an acute ocular event. The patient's description of the visit as an 'eye emergency' is unsupported by any clinical record.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "FULL DENIAL. Routine optometry visit — elective, pre-planned. genesis-acute-v1 Section 5.1 applies. No coverage for routine check-ups regardless of cost or location."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "hospital booking confirmation (Annual Eye Check)",
+          "optometry assessment report (no acute complaint)",
+          "itemized invoice"
+        ],
+        "tierClassified": "NOT_APPLICABLE",
+        "reviewOutcome": "DENIED",
+        "exclusionClause": "genesis-acute-v1 Section 5.1 — Elective and Pre-Planned Procedures and Check-ups",
+        "reviewNotes": "Appointment pre-booked 2 days prior, type 'Annual Eye Check'. No acute complaint in any part of the clinical record. Services rendered are standard routine optometry. This is an elective pre-planned visit — Section 5.1 applies. The claim narrative ('eye emergency') is contradicted by the booking and clinical documentation. Denied.",
+        "reviewCompletedHours": 2.5
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t1-den-002",
+        "intakeStatus": 5,
+        "intakeStatusLabel": "DENIED",
+        "approvedAmountUsdc": 0,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": null,
+        "fundingLineAddress": null,
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "VOID"
+      }
+    },
+    {
+      "_comment": "--- TRAVEL 30 | DENIAL — Substance dependence treatment (EXCL_5.6) ---",
+      "scenarioId": "TRV30-T2-DEN-002",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 2,
+      "tierLabel": "OVERNIGHT",
+      "denied": true,
+      "patientProfile": {
+        "age": 33,
+        "sex": "M",
+        "nationality": "AU",
+        "originCountry": "Australia",
+        "destinationCountry": "Singapore",
+        "preExistingConditions": "opioid use disorder (OUD) — on buprenorphine maintenance therapy in Australia",
+        "policyInceptionDaysAgo": 15,
+        "memberWalletSim": "sim-member-wallet-TRV30-T2-DEN-002"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Singapore",
+        "incidentCity": "Singapore",
+        "facilityType": "Tiong Bahru Community Hospital — Inpatient Rehabilitation Unit",
+        "facilityName": "Tiong Bahru Community Hospital (SingHealth)",
+        "eventContext": "Business and leisure travel — extended stay, elective inpatient rehabilitation",
+        "incidentDayOfCoverage": 15
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Opioid use disorder — voluntary inpatient detoxification and rehabilitation (5-day programme)",
+        "icdCode": "F11.20",
+        "icdDescription": "Opioid dependence, uncomplicated",
+        "clinicalNarrative": "Patient voluntarily enrolled in a 5-day inpatient opioid detoxification and rehabilitation programme at Tiong Bahru Community Hospital. Patient stopped buprenorphine maintenance 4 days before admission (self-managed taper). Programme: medically supervised withdrawal, clonidine for autonomic symptoms, psychological counselling, relapse prevention planning. No acute medical emergency or life-threatening complication occurred. Patient described admission on the claim form as 'acute medical hospitalisation for severe pain and withdrawal symptoms while travelling'.",
+        "documentsAvailable": [
+          "Tiong Bahru Community Hospital admission record (voluntary rehabilitation programme)",
+          "clinical psychology assessment note",
+          "medication administration record (clonidine detox protocol)",
+          "discharge summary (rehabilitation programme completion)"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 3800,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 3800,
+        "amountClaimed": 3000,
+        "amountApproved": 0,
+        "amountDenied": 3800,
+        "denialBreakdown": "Full claim denied. Voluntary inpatient opioid detoxification and rehabilitation is explicitly excluded under genesis-acute-v1 Section 5.6 (Excluded Conditions: Substance Dependence Treatment and Detoxification). This exclusion applies regardless of clinical severity, the presence of withdrawal symptoms, or the geographical location of treatment. The characterisation of the admission as an 'acute medical hospitalisation' is inconsistent with the documented voluntary rehabilitation programme structure.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "FULL DENIAL. Voluntary substance dependence rehabilitation — genesis-acute-v1 Section 5.6 absolute exclusion. Member should seek coverage through Australian private health insurance if OUD rehab coverage exists under their home policy."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "hospital admission record (voluntary rehab programme)",
+          "psychology assessment note",
+          "discharge summary"
+        ],
+        "tierClassified": "TIER_2_OVERNIGHT",
+        "reviewOutcome": "DENIED",
+        "exclusionClause": "genesis-acute-v1 Section 5.6 — Substance Dependence Treatment and Detoxification",
+        "reviewNotes": "Voluntary 5-day inpatient opioid detoxification programme confirmed by admission records and psychology note. No acute life-threatening event. Section 5.6 is an absolute exclusion — applies regardless of symptoms or clinical management involved. Denied.",
+        "reviewCompletedHours": 5.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t2-den-002",
+        "intakeStatus": 5,
+        "intakeStatusLabel": "DENIED",
+        "approvedAmountUsdc": 0,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": null,
+        "fundingLineAddress": null,
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "VOID"
+      }
+    },
+    {
+      "_comment": "--- TRAVEL 30 | DENIAL — Incident pre-dates policy activation (EXCL_PRE) ---",
+      "scenarioId": "TRV30-T3-DEN-002",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "denied": true,
+      "patientProfile": {
+        "age": 47,
+        "sex": "M",
+        "nationality": "ZA",
+        "originCountry": "South Africa",
+        "destinationCountry": "Morocco",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 0,
+        "memberWalletSim": "sim-member-wallet-TRV30-T3-DEN-002"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Morocco",
+        "incidentCity": "Marrakech",
+        "facilityType": "Clinique Internationale de Marrakech — Emergency Orthopaedic Surgery",
+        "facilityName": "Clinique Internationale de Marrakech",
+        "eventContext": "Leisure travel — hotel staircase fall on day of arrival (before policy activated)",
+        "incidentDayOfCoverage": 0
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Displaced distal radius fracture (Colles-type) with operative ORIF — fall on outstretched hand",
+        "icdCode": "S52.501A",
+        "icdDescription": "Unspecified fracture of the lower end of right radius, initial encounter for closed fracture",
+        "clinicalNarrative": "Patient fell on hotel staircase on the day of arrival in Marrakech, landing on outstretched right hand. X-ray right wrist: severely displaced distal radius fracture (Colles-type, dorsal angulation 45 degrees, radial shortening 8mm). Orthopaedic surgery: open reduction and internal fixation (ORIF) with volar locking plate under general anaesthesia. Duration 80 minutes. Overnight admission + hand therapy day 2. Discharged day 2. POLICY TIMELINE INVESTIGATION: Policy purchase timestamp: 2026-04-18 14:22 UTC. Policy activation (inception): 2026-04-19 00:00 UTC. Incident timestamp (hotel CCTV and hospital ED record): 2026-04-18 17:45 local Marrakech time (UTC+1) = 2026-04-18 16:45 UTC. The incident occurred 2 hours and 23 minutes after policy purchase but 7 hours and 15 minutes BEFORE the policy activation time.",
+        "documentsAvailable": [
+          "ED triage note (timestamp 2026-04-18 16:45 UTC confirmed)",
+          "X-ray right wrist report",
+          "orthopaedic operative note (ORIF volar locking plate)",
+          "anaesthesia record",
+          "policy certificate (purchase 2026-04-18 14:22 UTC, inception 2026-04-19 00:00 UTC)",
+          "hotel CCTV incident log (timestamp corroborating ED record)"
+        ]
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 6800,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 6800,
+        "amountClaimed": 3000,
+        "amountApproved": 0,
+        "amountDenied": 3000,
+        "denialBreakdown": "Full claim denied. The incident timestamp (2026-04-18 15:45 UTC) pre-dates the policy activation time (2026-04-19 00:00 UTC) by 8 hours 15 minutes. Travel 30 coverage commences at 00:00 UTC on the policy inception date. The policy purchase timestamp does not constitute coverage commencement. Excluded under genesis-acute-v1 coverage window clause (EXCL_PRE): no retroactive coverage applies to incidents occurring before inception.",
+        "settlementCurrency": "USDC",
+        "settlementNote": "FULL DENIAL. Incident 7h 15min before policy activation. Coverage commences at inception date 00:00 UTC, not at purchase timestamp. Member has no other active travel insurance on file."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED triage note (timestamp verified: 2026-04-18 15:45 UTC)",
+          "policy certificate (inception: 2026-04-19 00:00 UTC)",
+          "hotel CCTV incident log (corroborating timestamp)"
+        ],
+        "tierClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "DENIED",
+        "exclusionClause": "genesis-acute-v1 Coverage Window Clause (EXCL_PRE) — incident before policy inception",
+        "reviewNotes": "Timeline verified from three independent sources: hospital ED record, hotel CCTV, and policy certificate. Incident: 2026-04-18 16:45 UTC. Policy inception: 2026-04-19 00:00 UTC. Delta: -7h 15min (incident pre-dates inception). The injury itself would have qualified as Tier 3 had it occurred within the coverage window. Denial is purely administrative — timing. No coverage applies.",
+        "reviewCompletedHours": 6.0
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t3-den-002",
+        "intakeStatus": 5,
+        "intakeStatusLabel": "DENIED",
+        "approvedAmountUsdc": 0,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": null,
+        "fundingLineAddress": null,
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "VOID"
+      }
+    },
+    {
+      "_comment": "--- TRAVEL 30 | IN-FLIGHT / UNDER REVIEW — Polytrauma, specialist ortho report pending ---",
+      "scenarioId": "TRV30-T3-REVIEW-002",
+      "product": "genesis-travel-30-v1",
+      "clinicalTier": 3,
+      "tierLabel": "SURGERY_ICU_2NIGHTS",
+      "inFlight": true,
+      "patientProfile": {
+        "age": 29,
+        "sex": "M",
+        "nationality": "NL",
+        "originCountry": "Netherlands",
+        "destinationCountry": "Malaysia",
+        "preExistingConditions": "none",
+        "policyInceptionDaysAgo": 7,
+        "memberWalletSim": "sim-member-wallet-TRV30-T2-REVIEW-001"
+      },
+      "clinicalSetting": {
+        "incidentCountry": "Malaysia",
+        "incidentCity": "Kuala Lumpur",
+        "facilityType": "Sunway Medical Centre — Emergency Trauma and Orthopaedic Surgery",
+        "facilityName": "Sunway Medical Centre",
+        "eventContext": "Leisure travel — road traffic accident involving motorcycle taxi, day 7",
+        "incidentDayOfCoverage": 7
+      },
+      "diagnosis": {
+        "primaryDiagnosis": "Complex polytrauma — left femur shaft fracture, right tibial plateau fracture, L2 transverse process fracture — orthopaedic fixation surgery + L2 spine clearance pending",
+        "icdCode": "S72.301A",
+        "icdDescription": "Unspecified fracture of shaft of right femur, initial encounter for closed fracture",
+        "clinicalNarrative": "Patient was a passenger on a motorcycle taxi involved in a collision with a van. Multiple injuries identified: (1) Left femur shaft fracture — displaced, mid-diaphyseal. (2) Right tibial plateau fracture — Schatzker Type II (split-depression). (3) L2 vertebral body right transverse process fracture (CT spine). Neurosurgery clearance for L2: no cord or cauda equina involvement, neurologically intact. Transverse process fracture: conservative management. Orthopaedic surgery day 1: Left femur — intramedullary nail (femoral rod). Right tibial plateau — open reduction, lateral plate fixation. Duration: 4 hours under general anaesthesia. Post-operative ICU: 2 nights — haemodynamic management (blood loss 900mL, 2 units pRBC), VTE prophylaxis initiated, bilateral lower limb monitoring. Step-down ward: patient still admitted. PENDING: specialist orthopaedic second opinion on tibial plateau fixation adequacy and L2 stability confirmation before rehabilitation plan finalised. Itemized invoice not yet received — hospital billing confirmed ETA 48-72h.",
+        "documentsAvailable": [
+          "ED trauma assessment note",
+          "CT scan reports (pelvis, bilateral lower limbs, spine)",
+          "neurosurgery clearance note (L2 — conservative)",
+          "orthopaedic operative note (femoral nail + tibial plateau ORIF)",
+          "anaesthesia and blood transfusion record",
+          "ICU nursing chart (nights 1-2)"
+        ],
+        "documentsPending": [
+          "Specialist orthopaedic second opinion (tibial plateau fixation adequacy) — ETA 48h",
+          "Itemized hospital invoice — Sunway Medical Centre billing (ETA 48-72h)",
+          "L2 stability orthopaedic clearance letter — ETA 24h"
+        ],
+        "claimSubmittedAt": "2026-04-23T10:30:00Z"
+      },
+      "claimFinancials": {
+        "productMaxBenefit": 3000,
+        "benefitMode": "hybrid_fixed_reimbursement",
+        "invoicedMedicalCostUSD": 0,
+        "fixedBenefitApplied": 0,
+        "reimbursableExpenses": 0,
+        "amountClaimed": 3000,
+        "amountApproved": 0,
+        "amountReserved": 3000,
+        "amountDenied": 0,
+        "settlementCurrency": "USDC",
+        "settlementNote": "Claim under active review. Full $3,000 product maximum reserved on genesis-travel30-liquidity FundingLine. Tier 3 criteria appear met (emergency orthopaedic surgery + ICU 2 nights). UCR review cannot be completed until itemized invoice is received. Orthopaedic specialist second opinion and L2 clearance letter pending — required to confirm final scope of covered treatment."
+      },
+      "oracleFlow": {
+        "oraclePhase": 0,
+        "reviewerType": "human_operator",
+        "operatorAddress": "BGN6pVpuD9GPSsExtBi7pe4RLCJrkFVsQd9mw7ZdH8Ez",
+        "documentsReviewed": [
+          "ED trauma assessment note",
+          "CT scan reports",
+          "neurosurgery clearance note",
+          "operative note (femoral nail + tibial plateau ORIF)",
+          "ICU nursing chart (nights 1-2)"
+        ],
+        "documentsPending": [
+          "Specialist orthopaedic second opinion — tibial plateau fixation adequacy (ETA 48h)",
+          "L2 vertebral stability orthopaedic clearance (ETA 24h)",
+          "Itemized hospital invoice (Sunway Medical Centre billing, ETA 48-72h)"
+        ],
+        "tierPreClassified": "TIER_3_SURGERY_ICU_2NIGHTS",
+        "reviewOutcome": "PENDING",
+        "reviewBlockingReason": "Three documents pending: (1) Orthopaedic specialist second opinion on tibial plateau fixation adequacy — required to confirm whether further surgery is planned (affects total covered episode definition). (2) L2 stability clearance letter — required to confirm conservative management is the final decision (no deferred spinal surgery). (3) Itemized hospital invoice — UCR review cannot be performed on the lump sum; per-category itemization required (surgery theatre, ICU, ward, pharmacy, imaging).",
+        "reviewSlaDeadlineHours": 48,
+        "reviewElapsedHours": 8,
+        "reviewCompletedHours": null,
+        "anticipatedApprovedRange": "$2,800 - $3,000 (product maximum) upon UCR review"
+      },
+      "onChainOutcome": {
+        "claimCaseId": "trv30-t3-review-002",
+        "intakeStatus": 1,
+        "intakeStatusLabel": "UNDER_REVIEW",
+        "approvedAmountUsdc": 0,
+        "reservedAmountUsdc": 3000,
+        "paidAmountUsdc": 0,
+        "fundingLineCharged": "genesis-travel30-liquidity",
+        "fundingLineAddress": "HBrdsf7UjYK5tRoM9j6YaxfV7nFBkVhnJbrmTLVaDiEr",
+        "policySeries": "29XmfdaHceAeAvtiESAcNDXLsJxEqW2RBa3DttTUUcco",
+        "healthPlan": "D38bBYTWAkcyJZHFaZLRYRJErwLNB45YKJPfxU4PL5F6",
+        "obligationStatus": "RESERVED",
+        "expectedResolutionNote": "Pending 3 documents (ETA 24-72h). Anticipated outcome: APPROVED_PARTIAL or FULLY_SETTLED at $3,000 product maximum after UCR itemization."
       }
     }
   ]
