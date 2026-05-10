@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreatePolicySeries, CreatePolicySeriesArgs};
 
 impl<'info> CreatePolicySeries<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_policy_series", hash = "e204fc7f8a73258d", spec_hash = "496c961e6f8daf67")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_policy_series", hash = "e204fc7f8a73258d", spec_hash = "e6f4b938d840eac4")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreatePolicySeriesArgs) -> Result<()> {
         guards::create_policy_series(self, args)?;

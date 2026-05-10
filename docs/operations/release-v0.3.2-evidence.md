@@ -140,7 +140,7 @@ outside reviewer with repository review permission must approve before merge.
 | Liability-state Node/static regression | `npm run test:node` | PASS: `251 passed`, `0 failed` | console output |
 | Repo baseline health | `npm run verify:public` | PASS | SBOM under `artifacts/sbom/` |
 | Localnet protocol-surface audit | `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet` | PASS: `68/68` live instructions owned | `artifacts/localnet-e2e-summary-2026-05-06T07-38-44-043Z.json` |
-| Asset-agnostic commitment custody | included in localnet E2E | PASS: `3 payment assets`, `300 exact refunds`, `27 blocked custody/outflow probes`, `9 activation checks` | `artifacts/localnet-commitment-custody-2026-05-06T07-38-44-043Z.json` |
+| Founder reservation custody | website/oracle-service only | RETIRED from protocol: pending reservations use Squads custody and unique Solana Pay references outside the on-chain program | `docs/operations/founder-reservation-runbook.md` |
 | Executable adversarial localnet | included in localnet E2E | PASS: `62 blocked`, `0 unexpectedSuccess`, `0 inconclusive` | `artifacts/localnet-adversarial-matrix-2026-05-06T07-38-44-044Z.json` |
 | Operator drawer simulation | `SOLANA_KEYPAIR=<devnet governance keypair> npm run devnet:operator:drawer:sim` | PASS: `FAIL=0`; expected idempotent collisions and fixture skips only | console output |
 | Mainnet preflight, no sends | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 OMEGAX_LIVE_SETTLEMENT_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v npm run protocol:bootstrap:genesis-live -- --plan` | BLOCKER: current operator env is missing `OMEGAX_LIVE_ORACLE_KEYPAIR_PATH`; command failed before send path | console error; no transactions sent |
@@ -249,9 +249,10 @@ claim ledger while draining a WBTC/SOL/WETH vault and does not perform DEX
 swaps in this pass.
 
 `$OMEGAX` (`4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump`) is not the
-default claims settlement mint. It may be configured as a commitment payment
-rail or a last-resort selected payout rail only when explicitly enabled,
-payout-enabled, and fresh confidence-bounded.
+default claims settlement mint. It may be configured as a last-resort selected
+payout rail only when explicitly enabled, payout-enabled, and fresh
+confidence-bounded. Founder reservations remain off-chain until later
+activation/posting through ordinary premium and reserve controls.
 
 ## 11. Liability-State Hardening Addendum
 
@@ -272,27 +273,15 @@ These fixes are locally proven by `npm run rust:test`, `npm run test:node`,
 `OMEGAX_E2E_KEEP_ARTIFACTS=1 npm run test:e2e:localnet`. Remote PR CI is also
 green on `d9fa872dc289dcba6886f81551d21ba0d2016bb7`.
 
-## 12. Asset-Agnostic Commitment Custody Addendum
+## 12. Founder Reservation Update
 
-The preorder custody closure was refreshed on `2026-05-06T04:02:51Z` across
-three localnet payment rails: an OMEGAX-like token, a stable/settlement-like SPL
-token, and a non-settlement reserve asset. The suite proves the pooled
-`DomainAssetVault` custody model before activation without relying on
-OMEGAX-specific names or decimals.
-
-- Each asset seeded `100` pending commitment positions and verified exact
-  equality across the SPL vault balance, `DomainAssetVault.total_assets`, and
-  `CommitmentLedger.pending_amount`.
-- The refund matrix returned `300` exact user refunds and rejected attacker
-  refund, wrong recipient, wrong mint, wrong token program, fake vault token
-  account, and zero-accrual fee-withdrawal probes.
-- The same-mint outflow matrix rejected fee-withdrawal, claim-settlement,
-  obligation-settlement, and LP-redemption attempts against vaults containing
-  pending commitment deposits.
-- Activation coverage now checks `DIRECT_PREMIUM`, `TREASURY_CREDIT`, and
-  `WATERFALL_RESERVE` for every payment rail. Waterfall activation decrements
-  pending token liability by the full deposited token amount while reserve
-  funding/capacity accounting remains haircut-adjusted.
+The former on-chain Founder commitment custody surface has been retired from
+the active protocol surface. Founder reservations now live in the website and
+OmegaX Health oracle-service flow, are paid into Squads custody with unique
+Solana Pay references, and remain off-chain reservation records until a later
+activation/posting process books reserve through the existing premium and
+reserve controls. Pending reservations are not active cover and do not count as
+claims-paying reserve.
 
 ## 13. Sign-off
 

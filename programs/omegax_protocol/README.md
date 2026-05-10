@@ -15,7 +15,6 @@ audit-domain modules:
 - [`src/reserve_custody.rs`](./src/reserve_custody.rs)
 - [`src/plans_membership.rs`](./src/plans_membership.rs)
 - [`src/funding_obligations/`](./src/funding_obligations/)
-- [`src/commitments.rs`](./src/commitments.rs)
 - [`src/claims.rs`](./src/claims.rs)
 - [`src/capital/`](./src/capital/)
 - [`src/fees.rs`](./src/fees.rs)
@@ -43,9 +42,6 @@ The active public object model is:
 - `MemberPosition`
 - `FundingLine`
 - `FundingLineLedger`
-- `CommitmentCampaign`
-- `CommitmentLedger`
-- `CommitmentPosition`
 - `ClaimCase`
 - `Obligation`
 - `LiquidityPool`
@@ -57,7 +53,16 @@ The active public object model is:
 
 Restricted and wrapper-only capital classes now rely on managed `LPPosition` credentialing. Direct deposits do not carry a caller-supplied credential flag; access is granted on-chain through the canonical LP position for that class and owner.
 
-Founder commitment campaigns are a narrow pre-activation primitive. Pending USDC, PUSD, WSOL, WBTC, WETH, and OMEGAX commitments sit in the existing `DomainAssetVault` custody lane, but they do not increase claims-paying reserve ledgers until an explicit activation instruction runs. `WATERFALL_RESERVE` activation books capacity through configured `ReserveAssetRail` controls: role, payout priority, oracle source, price freshness, price-confidence threshold, haircut, and exposure cap. Stable rails pay first, volatile rails are discounted, and OMEGAX remains disabled for capacity/payout by default and last in the waterfall if governance later enables it. The v1 program does not sell, swap, or withdraw OMEGAX treasury inventory; if OMEGAX capacity is enabled, it must use an approved Chainlink/governance-attested price with conservative confidence, haircut, and exposure limits. Legacy `DIRECT_PREMIUM` and `TREASURY_CREDIT` modes remain for operator/backward workflows, not the new public Founder Travel30 path.
+Founder reservations are off-chain payment reservations into Squads custody,
+not on-chain protocol accounts. They do not increase claims-paying reserve,
+create active cover, or change policy state until an activation/posting flow
+books reserve through the existing reserve, premium, and claim controls.
+`ReserveAssetRail` remains the on-chain enforcement layer for live reserve
+capacity and payout eligibility: role, payout priority, oracle source, price
+freshness, price-confidence threshold, haircut, and exposure cap. Stable rails
+pay first, volatile rails are discounted, and OMEGAX remains disabled for
+capacity/payout by default unless governance explicitly enables it with
+conservative limits.
 
 ## Important reviewer rule
 

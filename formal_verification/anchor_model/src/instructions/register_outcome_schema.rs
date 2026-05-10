@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{RegisterOutcomeSchema, RegisterOutcomeSchemaArgs};
 
 impl<'info> RegisterOutcomeSchema<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "register_outcome_schema", hash = "1a2e20f1f0cebfa0", spec_hash = "7e62148aa7bde3ab")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "register_outcome_schema", hash = "1a2e20f1f0cebfa0", spec_hash = "1fc4921bb61c78ba")]
     #[inline(always)]
     pub fn handler(&mut self, args: RegisterOutcomeSchemaArgs) -> Result<()> {
         guards::register_outcome_schema(self, args)?;

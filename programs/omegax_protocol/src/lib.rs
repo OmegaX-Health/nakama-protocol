@@ -11,7 +11,6 @@ pub mod capital;
 #[cfg(feature = "certora")]
 pub mod certora;
 pub mod claims;
-pub mod commitments;
 pub mod constants;
 pub mod errors;
 pub mod events;
@@ -29,7 +28,6 @@ pub mod types;
 pub use args::*;
 pub use capital::*;
 pub use claims::*;
-pub use commitments::*;
 pub use constants::*;
 pub use errors::*;
 pub use events::*;
@@ -58,13 +56,6 @@ pub(crate) use capital::{
     __client_accounts_update_lp_position_credentialing,
 };
 pub(crate) use claims::__client_accounts_settle_claim_case_selected_asset;
-pub(crate) use commitments::{
-    __client_accounts_activate_direct_premium_commitment,
-    __client_accounts_activate_treasury_credit_commitment,
-    __client_accounts_activate_waterfall_commitment, __client_accounts_create_commitment_campaign,
-    __client_accounts_create_commitment_payment_rail, __client_accounts_deposit_commitment,
-    __client_accounts_pause_commitment_campaign, __client_accounts_refund_commitment,
-};
 pub(crate) use funding_obligations::{
     __client_accounts_create_obligation, __client_accounts_fund_sponsor_budget,
     __client_accounts_open_funding_line, __client_accounts_record_premium_payment,
@@ -245,62 +236,6 @@ pub mod omegax_protocol {
         args: RecordPremiumPaymentArgs,
     ) -> Result<()> {
         crate::funding_obligations::record_premium_payment(ctx, args)
-    }
-
-    pub fn create_commitment_campaign(
-        ctx: Context<CreateCommitmentCampaign>,
-        args: CreateCommitmentCampaignArgs,
-    ) -> Result<()> {
-        crate::commitments::create_commitment_campaign(ctx, args)
-    }
-
-    pub fn create_commitment_payment_rail(
-        ctx: Context<CreateCommitmentPaymentRail>,
-        args: CreateCommitmentPaymentRailArgs,
-    ) -> Result<()> {
-        crate::commitments::create_commitment_payment_rail(ctx, args)
-    }
-
-    pub fn deposit_commitment(
-        ctx: Context<DepositCommitment>,
-        args: DepositCommitmentArgs,
-    ) -> Result<()> {
-        crate::commitments::deposit_commitment(ctx, args)
-    }
-
-    pub fn activate_direct_premium_commitment(
-        ctx: Context<ActivateDirectPremiumCommitment>,
-        args: ActivateCommitmentArgs,
-    ) -> Result<()> {
-        crate::commitments::activate_direct_premium_commitment(ctx, args)
-    }
-
-    pub fn activate_treasury_credit_commitment(
-        ctx: Context<ActivateTreasuryCreditCommitment>,
-        args: ActivateCommitmentArgs,
-    ) -> Result<()> {
-        crate::commitments::activate_treasury_credit_commitment(ctx, args)
-    }
-
-    pub fn activate_waterfall_commitment(
-        ctx: Context<ActivateWaterfallCommitment>,
-        args: ActivateCommitmentArgs,
-    ) -> Result<()> {
-        crate::commitments::activate_waterfall_commitment(ctx, args)
-    }
-
-    pub fn refund_commitment(
-        ctx: Context<RefundCommitment>,
-        args: RefundCommitmentArgs,
-    ) -> Result<()> {
-        crate::commitments::refund_commitment(ctx, args)
-    }
-
-    pub fn pause_commitment_campaign(
-        ctx: Context<PauseCommitmentCampaign>,
-        args: PauseCommitmentCampaignArgs,
-    ) -> Result<()> {
-        crate::commitments::pause_commitment_campaign(ctx, args)
     }
 
     pub fn create_obligation(

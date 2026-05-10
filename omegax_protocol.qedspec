@@ -13,7 +13,6 @@ const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS = 50
 // Unsupported/string/hash fields from the Anchor args are intentionally omitted
 // until a guard/effect/property references them.
 // Timestamp-like i64 fields used by this abstract model are treated as non-negative U64 domains.
-type ActivateCommitmentArgs = {}
 
 type AdjudicateClaimCaseArgs = {
   review_state : U8,
@@ -52,16 +51,6 @@ type CreateCapitalClassArgs = {
   pause_flags : U32
 }
 
-type CreateCommitmentCampaignArgs = {
-  deposit_amount : U64,
-  coverage_amount : U64
-}
-
-type CreateCommitmentPaymentRailArgs = {
-  deposit_amount : U64,
-  coverage_amount : U64
-}
-
 type CreateDomainAssetVaultArgs = {}
 
 type CreateHealthPlanArgs = {
@@ -88,8 +77,6 @@ type CreateReserveDomainArgs = {
 type DeallocateCapitalArgs = {
   amount : U64
 }
-
-type DepositCommitmentArgs = {}
 
 type DepositIntoCapitalClassArgs = {
   amount : U64,
@@ -126,8 +113,6 @@ type OpenMemberPositionArgs = {
   delegated_rights : U32
 }
 
-type PauseCommitmentCampaignArgs = {}
-
 type ProcessRedemptionQueueArgs = {
   shares : U64
 }
@@ -141,8 +126,6 @@ type PublishReserveAssetRailPriceArgs = {
 type RecordPremiumPaymentArgs = {
   amount : U64
 }
-
-type RefundCommitmentArgs = {}
 
 type RegisterOracleArgs = {}
 
@@ -344,7 +327,6 @@ type State
       claimed : Bool,
       verified : Bool,
       closed_outcome_schema_count : U64,
-      commitment_deposit_amount : U64,
       refund_amount : U64,
       settlement_net_payout_amount : U64,
       claim_net_payout_amount : U64,
@@ -440,14 +422,6 @@ type Error
   | SettlementOutflowAccountsRequired
   | FeeVaultRequiredForConfiguredFee
   | ClaimAttestationRequiredForOracleFee
-  | InvalidCommitmentCampaignMode
-  | InvalidCommitmentCampaignStatus
-  | CommitmentCampaignInactive
-  | CommitmentNotRefundable
-  | CommitmentPositionNotPending
-  | CommitmentTermsMismatch
-  | CommitmentCapExceeded
-  | CommitmentActivationAuthorityMismatch
   | InsufficientStableCoverageCapacity
   | TreasuryCreditAssetMismatch
   | InvalidReserveAssetRole
@@ -455,14 +429,11 @@ type Error
   | ReserveAssetRailMismatch
   | ReserveDomainMismatch
   | ReserveAssetRailInactive
-  | ReserveAssetRailDepositDisabled
   | ReserveAssetRailPayoutDisabled
   | ReserveAssetRailCapacityDisabled
   | ReserveAssetPriceStale
   | ReserveAssetPriceInvalid
   | ReserveAssetPriceConfidenceTooWide
-  | CommitmentPaymentRailMismatch
-  | CommitmentPaymentRailInactive
   | PartialObligationTransitionUnsupported
   | InvalidObligationDeliveryMode
   | ClaimAdjudicationLocked
@@ -476,9 +447,9 @@ type Error
 
 // Candidate guarantees guiding the current and next verification passes.
 // SPEC-GUARANTEE: Only configured governance or delegated domain/plan/oracle authority may mutate privileged controls.
-// SPEC-GUARANTEE: Protocol emergency pause fails closed for reserve, claim, commitment, capital, and oracle mutations.
+// SPEC-GUARANTEE: Protocol emergency pause fails closed for reserve, claim, capital, and oracle mutations.
 // SPEC-GUARANTEE: DomainAssetVault and ledger accounts remain bound to their derived reserve domain and asset mint.
-// SPEC-GUARANTEE: Pending Founder commitments remain custody/pending amounts until activation books reserve capacity.
+// SPEC-GUARANTEE: Off-chain Founder reservations never count as protocol reserve until activation/posting books reserve capacity through existing reserve flows.
 // SPEC-GUARANTEE: Reserved and settled obligation amounts never exceed approved/outstanding obligations or available reserve.
 // SPEC-GUARANTEE: Claim paid_amount never exceeds approved_amount, including selected-asset payout paths.
 // SPEC-GUARANTEE: Fee withdrawals never exceed accrued balances and preserve rent-exempt SOL fee-vault balances.
@@ -503,7 +474,6 @@ property allocation_cap_bounded : allocated_amount <= cap_amount
   preserved_by [create_allocation_position, update_allocation_caps, allocate_capital, deallocate_capital]
 
 cover governance_setup_path [initialize_protocol_governance, create_reserve_domain, create_health_plan]
-cover founder_commitment_waterfall_path [create_commitment_campaign, deposit_commitment, activate_waterfall_commitment]
 cover direct_claim_settlement_path [open_claim_case, adjudicate_claim_case, settle_claim_case]
 cover obligation_claim_settlement_path [create_obligation, reserve_obligation, settle_obligation]
 
@@ -1024,244 +994,6 @@ handler record_premium_payment (args : RecordPremiumPaymentArgs) : State.Live ->
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
   effect {
     funded_amount +=! 1
-    audit_nonce +=! 1
-  }
-}
-
-/// `create_commitment_campaign` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::create_commitment_campaign`; accounts context: `CreateCommitmentCampaign`.
-handler create_commitment_campaign (args : CreateCommitmentCampaignArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority                    : signer, writable
-    protocol_governance          : readonly
-    health_plan                  : readonly
-    payment_domain_asset_vault   : readonly
-    reserve_asset_rail           : readonly
-    coverage_domain_asset_ledger : writable
-    coverage_funding_line        : readonly
-    coverage_funding_line_ledger : writable
-    coverage_plan_reserve_ledger : writable
-    campaign                     : writable
-    payment_rail                 : writable
-    ledger                       : writable
-    system_program               : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.deposit_amount > 0 else AmountMustBePositive
-  requires args.coverage_amount > 0 else AmountMustBePositive
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    audit_nonce +=! 1
-  }
-}
-
-/// `create_commitment_payment_rail` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::create_commitment_payment_rail`; accounts context: `CreateCommitmentPaymentRail`.
-handler create_commitment_payment_rail (args : CreateCommitmentPaymentRailArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority                  : signer, writable
-    protocol_governance        : readonly
-    health_plan                : readonly
-    campaign                   : writable
-    payment_domain_asset_vault : readonly
-    reserve_asset_rail         : readonly
-    coverage_funding_line      : readonly
-    payment_rail               : writable
-    ledger                     : writable
-    system_program             : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.deposit_amount > 0 else AmountMustBePositive
-  requires args.coverage_amount > 0 else AmountMustBePositive
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    audit_nonce +=! 1
-  }
-}
-
-/// `deposit_commitment` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::deposit_commitment`; accounts context: `DepositCommitment`.
-handler deposit_commitment (args : DepositCommitmentArgs) : State.Live -> State.Live {
-  auth depositor
-
-  accounts {
-    depositor            : signer, writable
-    protocol_governance  : readonly
-    campaign             : writable
-    payment_rail         : readonly
-    reserve_asset_rail   : readonly
-    ledger               : writable
-    position             : writable
-    domain_asset_vault   : writable
-    source_token_account : writable
-    asset_mint           : readonly
-    vault_token_account  : writable
-    token_program        : program
-    system_program       : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-
-  // SPEC-CPI: commitment deposit amount is configured on the payment rail, not passed in args.
-  transfers {
-    from source_token_account to vault_token_account amount commitment_deposit_amount authority depositor
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    pending_amount +=! 1
-    next_queue_index +=! 1
-    audit_nonce +=! 1
-  }
-}
-
-/// `activate_direct_premium_commitment` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::activate_direct_premium_commitment`; accounts context: `ActivateDirectPremiumCommitment`.
-handler activate_direct_premium_commitment (args : ActivateCommitmentArgs) : State.Live -> State.Live {
-  auth activation_authority
-
-  accounts {
-    activation_authority           : signer
-    protocol_governance            : readonly
-    health_plan                    : readonly
-    campaign                       : writable
-    payment_rail                   : readonly
-    ledger                         : writable
-    position                       : writable
-    coverage_domain_asset_ledger   : writable
-    coverage_funding_line          : writable
-    coverage_funding_line_ledger   : writable
-    coverage_plan_reserve_ledger   : writable
-    coverage_series_reserve_ledger : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    funded_amount +=! 1
-    activated_amount +=! 1
-    audit_nonce +=! 1
-  }
-}
-
-/// `activate_treasury_credit_commitment` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::activate_treasury_credit_commitment`; accounts context: `ActivateTreasuryCreditCommitment`.
-handler activate_treasury_credit_commitment (args : ActivateCommitmentArgs) : State.Live -> State.Live {
-  auth activation_authority
-
-  accounts {
-    activation_authority           : signer
-    protocol_governance            : readonly
-    health_plan                    : readonly
-    campaign                       : writable
-    payment_rail                   : readonly
-    ledger                         : writable
-    position                       : writable
-    coverage_domain_asset_ledger   : writable
-    coverage_funding_line          : writable
-    coverage_funding_line_ledger   : writable
-    coverage_plan_reserve_ledger   : writable
-    coverage_series_reserve_ledger : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    activated_amount +=! 1
-    treasury_locked_amount +=! 1
-    audit_nonce +=! 1
-  }
-}
-
-/// `activate_waterfall_commitment` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::activate_waterfall_commitment`; accounts context: `ActivateWaterfallCommitment`.
-handler activate_waterfall_commitment (args : ActivateCommitmentArgs) : State.Live -> State.Live {
-  auth activation_authority
-
-  accounts {
-    activation_authority           : signer
-    protocol_governance            : readonly
-    health_plan                    : readonly
-    campaign                       : writable
-    payment_rail                   : readonly
-    reserve_asset_rail             : readonly
-    ledger                         : writable
-    position                       : writable
-    coverage_domain_asset_ledger   : writable
-    coverage_funding_line          : writable
-    coverage_funding_line_ledger   : writable
-    coverage_plan_reserve_ledger   : writable
-    coverage_series_reserve_ledger : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    funded_amount +=! 1
-    activated_amount +=! 1
-    audit_nonce +=! 1
-  }
-}
-
-/// `refund_commitment` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::refund_commitment`; accounts context: `RefundCommitment`.
-handler refund_commitment (args : RefundCommitmentArgs) : State.Live -> State.Live {
-  auth depositor
-
-  accounts {
-    depositor               : signer, writable
-    campaign                : writable
-    payment_rail            : readonly
-    ledger                  : writable
-    position                : writable
-    domain_asset_vault      : writable
-    asset_mint              : readonly
-    vault_token_account     : writable
-    recipient_token_account : writable
-    token_program           : program
-  }
-
-  // SPEC-CPI: refund returns the pending commitment amount from the vault PDA.
-  transfers {
-    from vault_token_account to recipient_token_account amount refund_amount authority domain_asset_vault
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    pending_amount +=! 1
-    refunded_amount +=! 1
-    refunded_at +=! 1
-    audit_nonce +=! 1
-  }
-}
-
-/// `pause_commitment_campaign` - Anchor facade forwarder.
-/// Implementation: `crate::commitments::pause_commitment_campaign`; accounts context: `PauseCommitmentCampaign`.
-handler pause_commitment_campaign (args : PauseCommitmentCampaignArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    health_plan         : readonly
-    campaign            : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
     audit_nonce +=! 1
   }
 }

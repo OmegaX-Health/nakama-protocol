@@ -66,7 +66,7 @@ export function GenesisProtectAcuteReserveConsolePanel(props: GenesisProtectAcut
               {formatSettlementUnits(props.model.summary.claimsPayingCapital)}
             </strong>
             <p className="plans-wizard-support-note">
-              Recognized posted reserve only; pending commitments and diagnostic lane balances stay excluded until posting rules pass.
+              Recognized posted reserve only; pending reservations and diagnostic lane balances stay excluded until posting rules pass.
               {props.model.summary.diagnosticLaneFundedAmount !== props.model.summary.claimsPayingCapital
                 ? ` Visible lane funding: ${formatSettlementUnits(props.model.summary.diagnosticLaneFundedAmount)}.`
                 : ""}

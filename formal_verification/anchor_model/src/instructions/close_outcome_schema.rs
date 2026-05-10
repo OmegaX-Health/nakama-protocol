@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::CloseOutcomeSchema;
 
 impl<'info> CloseOutcomeSchema<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "close_outcome_schema", hash = "5428dfc9b89a4c36", spec_hash = "1d5bff5839019cef")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "close_outcome_schema", hash = "5428dfc9b89a4c36", spec_hash = "5d6e54303bc0afe6")]
     #[inline(always)]
     pub fn handler(&mut self) -> Result<()> {
         guards::close_outcome_schema(self)?;

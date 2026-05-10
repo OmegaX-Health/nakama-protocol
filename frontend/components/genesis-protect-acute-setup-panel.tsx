@@ -23,7 +23,7 @@ type GenesisProtectAcuteSetupPanelProps = {
   oracleBindingsHref: string;
   claimsHref: string;
   adminActionsEnabled?: boolean;
-  founderCommitmentHref?: string;
+  founderReservationHref?: string;
   skuConsoleHrefs: Record<GenesisProtectAcuteSkuKey, {
     claims: string;
     treasury: string;
@@ -55,26 +55,6 @@ function readinessPillClass(phase: GenesisProtectAcuteSetupModel["readinessPhase
 function utilizationLabel(bps: bigint | null): string {
   if (bps === null) return "N/A";
   return `${Number(bps) / 100}%`;
-}
-
-function commitmentModeLabel(mode: number): string {
-  switch (mode) {
-    case 0:
-      return "Direct premium";
-    case 1:
-      return "Treasury credit";
-    case 2:
-      return "Waterfall reserve";
-    default:
-      return `Mode ${mode}`;
-  }
-}
-
-function shortHash(value: string | null | undefined): string {
-  const normalized = value?.trim() ?? "";
-  if (!normalized) return "None";
-  if (normalized.length <= 16) return normalized;
-  return `${normalized.slice(0, 8)}…${normalized.slice(-8)}`;
 }
 
 function checklistRows(props: GenesisProtectAcuteSetupPanelProps) {
@@ -273,153 +253,16 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
         <div className="plans-notice liquid-glass" role="status">
           <span className="material-symbols-outlined plans-notice-icon" aria-hidden="true">lock</span>
           <p>
-            <strong>Founder commitments are read-only here.</strong>{" "}
-            Pending deposits are refundable holds, not active cover, not LP deposits, and not claims-paying reserve until activation or posting rules are satisfied.
+            <strong>Founder reservations live outside this protocol program.</strong>{" "}
+            Multisig-held reservations are not active cover, not LP deposits, and not claims-paying reserve until activation or reserve posting rules are satisfied.
           </p>
         </div>
 
-        {props.founderCommitmentHref ? (
+        {props.founderReservationHref ? (
           <div className="plans-wizard-support-actions">
-            <Link href={props.founderCommitmentHref} className="secondary-button inline-flex w-fit" target="_blank" rel="noreferrer">
-              Open consumer Founder flow
+            <Link href={props.founderReservationHref} className="secondary-button inline-flex w-fit" target="_blank" rel="noreferrer">
+              Open consumer reservation flow
             </Link>
-          </div>
-        ) : null}
-
-        <div className="plans-settings-grid">
-          <div className="plans-settings-row">
-            <div>
-              <span className="plans-settings-label">Commitment intake</span>
-              <span className="plans-settings-lane">Read-only pending commitment status linked to this plan and policy series</span>
-            </div>
-            <span className="plans-settings-address">
-              {props.model.founderCommitments.activeCampaignCount}/{props.model.founderCommitments.campaignCount} active
-            </span>
-          </div>
-          <div className="plans-settings-row">
-            <div>
-              <span className="plans-settings-label">Payment rails</span>
-              <span className="plans-settings-lane">Accepted payment rails for optional pre-activation commitment deposits</span>
-            </div>
-            <span className="plans-settings-address">
-              {props.model.founderCommitments.waterfallRailCount}/{props.model.founderCommitments.paymentRailCount} waterfall
-            </span>
-          </div>
-          <div className="plans-settings-row">
-            <div>
-              <span className="plans-settings-label">Pending commitments</span>
-              <span className="plans-settings-lane">Commitment positions still waiting for activation or refund</span>
-            </div>
-            <span className="plans-settings-address">{formatAmount(props.model.founderCommitments.pendingPositionCount)}</span>
-          </div>
-          <div className="plans-settings-row">
-            <div>
-              <span className="plans-settings-label">Custody pending</span>
-              <span className="plans-settings-lane">Deposited token amount still held in the DomainAssetVault commitment lane</span>
-            </div>
-            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.pendingCustodyAmount)}>
-              {formatSettlementUnits(props.model.founderCommitments.pendingCustodyAmount)}
-            </span>
-          </div>
-          <div className="plans-settings-row">
-            <div>
-              <span className="plans-settings-label">Coverage pending</span>
-              <span className="plans-settings-lane">Coverage amount represented by pending commitments, not active coverage</span>
-            </div>
-            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.pendingCoverageAmount)}>
-              {formatSettlementUnits(props.model.founderCommitments.pendingCoverageAmount)}
-            </span>
-          </div>
-          <div className="plans-settings-row">
-            <div>
-              <span className="plans-settings-label">Treasury inventory</span>
-              <span className="plans-settings-lane">Legacy treasury-credit amount locked as inventory after activation</span>
-            </div>
-            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.treasuryInventoryAmount)}>
-              {formatSettlementUnits(props.model.founderCommitments.treasuryInventoryAmount)}
-            </span>
-          </div>
-          <div className="plans-settings-row">
-            <div>
-              <span className="plans-settings-label">Pending reserve impact</span>
-              <span className="plans-settings-lane">Claims-paying reserve impact from pending commitments</span>
-            </div>
-            <span className="plans-settings-address" title={rawAmountTitle(props.model.founderCommitments.claimsPayingReserveImpact)}>
-              {formatSettlementUnits(props.model.founderCommitments.claimsPayingReserveImpact)}
-            </span>
-          </div>
-        </div>
-
-        {props.model.founderCommitments.rows.length > 0 ? (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {props.model.founderCommitments.rows.map((row) => (
-              <article key={row.address} className="operator-summary-card">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--foreground)]">{row.displayName}</p>
-                    <p className="field-help">
-                      {row.campaignId} · {commitmentModeLabel(row.mode)} · {row.paymentRailCount} rail{row.paymentRailCount === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  <span className={`status-pill ${row.status === 1 ? "status-ok" : "status-off"}`}>
-                    {row.status === 1 ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                <div className="plans-settings-grid">
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Pending</span>
-                    <span className="plans-settings-address" title={rawAmountTitle(row.pendingAmount)}>
-                      {formatSettlementUnits(row.pendingAmount)}
-                    </span>
-                  </div>
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Policy series</span>
-                    <span className="plans-settings-address">{row.policySeries ? shortHash(row.policySeries) : "Unlinked"}</span>
-                  </div>
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Primary line</span>
-                    <span className="plans-settings-address">{shortHash(row.coverageFundingLine)}</span>
-                  </div>
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Terms hash</span>
-                    <span className="plans-settings-address">{shortHash(row.termsHashHex)}</span>
-                  </div>
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Activated</span>
-                    <span className="plans-settings-address" title={rawAmountTitle(row.activatedAmount)}>
-                      {formatSettlementUnits(row.activatedAmount)}
-                    </span>
-                  </div>
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Treasury locked</span>
-                    <span className="plans-settings-address" title={rawAmountTitle(row.treasuryLockedAmount)}>
-                      {formatSettlementUnits(row.treasuryLockedAmount)}
-                    </span>
-                  </div>
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Waterfall rails</span>
-                    <span className="plans-settings-address">{formatAmount(row.waterfallRailCount)}</span>
-                  </div>
-                  <div className="plans-settings-row">
-                    <span className="plans-settings-label">Refunded</span>
-                    <span className="plans-settings-address" title={rawAmountTitle(row.refundedAmount)}>
-                      {formatSettlementUnits(row.refundedAmount)}
-                    </span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : null}
-
-        {props.model.founderCommitments.warnings.length > 0 ? (
-          <div className="space-y-2">
-            {props.model.founderCommitments.warnings.map((warning) => (
-              <div key={warning} className="plans-notice liquid-glass" role="status">
-                <span className="material-symbols-outlined plans-notice-icon" aria-hidden="true">info</span>
-                <p>{warning}</p>
-              </div>
-            ))}
           </div>
         ) : null}
 

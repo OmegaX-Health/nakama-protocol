@@ -13,12 +13,6 @@ abbrev MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS : Nat := 50
 
 abbrev AccountIdx : Type := Fin MAX_CONFIGURED_FEE_BPS
 
-structure ActivateCommitmentArgs where
-  deriving Repr, DecidableEq, BEq
-
-instance : Inhabited ActivateCommitmentArgs := ⟨{
-}⟩
-
 structure AdjudicateClaimCaseArgs where
   review_state : Nat
   approved_amount : Nat
@@ -101,26 +95,6 @@ instance : Inhabited CreateCapitalClassArgs := ⟨{
   pause_flags := 0,
 }⟩
 
-structure CreateCommitmentCampaignArgs where
-  deposit_amount : Nat
-  coverage_amount : Nat
-  deriving Repr, DecidableEq, BEq
-
-instance : Inhabited CreateCommitmentCampaignArgs := ⟨{
-  deposit_amount := 0,
-  coverage_amount := 0,
-}⟩
-
-structure CreateCommitmentPaymentRailArgs where
-  deposit_amount : Nat
-  coverage_amount : Nat
-  deriving Repr, DecidableEq, BEq
-
-instance : Inhabited CreateCommitmentPaymentRailArgs := ⟨{
-  deposit_amount := 0,
-  coverage_amount := 0,
-}⟩
-
 structure CreateDomainAssetVaultArgs where
   deriving Repr, DecidableEq, BEq
 
@@ -177,12 +151,6 @@ structure DeallocateCapitalArgs where
 
 instance : Inhabited DeallocateCapitalArgs := ⟨{
   amount := 0,
-}⟩
-
-structure DepositCommitmentArgs where
-  deriving Repr, DecidableEq, BEq
-
-instance : Inhabited DepositCommitmentArgs := ⟨{
 }⟩
 
 structure DepositIntoCapitalClassArgs where
@@ -267,12 +235,6 @@ instance : Inhabited OpenMemberPositionArgs := ⟨{
   delegated_rights := 0,
 }⟩
 
-structure PauseCommitmentCampaignArgs where
-  deriving Repr, DecidableEq, BEq
-
-instance : Inhabited PauseCommitmentCampaignArgs := ⟨{
-}⟩
-
 structure ProcessRedemptionQueueArgs where
   shares : Nat
   deriving Repr, DecidableEq, BEq
@@ -299,12 +261,6 @@ structure RecordPremiumPaymentArgs where
 
 instance : Inhabited RecordPremiumPaymentArgs := ⟨{
   amount := 0,
-}⟩
-
-structure RefundCommitmentArgs where
-  deriving Repr, DecidableEq, BEq
-
-instance : Inhabited RefundCommitmentArgs := ⟨{
 }⟩
 
 structure RegisterOracleArgs where
@@ -639,7 +595,6 @@ structure State where
   claimed : Bool
   verified : Bool
   closed_outcome_schema_count : Nat
-  commitment_deposit_amount : Nat
   refund_amount : Nat
   settlement_net_payout_amount : Nat
   claim_net_payout_amount : Nat
@@ -760,46 +715,6 @@ def fund_sponsor_budgetTransition (s : State) (signer : Pubkey) (args : FundSpon
 
 def record_premium_paymentTransition (s : State) (signer : Pubkey) (args : RecordPremiumPaymentArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
-    some { s with status := .Live }
-  else none
-
-def create_commitment_campaignTransition (s : State) (signer : Pubkey) (args : CreateCommitmentCampaignArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.deposit_amount > 0) ∧ (args.coverage_amount > 0) then
-    some { s with status := .Live }
-  else none
-
-def create_commitment_payment_railTransition (s : State) (signer : Pubkey) (args : CreateCommitmentPaymentRailArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.deposit_amount > 0) ∧ (args.coverage_amount > 0) then
-    some { s with status := .Live }
-  else none
-
-def deposit_commitmentTransition (s : State) (signer : Pubkey) (args : DepositCommitmentArgs) : Option State :=
-  if signer = s.depositor ∧ s.status = .Live ∧ (s.emergency_pause = false) then
-    some { s with status := .Live }
-  else none
-
-def activate_direct_premium_commitmentTransition (s : State) (signer : Pubkey) (args : ActivateCommitmentArgs) : Option State :=
-  if signer = s.activation_authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
-    some { s with status := .Live }
-  else none
-
-def activate_treasury_credit_commitmentTransition (s : State) (signer : Pubkey) (args : ActivateCommitmentArgs) : Option State :=
-  if signer = s.activation_authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
-    some { s with status := .Live }
-  else none
-
-def activate_waterfall_commitmentTransition (s : State) (signer : Pubkey) (args : ActivateCommitmentArgs) : Option State :=
-  if signer = s.activation_authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
-    some { s with status := .Live }
-  else none
-
-def refund_commitmentTransition (s : State) (signer : Pubkey) (args : RefundCommitmentArgs) : Option State :=
-  if signer = s.depositor ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
-def pause_commitment_campaignTransition (s : State) (signer : Pubkey) (args : PauseCommitmentCampaignArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
     some { s with status := .Live }
   else none
 
@@ -1022,14 +937,6 @@ inductive Operation where
   | open_funding_line (args : OpenFundingLineArgs)
   | fund_sponsor_budget (args : FundSponsorBudgetArgs)
   | record_premium_payment (args : RecordPremiumPaymentArgs)
-  | create_commitment_campaign (args : CreateCommitmentCampaignArgs)
-  | create_commitment_payment_rail (args : CreateCommitmentPaymentRailArgs)
-  | deposit_commitment (args : DepositCommitmentArgs)
-  | activate_direct_premium_commitment (args : ActivateCommitmentArgs)
-  | activate_treasury_credit_commitment (args : ActivateCommitmentArgs)
-  | activate_waterfall_commitment (args : ActivateCommitmentArgs)
-  | refund_commitment (args : RefundCommitmentArgs)
-  | pause_commitment_campaign (args : PauseCommitmentCampaignArgs)
   | create_obligation (args : CreateObligationArgs)
   | reserve_obligation (args : ReserveObligationArgs)
   | settle_obligation (args : SettleObligationArgs)
@@ -1094,14 +1001,6 @@ def applyOp (s : State) (signer : Pubkey) : Operation → Option State
   | .open_funding_line args => open_funding_lineTransition s signer args
   | .fund_sponsor_budget args => fund_sponsor_budgetTransition s signer args
   | .record_premium_payment args => record_premium_paymentTransition s signer args
-  | .create_commitment_campaign args => create_commitment_campaignTransition s signer args
-  | .create_commitment_payment_rail args => create_commitment_payment_railTransition s signer args
-  | .deposit_commitment args => deposit_commitmentTransition s signer args
-  | .activate_direct_premium_commitment args => activate_direct_premium_commitmentTransition s signer args
-  | .activate_treasury_credit_commitment args => activate_treasury_credit_commitmentTransition s signer args
-  | .activate_waterfall_commitment args => activate_waterfall_commitmentTransition s signer args
-  | .refund_commitment args => refund_commitmentTransition s signer args
-  | .pause_commitment_campaign args => pause_commitment_campaignTransition s signer args
   | .create_obligation args => create_obligationTransition s signer args
   | .reserve_obligation args => reserve_obligationTransition s signer args
   | .settle_obligation args => settle_obligationTransition s signer args

@@ -42,7 +42,7 @@ Main trust boundaries:
 - Use a broad pool role such as sentinel or allocator to mutate oracle policy,
   fee economics, or capital-class controls.
 - Change a claim payout recipient after approval.
-- Activate canceled, paused, expired, or refund-eligible commitments.
+- Activate canceled, paused, expired, or refund-eligible reservations.
 - Make an operator sign a valid but dangerous transaction because the pre-sign
   review omitted authority, amount, recipient, or target-account details.
 - Ship stale IDL/contract artifacts or dependency advisories under a green
@@ -57,8 +57,9 @@ Implemented and regression-tested in this pass:
 - Allocation and reserve booking must have free capacity in the relevant
   source: pool-class redeemable capacity for allocation, and funding-line or
   LP-allocation free capacity for obligation reserve booking.
-- Commitment activation requires an active campaign, active payment rail, and a
-  non-expired campaign window.
+- Founder reservations are off-chain Squads custody records and never count as
+  active cover or claims-paying reserve until activation/posting books them
+  through the normal reserve controls.
 - `settle_obligation` cannot mark an asset-backed obligation settled without
   SPL outflow accounts. Linked claims pay the resolved member/delegate
   recipient; unlinked settlements can only pay the authority-owned recipient

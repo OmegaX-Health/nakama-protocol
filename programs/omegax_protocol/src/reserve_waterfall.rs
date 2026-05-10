@@ -174,15 +174,7 @@ pub(crate) fn require_reserve_asset_rail_active(rail: &ReserveAssetRail) -> Resu
     Ok(())
 }
 
-pub(crate) fn require_reserve_asset_rail_deposit_enabled(rail: &ReserveAssetRail) -> Result<()> {
-    require_reserve_asset_rail_active(rail)?;
-    require!(
-        rail.deposit_enabled,
-        OmegaXProtocolError::ReserveAssetRailDepositDisabled
-    );
-    Ok(())
-}
-
+#[cfg(test)]
 pub(crate) fn require_reserve_asset_rail_capacity_enabled(rail: &ReserveAssetRail) -> Result<()> {
     require_reserve_asset_rail_active(rail)?;
     require!(

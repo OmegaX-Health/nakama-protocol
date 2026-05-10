@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{BackfillSchemaDependencyLedger, BackfillSchemaDependencyLedgerArgs};
 
 impl<'info> BackfillSchemaDependencyLedger<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "backfill_schema_dependency_ledger", hash = "6390945597f6be23", spec_hash = "3cfbf8c1b98c052d")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "backfill_schema_dependency_ledger", hash = "6390945597f6be23", spec_hash = "aacfef4dccf42759")]
     #[inline(always)]
     pub fn handler(&mut self, args: BackfillSchemaDependencyLedgerArgs) -> Result<()> {
         guards::backfill_schema_dependency_ledger(self, args)?;
