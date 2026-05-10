@@ -1,7 +1,18 @@
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, type Connection } from "@solana/web3.js";
+
+import privateClaimReviewModule from "../frontend/lib/private-claim-review.ts";
+
+const {
+  derivePrivateClaimReviewSessionPda,
+  describePrivateClaimReviewStatus,
+  loadPrivateClaimReviewReceipt,
+  PRIVATE_CLAIM_REVIEW_PROGRAM_ID,
+  SEED_PRIVATE_CLAIM_REVIEW_SESSION,
+} = privateClaimReviewModule as typeof import("../frontend/lib/private-claim-review.ts");
 
 const anchorToml = readFileSync("Anchor.toml", "utf8");
 const cargoToml = readFileSync("programs/omegax_private_claim_review/Cargo.toml", "utf8");
@@ -16,6 +27,7 @@ const claimRoomWorkbench = readFileSync(
   "frontend/components/magicblock-claim-room-workbench.tsx",
   "utf8",
 );
+const claimReviewClient = readFileSync("frontend/lib/private-claim-review.ts", "utf8");
 
 test("MagicBlock adjunct program is registered as a separate Anchor program", () => {
   assert.match(anchorToml, /programs\/omegax_private_claim_review/);
@@ -132,13 +144,108 @@ test("MagicBlock private claim review program id is valid", () => {
   assert.doesNotThrow(() => new PublicKey(match[1]));
 });
 
-test("MagicBlock claim room frontend fails closed outside the devnet demo", () => {
-  assert.match(claimRoomPage, /devnet-only MagicBlock private-review demo surface/);
+test("MagicBlock claim room frontend is a read-only receipt verifier", () => {
+  assert.match(claimRoomPage, /read-only MagicBlock private-review receipt verifier/);
+  assert.match(claimReviewClient, /omegax_private_claim_review\.json/);
+  assert.match(claimReviewClient, /BorshCoder/);
+  assert.match(claimReviewClient, /PRIVATE_CLAIM_REVIEW_PROGRAM_ID/);
+  assert.match(claimReviewClient, /PrivateClaimReviewSession/);
+  assert.match(claimReviewClient, /accountInfo\.owner\.toBase58\(\)/);
+  assert.match(claimRoomWorkbench, /Review session PDA/);
+  assert.match(claimRoomWorkbench, /Seed-derived lookup/);
+  assert.match(claimRoomWorkbench, /Session authority/);
+  assert.match(claimRoomWorkbench, /Claim case/);
+  assert.match(claimRoomWorkbench, /What this proves/);
+  assert.match(claimRoomWorkbench, /What it does not prove/);
+  assert.doesNotMatch(
+    claimRoomWorkbench,
+    /storage_path|evidence_url|ocr_text|medical_narrative|encrypted_evidence_payload/i,
+  );
+});
+
+test("MagicBlock receipt verifier fails closed outside the devnet adjunct", () => {
   assert.match(claimRoomWorkbench, /selectedNetwork === "mainnet-beta"/);
-  assert.match(claimRoomWorkbench, /No MagicBlock private-review program is configured on mainnet/);
+  assert.match(claimRoomWorkbench, /Receipt verification is unavailable on mainnet/);
+  assert.match(claimRoomWorkbench, /No mainnet MagicBlock receipt program is configured/);
   assert.match(claimRoomWorkbench, /No mainnet delegation/);
   assert.match(claimRoomWorkbench, /No mainnet ER/);
   assert.match(claimRoomWorkbench, /claim-room-posture-badge/);
   assert.match(claimRoomWorkbench, /Production reimbursement still uses the normal reserve and claim-settlement kernel/);
   assert.doesNotMatch(claimRoomWorkbench, /mainnet.*FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn/is);
+});
+
+test("MagicBlock receipt status labels cover every public review state", () => {
+  assert.deepEqual(describePrivateClaimReviewStatus(0), { status: "opened", label: "Opened" });
+  assert.deepEqual(describePrivateClaimReviewStatus(1), { status: "delegated", label: "Delegated" });
+  assert.deepEqual(describePrivateClaimReviewStatus(2), { status: "reviewed", label: "Reviewed" });
+  assert.deepEqual(describePrivateClaimReviewStatus(3), { status: "approved", label: "Approved" });
+  assert.deepEqual(describePrivateClaimReviewStatus(4), { status: "needs_more_info", label: "Needs more info" });
+  assert.deepEqual(describePrivateClaimReviewStatus(5), { status: "escalated", label: "Escalated" });
+  assert.deepEqual(describePrivateClaimReviewStatus(6), { status: "failed", label: "Failed" });
+  assert.deepEqual(describePrivateClaimReviewStatus(255), { status: "unknown", label: "Unknown (255)" });
+});
+
+test("MagicBlock review session PDA derivation uses the public program seeds", () => {
+  const sessionAuthority = Keypair.generate().publicKey;
+  const claimCase = Keypair.generate().publicKey;
+  const sessionId = "claim-protect-001-review";
+  const derived = derivePrivateClaimReviewSessionPda({
+    sessionAuthority,
+    claimCase,
+    sessionId,
+  });
+  const expected = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(SEED_PRIVATE_CLAIM_REVIEW_SESSION),
+      sessionAuthority.toBuffer(),
+      claimCase.toBuffer(),
+      Buffer.from(sessionId),
+    ],
+    PRIVATE_CLAIM_REVIEW_PROGRAM_ID,
+  )[0];
+
+  assert.equal(derived.toBase58(), expected.toBase58());
+  assert.throws(
+    () => derivePrivateClaimReviewSessionPda({ sessionAuthority, claimCase, sessionId: "" }),
+    /Session ID is required/,
+  );
+  assert.throws(
+    () => derivePrivateClaimReviewSessionPda({ sessionAuthority, claimCase, sessionId: "x".repeat(65) }),
+    /64 bytes or fewer/,
+  );
+});
+
+test("MagicBlock receipt lookup rejects invalid addresses and non-session accounts", async () => {
+  const invalidResult = await loadPrivateClaimReviewReceipt({} as Connection, "not a public key");
+  assert.equal(invalidResult.kind, "invalid-address");
+
+  const wrongOwnerConnection = {
+    getAccountInfo: async () => ({
+      data: Buffer.from([65, 251, 196, 172, 246, 214, 222, 202]),
+      executable: false,
+      lamports: 1,
+      owner: SystemProgram.programId,
+      rentEpoch: 0,
+    }),
+  } as unknown as Connection;
+  const wrongOwnerResult = await loadPrivateClaimReviewReceipt(
+    wrongOwnerConnection,
+    Keypair.generate().publicKey,
+  );
+  assert.equal(wrongOwnerResult.kind, "wrong-owner");
+
+  const wrongTypeConnection = {
+    getAccountInfo: async () => ({
+      data: Buffer.from([1, 2, 3, 4, 5, 6, 7, 8]),
+      executable: false,
+      lamports: 1,
+      owner: PRIVATE_CLAIM_REVIEW_PROGRAM_ID,
+      rentEpoch: 0,
+    }),
+  } as unknown as Connection;
+  const wrongTypeResult = await loadPrivateClaimReviewReceipt(
+    wrongTypeConnection,
+    Keypair.generate().publicKey,
+  );
+  assert.equal(wrongTypeResult.kind, "wrong-account-type");
 });

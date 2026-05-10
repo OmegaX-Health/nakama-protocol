@@ -5,9 +5,9 @@ import type { Metadata } from "next";
 import { MagicBlockClaimRoomWorkbench } from "@/components/magicblock-claim-room-workbench";
 
 export const metadata: Metadata = {
-  title: "MagicBlock Claim Room | OmegaX Protocol",
+  title: "MagicBlock Receipt Verifier | OmegaX Protocol",
   description:
-    "A devnet-only MagicBlock private-review demo surface for OmegaX Protect claim receipts.",
+    "A read-only MagicBlock private-review receipt verifier for public-safe OmegaX Protect claim review metadata.",
 };
 
 export default function MagicBlockClaimRoomPage() {

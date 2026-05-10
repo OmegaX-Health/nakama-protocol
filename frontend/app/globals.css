@@ -3418,6 +3418,272 @@
     line-height: 1.62;
   }
 
+  .claim-room-verifier-card {
+    padding: 1.25rem;
+  }
+
+  .claim-room-verifier-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(21rem, 0.72fr);
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .claim-room-verifier-controls {
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .claim-room-lookup-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: end;
+  }
+
+  .claim-room-field {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .claim-room-input {
+    min-height: 2.85rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 0.76rem;
+  }
+
+  .claim-room-lookup-button,
+  .claim-room-derive-button {
+    min-width: max-content;
+  }
+
+  .claim-room-lookup-button:disabled,
+  .claim-room-derive-button:disabled {
+    pointer-events: none;
+    opacity: 0.48;
+  }
+
+  .claim-room-derive-panel {
+    border: 1px solid color-mix(in oklab, var(--border) 54%, transparent);
+    border-radius: 1rem;
+    background: color-mix(in oklab, var(--surface-elevated) 40%, transparent);
+    padding: 0.85rem;
+  }
+
+  .claim-room-derive-panel summary {
+    cursor: pointer;
+    color: var(--foreground);
+    font-size: 0.78rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .claim-room-derive-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+  }
+
+  .claim-room-field-wide,
+  .claim-room-derive-button {
+    grid-column: 1 / -1;
+  }
+
+  .claim-room-helper-copy {
+    margin-top: 0.7rem;
+    color: var(--muted-foreground);
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+
+  .claim-room-result-panel {
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    min-width: 0;
+    min-height: 100%;
+    padding: 1rem;
+    border: 1px solid color-mix(in oklab, var(--border) 56%, transparent);
+    border-radius: 1.15rem;
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-elevated) 88%, white 12%), color-mix(in oklab, var(--surface) 96%, transparent));
+  }
+
+  .claim-room-result-panel p {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.86rem;
+    line-height: 1.55;
+  }
+
+  .claim-room-result-panel-error {
+    border-color: color-mix(in oklab, var(--danger) 26%, var(--border));
+    background: color-mix(in oklab, var(--danger) 5%, var(--surface-elevated));
+  }
+
+  .claim-room-result-panel-found {
+    border-color: color-mix(in oklab, var(--accent) 28%, var(--border));
+  }
+
+  .claim-room-result-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .claim-room-result-title {
+    margin: 0.2rem 0 0;
+    color: var(--foreground);
+    font-size: 1.05rem;
+    font-weight: 760;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .claim-room-result-icon,
+  .claim-room-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 999px;
+  }
+
+  .claim-room-result-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+    color: var(--accent);
+    background: color-mix(in oklab, var(--accent) 10%, transparent);
+  }
+
+  .claim-room-status-badge {
+    min-height: 2rem;
+    padding: 0.42rem 0.7rem;
+    border: 1px solid color-mix(in oklab, var(--accent) 32%, var(--border));
+    background: color-mix(in oklab, var(--accent) 10%, var(--surface-elevated));
+    color: color-mix(in oklab, var(--accent) 70%, var(--foreground));
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .claim-room-status-failed,
+  .claim-room-status-escalated {
+    border-color: color-mix(in oklab, var(--danger) 28%, var(--border));
+    background: color-mix(in oklab, var(--danger) 8%, var(--surface-elevated));
+    color: color-mix(in oklab, var(--danger) 74%, var(--foreground));
+  }
+
+  .claim-room-status-opened,
+  .claim-room-status-delegated,
+  .claim-room-status-needs_more_info,
+  .claim-room-status-unknown {
+    border-color: color-mix(in oklab, var(--warning) 30%, var(--border));
+    background: color-mix(in oklab, var(--warning) 8%, var(--surface-elevated));
+    color: color-mix(in oklab, var(--warning) 78%, var(--foreground));
+  }
+
+  .claim-room-explorer-link {
+    display: inline-flex;
+    width: fit-content;
+    color: var(--foreground);
+    font-size: 0.72rem;
+    font-weight: 760;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .claim-room-explorer-link:hover,
+  .claim-room-explorer-link:focus-visible {
+    color: var(--accent);
+  }
+
+  .claim-room-result-section {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .claim-room-result-section h4 {
+    margin: 0;
+    color: var(--muted-foreground);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .claim-room-result-rows,
+  .claim-room-result-minirows {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .claim-room-result-row,
+  .claim-room-minirow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.9rem;
+    min-width: 0;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 35%, transparent);
+  }
+
+  .claim-room-result-row span,
+  .claim-room-minirow span {
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+  }
+
+  .claim-room-result-row strong,
+  .claim-room-minirow strong {
+    min-width: 0;
+    color: var(--foreground);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  .claim-room-proof-list {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .claim-room-proof-list li {
+    position: relative;
+    padding-left: 1rem;
+    color: var(--muted-foreground);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+
+  .claim-room-proof-list li::before {
+    content: "";
+    position: absolute;
+    top: 0.58em;
+    left: 0;
+    width: 0.36rem;
+    height: 0.36rem;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
   .governance-queue-skeleton,
   .governance-queue-skeleton-list,
   .governance-queue-skeleton-table {
@@ -9368,6 +9634,10 @@
   }
 
   @media (max-width: 899px) {
+    .claim-room-verifier-grid {
+      grid-template-columns: 1fr;
+    }
+
     .claim-room-flow-list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -9416,6 +9686,37 @@
   }
 
   @media (max-width: 767px) {
+    .claim-room-verifier-card {
+      padding: 0.8rem;
+    }
+
+    .claim-room-lookup-form,
+    .claim-room-derive-form {
+      grid-template-columns: 1fr;
+    }
+
+    .claim-room-lookup-button,
+    .claim-room-derive-button {
+      width: 100%;
+    }
+
+    .claim-room-result-head,
+    .claim-room-result-row,
+    .claim-room-minirow {
+      align-items: start;
+    }
+
+    .claim-room-result-row,
+    .claim-room-minirow {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .claim-room-result-row strong,
+    .claim-room-minirow strong {
+      text-align: left;
+    }
+
     .claim-room-posture-badge {
       width: 100%;
       min-height: 2.75rem;
