@@ -595,7 +595,7 @@ test("adversarial matrix owns all live instructions through the surface manifest
   assert.deepEqual(duplicateOwnedInstructions(), []);
   assert.deepEqual(blankInstructionExceptionReasons(), []);
   assert.deepEqual(missing, []);
-  assert.equal(live.length, 70);
+  assert.equal(live.length, 62);
 });
 
 test("money and control paths include adversarial signer and account-binding probes", () => {

@@ -66,6 +66,8 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
     instructions: [
       "create_reserve_domain",
       "create_domain_asset_vault",
+      "configure_reserve_asset_rail",
+      "publish_reserve_asset_rail_price",
     ],
   },
   bootstrap_to_self_serve_plan_journey: {
