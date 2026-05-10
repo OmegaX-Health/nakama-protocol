@@ -104,6 +104,16 @@ test("review registry initialization is anchored to the program upgrade authorit
 });
 
 test("review session PDA seeds bind session authority and claim case", () => {
+  assert.match(programSource, /fn require_canonical_session_id\(/);
+  assert.match(programSource, /NonCanonicalSessionId/);
+  assert.match(
+    programSource,
+    /pub fn open_review_session[\s\S]+require_canonical_session_id\(&args\.session_id\)\?/,
+  );
+  assert.match(
+    programSource,
+    /pub fn delegate_review_session[\s\S]+require_canonical_session_id\(&args\.session_id\)\?/,
+  );
   assert.match(
     programSource,
     /seeds = \[SEED_REVIEW_SESSION, payer\.key\(\)\.as_ref\(\), args\.claim_case\.as_ref\(\), args\.session_id\.as_bytes\(\)\]/,
@@ -208,6 +218,10 @@ test("MagicBlock review session PDA derivation uses the public program seeds", (
   assert.throws(
     () => derivePrivateClaimReviewSessionPda({ sessionAuthority, claimCase, sessionId: "" }),
     /Session ID is required/,
+  );
+  assert.throws(
+    () => derivePrivateClaimReviewSessionPda({ sessionAuthority, claimCase, sessionId: " claim-protect-001-review " }),
+    /leading or trailing whitespace/,
   );
   assert.throws(
     () => derivePrivateClaimReviewSessionPda({ sessionAuthority, claimCase, sessionId: "x".repeat(65) }),

@@ -13611,6 +13611,16 @@
       "code": 6112,
       "name": "DirectClaimReserveUnsupported",
       "msg": "Direct claim reserves require linked obligation settlement"
+    },
+    {
+      "code": 6113,
+      "name": "LiquidityPoolInactive",
+      "msg": "Liquidity pool is inactive"
+    },
+    {
+      "code": 6114,
+      "name": "AllocationPositionInactive",
+      "msg": "Allocation position is inactive or deallocation-only"
     }
   ],
   "types": [

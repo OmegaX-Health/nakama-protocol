@@ -135,6 +135,9 @@ pub(crate) fn allocate_capital(
         &ctx.accounts.protocol_governance,
         &ctx.accounts.liquidity_pool,
     )?;
+    require_liquidity_pool_active(&ctx.accounts.liquidity_pool)?;
+    require_capital_class_active(&ctx.accounts.capital_class)?;
+    require_allocation_position_allocatable(&ctx.accounts.allocation_position)?;
 
     let amount = args.amount;
     require_positive_amount(amount)?;

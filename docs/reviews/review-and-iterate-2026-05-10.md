@@ -4,6 +4,10 @@ Date: May 10, 2026
 
 Reviewed HEAD: `148018e4cd85`
 
+Follow-up status: the code findings below were patched on May 11, 2026 in the
+release-gate follow-up. The historical review remains here to preserve the
+audit trail.
+
 This is the public-safe copy of the local review-and-iterate pass. The local
 `.superstack/` build-context and HTML artifact were refreshed for operator
 handoff, but that directory is intentionally blocked by the public hygiene gate
@@ -16,19 +20,20 @@ health-plan domain-control gap, membership-seat writability mismatch, direct
 claim accounting bug, and private claim-review QEDGen wrapper drift are closed
 or materially improved.
 
-It is not mainnet-ready yet. The remaining blocker is lifecycle enforcement on
-fresh capital allocations: an authorized allocator can still increase exposure
-after an allocation position has been marked inactive or deallocation-only.
+At review time it was not mainnet-ready because allocation lifecycle enforcement
+was missing on fresh capital allocations. The follow-up patch now blocks fresh
+allocation into inactive or deallocation-only allocation positions, inactive
+liquidity pools, and inactive capital classes.
 
 ## Scorecard
 
 | Dimension | Score | Evidence |
 | --- | --- | --- |
-| Security | `B-` | previous high-risk authorization and settlement-accounting issues are fixed, but allocation lifecycle freeze controls are not enforced by `allocate_capital` |
-| Quality | `B+` | public gates, generated artifacts, and wrapper tests are strong; remaining drag is seed canonicalization and proof-completeness scope |
-| Mainnet readiness | `No` | requires allocation lifecycle fix plus final localnet release-candidate evidence |
+| Security | `B` after follow-up | previous high-risk authorization and settlement-accounting issues are fixed; allocation lifecycle and mainnet bootstrap guard bypasses are now patched |
+| Quality | `B+` after follow-up | generated artifacts, wrapper tests, and session ID canonicalization are aligned; formal lanes are documented as coverage/spec hygiene unless proof bodies are complete |
+| Mainnet readiness | `No` | still requires full localnet release-candidate evidence and production operator sign-off before mainnet |
 
-## Current findings
+## Findings and follow-up status
 
 ### Medium: allocation lifecycle controls are bypassable
 
@@ -58,8 +63,9 @@ require!(
 );
 ```
 
-Add regression coverage for inactive allocation positions and deallocation-only
-allocation positions before mutation.
+Follow-up: fixed. `allocate_capital` now calls lifecycle guards before mutation,
+with Rust unit coverage and a security regression that checks the guard order
+and IDL-exposed errors.
 
 ### Low: private review session ID canonicalization diverges
 
@@ -81,7 +87,9 @@ Recommended fix:
 Pick one canonical rule. Prefer rejecting leading/trailing whitespace on-chain
 in `open_review_session` and `delegate_review_session`, then keep frontend trim
 as input normalization. If whitespace is intentionally allowed, remove the
-frontend trim and derive from raw bytes everywhere.
+Follow-up: fixed. The adjunct program now rejects non-canonical session IDs
+with leading or trailing whitespace, and the frontend PDA helper rejects the
+same input before derivation.
 
 ### Low: formal proof completeness should not be overclaimed
 
@@ -95,9 +103,22 @@ complete formal proof package:
 
 Recommended fix:
 
-Either describe those artifacts as scaffold/coverage gates only, or fill and
-gate the missing theorem and non-mechanical-effect bodies before claiming formal
-proof coverage for mainnet sign-off.
+Follow-up: fixed by scoping. The README now states that the current QEDGen lane
+is coverage/spec hygiene unless concrete proof bodies are committed, and that
+generated theorem stubs or non-mechanical-effect placeholders are not mainnet
+formal-proof sign-off.
+
+### High: mainnet bootstrap guard override bypass
+
+Follow-up audit found that `OMEGAX_LIVE_CLUSTER_OVERRIDE=devnet` could make the
+bootstrap guard treat a literal mainnet RPC URL as non-mainnet. That skipped the
+mainnet distinct-role hard fail.
+
+Follow-up: fixed. Mainnet detection now remains load-bearing when the resolved
+RPC URL is mainnet-like, regardless of a devnet/localnet cluster override.
+Private mainnet-like rehearsals must use the documented break-glass override and
+emit the release-evidence warning. The bypass regression was flipped into a
+rejection test.
 
 ## Closed since the previous pass
 

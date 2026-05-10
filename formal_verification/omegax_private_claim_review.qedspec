@@ -82,6 +82,7 @@ type Error
   | EmptySessionId
   | SessionIdTooLong
   | SessionIdMismatch
+  | NonCanonicalSessionId
   | InvalidRegistryAuthority
   | InvalidSessionAuthority
   | InvalidPaymentAttestor

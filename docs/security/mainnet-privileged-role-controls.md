@@ -49,7 +49,7 @@ Three flags govern the bootstrap-script guards:
 |------|---------|-------------|
 | `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1` | Refuse a config where any two operational roles resolve to the same pubkey | **Always** for mainnet bootstraps (now required by the guard, not optional) |
 | `OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1` | Bypass the mainnet hard-fail and allow privileged roles to default to the governance signer | Only for documented rehearsal runs or genuine emergency recovery (see §6); the override **must** be recorded in the release-candidate evidence template |
-| `OMEGAX_LIVE_CLUSTER_OVERRIDE` | Force the bootstrap to treat the target cluster as `devnet` even though the RPC URL looks like mainnet | Only when running an isolated rehearsal against a private mainnet-beta-like cluster; never in production |
+| `OMEGAX_LIVE_CLUSTER_OVERRIDE` | Label a non-mainnet rehearsal as `devnet` or `localnet`, or explicitly force `mainnet` handling | This does **not** bypass a mainnet-looking RPC URL. Use documented break-glass for private mainnet-like rehearsals; never use it to weaken production guards |
 
 Every break-glass usage **must** be logged in the corresponding [release-candidate evidence document](../operations/release-candidate-evidence-template.md) §8 (External audit / bug-bounty posture). An undocumented break-glass run is a release blocker, not an accepted risk.
 
@@ -59,7 +59,7 @@ Every break-glass usage **must** be logged in the corresponding [release-candida
 
 The guard fires when **all** of these are true:
 
-1. the resolved RPC URL points at a mainnet endpoint (`*.mainnet-beta.solana.com`, `mainnet.helius-rpc.com`, `mainnet.metaplex.com`, anything containing `mainnet`), **or** the operator explicitly set `OMEGAX_LIVE_CLUSTER_OVERRIDE=mainnet`
+1. the resolved RPC URL points at a mainnet endpoint (`*.mainnet-beta.solana.com`, `mainnet.helius-rpc.com`, `mainnet.metaplex.com`, anything containing `mainnet`, or any custom URL that is not clearly devnet/testnet/localnet), **or** the operator explicitly set `OMEGAX_LIVE_CLUSTER_OVERRIDE=mainnet`
 2. `OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1` is **not** set
 
 In that combination the loader requires:
@@ -68,6 +68,8 @@ In that combination the loader requires:
 - explicit values for every operational role: `OMEGAX_LIVE_RESERVE_DOMAIN_ADMIN`, `OMEGAX_LIVE_SPONSOR_WALLET`, `OMEGAX_LIVE_SPONSOR_OPERATOR_WALLET`, `OMEGAX_LIVE_CLAIMS_OPERATOR_WALLET`, `OMEGAX_LIVE_POOL_CURATOR_WALLET`, `OMEGAX_LIVE_POOL_ALLOCATOR_WALLET`, `OMEGAX_LIVE_POOL_SENTINEL_WALLET` — failure mode: each missing var listed in the error so the operator can fix in one pass
 
 When `OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1` is set, the loader emits a loud `[bootstrap] BREAK-GLASS …` warning to stderr at config-load time and proceeds. The warning is the audit trail.
+
+`OMEGAX_LIVE_CLUSTER_OVERRIDE=devnet` or `localnet` only affects non-mainnet targets. It cannot downgrade an actual mainnet RPC URL. Private rehearsals against a mainnet-like/custom RPC must use break-glass and record the override in release-candidate evidence.
 
 ## 5. Role rotation
 

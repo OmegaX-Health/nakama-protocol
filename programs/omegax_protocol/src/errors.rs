@@ -232,4 +232,8 @@ pub enum OmegaXProtocolError {
     CapitalClassInactive,
     #[msg("Direct claim reserves require linked obligation settlement")]
     DirectClaimReserveUnsupported,
+    #[msg("Liquidity pool is inactive")]
+    LiquidityPoolInactive,
+    #[msg("Allocation position is inactive or deallocation-only")]
+    AllocationPositionInactive,
 }

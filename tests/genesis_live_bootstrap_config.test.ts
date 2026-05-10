@@ -278,17 +278,44 @@ test("Mainnet bootstrap break-glass override bypasses distinct-key validation wh
   assert.equal(config.roles.claimsOperator, GOVERNANCE);
 });
 
-test("OMEGAX_LIVE_CLUSTER_OVERRIDE=devnet bypasses the mainnet guard even on a mainnet RPC URL", () => {
-  // Operator running an isolated rehearsal against a private mainnet-beta-
-  // like cluster can opt out via the cluster override. The older opt-in
-  // distinct-keys check still fires only when its flag is set, so this
-  // call must succeed without per-role env vars.
-  const config = loadGenesisLiveBootstrapConfig({
-    governanceAuthority: GOVERNANCE,
-    env: {
-      ...baseMainnetEnv(),
-      OMEGAX_LIVE_CLUSTER_OVERRIDE: "devnet",
-    },
-  });
-  assert.equal(config.roles.sponsor, GOVERNANCE);
+test("OMEGAX_LIVE_CLUSTER_OVERRIDE=devnet cannot bypass the mainnet RPC guard", () => {
+  assert.throws(
+    () => loadGenesisLiveBootstrapConfig({
+      governanceAuthority: GOVERNANCE,
+      env: {
+        ...baseMainnetEnv(),
+        OMEGAX_LIVE_CLUSTER_OVERRIDE: "devnet",
+      },
+    }),
+    /Mainnet bootstrap blocked.*OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1 is required/,
+  );
+});
+
+test("Private mainnet-like rehearsals require the documented break-glass override", () => {
+  const originalWrite = process.stderr.write.bind(process.stderr);
+  let captured = "";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (process.stderr as any).write = (chunk: any) => {
+    captured += String(chunk);
+    return true;
+  };
+
+  try {
+    const config = loadGenesisLiveBootstrapConfig({
+      governanceAuthority: GOVERNANCE,
+      env: {
+        ...baseMainnetEnv(),
+        SOLANA_RPC_URL: "https://rpc.omegax.health/solana",
+        OMEGAX_LIVE_CLUSTER_OVERRIDE: "devnet",
+        OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET: "1",
+      },
+    });
+    assert.equal(config.launchProfile.network, "mainnet-beta");
+    assert.equal(config.roles.sponsor, GOVERNANCE);
+  } finally {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (process.stderr as any).write = originalWrite;
+  }
+
+  assert.match(captured, /BREAK-GLASS.*OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1 active/);
 });

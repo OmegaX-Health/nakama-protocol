@@ -55,6 +55,21 @@ pub(crate) fn require_capital_class_active(capital_class: &CapitalClass) -> Resu
     Ok(())
 }
 
+pub(crate) fn require_liquidity_pool_active(pool: &LiquidityPool) -> Result<()> {
+    require!(pool.active, OmegaXProtocolError::LiquidityPoolInactive);
+    Ok(())
+}
+
+pub(crate) fn require_allocation_position_allocatable(
+    allocation_position: &AllocationPosition,
+) -> Result<()> {
+    require!(
+        allocation_position.active && !allocation_position.deallocation_only,
+        OmegaXProtocolError::AllocationPositionInactive
+    );
+    Ok(())
+}
+
 pub(crate) fn require_positive_amount(amount: u64) -> Result<()> {
     require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
     Ok(())

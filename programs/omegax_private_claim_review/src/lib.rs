@@ -154,14 +154,7 @@ pub mod omegax_private_claim_review {
         ctx: Context<OpenReviewSession>,
         args: OpenReviewSessionArgs,
     ) -> Result<()> {
-        require!(
-            !args.session_id.trim().is_empty(),
-            PrivateClaimReviewError::EmptySessionId
-        );
-        require!(
-            args.session_id.len() <= MAX_SESSION_ID_LEN,
-            PrivateClaimReviewError::SessionIdTooLong
-        );
+        require_canonical_session_id(&args.session_id)?;
         require_not_default_pubkey(args.claim_case, PrivateClaimReviewError::InvalidClaimCase)?;
         require_not_default_pubkey(args.health_plan, PrivateClaimReviewError::InvalidHealthPlan)?;
         require_not_default_pubkey(
@@ -227,14 +220,7 @@ pub mod omegax_private_claim_review {
         ctx: Context<DelegateReviewSession>,
         args: DelegateReviewSessionArgs,
     ) -> Result<()> {
-        require!(
-            !args.session_id.trim().is_empty(),
-            PrivateClaimReviewError::EmptySessionId
-        );
-        require!(
-            args.session_id.len() <= MAX_SESSION_ID_LEN,
-            PrivateClaimReviewError::SessionIdTooLong
-        );
+        require_canonical_session_id(&args.session_id)?;
 
         let now_ts = Clock::get()?.unix_timestamp;
         let mut data = ctx.accounts.review_session.try_borrow_mut_data()?;
@@ -978,6 +964,8 @@ pub enum PrivateClaimReviewError {
     TerminalReviewCannotFail,
     #[msg("signer is not the private review program upgrade authority")]
     UnauthorizedRegistryInitializer,
+    #[msg("review session id must not have leading or trailing whitespace")]
+    NonCanonicalSessionId,
 }
 
 fn is_zero_hash(hash: &[u8; 32]) -> bool {
@@ -992,6 +980,22 @@ fn require_not_default_pubkey(pubkey: Pubkey, error: PrivateClaimReviewError) ->
     if is_default_pubkey(pubkey) {
         return Err(error.into());
     }
+    Ok(())
+}
+
+fn require_canonical_session_id(session_id: &str) -> Result<()> {
+    require!(
+        !session_id.is_empty(),
+        PrivateClaimReviewError::EmptySessionId
+    );
+    require!(
+        session_id.len() <= MAX_SESSION_ID_LEN,
+        PrivateClaimReviewError::SessionIdTooLong
+    );
+    require!(
+        session_id.trim() == session_id,
+        PrivateClaimReviewError::NonCanonicalSessionId
+    );
     Ok(())
 }
 

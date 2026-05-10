@@ -428,19 +428,26 @@ export function loadGenesisLiveBootstrapConfig(params: {
   // that into a hard-fail: any bootstrap that resolves to a mainnet RPC URL
   // (or sets OMEGAX_LIVE_CLUSTER_OVERRIDE=mainnet) must (a) set the distinct-
   // keys flag explicitly, and (b) provide explicit env vars for every
-  // operational role so none default to the governance signer. The break-
-  // glass override OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1 exists for
-  // documented rehearsal or emergency recovery and emits a loud warning to
-  // stderr so it appears in the release-candidate evidence trail.
-  const rpcUrlForGuard =
+  // operational role so none default to the governance signer. Devnet/localnet
+  // cluster overrides are deliberately not allowed to mask an actual mainnet
+  // RPC URL. The break-glass override OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1
+  // exists for documented rehearsal or emergency recovery and emits a loud
+  // warning to stderr so it appears in the release-candidate evidence trail.
+  const clusterOverride = optionalEnv(env, "OMEGAX_LIVE_CLUSTER_OVERRIDE")?.toLowerCase() ?? null;
+  const defaultRpcUrl =
+    clusterOverride === "devnet"
+      ? "https://api.devnet.solana.com"
+      : clusterOverride === "localnet"
+        ? "http://127.0.0.1:8899"
+        : "https://api.mainnet-beta.solana.com";
+  const resolvedRpcUrl =
     optionalEnv(env, "SOLANA_RPC_URL")
     ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL")
     ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_RPC_URL")
-    ?? "https://api.mainnet-beta.solana.com";
-  const clusterOverride = optionalEnv(env, "OMEGAX_LIVE_CLUSTER_OVERRIDE")?.toLowerCase() ?? null;
+    ?? defaultRpcUrl;
   const targetingMainnet =
     clusterOverride === "mainnet"
-    || (clusterOverride !== "devnet" && clusterOverride !== "localnet" && isMainnetCluster(rpcUrlForGuard));
+    || isMainnetCluster(resolvedRpcUrl);
   const breakGlass = env.OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET === "1";
   const launchProfile = resolveGenesisPhase0LaunchProfile({
     network: targetingMainnet ? "mainnet-beta" : "devnet",
@@ -604,11 +611,7 @@ export function loadGenesisLiveBootstrapConfig(params: {
   }
 
   return {
-    rpcUrl:
-      optionalEnv(env, "SOLANA_RPC_URL")
-      ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL")
-      ?? optionalEnv(env, "NEXT_PUBLIC_SOLANA_RPC_URL")
-      ?? "https://api.mainnet-beta.solana.com",
+    rpcUrl: resolvedRpcUrl,
     launchProfile,
     governanceAuthority,
     governanceConfigAddress: optionalPubkey(

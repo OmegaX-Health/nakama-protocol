@@ -55,6 +55,44 @@ fn inactive_capital_class_guard_blocks_fresh_deposits() {
 }
 
 #[test]
+fn inactive_liquidity_pool_guard_blocks_fresh_allocations() {
+    let mut pool = sample_liquidity_pool(Pubkey::new_unique(), Pubkey::new_unique());
+    assert!(require_liquidity_pool_active(&pool).is_ok());
+
+    pool.active = false;
+    assert_eq!(
+        require_liquidity_pool_active(&pool).unwrap_err(),
+        OmegaXProtocolError::LiquidityPoolInactive.into()
+    );
+}
+
+#[test]
+fn allocation_position_guard_blocks_inactive_or_deallocation_only_allocations() {
+    let mut allocation = sample_allocation_position(
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+    );
+    assert!(require_allocation_position_allocatable(&allocation).is_ok());
+
+    allocation.active = false;
+    assert_eq!(
+        require_allocation_position_allocatable(&allocation).unwrap_err(),
+        OmegaXProtocolError::AllocationPositionInactive.into()
+    );
+
+    allocation.active = true;
+    allocation.deallocation_only = true;
+    assert_eq!(
+        require_allocation_position_allocatable(&allocation).unwrap_err(),
+        OmegaXProtocolError::AllocationPositionInactive.into()
+    );
+}
+
+#[test]
 fn realized_pnl_loss_debit_uses_checked_signed_math() {
     assert_eq!(debit_realized_pnl_for_loss(100, 40).unwrap(), 60);
     assert_eq!(debit_realized_pnl_for_loss(-10, 5).unwrap(), -15);

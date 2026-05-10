@@ -110,7 +110,11 @@ export function derivePrivateClaimReviewSessionPda(params: {
   sessionId: string;
   programId?: string | PublicKey;
 }): PublicKey {
-  const sessionIdBytes = TEXT_ENCODER.encode(params.sessionId.trim());
+  const canonicalSessionId = params.sessionId.trim();
+  if (canonicalSessionId !== params.sessionId) {
+    throw new Error("Session ID must not have leading or trailing whitespace.");
+  }
+  const sessionIdBytes = TEXT_ENCODER.encode(canonicalSessionId);
   if (sessionIdBytes.length === 0) {
     throw new Error("Session ID is required.");
   }
