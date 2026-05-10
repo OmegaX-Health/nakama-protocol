@@ -269,7 +269,7 @@ pub mod omegaxprotocol {
 // The handler impl blocks live next to the (always-regenerated)
 // guard module in `instructions/<name>.rs`.
 use crate::state::*;
-use anchor_spl::token::{Token, TokenAccount};
+use anchor_spl::token::Token;
 
 #[derive(Accounts)]
 pub struct InitializeProtocolGovernance<'info> {

@@ -7,6 +7,8 @@ namespace OmegaxProtocol
 open QEDGen.Solana
 open QEDGen.Solana.IndexedState
 
+set_option linter.unusedVariables false
+
 abbrev BASIS_POINTS_DENOMINATOR : Nat := 10000
 abbrev MAX_CONFIGURED_FEE_BPS : Nat := 9999
 abbrev MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS : Nat := 50

@@ -349,6 +349,12 @@ function postprocessLeanSpec() {
 
   let text = readFileSync(LEAN_SPEC, 'utf8');
   text = text.replace(/s\.args\./g, 'args.');
+  if (!text.includes('set_option linter.unusedVariables false')) {
+    text = text.replace(
+      /(open QEDGen\.Solana\.IndexedState\n)/,
+      '$1\nset_option linter.unusedVariables false\n',
+    );
+  }
 
   const stateMatch = text.match(/structure State where\n([\s\S]*?)\n\s*status : Status/);
   const stateFields = stateMatch

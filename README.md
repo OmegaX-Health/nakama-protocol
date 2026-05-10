@@ -95,7 +95,7 @@ This patch hardens the first publishable canonical OmegaX health-capital-markets
 
 - reserve inflows now require checked SPL token transfers into the configured domain vault token account before ledgers increase
 - redemption payouts are derived on-chain from queued shares and NAV rather than caller-supplied payout amounts
-- emergency pause now covers reserve-moving exits, settlement paths, and new commitment deposits
+- emergency pause now covers reserve-moving exits and settlement paths; Founder reservations remain off-chain Squads custody until activation/posting
 - settlement and redemption fee carve-outs must leave a positive net recipient payout; oracle-fee accrual is bound to the matching claim attestation
 - fee accrual leaves reserve ledgers and LP TVL net of fee claims while `DomainAssetVault.total_assets` tracks physical custody until SPL fee withdrawal
 - optional mutable reserve ledgers are bound to the expected series, class, allocation, funding line, domain, and mint before mutation
