@@ -28,6 +28,7 @@ If you are an external builder, start with the public docs site before diving in
 
 ### Reviews
 
+- [Review and Iterate Readiness Review (May 10, 2026)](./reviews/review-and-iterate-2026-05-10.md)
 - [Solana Public Readiness Review (March 10, 2026)](./reviews/solana-public-readiness-review.md)
 
 ### Reference
@@ -84,7 +85,8 @@ If you are an external builder, start with the public docs site before diving in
 - Use [Decentralized Coverage Claims](./architecture/decentralized-coverage-claims.md) when you need the signer model, claim roles, and payout-path rules for reviewed coverage claims.
 - Use [Genesis Protect V1 Curve Launch Plan](./architecture/genesis-protect-v1-curve-launch.md) when deciding what to ship first on mainnet after the quote-curve, sidecar, prediction-market, and health-bond actuarial review.
 - Use [Protocol Console Functional Specification](./architecture/protocol-console-functional-spec.md) when you need the target-state screen-by-screen functional brief for the public protocol console.
-- Use [Solana Public Readiness Review](./reviews/solana-public-readiness-review.md) for the scored audit, blockers, and cleanup backlog.
+- Use [Review and Iterate Readiness Review](./reviews/review-and-iterate-2026-05-10.md) for the latest scored audit, remaining blockers, and validation evidence.
+- Use [Solana Public Readiness Review](./reviews/solana-public-readiness-review.md) for the historical March 2026 scored audit and cleanup backlog.
 - Use [Liquidity Pool Metadata Schema](./reference/liquidity-pool-metadata-schema.md) when integrating LP-facing off-chain APY metadata for a `LiquidityPool`.
 - Use [Protocol Surface Audit](./testing/protocol-surface-audit.md) when you need the heavier localnet proof for canonical instruction ownership, scenario coverage, and release-candidate sign-off.
 - Start with [Operator Runbooks — Index](./operations/runbooks.md) when you need to find the right runbook for a role × environment without reading every operations doc.
