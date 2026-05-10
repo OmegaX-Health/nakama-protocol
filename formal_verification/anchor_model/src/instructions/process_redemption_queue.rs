@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{ProcessRedemptionQueue, ProcessRedemptionQueueArgs};
 
 impl<'info> ProcessRedemptionQueue<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "process_redemption_queue", hash = "c50fb5c5d1beae52", spec_hash = "280a2aaf2538a760")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "process_redemption_queue", hash = "c50fb5c5d1beae52", spec_hash = "3c5c53c768a30b23")]
     #[inline(always)]
     pub fn handler(&mut self, args: ProcessRedemptionQueueArgs) -> Result<()> {
         guards::process_redemption_queue(self, args)?;

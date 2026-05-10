@@ -16,9 +16,7 @@ const { DEVNET_PROTOCOL_FIXTURE_STATE } =
 
 const {
   buildCreateDomainAssetVaultTx,
-  buildDepositCommitmentTx,
   buildDepositIntoCapitalClassTx,
-  buildRefundCommitmentTx,
   buildWithdrawProtocolFeeSplTx,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
 
@@ -26,7 +24,6 @@ const recentBlockhash = "11111111111111111111111111111111";
 const wallet = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[0]!.address;
 const recipient = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[1]!.address;
 const reserveDomain = DEVNET_PROTOCOL_FIXTURE_STATE.reserveDomains[0]!.address;
-const healthPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
 const pool = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools[0]!;
 const capitalClass = DEVNET_PROTOCOL_FIXTURE_STATE.capitalClasses.find((row) => row.liquidityPool === pool.address)
   ?? DEVNET_PROTOCOL_FIXTURE_STATE.capitalClasses[0]!;
@@ -73,33 +70,4 @@ test("[CSO-2026-04-29] custody builders reject non-classic token program ids", (
     /classic SPL Token program/,
   );
 
-  assert.throws(
-    () => buildDepositCommitmentTx({
-      depositor: wallet,
-      healthPlanAddress: healthPlan.address,
-      campaignId: "founder-travel30",
-      reserveDomainAddress: reserveDomain,
-      paymentAssetMint: pool.depositAssetMint,
-      sourceTokenAccountAddress: wallet,
-      beneficiary: recipient,
-      recentBlockhash,
-      tokenProgramId: SystemProgram.programId,
-    }),
-    /classic SPL Token program/,
-  );
-
-  assert.throws(
-    () => buildRefundCommitmentTx({
-      depositor: wallet,
-      healthPlanAddress: healthPlan.address,
-      campaignId: "founder-travel30",
-      reserveDomainAddress: reserveDomain,
-      paymentAssetMint: pool.depositAssetMint,
-      recipientTokenAccountAddress: recipient,
-      beneficiary: recipient,
-      recentBlockhash,
-      tokenProgramId: SystemProgram.programId,
-    }),
-    /classic SPL Token program/,
-  );
 });

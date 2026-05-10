@@ -56,14 +56,6 @@ All current public instructions remain present in [`programs/omegax_protocol/src
 | `record_premium_payment` | transfer premium tokens into the configured domain vault and record premium income in the reserve kernel |
 | `configure_reserve_asset_rail` | create or update an accepted reserve asset rail with role, waterfall priority, oracle source, freshness, confidence, haircut, and exposure controls |
 | `publish_reserve_asset_rail_price` | publish governance/oracle-approved reserve asset pricing used by mixed-reserve capacity and selected-asset payout checks; confidence must fit the rail threshold |
-| `create_commitment_campaign` | create a Founder-style pre-activation commitment campaign and its first payment rail |
-| `create_commitment_payment_rail` | add another accepted payment asset to the same commitment campaign without splitting campaign treasury accounting |
-| `deposit_commitment` | transfer committed tokens into the existing domain asset vault without increasing claims-paying reserve ledgers; blocked by the global emergency pause |
-| `activate_direct_premium_commitment` | move a same-mint pending commitment into premium reserve accounting |
-| `activate_treasury_credit_commitment` | legacy path to lock already posted stable capacity for a treasury-credit commitment |
-| `activate_waterfall_commitment` | activate a commitment into mixed-reserve accounting only when the payment asset rail has enabled reserve capacity |
-| `refund_commitment` | refund a still-pending commitment in the same token amount originally deposited; blocked by the global emergency pause |
-| `pause_commitment_campaign` | pause, cancel, close, or reactivate a campaign through plan/governance control |
 | `create_obligation` | create a canonical liability unit |
 | `reserve_obligation` | reserve liability against plan-side capital and optionally mirror a linked `ClaimCase` reserve balance |
 | `settle_obligation` | move an obligation into claimable, payable, settled, or canceled states and mirror linked protection-claim settlement state; settlement requires the selected payout asset's active, payout-enabled, fresh confidence-bounded `ReserveAssetRail` |
@@ -118,4 +110,4 @@ do not count as free claims-paying reserve.
 - The retired pre-rearchitecture product-typing field does not exist in the live surface.
 - Sponsor budgets and LP capital no longer share one overloaded root.
 - Reward and protection both reconcile through the same reserve kernel.
-- For implementation review, follow the facade delegation into `governance.rs`, `reserve_custody.rs`, `plans_membership.rs`, `funding_obligations/`, `commitments.rs`, `claims.rs`, `capital/`, `fees.rs`, or `oracle_schema.rs`.
+- For implementation review, follow the facade delegation into `governance.rs`, `reserve_custody.rs`, `plans_membership.rs`, `funding_obligations/`, `claims.rs`, `capital/`, `fees.rs`, or `oracle_schema.rs`.

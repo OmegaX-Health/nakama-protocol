@@ -188,26 +188,8 @@ pub enum OmegaXProtocolError {
     FeeVaultRequiredForConfiguredFee,
     #[msg("Oracle fee accrual requires a matching claim attestation account")]
     ClaimAttestationRequiredForOracleFee,
-    #[msg("Commitment campaign mode is invalid")]
-    InvalidCommitmentCampaignMode,
-    #[msg("Commitment campaign status is invalid")]
-    InvalidCommitmentCampaignStatus,
-    #[msg("Commitment campaign is not active")]
-    CommitmentCampaignInactive,
-    #[msg("Commitment campaign is not refundable yet")]
-    CommitmentNotRefundable,
-    #[msg("Commitment position is not pending")]
-    CommitmentPositionNotPending,
-    #[msg("Commitment terms hash mismatch")]
-    CommitmentTermsMismatch,
-    #[msg("Commitment cap exceeded")]
-    CommitmentCapExceeded,
-    #[msg("Commitment activation authority mismatch")]
-    CommitmentActivationAuthorityMismatch,
     #[msg("Stable coverage capacity is insufficient")]
     InsufficientStableCoverageCapacity,
-    #[msg("Treasury-credit commitments require distinct payment and coverage assets")]
-    TreasuryCreditAssetMismatch,
     #[msg("Reserve asset role is invalid")]
     InvalidReserveAssetRole,
     #[msg("Reserve asset oracle source is invalid")]
@@ -218,8 +200,6 @@ pub enum OmegaXProtocolError {
     ReserveDomainMismatch,
     #[msg("Reserve asset rail is inactive")]
     ReserveAssetRailInactive,
-    #[msg("Reserve asset rail does not allow deposits")]
-    ReserveAssetRailDepositDisabled,
     #[msg("Reserve asset rail does not allow claims payout")]
     ReserveAssetRailPayoutDisabled,
     #[msg("Reserve asset rail cannot count toward claims capacity")]
@@ -230,10 +210,6 @@ pub enum OmegaXProtocolError {
     ReserveAssetPriceInvalid,
     #[msg("Reserve asset oracle price confidence exceeds rail threshold")]
     ReserveAssetPriceConfidenceTooWide,
-    #[msg("Commitment payment rail mismatch")]
-    CommitmentPaymentRailMismatch,
-    #[msg("Commitment payment rail is inactive")]
-    CommitmentPaymentRailInactive,
     #[msg("Partial obligation lifecycle transitions are not supported")]
     PartialObligationTransitionUnsupported,
     #[msg("Invalid obligation delivery mode")]

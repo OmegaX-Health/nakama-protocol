@@ -6,7 +6,7 @@ Current posture after this implementation pass: no unauthenticated or attacker-r
 
 The remaining exploitable edge is operational rather than a newly observed vault-drain path: compromised governance/curator/operator keys, a bad bootstrap authority split, or a launch environment that does not match the evidence packet. Mistaken governance authority rotation is now materially reduced by a proposal/accept/cancel handoff, and the devnet operator drawer simulation has been rerun with the canonical governance signer; mainnet funding still depends on proving the intended multisig.
 
-What destroys trust fastest is a public commitment/reserve story that implies pending or haircut-adjusted assets are active claims-paying reserve. The code, docs, and UI copy now describe rail caps as optional commitment intake limits only; pending commitments remain separate from active cover and claims-paying reserve.
+What destroys trust fastest is a public reservation/reserve story that implies pending or haircut-adjusted assets are active claims-paying reserve. The code, docs, and UI copy now describe Founder reservations as off-chain Squads custody only; pending reservations remain separate from active cover and claims-paying reserve.
 
 What is probably fine now because current code and tests prove it: classic-SPL-only custody, fee-recipient binding, claim-recipient binding, selected-asset payout value bounds, direct claim settlement rejecting allocation scope, LP allocation settlement using allocation capacity rather than pretending it is funded custody, two-step governance authority transfer, on-chain FIFO redemption processing, frontend pre-sign review coverage, generated IDL/contract parity, and localnet adversarial money/control probes.
 
@@ -28,7 +28,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 | Claims | claim intake, evidence, attestation, settlement | Approved claim value and member payout | Member, operator, oracle, funding line, settlement recipient | Claimant binding, recipient lock, evidence lock, payout rail pricing | Direct claim settlement rejects LP allocation accounts. |
 | Obligations | reserve, release, settle, cancel | Reserved/payable/claimable obligations | Plan authority, claim operator, optional scoped accounts | Full-transition guards, outflow-required settlement, canonical optional PDA hardening | Linked claims require claim/member context. |
 | Capital and LP | deposits, allocation caps, redemption queue, impairments | LP capital, NAV, allocation ledgers | Pool curator/allocator, LP owner, queue processor | Pool binding for allocation-cap updates, canonical ledgers, LP recipient pinning, FIFO sequence enforcement | Partial processing does not advance the queue head. |
-| Founder commitments | campaign, payment rails, deposits, activation, refunds | Pending commitment custody and active reserve capacity | Depositor, activation authority, reserve rails | Pending not counted as reserve; same-asset waterfall docs/builders; refund only to depositor; per-rail intake limit with zero uncapped | No aggregate campaign cap or claims-reserve cap was added. |
+| Founder reservations | website/oracle-service reservation records | Off-chain Squads custody before activation | Buyer wallet, Squads operators, reservation service | Pending reservations do not count as reserve and require later activation/posting through normal reserve controls | The retired on-chain Founder commitment surface is no longer part of the active protocol program. |
 | Frontend builders | `frontend/lib/protocol.ts` | Serialized tx accounts and user signing intent | Wallet adapter and generated contract | 26/26 pre-sign review callsites covered; generated contract parity | Governance init builders now include program/programdata accounts. |
 | Release chain | IDL, generated contract, public gate, localnet matrix | Public protocol surface integrity | Maintainers, CI, local toolchain | `verify:public`, localnet e2e, QEDGen, Certora prereq checks, devnet operator drawer simulation | No mainnet send path was executed. |
 | Formal lanes | QEDGen, Certora Solana | Regression evidence | Local specs vs actual handler behavior | QEDGen passes with one accepted warning; Certora local prerequisites pass | Certora check submits no remote job. |
@@ -154,7 +154,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 
 ## 7. Hard Invariants
 
-1. Pending commitments never count as claims-paying reserve.
+1. Pending reservations never count as claims-paying reserve.
 2. Waterfall reserve activation books haircut-adjusted capacity, not the full token liability.
 3. Pending custody, treasury inventory, reserve capacity, and active cover are separate states.
 4. Every allocator/curator mutation binds the mutable account to the supplied pool before authorization.
@@ -212,7 +212,7 @@ Passed:
   - 19 passed.
   - Localnet surface manifest owns 70/70 live instructions.
   - Executable adversarial matrix: `68 blocked`, `0 unexpectedSuccess`, `0 inconclusive`.
-  - Commitment custody drill: 3 assets, 100 users per asset, 300 refunds, 27 blocked probes, 9 activation-mode checks.
+  - Historical commitment custody drill retired with the on-chain Founder commitment surface.
 - `npm run certora:solana:check`
   - Local prerequisites pass; no remote job submitted.
 - `npm run qedgen:check`
@@ -223,7 +223,7 @@ Passed:
   - Builder health: 16/16 attempted flows reached the program cleanly.
 - Focused tests:
   - Rust governance transfer and FIFO redemption unit coverage.
-  - Commitment intake capacity unit coverage for zero-uncapped and per-rail semantics.
+  - Founder reservation reserve treatment now lives in website/oracle-service tests; pending reservations never count as protocol reserve.
   - `tests/protocol_governance_builders.test.ts`
   - `tests/protocol_contract.test.ts`
 

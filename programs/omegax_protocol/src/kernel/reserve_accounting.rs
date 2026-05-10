@@ -37,6 +37,7 @@ pub(crate) fn book_inflow_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) ->
     recompute_sheet(sheet)
 }
 
+#[cfg(test)]
 pub(crate) fn book_restricted_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
     require!(
         sheet.free >= amount,

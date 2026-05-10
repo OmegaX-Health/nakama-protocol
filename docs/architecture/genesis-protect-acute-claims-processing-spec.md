@@ -410,7 +410,7 @@ following before any value leaves custody:
 | Oracle confidence | Price confidence must be ≤ `rail.max_confidence_bps` | Asset counted as zero capacity — cannot be selected |
 
 Approved fallback rails (where configured): PUSD, USDT, SOL, WBTC, WETH.
-The program **does not swap assets** and does not treat pending commitment custody as
+The program **does not swap assets** and does not treat pending reservation custody as
 claims-paying reserve until activation/posting rules have made that true.
 
 Other settlement mechanics:

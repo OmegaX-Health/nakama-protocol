@@ -19,9 +19,6 @@ open QEDGen.Solana
 -- `QEDGen.Solana.IndexedState.forall_update_pres` for per-account
 -- invariants in Map-backed specs.
 --
---   theorem abstract_state_progress_nonnegative_preserved_by_activate_direct_premium_commitment
---   theorem abstract_state_progress_nonnegative_preserved_by_activate_treasury_credit_commitment
---   theorem abstract_state_progress_nonnegative_preserved_by_activate_waterfall_commitment
 --   theorem abstract_state_progress_nonnegative_preserved_by_adjudicate_claim_case
 --   theorem abstract_state_progress_nonnegative_preserved_by_allocate_capital
 --   theorem abstract_state_progress_nonnegative_preserved_by_attach_claim_evidence_ref
@@ -33,8 +30,6 @@ open QEDGen.Solana
 --   theorem abstract_state_progress_nonnegative_preserved_by_configure_reserve_asset_rail
 --   theorem abstract_state_progress_nonnegative_preserved_by_create_allocation_position
 --   theorem abstract_state_progress_nonnegative_preserved_by_create_capital_class
---   theorem abstract_state_progress_nonnegative_preserved_by_create_commitment_campaign
---   theorem abstract_state_progress_nonnegative_preserved_by_create_commitment_payment_rail
 --   theorem abstract_state_progress_nonnegative_preserved_by_create_domain_asset_vault
 --   theorem abstract_state_progress_nonnegative_preserved_by_create_health_plan
 --   theorem abstract_state_progress_nonnegative_preserved_by_create_liquidity_pool
@@ -42,7 +37,6 @@ open QEDGen.Solana
 --   theorem abstract_state_progress_nonnegative_preserved_by_create_policy_series
 --   theorem abstract_state_progress_nonnegative_preserved_by_create_reserve_domain
 --   theorem abstract_state_progress_nonnegative_preserved_by_deallocate_capital
---   theorem abstract_state_progress_nonnegative_preserved_by_deposit_commitment
 --   theorem abstract_state_progress_nonnegative_preserved_by_deposit_into_capital_class
 --   theorem abstract_state_progress_nonnegative_preserved_by_fund_sponsor_budget
 --   theorem abstract_state_progress_nonnegative_preserved_by_init_pool_oracle_fee_vault
@@ -54,11 +48,9 @@ open QEDGen.Solana
 --   theorem abstract_state_progress_nonnegative_preserved_by_open_claim_case
 --   theorem abstract_state_progress_nonnegative_preserved_by_open_funding_line
 --   theorem abstract_state_progress_nonnegative_preserved_by_open_member_position
---   theorem abstract_state_progress_nonnegative_preserved_by_pause_commitment_campaign
 --   theorem abstract_state_progress_nonnegative_preserved_by_process_redemption_queue
 --   theorem abstract_state_progress_nonnegative_preserved_by_publish_reserve_asset_rail_price
 --   theorem abstract_state_progress_nonnegative_preserved_by_record_premium_payment
---   theorem abstract_state_progress_nonnegative_preserved_by_refund_commitment
 --   theorem abstract_state_progress_nonnegative_preserved_by_register_oracle
 --   theorem abstract_state_progress_nonnegative_preserved_by_register_outcome_schema
 --   theorem abstract_state_progress_nonnegative_preserved_by_release_reserve

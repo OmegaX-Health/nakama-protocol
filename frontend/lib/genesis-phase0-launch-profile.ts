@@ -15,7 +15,7 @@ export type GenesisPhase0LaunchProfile = {
   reserveDashboard: GenesisPhase0ReadSurfaceState;
   claimsDashboard: GenesisPhase0ReadSurfaceState;
   oracleDashboard: GenesisPhase0ReadSurfaceState;
-  commitmentsDashboard: GenesisPhase0ReadSurfaceState;
+  reservationsDashboard: GenesisPhase0ReadSurfaceState;
   operatorSettlementVisibility: GenesisPhase0ReadSurfaceState;
   rewardLaunch: GenesisPhase0SurfaceState;
   rwaPolicyLaunch: GenesisPhase0SurfaceState;
@@ -128,7 +128,7 @@ export function resolveGenesisPhase0LaunchProfile(params: {
     reserveDashboard: "read_only" as const,
     claimsDashboard: "read_only" as const,
     oracleDashboard: "read_only" as const,
-    commitmentsDashboard: "read_only" as const,
+    reservationsDashboard: "read_only" as const,
     operatorSettlementVisibility: "read_only" as const,
     rewardLaunch: executionClusterVerified
       ? productSurfaceState({ enabledFlag: GENESIS_PHASE0_REWARD_FLAG, env, mainnet })

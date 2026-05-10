@@ -135,7 +135,7 @@ function planSummary(
         reserves: config.launchProfile.reserveDashboard,
         claims: config.launchProfile.claimsDashboard,
         oracle: config.launchProfile.oracleDashboard,
-        commitments: config.launchProfile.commitmentsDashboard,
+        reservations: config.launchProfile.reservationsDashboard,
       },
       disabledSurfaces: config.launchProfile.disabledSurfaces,
       hiddenSurfaces: config.launchProfile.hiddenSurfaces,

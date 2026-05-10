@@ -41,7 +41,7 @@ test("Genesis Phase 0 launch profile keeps mainnet conservative by default", () 
 
   assert.equal(profile.lpDeposits, "live");
   assert.equal(profile.lpRedemptionRequests, "live");
-  assert.equal(profile.commitmentsDashboard, "read_only");
+  assert.equal(profile.reservationsDashboard, "read_only");
   assert.equal(profile.rewardLaunch, "disabled_preview");
   assert.equal(profile.rwaPolicyLaunch, "disabled_preview");
   assert.equal(profile.hybridLaunch, "disabled_preview");

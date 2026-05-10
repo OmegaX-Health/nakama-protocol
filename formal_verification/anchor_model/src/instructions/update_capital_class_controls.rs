@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{UpdateCapitalClassControls, UpdateCapitalClassControlsArgs};
 
 impl<'info> UpdateCapitalClassControls<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_capital_class_controls", hash = "0e0b974add8178cd", spec_hash = "72eb0d6ed93865d2")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_capital_class_controls", hash = "0e0b974add8178cd", spec_hash = "29366b893df0f50c")]
     #[inline(always)]
     pub fn handler(&mut self, args: UpdateCapitalClassControlsArgs) -> Result<()> {
         guards::update_capital_class_controls(self, args)?;

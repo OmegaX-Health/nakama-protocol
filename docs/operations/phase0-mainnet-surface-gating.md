@@ -2,7 +2,7 @@
 
 Phase 0 keeps the on-chain OmegaX program broad and permissioned, but narrows the public mainnet console and bootstrap paths to the conservative live surface.
 
-There is no on-chain `phase0` switch, no deleted instruction set, and no duplicated Founder checkout in this repository. The public console is the reserve, liability, LP, operator, and auditor surface. The consumer Founder commitment flow remains outside this repository in the OmegaX website and OmegaX Health protocol oracle service.
+There is no on-chain `phase0` switch and no duplicated Founder checkout in this repository. The public console is the reserve, liability, LP, operator, and auditor surface. The consumer Founder reservation flow remains outside this repository in the OmegaX website and OmegaX Health protocol oracle service.
 
 ## Mainnet Profile
 
@@ -12,7 +12,7 @@ Mainnet defaults:
 
 - LP deposit actions are live.
 - LP redemption requests are live.
-- Capital, reserve, claims, oracle, and commitment dashboards are read-only.
+- Capital, reserve, claims, and oracle dashboards are read-only.
 - Operator settlement visibility is read-only.
 - Rewards, RWA policy launch, hybrid launch, DAO fallback, and future launch choices render as disabled previews.
 - Capital admin and policy admin actions are hidden unless operator execution is explicitly enabled.
@@ -80,33 +80,34 @@ This makes USDC the preferred Genesis settlement rail while still allowing an
 approved fallback rail such as PUSD, USDT, SOL, WBTC, or WETH to pay a claim
 when the router selects it. The program does not swap assets, does not mutate a
 USDC claim ledger while draining a WBTC vault, and does not treat pending
-commitment custody as claims-paying reserve until activation/posting rules have
-made that true.
+off-chain reservations as claims-paying reserve until activation/posting rules
+have made that true.
 
 Selected-asset payouts additionally require both the claim-denomination rail
 and the selected payout rail to pass the same freshness and confidence checks
 before the value-comparison bounds run.
 
-## Commitment Visibility
+## Reservation Visibility
 
-The protocol dapp shows Founder commitments as plan and policy-series state. It must not become the consumer purchase flow.
+The protocol dapp does not host the consumer Founder reservation payment flow.
+Reservation payments are off-chain Squads custody records until activation.
+They are not active cover, not LP deposits, and not claims-paying reserve.
 
-The Genesis setup dashboard separates:
+Any protocol-facing operator copy must separate:
 
-- campaign status;
-- accepted rails;
-- pending, activated, and refunded counts;
-- terms hash;
-- linked policy series;
-- linked funding line;
-- pending custody;
-- pending coverage;
-- treasury inventory;
+- accepted reservation products and payment rails;
+- pending, activation-pending, refund-requested, and refunded reservation counts;
+- Squads custody balances and reservation records;
+- posted reserve, premium, and claim ledgers;
 - claims-paying reserve impact.
 
-Copy must stay explicit: pending commitments are refundable holds. They are not active cover, not LP deposits, and not claims-paying reserve until activation and posting rules are satisfied.
+Copy must stay explicit: pending reservations are refundable manual holds. They
+do not become protocol reserve until a later activation/posting process books
+them through the normal reserve controls.
 
-Production website and oracle-service fallbacks must fail closed if the Founder campaign cannot be read. They should show a paused or unavailable campaign instead of implying deposits are open.
+Production website and oracle-service fallbacks must fail closed if the Founder
+reservation campaign cannot be read. They should show a paused or unavailable
+campaign instead of implying payments are open.
 
 ## Validation
 

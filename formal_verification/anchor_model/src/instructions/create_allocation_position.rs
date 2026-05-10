@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateAllocationPosition, CreateAllocationPositionArgs};
 
 impl<'info> CreateAllocationPosition<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_allocation_position", hash = "7764faee6f0fd69b", spec_hash = "0ecfed2768ded362")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_allocation_position", hash = "7764faee6f0fd69b", spec_hash = "25f1c3afdeb83146")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateAllocationPositionArgs) -> Result<()> {
         guards::create_allocation_position(self, args)?;

@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{RequestRedemption, RequestRedemptionArgs};
 
 impl<'info> RequestRedemption<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "request_redemption", hash = "e7471279591ffc6d", spec_hash = "55cbe56035ecb439")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "request_redemption", hash = "e7471279591ffc6d", spec_hash = "5c30acae526fc458")]
     #[inline(always)]
     pub fn handler(&mut self, args: RequestRedemptionArgs) -> Result<()> {
         guards::request_redemption(self, args)?;

@@ -927,7 +927,7 @@ export function PlansWorkbench({ searchParams = {} }: PlansWorkbenchProps) {
                     claimsHref={genesisClaimsHref}
                     skuConsoleHrefs={genesisSkuConsoleHrefs}
                     adminActionsEnabled={canOperate}
-                    founderCommitmentHref={process.env.NEXT_PUBLIC_PROTECT_FOUNDER_COMMITMENT_URL ?? "https://omegax.health/protect/founder"}
+                    founderReservationHref={process.env.NEXT_PUBLIC_PROTECT_FOUNDER_RESERVATION_URL ?? "https://omegax.health/protect/founder"}
                   />
                 ) : (
                   <div className="plans-stack">

@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::AcceptProtocolGovernanceAuthority;
 
 impl<'info> AcceptProtocolGovernanceAuthority<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "accept_protocol_governance_authority", hash = "ba3556b65aae6710", spec_hash = "cc5e741ac67d616c")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "accept_protocol_governance_authority", hash = "ba3556b65aae6710", spec_hash = "9253b5a37c388d8e")]
     #[inline(always)]
     pub fn handler(&mut self) -> Result<()> {
         guards::accept_protocol_governance_authority(self)?;
