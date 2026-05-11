@@ -199,6 +199,13 @@ npm run qedgen:reconcile
 `formal_verification/Spec.lean`, and the generated Kani/proptest harnesses to
 `formal_verification/anchor_model/tests/`.
 
+Treat the current QEDGen lane as a coverage and spec-hygiene gate unless a
+specific property has committed proof bodies. Generated theorem stubs, missing
+Lean obligations, and `todo!("fill non-mechanical effects, events, transfers,
+calls")` placeholders in `formal_verification/anchor_model/` are not production
+proof coverage by themselves and must not be described as mainnet formal-proof
+sign-off.
+
 The only currently accepted warning is
 `missing_cpi_for_token_context` on `create_domain_asset_vault`.
 That handler uses `token_program` for token-account initialization, not for a

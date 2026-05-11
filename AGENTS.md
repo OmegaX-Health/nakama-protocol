@@ -32,6 +32,8 @@ Public repository. Keep instructions and changes public-safe.
 - Keep these states semantically separate in labels, models, and docs: Founder reservation is a refundable pending hold; Protect quote is eligibility/pricing for activating cover; claims-paying reserve only increases after the relevant activation/posting rules are satisfied.
 - Do not present pending reservations as active cover or available claims-paying reserve. Pending custody, treasury inventory, and reserve impact must remain distinct.
 - If the external consumer/oracle reservation campaign cannot be read in production, fail closed in protocol-facing copy instead of implying the campaign is actively accepting deposits.
+- The website `/protect/devnet` flow is a devnet live-coverage simulator owned by the website plus OmegaX Health app/oracle service. It is not a mainnet protocol-console surface and must not be described as public mainnet coverage.
+- Protocol docs may reference the devnet simulator as a QA/demo path, but settlement truth stays with the deployed protocol state, reserve controls, and later `ClaimCase`/`ClaimAttestation` activity. Keep public docs clear that Founder reservations and devnet simulations are outside claims-paying reserve until activation/posting rules are satisfied.
 
 ## Genesis Protect Launch Keys
 

@@ -117,6 +117,36 @@ test("[QEDGEN-2026-05-07] inactive plans and classes reject fresh intake before 
   assert.ok(errorNames.has("CapitalClassInactive"), "IDL must expose CapitalClassInactive");
 });
 
+test("[CSO-2026-05-10] inactive allocation scopes reject fresh capital allocation", () => {
+  const allocateBody = extractRustFunctionBody("allocate_capital");
+  const allocatorIndex = allocateBody.indexOf("require_allocator(");
+  const poolGuardIndex = allocateBody.indexOf("require_liquidity_pool_active");
+  const classGuardIndex = allocateBody.indexOf("require_capital_class_active");
+  const allocationGuardIndex = allocateBody.indexOf("require_allocation_position_allocatable");
+  const mutationIndex = allocateBody.indexOf("ctx.accounts.allocation_position.allocated_amount");
+
+  for (const [label, index] of [
+    ["allocator", allocatorIndex],
+    ["pool guard", poolGuardIndex],
+    ["class guard", classGuardIndex],
+    ["allocation guard", allocationGuardIndex],
+    ["mutation", mutationIndex],
+  ] as const) {
+    assert.notEqual(index, -1, `${label} must exist in allocate_capital`);
+  }
+
+  assert.ok(allocatorIndex < poolGuardIndex, "authorization must happen before active-state checks");
+  assert.ok(poolGuardIndex < mutationIndex, "liquidity pool active guard must run before mutation");
+  assert.ok(classGuardIndex < mutationIndex, "capital class active guard must run before mutation");
+  assert.ok(allocationGuardIndex < mutationIndex, "allocation active guard must run before mutation");
+  assert.match(programSource, /fn require_liquidity_pool_active\(/);
+  assert.match(programSource, /fn require_allocation_position_allocatable\(/);
+
+  const errorNames = new Set((idl.errors ?? []).map((error) => error.name));
+  assert.ok(errorNames.has("LiquidityPoolInactive"), "IDL must expose LiquidityPoolInactive");
+  assert.ok(errorNames.has("AllocationPositionInactive"), "IDL must expose AllocationPositionInactive");
+});
+
 test("[CSO-2026-05-04] allocation and reserve booking require free capacity", () => {
   assert.match(extractRustFunctionBody("allocate_capital"), /require_allocatable_reserve_capacity\(/);
   assert.match(extractRustFunctionBody("reserve_obligation"), /require_obligation_reserve_capacity\(/);

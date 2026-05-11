@@ -1566,6 +1566,11 @@
       "code": 6039,
       "name": "UnauthorizedRegistryInitializer",
       "msg": "signer is not the private review program upgrade authority"
+    },
+    {
+      "code": 6040,
+      "name": "NonCanonicalSessionId",
+      "msg": "review session id must not have leading or trailing whitespace"
     }
   ],
   "types": [

@@ -69,13 +69,15 @@ export OMEGAX_LIVE_MEMBERSHIP_INVITE_AUTHORITY=<pubkey>   # omit for open-member
 export GOVERNANCE_CONFIG=<governance_pda_pubkey>
 ```
 
-For devnet or rehearsal runs against an isolated mainnet-beta-like cluster, opt out via:
+For devnet or localnet rehearsal runs, label the non-mainnet target via:
 
 ```bash
 export OMEGAX_LIVE_CLUSTER_OVERRIDE=devnet   # or 'localnet'
 ```
 
-For genuine break-glass (incident recovery, where the multisig signer set is unreachable), use:
+This override does not bypass a mainnet-looking RPC URL. For private
+mainnet-like rehearsals or genuine break-glass (incident recovery, where the
+multisig signer set is unreachable), use:
 
 ```bash
 export OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1
