@@ -39,10 +39,10 @@ Genesis Protect Acute v1 processes health insurance claims through a cryptograph
 
 ## Purpose
 
-This document maps **every claim state** in Genesis Protect Acute v1 to its corresponding Solana instruction, on-chain account mutation, and cryptographic hash anchor — while maintaining a clear, auditable separation between:
+Two categories of data exist in this protocol:
 
 - **Raw PHI** (Protected Health Information): medical records, invoices, discharge summaries — stored exclusively off-chain, never written to Solana
-- **Proof anchors**: cryptographic hashes of that evidence — the only representation of PHI that appears on-chain, sufficient for independent verification without exposing private medical data
+- **Proof anchors**: SHA-256 cryptographic hashes of that evidence — the only representation of PHI that appears on-chain, sufficient for independent verification without exposing private medical data
 
 This is the authoritative reference for sponsors, LPs, auditors, and protocol reviewers who want to verify the claim truth chain without reading the full Anchor source.
 
@@ -61,14 +61,21 @@ This is the authoritative reference for sponsors, LPs, auditors, and protocol re
 
 Before any claim opens, the protocol anchors the policy terms, pricing, and evidence requirements on-chain as immutable hash commitments inside the `PolicySeries` account. These are the root of the verification chain — every claim is evaluated against these anchored parameters.
 
-| `PolicySeries` field | What it commits to | Set by |
-|----------------------|--------------------|--------|
-| `terms_hash` | Full coverage terms and exclusion schedule | Protocol governance |
-| `pricing_hash` | Premium structure and benefit tiers | Protocol governance |
-| `payout_hash` | Benefit amounts per tier (T1/T2/T3) and reimbursement cap | Protocol governance |
-| `reserve_model_hash` | Reserve methodology and VaR parameters | Protocol governance |
-| `evidence_requirements_hash` | Required document types per claim tier | Protocol governance |
-| `schema_binding_hash` *(HealthPlan)* | Binding to the verified `OutcomeSchema` | Plan admin |
+**`PolicySeries` account** — set by protocol governance, locked before the series goes live:
+
+| Field | What it commits to |
+|-------|--------------------|
+| `terms_hash` | Full coverage terms and exclusion schedule |
+| `pricing_hash` | Premium structure and benefit tiers |
+| `payout_hash` | Benefit amounts per tier (T1/T2/T3) and reimbursement cap |
+| `reserve_model_hash` | Reserve methodology and VaR parameters |
+| `evidence_requirements_hash` | Required document types per claim tier |
+
+**`HealthPlan` account** — set by plan admin:
+
+| Field | What it commits to |
+|-------|--------------------|
+| `schema_binding_hash` | Binding to the verified `OutcomeSchema` for this plan |
 
 > **OutcomeSchema** (`genesis-protect-acute-claim` v1) is separately registered on-chain and must be marked `verified = true` by governance before any oracle can attest against it. Its `schema_key_hash` and `schema_hash` are snapshotted into every `ClaimAttestation`.
 
@@ -107,6 +114,8 @@ The `ClaimCase` account (`intake_status` field) drives the complete claim lifecy
                     │   [5] CLOSED  (reserved for future use)             │
                     └─────────────────────────────────────────────────────┘
 ```
+
+> The `DENIED → OPEN` arrow in the diagram represents a **new** `ClaimCase` PDA being opened for an appeal — it is not an in-claim state rollback. The original `ClaimCase` remains permanently at `DENIED (3)`.
 
 | State | `intake_status` | On-chain trigger | Who signs | Money moves? |
 |-------|----------------|-----------------|-----------|--------------|
@@ -426,13 +435,22 @@ The main `omegax_protocol` program, its vaults, funding lines, obligations, and 
 ⛓ adjudicate_claim_case (approved)
         │
         ▼
-[0] PROPOSED ──────► [1] RESERVED (reserve_obligation) ──────► [3] SETTLED (settle_obligation)
-                             │                                         │
-                             └──────────────────────────►  [2] CLAIMABLE_PAYABLE
-                                                                       │
-                                                           [4] CANCELED (denial / void)
-                                                           [5] IMPAIRED (LP loss event)
-                                                           [6] RECOVERED (post-impairment)
+[0] PROPOSED ──► [1] RESERVED ──────────────────────────────► [3] SETTLED
+                 (reserve_obligation)    ⛓ settle_claim_case   (settle_claim_case)
+                       │
+                       ├──────────────────────────────────────► [4] CANCELED
+                       │                                         (denial / void path;
+                       │                                          no funds reserved)
+                       │
+                       ▼
+                 [2] CLAIMABLE_PAYABLE
+                       │
+                       ├──────────────────────────────────────► [5] IMPAIRED
+                       │                                         (mark_impairment;
+                       │                                          LP junior class absorbs loss)
+                       │
+                       └──────────────────────────────────────► [6] RECOVERED
+                                                                 (post-impairment recovery)
 ```
 
 Every `Obligation` state transition emits `ObligationStatusChangedEvent { obligation, funding_line, status, amount }`.

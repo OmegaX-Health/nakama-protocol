@@ -457,22 +457,32 @@ def build_pdf():
 
     story.append(p(
         "Before any claim opens, the protocol anchors the policy terms, pricing, and evidence "
-        "requirements on-chain as <b>immutable hash commitments</b> inside the <code>PolicySeries</code> account. "
-        "These are the root of the verification chain — every claim is evaluated against these anchored "
-        "parameters. All material is locked (<code>material_locked = true</code>) before the series goes live."
+        "requirements on-chain as <b>immutable hash commitments</b>. All material is locked "
+        "(<code>material_locked = true</code>) before the series goes live — every claim is evaluated "
+        "against exactly these anchored parameters."
     ))
     story.append(SP(6))
 
+    story.append(p("<b>PolicySeries account</b> — set by protocol governance:", "body_bold"))
+    story.append(SP(3))
     ps_rows = [
-        [C("PolicySeries field", "cell_hdr"), C("What it commits to", "cell_hdr"), C("Set by", "cell_hdr")],
-        [C("terms_hash", "cell_code"), C("Full coverage terms and exclusion schedule"), C("Protocol governance")],
-        [C("pricing_hash", "cell_code"), C("Premium structure and benefit tiers"), C("Protocol governance")],
-        [C("payout_hash", "cell_code"), C("Benefit amounts per tier (T1/T2/T3) and reimbursement cap"), C("Protocol governance")],
-        [C("reserve_model_hash", "cell_code"), C("Reserve methodology and VaR parameters"), C("Protocol governance")],
-        [C("evidence_requirements_hash", "cell_code"), C("Required document types per claim tier"), C("Protocol governance")],
-        [C("schema_binding_hash", "cell_code"), C("Binding to the verified OutcomeSchema (HealthPlan)"), C("Plan admin")],
+        [C("Field", "cell_hdr"), C("What it commits to", "cell_hdr")],
+        [C("terms_hash", "cell_code"), C("Full coverage terms and exclusion schedule")],
+        [C("pricing_hash", "cell_code"), C("Premium structure and benefit tiers")],
+        [C("payout_hash", "cell_code"), C("Benefit amounts per tier (T1/T2/T3) and reimbursement cap")],
+        [C("reserve_model_hash", "cell_code"), C("Reserve methodology and VaR parameters")],
+        [C("evidence_requirements_hash", "cell_code"), C("Required document types per claim tier")],
     ]
-    story.append(std_table(ps_rows, [5 * cm, 8 * cm, CONTENT_W - 13 * cm]))
+    story.append(std_table(ps_rows, [5 * cm, CONTENT_W - 5 * cm]))
+    story.append(SP(8))
+
+    story.append(p("<b>HealthPlan account</b> — set by plan admin:", "body_bold"))
+    story.append(SP(3))
+    hp_rows = [
+        [C("Field", "cell_hdr"), C("What it commits to", "cell_hdr")],
+        [C("schema_binding_hash", "cell_code"), C("Binding to the verified OutcomeSchema for this plan")],
+    ]
+    story.append(std_table(hp_rows, [5 * cm, CONTENT_W - 5 * cm]))
     story.append(SP(6))
     story.append(p(
         "The <b>OutcomeSchema</b> (<code>genesis-protect-acute-claim</code> v1) is separately registered "
@@ -489,6 +499,13 @@ def build_pdf():
         "The <code>ClaimCase</code> account's <code>intake_status</code> field drives the complete claim "
         "lifecycle. No state can be skipped or forged without a valid signed Solana transaction from the "
         "authorized role."
+    ))
+    story.append(SP(4))
+    story.append(info_box(
+        "<b>Note on the DENIED → OPEN arrow:</b> after denial, a new <code>ClaimCase</code> PDA is opened "
+        "for an appeal — this is not an in-claim state rollback. The original <code>ClaimCase</code> "
+        "remains permanently at DENIED (3) on-chain.",
+        s, bg=SLATE_100, border=MUTED, border_width=2
     ))
     story.append(SP(6))
 
@@ -821,11 +838,11 @@ def build_pdf():
          C("Ready for settlement payout")],
         [C("SETTLED", "cell_green"), C("3", "cell_code"), C("settle_claim_case"),
          C("Funds disbursed; obligation closed")],
-        [C("CANCELED", "cell_red"), C("4", "cell_code"), C("Denial / void path"),
+        [C("CANCELED", "cell_red"), C("4", "cell_code"), C("From RESERVED or PROPOSED — denial / void"),
          C("No reserve taken; obligation void")],
-        [C("IMPAIRED", "cell_red"), C("5", "cell_code"), C("mark_impairment"),
+        [C("IMPAIRED", "cell_red"), C("5", "cell_code"), C("mark_impairment — from RESERVED or CLAIMABLE_PAYABLE"),
          C("LP junior class absorbs loss; ImpairmentRecordedEvent emitted")],
-        [C("RECOVERED"), C("6", "cell_code"), C("Post-impairment recovery"),
+        [C("RECOVERED"), C("6", "cell_code"), C("Post-impairment recovery — from IMPAIRED"),
          C("Partial or full recovery credited back to LP")],
     ]
     story.append(std_table(obl_rows, [3.2 * cm, 1.2 * cm, 4.8 * cm, CONTENT_W - 9.2 * cm]))
