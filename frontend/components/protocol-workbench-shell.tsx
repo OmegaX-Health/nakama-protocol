@@ -7,7 +7,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useConnection } from "@solana/wallet-adapter-react";
-import { ChevronDown, Menu, MoonStar, SunMedium, Users, X } from "lucide-react";
+import { ChevronDown, ExternalLink, Menu, MoonStar, SunMedium, Users, X } from "lucide-react";
 
 import { useNetworkContext } from "@/components/network-context";
 import { useTheme } from "@/components/theme-provider";
@@ -79,6 +79,8 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
 
   const networkMenuRef = useRef<HTMLDivElement | null>(null);
   const personaMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileNavButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mobileNavRef = useRef<HTMLElement | null>(null);
 
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isNetworkMenuOpen, setIsNetworkMenuOpen] = useState(false);
@@ -107,10 +109,18 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
   }, [pathname]);
 
   useEffect(() => {
-    if (!isNetworkMenuOpen && !isPersonaMenuOpen) return;
+    if (!isMobileNavOpen && !isNetworkMenuOpen && !isPersonaMenuOpen) return;
 
     function handlePointerDown(event: PointerEvent) {
       const target = event.target as Node;
+      if (
+        isMobileNavOpen
+        && mobileNavRef.current
+        && !mobileNavRef.current.contains(target)
+        && !mobileNavButtonRef.current?.contains(target)
+      ) {
+        setIsMobileNavOpen(false);
+      }
       if (isNetworkMenuOpen && networkMenuRef.current && !networkMenuRef.current.contains(target)) {
         setIsNetworkMenuOpen(false);
       }
@@ -121,6 +131,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
+        setIsMobileNavOpen(false);
         setIsNetworkMenuOpen(false);
         setIsPersonaMenuOpen(false);
       }
@@ -132,7 +143,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isNetworkMenuOpen, isPersonaMenuOpen]);
+  }, [isMobileNavOpen, isNetworkMenuOpen, isPersonaMenuOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -187,6 +198,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
         <div className="protocol-topbar-row">
           <div className="protocol-topbar-left">
             <button
+              ref={mobileNavButtonRef}
               type="button"
               className="protocol-topbar-menu-button"
               aria-controls={MOBILE_NAV_ID}
@@ -227,6 +239,16 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
                   </Link>
                 );
               })}
+              <Link
+                href={DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="OmegaX Docs (opens in new tab)"
+                className="protocol-topbar-tab protocol-topbar-tab-external"
+              >
+                Docs
+                <ExternalLink className="h-3 w-3" strokeWidth={1.9} aria-hidden="true" />
+              </Link>
             </nav>
           </div>
 
@@ -362,7 +384,7 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
       </header>
 
       {isMobileNavOpen ? (
-        <nav id={MOBILE_NAV_ID} className="protocol-mobile-nav" aria-label="Mobile navigation">
+        <nav ref={mobileNavRef} id={MOBILE_NAV_ID} className="protocol-mobile-nav" aria-label="Mobile navigation">
           {WORKBENCH_NAV.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -377,6 +399,16 @@ export default function ProtocolWorkbenchShell({ children }: { children: React.R
               </Link>
             );
           })}
+          <Link
+            href={DOCS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="OmegaX Docs (opens in new tab)"
+            className="protocol-mobile-nav-link"
+          >
+            Docs
+            <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.9} aria-hidden="true" />
+          </Link>
 
           <div className="protocol-mobile-nav-divider" aria-hidden="true" />
           <div className="protocol-mobile-wallet">

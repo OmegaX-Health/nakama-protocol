@@ -17,7 +17,8 @@ The public UI should treat these as first-order objects:
 
 ## Navigation model
 
-- `/overview` is the editorial systems-map entrypoint for the protocol workbench
+- `/` redirects to `/overview`, the editorial systems-map entrypoint for the protocol workbench
+- `/overview` is the first-impression observer route for public protocol state, route selection, and explicit demo/live posture
 - `/plans` is the sponsor/operator view
 - `/plans/new?template=genesis-protect-acute` is the canonical Genesis bootstrap entrypoint
 - `/plans?...&setup=genesis-protect-acute` is the bounded Genesis setup, reserve-warning, and issuance-posture view inside the mounted plan workspace
@@ -54,7 +55,26 @@ The overview route is not a generic dashboard. It is the protocol entry composit
 - Desktop keeps the hero rail visually stable while the document scroll moves the access stream beneath the floating top and bottom chrome.
 - Mobile collapses to one column, but keeps the same sequence and hierarchy instead of inventing a separate dashboard layout.
 
-The approved visual grammar for this route lives in the OmegaX design-system file `references/DESIGN_PROTOCOL_FRONTEND.md`. Treat that document as the source of truth when extending or redesigning `/overview`.
+The approved visual grammar for this route lives in the repository-level [`DESIGN.md`](../../DESIGN.md). Treat that document as the source of truth when extending or redesigning `/overview` or any mounted protocol-console route.
+
+## Route responsibility contract
+
+Each mounted route must have one clear job:
+
+| Route | Primary question | Route responsibility |
+| --- | --- | --- |
+| `/` | Where do I begin? | Redirect to `/overview` so the first impression is the public systems map. |
+| `/overview` | What is live, pending, simulated, or unavailable? | Orient observers and route them to the correct workbench without implying fixture or demo state is live. |
+| `/plans` | What sponsor/operator state exists for a plan and its coverage products? | Keep plan, member, claim, treasury, and Genesis setup state together. |
+| `/capital` | What capital is posted, allocated, queued, or impaired? | Keep LP capital separate from sponsor budgets and claim obligations. |
+| `/claims` | Which claim cases and obligations need review? | Mount the claim queue without presenting Phase 0 review as decentralized adjudication. |
+| `/members` | Which wallets have plan/series rights? | Redirect into the mounted `/plans` member tab with context preserved. |
+| `/governance` | Which authorities and proposals control protocol state? | Expose scoped control lanes and templates without hiding disabled-action reasons. |
+| `/oracles` | Which oracle operators and bindings are visible? | Keep profile, schema, attestation, dispute, and staking readiness separate. |
+| `/schemas` | Which outcome schemas and series comparability rules are live? | Provide first-class registry and inspector access from the main navigation. |
+| `/coverage/*` | What public coverage terms and risk disclosures are referenced? | Stay read-only and bounded to the current Genesis launch truth. |
+| `/magicblock-claim-room` | Is a private-review receipt verifiable? | Stay devnet-only for verification and fail closed on mainnet. |
+| `/pools/*`, `/staking` | Where did retired routes move? | Redirect to canonical routes without reintroducing pool-first language. |
 
 ## Naming rules
 

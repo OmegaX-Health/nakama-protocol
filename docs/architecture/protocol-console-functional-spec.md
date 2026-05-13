@@ -30,9 +30,9 @@ Use this together with:
 
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
-| Brand mark | Link | Always returns the user to `/plans` as the default home surface. | Focusable, keyboard accessible, screen-reader label for home. |
-| Primary navigation | Route tabs | Expose `Plans`, `Capital`, `Claims`, `Members`, `Governance`, `Oracles`, `Schemas`, and external `Docs`. | Active route state, hover state, keyboard navigation, external-link treatment for `Docs`. |
-| Overflow navigation | `More` menu | Move lower-priority tabs into an overflow menu on narrower desktop widths without removing access. | Active-state inheritance, close on outside click, close on `Esc`. |
+| Brand mark | Link | Always returns the user to `/overview` as the public systems-map entrypoint. | Focusable, keyboard accessible, screen-reader label for home. |
+| Primary navigation | Route tabs | Expose `Overview`, `Plans`, `Capital`, `Governance`, `Oracles`, `Schemas`, and external `Docs`. `Claims` and `Members` remain mounted plan-workspace tabs and redirecting legacy paths, not separate top-level tabs. | Active route state, hover state, keyboard navigation, explicit external-link treatment for `Docs`. |
+| Compact navigation | Menu | Move primary route tabs into a stacked menu on narrower desktop and mobile widths without removing access. | Active-state inheritance, close on outside click, close on `Esc`, same route coverage as desktop. |
 | Theme toggle | Button | Toggle light/dark mode and persist user choice locally. | Works on desktop and mobile; label reflects next theme. |
 | Network selector | Button + menu | Show current cluster and allow switching between supported public networks. | Disabled options must remain visible with `Coming soon`; switching updates connection context and URL-safe explorer behavior. |
 | Wallet control | Button + menu | Connect wallet, show connected address, copy address, switch wallet, disconnect. | Observer, connecting, connected, disconnecting, copied-address success, menu open/close. |
@@ -92,12 +92,33 @@ Use this together with:
 
 Purpose:
 
-- Resolve the console entrypoint to the sponsor/operator landing route.
+- Resolve the console entrypoint to the public observer systems map.
 
 Required behavior:
 
-- Immediately redirect to `/plans`.
+- Immediately redirect to `/overview`.
 - Preserve query parameters only if a future canonical mapping explicitly supports them.
+- The root behavior must stay aligned with `frontend/app/page.tsx`, `tests/genesis_first_routing.test.ts`, and [`DESIGN.md`](../../DESIGN.md).
+
+### 3.1.1 `/overview`
+
+Purpose:
+
+- Explain the public protocol state and route users into the correct mounted workbench.
+
+Primary users:
+
+- first-time observer
+- sponsor reviewer
+- auditor
+- operator choosing the next surface
+
+Required behavior:
+
+- Show live metrics only from the configured protocol snapshot unless `?demo=1` is explicit.
+- Never fall back from a failed live read into fixture-looking success state.
+- Present route cards for the major mounted workbenches, including Schemas.
+- Route copy must distinguish posted reserve, pending custody, eligibility quotes, active cover, devnet demos, and fail-closed mainnet states.
 
 ### 3.2 `/plans`
 

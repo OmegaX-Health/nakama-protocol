@@ -24,7 +24,7 @@ import {
 
 import type { GovernanceProposalSummary } from "@/lib/governance-readonly";
 
-export type WorkbenchSection = "overview" | "plans" | "capital" | "governance" | "oracles";
+export type WorkbenchSection = "overview" | "plans" | "capital" | "governance" | "oracles" | "schemas";
 
 export type WorkbenchPersona = "observer" | "sponsor" | "capital" | "governance";
 
@@ -54,13 +54,14 @@ export const WORKBENCH_NAV: Array<{
   id: WorkbenchSection;
   href: `/${WorkbenchSection}`;
   label: string;
-  icon: "overview" | "plans" | "capital" | "governance" | "oracles";
+  icon: "overview" | "plans" | "capital" | "governance" | "oracles" | "schemas";
 }> = [
   { id: "overview", href: "/overview", label: "Overview", icon: "overview" },
   { id: "plans", href: "/plans", label: "Plans", icon: "plans" },
   { id: "capital", href: "/capital", label: "Capital", icon: "capital" },
   { id: "governance", href: "/governance", label: "Governance", icon: "governance" },
   { id: "oracles", href: "/oracles", label: "Oracles", icon: "oracles" },
+  { id: "schemas", href: "/schemas", label: "Schemas", icon: "schemas" },
 ] as const;
 
 export const PLAN_TABS = [
@@ -394,6 +395,7 @@ export function sectionFromPathname(pathname: string): WorkbenchSection {
   if (pathname.startsWith("/capital")) return "capital";
   if (pathname.startsWith("/governance")) return "governance";
   if (pathname.startsWith("/oracles")) return "oracles";
+  if (pathname.startsWith("/schemas")) return "schemas";
   if (pathname.startsWith("/plans")) return "plans";
   return "overview";
 }
@@ -427,6 +429,12 @@ export function sectionChrome(section: WorkbenchSection): {
         title: "Oracles",
         eyebrow: "Registry, attestations, and dispute posture",
         description: "Track verification operators and settlement-sensitive bindings without exposing raw health data.",
+      };
+    case "schemas":
+      return {
+        title: "Schemas",
+        eyebrow: "Outcome schemas and series comparability",
+        description: "Audit the live schema registry and versioned series rules without losing route context.",
       };
     case "overview":
     default:
@@ -465,6 +473,8 @@ export function defaultTabForPersona(
   section: Exclude<WorkbenchSection, "overview">,
   persona: WorkbenchPersona,
 ): string {
+  if (section === "schemas") return "registry";
+
   if (section === "plans") {
     if (persona === "capital") return "treasury";
     if (persona === "governance") return "claims";

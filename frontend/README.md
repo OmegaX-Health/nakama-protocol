@@ -23,9 +23,9 @@ This directory contains the Next.js protocol console for the canonical OmegaX he
 
 ## Design references
 
-- Keep the frontend aligned with the OmegaX design system rather than generic SaaS admin patterns.
-- For AI-assisted editing in Codex, load the `omegax-design` skill first.
-- Follow the shared design tokens and the protocol frontend surface guidance in the OmegaX design system before large UI changes or route rewrites.
+- Keep the frontend aligned with the repository-level [`../DESIGN.md`](../DESIGN.md) rather than generic SaaS admin patterns.
+- `../DESIGN.md` is the source of truth for the protocol console palette, route responsibilities, state-boundary copy, responsive rules, accessibility rules, and anti-slop bans.
+- The separate `omegax-design` skill is for the consumer health-agent app, not this protocol frontend. Do not import health-agent-only visual rules into the protocol console unless a protocol-specific design decision explicitly adopts them.
 
 ## Commands
 

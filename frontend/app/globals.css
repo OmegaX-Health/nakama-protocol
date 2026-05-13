@@ -2737,6 +2737,64 @@
     display: none;
   }
 
+  @media (min-width: 900px) and (max-width: 1180px) {
+    .protocol-topbar-nav {
+      display: none;
+    }
+
+    .protocol-topbar-menu-button {
+      display: inline-flex;
+      flex-shrink: 0;
+    }
+
+    .protocol-mobile-nav {
+      display: grid;
+      width: var(--protocol-chrome-width);
+      margin: 0 auto 0.45rem;
+      gap: 0.25rem;
+      padding: 0.55rem 1.15rem 0.65rem;
+      border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+      border-radius: 1.2rem;
+      background: color-mix(in oklab, var(--surface-elevated) 82%, transparent);
+      backdrop-filter: blur(28px) saturate(170%);
+    }
+
+    .protocol-mobile-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.75rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 0.85rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--foreground);
+      text-decoration: none;
+      transition: background-color 120ms ease;
+    }
+
+    .protocol-mobile-nav-link:hover,
+    .protocol-mobile-nav-link:focus-visible {
+      background: color-mix(in oklab, var(--surface-elevated) 88%, white 12%);
+      outline: none;
+    }
+
+    .protocol-mobile-nav-link-active {
+      color: var(--accent);
+      background: color-mix(in oklab, var(--status-surface) 88%, var(--surface-elevated) 12%);
+    }
+
+    .protocol-mobile-nav-divider {
+      height: 1px;
+      margin: 0.5rem 0 0.15rem;
+      background: color-mix(in oklab, var(--border) 80%, transparent);
+    }
+
+    .protocol-mobile-wallet {
+      padding-top: 0.15rem;
+    }
+  }
+
   /* ── Toolbar controls (dropdowns, buttons, menus) ── */
 
   .protocol-toolbar-dropdown {
@@ -9508,6 +9566,7 @@
     .protocol-mobile-nav-link {
       display: flex;
       align-items: center;
+      gap: 0.5rem;
       min-height: 2.75rem;
       padding: 0.6rem 0.85rem;
       border-radius: 0.85rem;
