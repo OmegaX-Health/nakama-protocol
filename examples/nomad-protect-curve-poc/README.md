@@ -9,6 +9,8 @@ This folder contains an experimental actuarial and product PoC for a nomad acute
 
 This does not replace the approved Genesis Protect Acute v1 pricing. It is a design exploration for a future curve-priced product.
 
+For the full Genesis Protect public-safe analysis read path, start with `../genesis-protect-analysis/README.md`.
+
 ## Product Split
 
 The key split is:

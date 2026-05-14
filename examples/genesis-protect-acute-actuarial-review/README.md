@@ -2,6 +2,8 @@
 
 This folder contains the repo-first actuarial pricing and launch-control workbook for the first Genesis Protect Acute policies: Event 7 and Travel 30.
 
+For the full public-safe analysis read path, start with `../genesis-protect-analysis/README.md`.
+
 The review is intentionally a launch-gate model, not a formal external actuarial opinion. It tests whether the first policies can be issued with explicit reserve floors, SKU-specific pause controls, and country/cohort gating that match the current public metadata and claim simulation surface. The May 11 cap update is now approved and applied in repo metadata.
 
 ## Files
