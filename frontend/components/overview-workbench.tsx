@@ -256,6 +256,11 @@ export function OverviewWorkbench({ demo = false }: OverviewWorkbenchProps) {
         label: cleanLabel(label),
         value: `${value} lane${value === 1 ? "" : "s"}`,
       }));
+    const schemaRows = snapshot.outcomeSchemas.slice(0, 2).map((schema, index) => ({
+      label: `Schema ${String(index + 1).padStart(2, "0")}`,
+      value: `${schema.schemaKey} · v${schema.version}${schema.verified ? " · verified" : ""}`,
+    }));
+    const verifiedSchemaCount = snapshot.outcomeSchemas.filter((schema) => schema.verified).length;
 
     return [
       {
@@ -326,6 +331,25 @@ export function OverviewWorkbench({ demo = false }: OverviewWorkbenchProps) {
         details: obligationDetails,
         note: "Attestation operators and reserve-obligation integrity",
       },
+      {
+        align: "start" as const,
+        entry: "Surface 05",
+        href: "/schemas",
+        status: `${snapshot.outcomeSchemas.length} schemas`,
+        title: "Schemas",
+        summary: "Outcome definitions, versioned terms, and series comparability across live coverage products.",
+        highlightLabel: "Verified schemas",
+        highlightValue: String(verifiedSchemaCount),
+        metrics: [
+          { label: "Schemas", value: String(snapshot.outcomeSchemas.length) },
+          { label: "Series", value: String(stats.seriesCount) },
+          { label: "Plans", value: String(stats.planCount) },
+        ],
+        details: schemaRows.length > 0
+          ? schemaRows
+          : [{ label: "Registry", value: "No live schemas visible" }],
+        note: "Schema registry and versioned policy-series truth",
+      },
     ];
   }, [
     governanceQueue,
@@ -352,6 +376,7 @@ export function OverviewWorkbench({ demo = false }: OverviewWorkbenchProps) {
     stats.totalObligationPrincipal,
     stats.tvl,
     stats.utilization,
+    snapshot.outcomeSchemas,
   ]);
   const signalMetrics = useMemo(() => [
     { label: "Utilization", value: `${stats.utilization}%` },
