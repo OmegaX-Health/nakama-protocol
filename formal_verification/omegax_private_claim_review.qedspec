@@ -289,7 +289,23 @@ handler record_private_payment_ref : State.Active -> State.Active {
   }
 }
 
-handler commit_and_close_review_session : State.Active -> State.Closed {
+handler commit_and_close_review_session : State.Active -> State.Active {
+  auth session_authority
+  requires session_authority == review_session.session_authority else UnauthorizedSessionAuthority
+  requires review_session.status > REVIEW_STATUS_DELEGATED else ReviewNotReadyToCommit
+  requires review_session.status <= REVIEW_STATUS_FAILED else ReviewNotReadyToCommit
+  requires review_session.status == REVIEW_STATUS_APPROVED
+        implies review_session.private_payment_ref_hash != 0 else ApprovedReviewMissingPaymentRef
+  requires review_session.committed_at == 0 else ReviewAlreadyCommitted
+  accounts {
+    session_authority : signer, writable
+    review_session : writable, pda [review_session]
+    magic_program : readonly
+    magic_context : writable
+  }
+}
+
+handler finalize_committed_review_session : State.Active -> State.Closed {
   auth session_authority
   requires session_authority == review_session.session_authority else UnauthorizedSessionAuthority
   requires review_session.status > REVIEW_STATUS_DELEGATED else ReviewNotReadyToCommit
@@ -303,8 +319,6 @@ handler commit_and_close_review_session : State.Active -> State.Closed {
   accounts {
     session_authority : signer, writable
     review_session : writable, pda [review_session]
-    magic_program : readonly
-    magic_context : writable
   }
 }
 
@@ -335,7 +349,8 @@ cover private_claim_room_happy_path [
   delegate_review_session,
   record_private_review,
   record_private_payment_ref,
-  commit_and_close_review_session
+  commit_and_close_review_session,
+  finalize_committed_review_session
 ]
 
 property committed_approved_reviews_have_payment_ref :
