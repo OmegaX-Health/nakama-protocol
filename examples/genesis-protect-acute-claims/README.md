@@ -3,6 +3,8 @@
 Realistic claim simulation scenarios for **Genesis Protect Acute v1**, the first
 OmegaX protocol product targeting mainnet launch.
 
+These are curated public fixtures. The larger proprietary Health/oracle simulator and raw synthetic corpus stay in `omegax-health`; public aggregate evidence is indexed in `../genesis-protect-analysis/`.
+
 ## What this is
 
 This directory contains a structured JSON file (`genesis-acute-claim-simulations-v1.json`)
