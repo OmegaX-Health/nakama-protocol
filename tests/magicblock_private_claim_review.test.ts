@@ -135,6 +135,42 @@ test("private review, payment, failure, and commit transitions are authority-gat
   assert.match(programSource, /actor == session\.session_authority \|\| actor == session\.reviewer_authority/);
 });
 
+test("MagicBlock commit schedules undelegation before base-layer finalization", () => {
+  assert.match(programSource, /pub fn finalize_committed_review_session/);
+  assert.match(programSource, /pub struct FinalizeCommittedReviewSession/);
+  assert.match(programSource, /ReviewSessionCommitFinalized/);
+  assert.doesNotMatch(
+    programSource,
+    /session\.committed_at = Clock::get\(\)\?\.unix_timestamp;\s+emit!\(ReviewSessionCommitted/,
+  );
+  assert.match(
+    architectureDoc,
+    /commit_and_close_review_session` schedules the MagicBlock commit and undelegates/,
+  );
+  assert.match(
+    architectureDoc,
+    /finalize_committed_review_session` stamps `committed_at`/,
+  );
+
+  const commitInstruction = privateReviewIdl.instructions.find(
+    (instruction: { name: string }) => instruction.name === "commit_and_close_review_session",
+  );
+  assert.ok(commitInstruction);
+  assert.deepEqual(
+    commitInstruction.accounts.map((account: { name: string }) => account.name),
+    ["payer", "review_session", "magic_program", "magic_context"],
+  );
+
+  const finalizeInstruction = privateReviewIdl.instructions.find(
+    (instruction: { name: string }) => instruction.name === "finalize_committed_review_session",
+  );
+  assert.ok(finalizeInstruction);
+  assert.deepEqual(
+    finalizeInstruction.accounts.map((account: { name: string }) => account.name),
+    ["payer", "review_session"],
+  );
+});
+
 test("delegate writes lifecycle state before ER delegation", () => {
   assert.match(programSource, /session\.status = REVIEW_STATUS_DELEGATED/);
   assert.match(programSource, /session\.delegated_at = now_ts/);

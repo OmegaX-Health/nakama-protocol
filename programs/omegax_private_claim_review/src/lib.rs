@@ -390,6 +390,48 @@ pub mod omegax_private_claim_review {
     pub fn commit_and_close_review_session(
         ctx: Context<CommitAndCloseReviewSession>,
     ) -> Result<()> {
+        let session = &ctx.accounts.review_session;
+        require_keys_eq!(
+            session.session_authority,
+            ctx.accounts.payer.key(),
+            PrivateClaimReviewError::UnauthorizedSessionAuthority
+        );
+        require!(
+            is_terminal_review_status(session.status),
+            PrivateClaimReviewError::ReviewNotReadyToCommit
+        );
+        if session.status == REVIEW_STATUS_APPROVED {
+            require!(
+                !is_zero_hash(&session.private_payment_ref_hash),
+                PrivateClaimReviewError::ApprovedReviewMissingPaymentRef
+            );
+        }
+        require!(
+            session.committed_at == 0,
+            PrivateClaimReviewError::ReviewAlreadyCommitted
+        );
+
+        emit!(ReviewSessionCommitted {
+            review_session: session.key(),
+            session_authority: session.session_authority,
+            status: session.status,
+            review_artifact_hash: session.review_artifact_hash,
+            private_payment_ref_hash: session.private_payment_ref_hash,
+        });
+
+        commit_and_undelegate_accounts(
+            &ctx.accounts.payer,
+            vec![&ctx.accounts.review_session.to_account_info()],
+            &ctx.accounts.magic_context,
+            &ctx.accounts.magic_program,
+        )?;
+
+        Ok(())
+    }
+
+    pub fn finalize_committed_review_session(
+        ctx: Context<FinalizeCommittedReviewSession>,
+    ) -> Result<()> {
         let session = &mut ctx.accounts.review_session;
         require_keys_eq!(
             session.session_authority,
@@ -410,22 +452,15 @@ pub mod omegax_private_claim_review {
             session.committed_at == 0,
             PrivateClaimReviewError::ReviewAlreadyCommitted
         );
+
         session.committed_at = Clock::get()?.unix_timestamp;
 
-        emit!(ReviewSessionCommitted {
+        emit!(ReviewSessionCommitFinalized {
             review_session: session.key(),
             session_authority: session.session_authority,
             status: session.status,
-            review_artifact_hash: session.review_artifact_hash,
-            private_payment_ref_hash: session.private_payment_ref_hash,
+            committed_at: session.committed_at,
         });
-
-        commit_and_undelegate_accounts(
-            &ctx.accounts.payer,
-            vec![&ctx.accounts.review_session.to_account_info()],
-            &ctx.accounts.magic_context,
-            &ctx.accounts.magic_program,
-        )?;
 
         Ok(())
     }
@@ -786,6 +821,23 @@ pub struct CommitAndCloseReviewSession<'info> {
 }
 
 #[derive(Accounts)]
+pub struct FinalizeCommittedReviewSession<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    #[account(
+        mut,
+        seeds = [
+            SEED_REVIEW_SESSION,
+            review_session.session_authority.as_ref(),
+            review_session.claim_case.as_ref(),
+            review_session.session_id.as_bytes(),
+        ],
+        bump = review_session.bump,
+    )]
+    pub review_session: Account<'info, PrivateClaimReviewSession>,
+}
+
+#[derive(Accounts)]
 #[instruction(_args: MarkReviewFailedArgs)]
 pub struct MarkReviewFailed<'info> {
     pub actor: Signer<'info>,
@@ -873,6 +925,14 @@ pub struct ReviewSessionCommitted {
     pub status: u8,
     pub review_artifact_hash: [u8; 32],
     pub private_payment_ref_hash: [u8; 32],
+}
+
+#[event]
+pub struct ReviewSessionCommitFinalized {
+    pub review_session: Pubkey,
+    pub session_authority: Pubkey,
+    pub status: u8,
+    pub committed_at: i64,
 }
 
 #[event]

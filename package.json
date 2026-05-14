@@ -56,6 +56,7 @@
     "devnet:governance:smoke:execute": "node --import tsx scripts/devnet_governance_smoke.ts execute",
     "devnet:governance:ui:readonly": "node --import tsx scripts/devnet_governance_ui_readonly.ts",
     "devnet:mvp:deploy": "node --import tsx scripts/deploy_devnet_mvp.ts",
+    "devnet:magicblock:claim-review": "node --import tsx scripts/devnet_magicblock_claim_review_smoke.ts",
     "schema:metadata-hash": "node --import tsx scripts/generate_schema_metadata_hash.ts",
     "schema:rule-hashes": "node --import tsx scripts/generate_outcome_rule_hashes.ts",
     "schema:generate-standard": "node --import tsx scripts/generate_standard_health_outcomes_schema.ts",
@@ -83,7 +84,8 @@
     "@solana/spl-governance": "^0.3.28",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
-    "bs58": "^6.0.0"
+    "bs58": "^6.0.0",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@types/node": "^20.19.37",

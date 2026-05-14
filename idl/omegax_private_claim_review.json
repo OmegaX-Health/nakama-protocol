@@ -304,6 +304,75 @@
       ]
     },
     {
+      "name": "finalize_committed_review_session",
+      "discriminator": [
+        167,
+        73,
+        107,
+        246,
+        80,
+        222,
+        44,
+        111
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "review_session",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  105,
+                  118,
+                  97,
+                  116,
+                  101,
+                  95,
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  118,
+                  105,
+                  101,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_authority",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.claim_case",
+                "account": "PrivateClaimReviewSession"
+              },
+              {
+                "kind": "account",
+                "path": "review_session.session_id",
+                "account": "PrivateClaimReviewSession"
+              }
+            ]
+          }
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initialize_review_registry",
       "discriminator": [
         41,
@@ -1314,6 +1383,19 @@
       ]
     },
     {
+      "name": "ReviewSessionCommitFinalized",
+      "discriminator": [
+        32,
+        170,
+        42,
+        98,
+        146,
+        18,
+        33,
+        201
+      ]
+    },
+    {
       "name": "ReviewSessionCommitted",
       "discriminator": [
         77,
@@ -2142,6 +2224,30 @@
           {
             "name": "active",
             "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ReviewSessionCommitFinalized",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "review_session",
+            "type": "pubkey"
+          },
+          {
+            "name": "session_authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "status",
+            "type": "u8"
+          },
+          {
+            "name": "committed_at",
+            "type": "i64"
           }
         ]
       }
