@@ -43,7 +43,7 @@ export type GenesisProtectDisclosurePageContent = {
 const sharedLaunchFacts = [
   {
     label: "Launch posture",
-    value: "Bounded end-of-month mainnet target, not broadly live insurance today.",
+    value: "Founder reservations pending activation, not broadly live insurance today.",
   },
   {
     label: "Trust phase",
@@ -76,7 +76,7 @@ export const GENESIS_PROTECT_DISCLOSURE_PAGES: Record<"technicalTerms" | "riskDi
         eyebrow: "Launch posture",
         title: "Shared route, current launch reference",
         copy:
-          "This route is the shared public technical-terms destination for DeFi-native protection metadata on the protocol frontend. The current live reference implementation is Genesis Protect Acute: Travel 30 is the primary launch SKU, Event 7 is the fast demo SKU, and both stay inside the same bounded end-of-month mainnet target rather than a broad always-live insurance claim.",
+          "This route is the shared public technical-terms destination for DeFi-native protection metadata on the protocol frontend. The current reference implementation is Genesis Protect Acute: Travel 30 is the primary Founder reservation SKU, Event 7 is the fast demo SKU, and both stay inside the same bounded pending-activation launch posture rather than a broad always-live insurance claim.",
         facts: [...sharedLaunchFacts],
       },
       {
@@ -87,7 +87,7 @@ export const GENESIS_PROTECT_DISCLOSURE_PAGES: Record<"technicalTerms" | "riskDi
         facts: [
           {
             label: GENESIS_PROTECT_ACUTE_SKUS.travel30.displayName,
-            value: "30-day cover window, hybrid fixed plus reimbursement top-up, premium plus liquidity reserve lanes.",
+            value: "30-day Founder access for the first 100 seats, reserve-indexed target cap up to 250,000 USDC at activation, premium plus liquidity reserve lanes.",
           },
           {
             label: GENESIS_PROTECT_ACUTE_SKUS.event7.displayName,
@@ -103,10 +103,10 @@ export const GENESIS_PROTECT_DISCLOSURE_PAGES: Record<"technicalTerms" | "riskDi
         eyebrow: "Commercial layers",
         title: "Membership and protection are separate",
         copy:
-          "OmegaX Health app membership and Genesis Protect premiums remain two separate economic layers. Membership pays for the app experience and AI health support. The protection premium is the per-window charge that activates Travel 30 or Event 7 eligibility in the protocol.",
+          "OmegaX Health app membership and Genesis Protect premiums remain two separate economic layers. Membership pays for the app experience and AI health support. Founder reservation/access payments can hold a place and price, but active Travel 30 or Event 7 protection starts only after activation locks exact cap and terms.",
         bullets: [
-          "Membership does not itself activate coverage.",
-          "Protection premiums contribute to reserve economics; app membership does not.",
+          "Membership and reservations do not themselves activate coverage.",
+          "Only premiums or funds that satisfy the relevant posting rules can contribute to claims-paying reserve.",
           "Sponsor funding can support protection without collapsing the distinction between membership and protection premium.",
         ],
       },
@@ -163,9 +163,10 @@ export const GENESIS_PROTECT_DISCLOSURE_PAGES: Record<"technicalTerms" | "riskDi
         eyebrow: "Launch boundary",
         title: "Shared route, bounded launch reference",
         copy:
-          "This route can be referenced by generic DeFi-native protection metadata, so it should not pretend every product is Genesis Protect Acute. The current public launch reference is Genesis Protect Acute, and that launch remains bounded to Event 7 and Travel 30 with messaging tied to the current end-of-month mainnet target and Phase 0 AI-assisted review under operator oversight.",
+          "This route can be referenced by generic DeFi-native protection metadata, so it should not pretend every product is Genesis Protect Acute. The current public launch reference is Genesis Protect Acute, and that launch remains bounded to Event 7 plus Travel 30 Founder reservations with messaging tied to pending activation and Phase 0 AI-assisted review under operator oversight.",
         bullets: [
           "Do not read this launch as a promise of broad always-open global insurance availability.",
+          "Do not read a Travel 30 Founder reservation as active cover or a live 250,000 USDC cap.",
           "Do not read roadmap language about AI or decentralized review as current live fact.",
           "Retail-open issuance and sponsor-configured cohorts can both exist, but each live series still needs explicit public posture and reserve support.",
         ],
@@ -185,10 +186,10 @@ export const GENESIS_PROTECT_DISCLOSURE_PAGES: Record<"technicalTerms" | "riskDi
         eyebrow: "Coverage boundary risk",
         title: "Waiting periods and exclusions still matter",
         copy:
-          "Buying coverage does not remove waiting periods, exclusions, or evidence requirements. Event 7 and Travel 30 both keep a 7-day illness wait and 24-hour accident activation rule in the current launch truth, with sponsor-configured waiver behavior only where the published cohort terms explicitly allow it.",
+          "Activation does not remove waiting periods, exclusions, or evidence requirements. Event 7 and Travel 30 both keep a 7-day illness wait and 24-hour accident activation rule in the current launch truth, with sponsor-configured waiver behavior only where the published cohort terms explicitly allow it.",
         bullets: [
           "Event 7 remains fixed-benefit-only.",
-          "Travel 30 can add a reimbursement top-up only inside the published aggregate cap.",
+          "Travel 30 can add a reimbursement top-up only inside the exact aggregate cap locked at activation.",
           "Pre-existing, chronic, routine, elective, sanctions-excluded, fraudulent, and non-acute scenarios remain outside the marketed coverage boundary.",
         ],
       },
@@ -207,10 +208,10 @@ export const GENESIS_PROTECT_DISCLOSURE_PAGES: Record<"technicalTerms" | "riskDi
         eyebrow: "Economic separation",
         title: "Membership fees are not reserve",
         copy:
-          "OmegaX Health app membership remains commercially separate from Genesis Protect premiums. Membership fees should not be interpreted as claims-paying reserve, and sponsor support should not be described as making app membership itself into protection capital.",
+          "OmegaX Health app membership remains commercially separate from Genesis Protect premiums. Membership fees and pending reservations should not be interpreted as claims-paying reserve, and sponsor support should not be described as making app membership itself into protection capital.",
         bullets: [
           "App membership supports the app experience and AI health support.",
-          "Protection premiums activate the per-window protection lane.",
+          "Protection premiums activate the per-window protection lane only after the relevant posting and activation rules are satisfied.",
           "Sponsor-funded cohorts can fund protection while still preserving that separation.",
         ],
       },

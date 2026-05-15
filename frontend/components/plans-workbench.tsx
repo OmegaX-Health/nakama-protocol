@@ -192,10 +192,18 @@ function GenesisPreBootstrapLanding(props: {
                   </div>
                   <div className="plans-settings-row">
                     <div>
-                      <span className="plans-settings-label">Payout cap</span>
-                      <span className="plans-settings-lane">Maximum visible member benefit</span>
+                      <span className="plans-settings-label">Benefit cap</span>
+                      <span className="plans-settings-lane">
+                        {sku.capMode === "reserve_indexed"
+                          ? "Reserve-indexed target; exact cap locks at activation"
+                          : "Maximum visible member benefit"}
+                      </span>
                     </div>
-                    <span className="plans-settings-address">${sku.payoutCapUsd.toLocaleString()}</span>
+                    <span className="plans-settings-address">
+                      {sku.capMode === "reserve_indexed" && sku.targetMaxBenefitUsd
+                        ? `Target up to $${sku.targetMaxBenefitUsd.toLocaleString()}`
+                        : `$${(sku.payoutCapUsd ?? 0).toLocaleString()}`}
+                    </span>
                   </div>
                 </div>
               </article>

@@ -62,7 +62,7 @@ It is intentionally a hard-break devnet migration rather than a compatibility re
 - the oracle register/update flows now share the same full-page wizard grammar as `/plans/new`, including guarded bootstrap handling when live schema reads degrade
 - plan-control saves now preserve decoded numeric membership mode and gate-kind values instead of reconstructing them from display labels
 - the hosted frontend keeps the canonical `v0.3.0` surface while improving workbench readability, queue visibility, and operator-facing chrome for the public deployment
-- Genesis-facing console and metadata copy now align to the actual launch posture: bounded end-of-month mainnet target, Travel 30 primary / Event 7 fast-demo, and Phase 0 operator-backed claim review with later AI and decentralized review framed as roadmap
+- Genesis-facing console and metadata copy now align to the actual launch posture: Travel 30 Founder reservations pending activation, Event 7 fast-demo readiness, and Phase 0 operator-backed claim review with later AI and decentralized review framed as roadmap
 - publish the matching docs update alongside the frontend deployment so [docs.omegax.health](https://docs.omegax.health/docs) reflects the current console experience
 
 ## Operations release notes

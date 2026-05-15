@@ -151,7 +151,10 @@ type PublicMetadata = {
     displayName: string;
     coverWindowDays: number;
     benefitStyle: string;
-    maxPayoutUsd: number;
+    capMode?: "fixed" | "reserve_indexed";
+    maxPayoutUsd: number | null;
+    historicalFixedCapUsd?: number;
+    targetMaxBenefitUsd?: number;
   };
   pricing: {
     retailUsd: number;
@@ -197,7 +200,13 @@ function validateMetadata(assumptions: Assumptions): void {
     assertEqual(metadata.product.displayName, sku.displayName, `${skuKey} displayName drift`);
     assertEqual(metadata.product.coverWindowDays, sku.coverWindowDays, `${skuKey} coverWindowDays drift`);
     assertEqual(metadata.product.benefitStyle, sku.benefitStyle, `${skuKey} benefitStyle drift`);
-    assertEqual(metadata.product.maxPayoutUsd, sku.maxPayoutUsd, `${skuKey} maxPayoutUsd drift`);
+    if (metadata.product.capMode === "reserve_indexed") {
+      assertEqual(metadata.product.maxPayoutUsd, null, `${skuKey} reserve-indexed active cap drift`);
+      assertEqual(metadata.product.historicalFixedCapUsd, sku.maxPayoutUsd, `${skuKey} historical cap drift`);
+      assertEqual(metadata.product.targetMaxBenefitUsd, 250_000, `${skuKey} target max benefit drift`);
+    } else {
+      assertEqual(metadata.product.maxPayoutUsd, sku.maxPayoutUsd, `${skuKey} maxPayoutUsd drift`);
+    }
     assertEqual(metadata.pricing.retailUsd, sku.retailPremiumUsd, `${skuKey} retail premium drift`);
     assertEqual(metadata.pricing.cohortUsdMin, sku.cohortPremiumUsdMin, `${skuKey} cohort min drift`);
     assertEqual(metadata.pricing.cohortUsdMax, sku.cohortPremiumUsdMax, `${skuKey} cohort max drift`);

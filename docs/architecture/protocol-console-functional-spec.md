@@ -159,7 +159,7 @@ Genesis Protect Acute is a required mounted variant of this same workspace, not 
 - after bootstrap, the operator must land back in `/plans?...&setup=genesis-protect-acute` so the live checklist and issuance posture remain visible until launch readiness is complete
 - `/plans?...&setup=genesis-protect-acute&tab=claims` must become the mounted Genesis operator claim queue, with summary cards, queue filters, selected-case detail, and only contextual action handoff into adjudication, reserve, impairment, or oracle follow-through
 - `/plans?...&setup=genesis-protect-acute&tab=treasury` must become the mounted Genesis reserve console, with per-lane reserve attribution, degraded-visibility warnings, and treasury actions scoped from the selected live funding lane
-- all mounted Genesis copy must describe a bounded launch-readiness posture: end-of-month mainnet target, not broadly live insurance today, and Phase 0 operator-backed claim review
+- all mounted Genesis copy must describe a bounded launch-readiness posture: Founder reservations pending activation, not broadly live insurance today, and Phase 0 operator-backed claim review
 - any later AI recommendation or decentralized review language must be explicitly framed as roadmap or next phase rather than current fact
 
 ##### Step 1: neutral plan root

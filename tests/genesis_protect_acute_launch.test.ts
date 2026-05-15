@@ -19,6 +19,9 @@ const {
   GENESIS_PROTECT_ACUTE_SENIOR_CLASS_ID,
   GENESIS_PROTECT_ACUTE_SKUS,
   GENESIS_PROTECT_ACUTE_TECHNICAL_TERMS_URL,
+  GENESIS_PROTECT_TRAVEL30_CAP_LADDER,
+  GENESIS_PROTECT_TRAVEL30_FOUNDER_SEAT_COUNT,
+  GENESIS_PROTECT_TRAVEL30_TARGET_MAX_BENEFIT_USD,
 } = genesisCatalogModule as typeof import("../frontend/lib/genesis-protect-acute.ts");
 const { DEVNET_PROTOCOL_FIXTURE_STATE } = fixturesModule as typeof import("../frontend/lib/devnet-fixtures.ts");
 const { parseProtectionPosture } = planLaunchModule as typeof import("../frontend/lib/plan-launch.ts");
@@ -32,7 +35,12 @@ type GenesisProtectionMetadataDocument = {
     displayName: string;
     coverWindowDays: number;
     benefitStyle: string;
-    maxPayoutUsd: number;
+    capMode: "fixed" | "reserve_indexed";
+    maxPayoutUsd: number | null;
+    targetSeatCount?: number;
+    targetMaxBenefitUsd?: number;
+    historicalFixedCapUsd?: number;
+    activationCapRule?: string;
   };
   pricing: {
     retailUsd: number;
@@ -46,10 +54,15 @@ type GenesisProtectionMetadataDocument = {
       trigger: string;
     }>;
     reimbursementTopUp?: {
-      aggregateCapUsd: number;
+      aggregateCapUsd: number | null;
+      capMode?: "fixed" | "reserve_indexed";
       description: string;
     };
   };
+  capLadder?: Array<{
+    reserveBackstopUsd: number;
+    maxBenefitUsd: number;
+  }>;
   waitingPeriods: {
     illnessDays: number;
     accidentHours: number;
@@ -147,6 +160,7 @@ test("Genesis Protect Acute metadata documents encode the canonical Event 7 and 
   assert.equal(event7Document.product.sku, "Event 7");
   assert.equal(event7Document.product.coverWindowDays, GENESIS_PROTECT_ACUTE_SKUS.event7.coverWindowDays);
   assert.equal(event7Document.product.benefitStyle, GENESIS_PROTECT_ACUTE_SKUS.event7.benefitStyle);
+  assert.equal(event7Document.product.capMode, "fixed");
   assert.equal(event7Document.product.maxPayoutUsd, GENESIS_PROTECT_ACUTE_SKUS.event7.payoutCapUsd);
   assert.equal(event7Document.pricing.retailUsd, GENESIS_PROTECT_ACUTE_SKUS.event7.pricing.retailUsd);
   assert.deepEqual(
@@ -186,7 +200,13 @@ test("Genesis Protect Acute metadata documents encode the canonical Event 7 and 
   assert.equal(travel30Document.product.sku, "Travel 30");
   assert.equal(travel30Document.product.coverWindowDays, GENESIS_PROTECT_ACUTE_SKUS.travel30.coverWindowDays);
   assert.equal(travel30Document.product.benefitStyle, GENESIS_PROTECT_ACUTE_SKUS.travel30.benefitStyle);
-  assert.equal(travel30Document.product.maxPayoutUsd, GENESIS_PROTECT_ACUTE_SKUS.travel30.payoutCapUsd);
+  assert.equal(travel30Document.product.capMode, "reserve_indexed");
+  assert.equal(travel30Document.product.maxPayoutUsd, null);
+  assert.equal(travel30Document.product.targetSeatCount, GENESIS_PROTECT_TRAVEL30_FOUNDER_SEAT_COUNT);
+  assert.equal(travel30Document.product.targetMaxBenefitUsd, GENESIS_PROTECT_TRAVEL30_TARGET_MAX_BENEFIT_USD);
+  assert.equal(travel30Document.product.historicalFixedCapUsd, 5_000);
+  assert.match(travel30Document.product.activationCapRule ?? "", /exact Travel 30 cap locks only at activation/);
+  assert.deepEqual(travel30Document.capLadder, GENESIS_PROTECT_TRAVEL30_CAP_LADDER);
   assert.equal(travel30Document.pricing.retailUsd, GENESIS_PROTECT_ACUTE_SKUS.travel30.pricing.retailUsd);
   assert.deepEqual(
     travel30Document.benefitSchedule.tiers.map((tier) => tier.benefitUsd),
@@ -196,6 +216,7 @@ test("Genesis Protect Acute metadata documents encode the canonical Event 7 and 
     travel30Document.benefitSchedule.reimbursementTopUp?.aggregateCapUsd,
     GENESIS_PROTECT_ACUTE_SKUS.travel30.reimbursementTopUp?.aggregateCapUsd,
   );
+  assert.equal(travel30Document.benefitSchedule.reimbursementTopUp?.capMode, "reserve_indexed");
   assert.equal(travel30Document.waitingPeriods.illnessDays, GENESIS_PROTECT_ACUTE_SKUS.travel30.waitingPeriods.illnessDays);
   assert.equal(travel30Document.waitingPeriods.accidentHours, GENESIS_PROTECT_ACUTE_SKUS.travel30.waitingPeriods.accidentHours);
   assert.equal(travel30Document.waitingPeriods.sponsorCohortWaiverAllowed, true);
@@ -215,9 +236,9 @@ test("Genesis Protect Acute metadata documents encode the canonical Event 7 and 
     travel30Document.issuanceControls.publicStatusRule,
     GENESIS_PROTECT_ACUTE_SKUS.travel30.issuanceControls.publicStatusRule,
   );
-  assert.equal(travel30Document.issuanceControls.issueWhen.length, 3);
+  assert.equal(travel30Document.issuanceControls.issueWhen.length, 4);
   assert.equal(travel30Document.issuanceControls.pauseWhen.length, 3);
-  assert.equal(travel30Document.launchTruth.publicStatus, "end_of_month_mainnet_target");
+  assert.equal(travel30Document.launchTruth.publicStatus, "founder_reservation_pending_activation");
   assert.equal(travel30Document.launchTruth.primaryLaunchSku, "travel30");
   assert.equal(travel30Document.launchTruth.fastDemoSku, "event7");
   assert.equal(travel30Document.launchTruth.claimsTrustPhase, "operator_backed_oracle_phase0");
