@@ -9,7 +9,7 @@ Source-of-truth record: internal decision log; public repo copy intentionally om
 
 Ship Genesis Protect Acute V1 on mainnet as a working coverage and claims product with:
 
-- Travel 30 Curve as the primary member offer.
+- Travel 30 Founder access as the primary member offer: 100 seats at 99 USD, targeting a reserve-indexed cap up to 250,000 USD at activation.
 - Event 7 fixed cover as the short-window demo/cohort SKU if it is already operationally ready.
 - Explicit claims-paying reserve from opening reserve, collected premiums, and private/operator backstop capital.
 - AI/operator-assisted offchain claim processing in Phase 0.
@@ -20,9 +20,10 @@ Do not ship the public prediction market, predictor rewards, health bonds, self-
 The simplest accurate description is:
 
 ```text
-Member chooses budget
--> quote curve returns a fixed cap
--> member buys capped acute cover
+Member reserves Founder access
+-> reserve/backstop proof unlocks a cap ladder
+-> activation quote returns the exact locked cap and terms
+-> member activates capped acute cover
 -> AI/operator processes claim offchain
 -> protocol records claim truth and reserve consequence
 -> claim settles from claims-paying reserve
@@ -30,41 +31,48 @@ Member chooses budget
 
 ## Why this is the V1
 
-The fixed-price V1 is now 99 USD, but the product gap still exists: some users will not buy a one-size Travel 30 policy, while they may buy 15 to 39 USD of reserve-gated protection.
+The public Founder V1 is now a fixed 99 USD reservation for Travel 30 access, but the cap must stay reserve-gated. The better launch promise is not "99 USD buys 250,000 USD live coverage today." It is "99 USD reserves access; the activation quote locks the cap that the posted reserve/backstop can actually support."
 
 The later full-stack market design is strategically stronger, but it is too much surface area for the first mainnet launch. It adds public market rules, settlement logic, predictor onboarding, collateral accounting, reward waterfalls, market integrity risk, and legal review.
 
 The V1 compromise is better:
 
 - keep the coverage promise boring and claimable
-- let the quote curve make entry flexible
+- let reserve-indexed activation make the benefit flexible
 - keep capital accounting explicit
 - ship real claims before shipping a public underwriting market
 
-This gives the product the useful "put in what you want" behavior without pretending prediction-market volume is reserve.
+This keeps the useful dynamic behavior without pretending prediction-market volume, waitlist deposits, or pending reservations are claims-paying reserve.
 
 ## V1 offer
 
-### Primary SKU: Travel 30 Curve
+### Primary SKU: Travel 30 Founder access
 
 - Cover window: 30 days.
 - Scope: acute, unplanned emergency medical care during the cover window.
-- Minimum member budget: 15 USD.
-- Maximum member cap: 5,000 USD after the May 11 cap increase.
+- Founder reservation price: 99 USD.
+- Founder cohort: first 100 seats.
+- Target max benefit: up to 250,000 USD.
+- Cap mode: reserve-indexed until activation.
 - Illness waiting period: 7 days.
 - Accident waiting period: 24 hours.
-- Coverage cap is fixed at purchase.
-- Terms hash, pricing curve hash, reserve snapshot, and quote TTL must be attached to the quote receipt.
+- Coverage cap is fixed only at activation, not at reservation.
+- Terms hash, cap ladder hash, reserve snapshot/hash, exclusions, waiting periods, and quote TTL must be attached to the activation quote receipt.
 
-Fresh-market quote examples from the Nomad Protect Curve PoC:
+Public copy:
 
-| Member budget | Coverage cap | Premium / cap |
-| ---: | ---: | ---: |
-| 15 USD | 286 USD | 5.25% |
-| 39 USD | 743 USD | 5.25% |
-| 99 USD | 1,884 USD | 5.25% |
+> $99 Travel 30 Founder access. First cohort: 100 seats. Target cap up to $250k, unlocked only when posted claims-paying reserve/backstop reaches the required threshold. Exact cap and terms lock at activation.
 
-Warm and stressed markets quote less cover per dollar. That is intentional. The curve should protect reserve health rather than preserve a marketing cap.
+Reserve-indexed cap ladder for launch copy:
+
+| Posted claims-paying reserve/backstop floor | Travel 30 activation cap |
+| ---: | ---: |
+| 250,000 USD | 25,000 USD |
+| 750,000 USD | 75,000 USD |
+| 1,500,000 USD | 150,000 USD |
+| 2,500,000 USD | 250,000 USD |
+
+The ladder is campaign metadata and activation gating guidance, not active cover. If reserve/backstop proof is unavailable, activation copy must fail closed and show no live 250,000 USD coverage claim.
 
 ### Optional V1 SKU: Event 7 fixed cover
 
@@ -76,24 +84,26 @@ Event 7 can remain the short trip, conference, or sponsor demo SKU:
 - Fixed benefit only in V1.
 - Same anti-selection posture: 24-hour accident wait; illness cover only if bought at least 7 days before the window unless a prefunded sponsor roster explicitly waives it.
 
-Do not block V1 on Event 7 if Travel 30 Curve and claims operations are ready first.
+Do not block V1 on Event 7 if Travel 30 Founder access and claims operations are ready first.
 
 ## Member language
 
 Use plain product language:
 
-> Choose your protection budget. We quote exactly how much acute emergency cover it buys before you join.
+> Reserve Travel 30 Founder access now. We quote the exact active cap before you activate.
 
-For a 39 USD quote:
+For the 99 USD Founder offer:
 
-> Your 39 USD buys up to 743 USD of acute emergency cover for 30 days.
+> Your 99 USD reserves access to the first 100-seat Travel 30 cohort. The target cap is up to 250,000 USD, but only if posted reserve/backstop proof supports it before activation.
 
 Avoid:
 
 - "Pay anything and you are insured" without the quoted cap.
+- "250,000 USD coverage is live" before the reserve threshold is met and terms are frozen.
 - "Prediction-market insurance" for V1.
 - "Fully decentralized claims" while Phase 0 uses AI/operator-assisted review.
 - "Yield-backed insurance" unless rewards and reserve waterfalls are actually live.
+- "Comprehensive travel insurance" unless a licensed wrapper and matching benefits are in force.
 
 ## Reserve model
 
@@ -114,6 +124,7 @@ Do not count:
 - expected future yield
 - token collateral without explicit haircuts and disclosure
 - member budgets before purchase finality
+- waitlist deposits or pending Founder reservations
 
 Issuance must pause or reprice when free reserve after the quote would breach the SKU floor.
 
@@ -124,9 +135,9 @@ The repo contains two relevant workbooks:
 - Genesis Protect Acute fixed SKU launch review: `examples/genesis-protect-acute-actuarial-review/review-memo.md`
 - Nomad curve and market-structure PoC: `examples/nomad-protect-curve-poc/hybrid-model-report.md`
 
-### Current Genesis fixed SKU launch gate
+### Historical Genesis fixed SKU launch gate
 
-The May 11 Genesis workbook applies the approved cap increase: Event 7 now carries a 3,000 USD fixed-benefit cap, and Travel 30 now carries a 5,000 USD aggregate cap. The baseline public-open mix remains healthy, while adverse and stress paths now gate to caution or pause unless additional posted reserve or sponsor/backstop capital is added:
+The May 11 Genesis workbook was the fixed-cap basis before the Founder cohort target changed: Event 7 carried a 3,000 USD fixed-benefit cap, and Travel 30 carried a 5,000 USD aggregate cap. It remains useful as the conservative Phase 0 claims-processing baseline, but it no longer defines the public Travel 30 Founder headline. A 250,000 USD target cap requires the reserve/backstop ladder above, fresh actuarial review, and final activation terms before any member receives active cover.
 
 | Scenario | Gate | Premium | p99.5 claims | Reserve |
 | --- | --- | ---: | ---: | ---: |
@@ -136,7 +147,7 @@ The May 11 Genesis workbook applies the approved cap increase: Event 7 now carri
 | travel30-only 500 | healthy | 49,500 USD | 53,064 USD | 84,900 USD |
 | travel30-only adverse 500 | caution | 49,500 USD | 76,888 USD | 84,900 USD |
 
-This is the current repo basis for mainnet launch gating after the cap increase.
+This is retained as repo evidence for the earlier fixed-cap gate. Do not use it to claim that the 250,000 USD Founder target is actuarially approved or active.
 
 ### Curve and market-structure simulations
 
@@ -244,11 +255,14 @@ Once that is live, market capital can graduate through:
 
 Before public mainnet activation, the launch surface should have:
 
-- Travel 30 Curve terms frozen.
-- Cap and premium curve published.
+- Travel 30 Founder terms frozen for the activated cohort.
+- 100-seat Founder cohort metadata published.
+- Reserve-indexed cap ladder published and hashable.
+- Cap, waiting periods, exclusions, terms hash, reserve snapshot/hash, and quote TTL returned by activation quote.
 - Reserve floor and issuance pause logic implemented.
 - Opening reserve posted.
 - Backstop capital posted or explicitly documented.
+- Existing active terms protected from later reserve changes; reserve changes affect only new activations or renewals.
 - AI/operator claim intake ready.
 - Evidence reference and claim attestation path ready.
 - Settlement path tested with real payout rail assumptions.
@@ -278,7 +292,9 @@ Ship:
 
 ```text
 Genesis Protect Acute V1
-- Travel 30 Curve as the main offer
+- Travel 30 Founder access as the main offer
+- 100 seats at 99 USD
+- reserve-indexed target cap up to 250,000 USD
 - Event 7 fixed cover only if operationally ready
 - private/operator backstop sidecar
 - signed quote receipts
@@ -300,4 +316,4 @@ full public backer marketplace
 complex yield waterfall
 ```
 
-This is the fastest credible mainnet path because it ships real coverage, real claims, and flexible pricing without turning launch into a capital-markets release.
+This is the fastest credible mainnet path because it ships real reserved access, real activation gates, real claims, and flexible benefit limits without turning launch into a capital-markets release or overstating inactive cover.

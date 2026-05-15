@@ -6,13 +6,13 @@ If you are evaluating the current Genesis launch surface, start with the sponsor
 
 ## Sponsor Travel 30 start here
 
-- [Genesis Protect V1 Curve Launch Plan](./architecture/genesis-protect-v1-curve-launch.md) — primary Travel 30 launch recommendation, Event 7 cohort/demo boundary, reserve gating, and current cap doctrine
+- [Genesis Protect V1 Curve Launch Plan](./architecture/genesis-protect-v1-curve-launch.md) — primary Travel 30 Founder launch recommendation, Event 7 cohort/demo boundary, reserve gating, and reserve-indexed cap doctrine
 - [Genesis Protect Claim Trace](./architecture/genesis-protect-claim-trace.md) — one Travel 30 claim from intake through evidence, attestation, obligation, reserve impact, and payout
 - [Genesis Protect Acute Claims Processing Spec](./architecture/genesis-protect-acute-claims-processing-spec.md) — Phase 0 claim workflow, evidence rules, escalation, denial, and payout timing
 - [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface)
 - [Protocol Architecture](https://docs.omegax.health/docs/protocol/architecture)
 
-This path is intentionally launch-truth-first: `Travel 30` is the primary SKU, `Event 7` is the short-window cohort/demo SKU, and Phase 0 claims remain operator-backed rather than fully decentralized.
+This path is intentionally launch-truth-first: `Travel 30` is the primary reserve-indexed Founder SKU, `Event 7` is the short-window cohort/demo SKU, and Phase 0 claims remain operator-backed rather than fully decentralized.
 
 ## External builder start here
 
@@ -32,7 +32,7 @@ This path is intentionally launch-truth-first: `Travel 30` is the primary SKU, `
 - [Solana Instruction Map](./architecture/solana-instruction-map.md)
 - [Decentralized Coverage Claims](./architecture/decentralized-coverage-claims.md) — abstract claim model
 - [Genesis Protect Claim Trace](./architecture/genesis-protect-claim-trace.md) — deterministic end-to-end walkthrough + messy-path map
-- [Genesis Protect V1 Curve Launch Plan](./architecture/genesis-protect-v1-curve-launch.md) — accepted V1 launch recommendation for curve-priced Travel 30, reserve gating, and Phase 0 claims
+- [Genesis Protect V1 Curve Launch Plan](./architecture/genesis-protect-v1-curve-launch.md) — accepted V1 launch recommendation for reserve-indexed Travel 30, reserve gating, and Phase 0 claims
 - [Frontend Information Architecture](./architecture/frontend-information-architecture.md)
 - [Protocol Console Functional Specification](./architecture/protocol-console-functional-spec.md)
 
@@ -83,7 +83,7 @@ This path is intentionally launch-truth-first: `Travel 30` is the primary SKU, `
 
 ## Audience Guide
 
-- Use [Genesis Protect V1 Curve Launch Plan](./architecture/genesis-protect-v1-curve-launch.md) when deciding how a sponsor-backed Travel 30 cohort should launch, what Event 7 is allowed to mean, and how reserve gating constrains the promise.
+- Use [Genesis Protect V1 Curve Launch Plan](./architecture/genesis-protect-v1-curve-launch.md) when deciding how a sponsor-backed Travel 30 Founder cohort should launch, what Event 7 is allowed to mean, and how reserve gating constrains the promise.
 - Use [Genesis Protect Claim Trace](./architecture/genesis-protect-claim-trace.md) when a sponsor, operator, or reviewer needs to follow one claim from evidence through payout without reading the whole program.
 - Use [Genesis Protect Acute Claims Processing Spec](./architecture/genesis-protect-acute-claims-processing-spec.md) when checking Phase 0 claim operations, evidence requirements, denial/appeal posture, and payout timing.
 - Use [SDK Overview](https://docs.omegax.health/docs/sdk/sdk-overview) when you want the fastest public explanation of what builders can ship on OmegaX today.

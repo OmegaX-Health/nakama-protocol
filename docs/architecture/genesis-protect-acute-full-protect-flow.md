@@ -23,6 +23,11 @@ in what sequence, with what internal operating target, and what happens when thi
 Together they form the complete picture of the Genesis Protect Acute claim lifecycle — technical
 truth chain on one side, operational workflow on the other.
 
+Travel 30 Founder reservations are not active cover. The first 100-seat Founder cohort targets a
+reserve-indexed cap up to $250,000 only when posted claims-paying reserve/backstop proof supports
+it before activation. This flow begins once a member activates cover and receives a quote receipt
+with exact cap, terms hash, reserve snapshot, waiting periods, exclusions, and quote expiry.
+
 ---
 
 ## 1. Overview: The Protect Flow in One View
@@ -73,7 +78,7 @@ MEMBER JOURNEY                    OPERATOR / ORACLE WORKFLOW               ONCHA
 ### 2.1 Member actions
 
 1. Member connects wallet to the OmegaX Health portal (or Breakpoint registration flow).
-2. Member selects a product SKU: **Event 7** ($39 / 7 days) or **Travel 30** ($99 / 30 days).
+2. Member selects a product SKU: **Event 7** ($39 / 7 days) or activates reserved **Travel 30** Founder access ($99 / 30 days; exact cap locked at activation).
 3. Member reviews coverage terms and exclusion schedule (Phase 0: mandatory pre-sign review via
    `protocol-transaction-review` frontend component).
 4. Member pays premium in USDC — the `record_premium_payment` instruction is executed.
@@ -326,13 +331,13 @@ The operator confirms (or overrides) the AI-suggested tier classification based 
 
 | Tier | Event 7 benefit | Travel 30 fixed | Travel 30 top-up |
 |---|---|---|---|
-| T1 — ER same-day | $150 | $250 | UCR-benchmarked top-up, total capped at $5,000 |
-| T2 — Overnight | $500 | $1,000 | UCR-benchmarked top-up, total capped at $5,000 |
-| T3 — Surgery + ICU | $3,000 | $2,500 | UCR-benchmarked top-up, total capped at $5,000 |
+| T1 — ER same-day | $150 | $250 | UCR-benchmarked top-up, total capped at locked aggregate cap |
+| T2 — Overnight | $500 | $1,000 | UCR-benchmarked top-up, total capped at locked aggregate cap |
+| T3 — Surgery + ICU | $3,000 | $2,500 | UCR-benchmarked top-up, total capped at locked aggregate cap |
 
 For Travel 30 reimbursement top-up: the operator calculates
-`min(UCR_eligible_itemized_cost - fixed_tier_benefit, 5000 - fixed_tier_benefit)` so the
-total approved amount remains within the $5,000 aggregate cap.
+`min(UCR_eligible_itemized_cost - fixed_tier_benefit, locked_cap - fixed_tier_benefit)` so the
+total approved amount remains within the aggregate cap locked at activation.
 
 ### 9.3 Denial notification timing
 

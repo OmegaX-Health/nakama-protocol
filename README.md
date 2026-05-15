@@ -4,7 +4,7 @@ OmegaX Protocol's current launch job is concrete: help a sponsor fund Travel 30 
 
 Plainly: a sponsor can fund a protected group, see what backs the promise, and audit what happened when a claim is reviewed or paid.
 
-The current public launch reference is Genesis Protect Acute. `Travel 30` is the primary SKU, with a 30-day window and a 5,000 USDC aggregate cap. `Event 7` is the short-window cohort/demo SKU, with a 7-day window and a 3,000 USDC fixed-benefit cap. Both remain bounded launch surfaces: not broadly live insurance today, and Phase 0 claim review is operator-backed rather than fully decentralized.
+The current public launch reference is Genesis Protect Acute. `Travel 30` is the primary Founder SKU: a 100-seat cohort where 99 USDC reserves access to a reserve-indexed 30-day travel cap targeting up to 250,000 USDC at activation, unlocked only when the posted claims-paying reserve/backstop reaches the required threshold and final terms are ready. `Event 7` is the short-window cohort/demo SKU, with a 7-day window and a 3,000 USDC fixed-benefit cap. Both remain bounded launch surfaces: reservations are not active cover today, pending custody is not claims-paying reserve, this is not comprehensive travel insurance, and Phase 0 claim review is operator-backed rather than fully decentralized.
 
 On Solana devnet beta today, the public surface in this repository can already anchor:
 
@@ -132,7 +132,7 @@ This patch hardens the first publishable canonical OmegaX health-capital-markets
 
 Genesis Protect Acute sprint-1 launch truth is frozen in the public metadata and fixture surface for the April 16-20, 2026 implementation window.
 
-- `Travel 30` is the primary launch SKU and `Event 7` is the fast demo SKU
+- `Travel 30` is the primary Founder launch SKU with a reserve-indexed target cap, and `Event 7` is the fast demo SKU
 - the current public target is end-of-month mainnet readiness, not broadly live insurance issuance today
 - phase-0 claims trust is an operator-backed oracle flow rather than decentralized adjudication
 - AI recommendation and more explicit decentralized review remain next-phase work, not current public fact
