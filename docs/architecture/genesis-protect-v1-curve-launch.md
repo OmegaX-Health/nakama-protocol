@@ -70,9 +70,12 @@ Reserve-indexed cap ladder for launch copy:
 | 250,000 USD | 25,000 USD |
 | 750,000 USD | 75,000 USD |
 | 1,500,000 USD | 150,000 USD |
+| 2,000,000 USD | 200,000 USD |
 | 2,500,000 USD | 250,000 USD |
 
 The ladder is campaign metadata and activation gating guidance, not active cover. If reserve/backstop proof is unavailable, activation copy must fail closed and show no live 250,000 USD coverage claim.
+
+The `/protect/devnet` website simulator may use the 2,000,000 USD row to show a 200,000 USD locked Travel 30 demo cap with simulated reserve and terms hashes. That is QA/demo state only: it is not public mainnet cover, not a licensed insurance policy, and not a real payout obligation.
 
 ### Optional V1 SKU: Event 7 fixed cover
 

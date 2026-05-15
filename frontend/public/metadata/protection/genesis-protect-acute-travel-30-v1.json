@@ -70,6 +70,10 @@
       "maxBenefitUsd": 150000
     },
     {
+      "reserveBackstopUsd": 2000000,
+      "maxBenefitUsd": 200000
+    },
+    {
       "reserveBackstopUsd": 2500000,
       "maxBenefitUsd": 250000
     }

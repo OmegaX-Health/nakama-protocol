@@ -118,6 +118,7 @@ export const GENESIS_PROTECT_TRAVEL30_CAP_LADDER: GenesisProtectAcuteCapLadderSt
   { reserveBackstopUsd: 250_000, maxBenefitUsd: 25_000 },
   { reserveBackstopUsd: 750_000, maxBenefitUsd: 75_000 },
   { reserveBackstopUsd: 1_500_000, maxBenefitUsd: 150_000 },
+  { reserveBackstopUsd: 2_000_000, maxBenefitUsd: 200_000 },
   { reserveBackstopUsd: 2_500_000, maxBenefitUsd: 250_000 },
 ];
 

@@ -44,7 +44,9 @@ token account is available.
 4. Confirm `/v1/public/reservations/campaigns` returns both campaigns, the
    intended enabled rails, and the Travel cover fields
    `targetSeatCount=100`, `targetMaxBenefitUsd=250000`,
-   `capMode=reserve_indexed`, `capLadder`, and `activationTermsLabel`.
+   `capMode=reserve_indexed`, `capLadder`, and `activationTermsLabel`. The
+   current ladder includes the 2,000,000 USD reserve/backstop row that can lock
+   a 200,000 USD activation cap before the final 250,000 USD target row.
 5. Run a prepare-submit-confirm rehearsal for SOL and one SPL rail on the target
    cluster.
 6. Reconcile reservations by unique reference, not by payer memo.
