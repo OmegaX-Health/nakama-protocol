@@ -17,7 +17,13 @@ test("Genesis actuarial assumptions match public metadata", () => {
     const metadata = readJson<any>(join(process.cwd(), model.metadataPath));
     assert.equal(metadata.product.coverWindowDays, model.coverWindowDays, `${sku} cover window drift`);
     assert.equal(metadata.product.benefitStyle, model.benefitStyle, `${sku} benefit style drift`);
-    assert.equal(metadata.product.maxPayoutUsd, model.maxPayoutUsd, `${sku} max payout drift`);
+    if (metadata.product.capMode === "reserve_indexed") {
+      assert.equal(metadata.product.maxPayoutUsd, null, `${sku} reserve-indexed cap should not imply active cover`);
+      assert.equal(metadata.product.historicalFixedCapUsd, model.maxPayoutUsd, `${sku} historical cap drift`);
+      assert.equal(metadata.product.targetMaxBenefitUsd, 250_000, `${sku} target max benefit drift`);
+    } else {
+      assert.equal(metadata.product.maxPayoutUsd, model.maxPayoutUsd, `${sku} max payout drift`);
+    }
     assert.equal(metadata.pricing.retailUsd, model.retailPremiumUsd, `${sku} retail premium drift`);
     assert.equal(metadata.pricing.cohortUsdMin, model.cohortPremiumUsdMin, `${sku} cohort min drift`);
     assert.equal(metadata.pricing.cohortUsdMax, model.cohortPremiumUsdMax, `${sku} cohort max drift`);

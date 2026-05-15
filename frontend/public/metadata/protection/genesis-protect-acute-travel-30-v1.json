@@ -16,7 +16,12 @@
     "coverWindowDays": 30,
     "currency": "USDC",
     "benefitStyle": "hybrid_fixed_plus_reimbursement",
-    "maxPayoutUsd": 5000
+    "capMode": "reserve_indexed",
+    "maxPayoutUsd": null,
+    "targetSeatCount": 100,
+    "targetMaxBenefitUsd": 250000,
+    "historicalFixedCapUsd": 5000,
+    "activationCapRule": "The exact Travel 30 cap locks only at activation from the posted claims-paying reserve/backstop snapshot, terms hash, waiting periods, exclusions, and quote expiry."
   },
   "pricing": {
     "retailUsd": 99,
@@ -46,10 +51,33 @@
       }
     ],
     "reimbursementTopUp": {
-      "aggregateCapUsd": 5000,
-      "description": "Actual acute emergency medical spend above the fixed tier benefit, capped at the aggregate maximum."
+      "aggregateCapUsd": 250000,
+      "capMode": "reserve_indexed",
+      "description": "Target aggregate maximum for Founder access. The active reimbursement top-up cap is reserve-indexed and locks only at activation."
     }
   },
+  "capLadder": [
+    {
+      "reserveBackstopUsd": 250000,
+      "maxBenefitUsd": 25000
+    },
+    {
+      "reserveBackstopUsd": 750000,
+      "maxBenefitUsd": 75000
+    },
+    {
+      "reserveBackstopUsd": 1500000,
+      "maxBenefitUsd": 150000
+    },
+    {
+      "reserveBackstopUsd": 2000000,
+      "maxBenefitUsd": 200000
+    },
+    {
+      "reserveBackstopUsd": 2500000,
+      "maxBenefitUsd": 250000
+    }
+  ],
   "waitingPeriods": {
     "illnessDays": 7,
     "accidentHours": 24,
@@ -92,12 +120,12 @@
   },
   "commercialLayers": {
     "appMembership": "Separate OmegaX Health app subscription for AI health agent value and premium app features.",
-    "protectionPremium": "Per-window premium that activates Travel 30 protection eligibility in the protocol."
+    "protectionPremium": "Founder reservation/access payment holds a place and price for Travel 30. Active protection starts only after activation locks exact cap and terms."
   },
   "fundingLanes": {
     "premium": {
       "lineId": "genesis-travel30-premiums",
-      "reserveRole": "Collected premiums attributed to the Travel 30 protection reserve lane."
+      "reserveRole": "Collected premiums attributed to the Travel 30 protection reserve lane after the relevant activation/posting rules are satisfied."
     },
     "liquidity": {
       "lineId": "genesis-travel30-liquidity",
@@ -106,20 +134,21 @@
   },
   "issuanceControls": {
     "reserveAttribution": "Only posted capital, collected premiums, and explicit backstop funds count as claims-paying reserve.",
-    "publicStatusRule": "Keep Travel 30 positioned as the primary SKU for a bounded end-of-month mainnet launch target. Do not describe it as broadly live insurance today.",
+    "publicStatusRule": "Keep Travel 30 positioned as 99 USDC Founder access for the first 100-seat cohort, targeting reserve-indexed benefits up to 250,000 USDC only after posted reserve/backstop proof and final terms support activation. Do not describe it as broadly live insurance today.",
     "issueWhen": [
-      "Travel 30 reserve lanes are funded onchain with published premium and liquidity support.",
+      "Travel 30 reserve lanes have posted claims-paying reserve/backstop that meets the published cap ladder threshold.",
+      "Activation quotes lock exact cap, reserve snapshot/hash, terms hash, waiting periods, exclusions, and quote expiry.",
       "Operator-backed claim review is staffed for the active issuance window.",
       "The shared public evidence schema stays aligned with the published metadata document."
     ],
     "pauseWhen": [
-      "Posted reserve no longer covers the marketed issuance window.",
+      "Posted reserve/backstop proof cannot support any published activation cap.",
       "Claims operator or oracle staffing falls below the required phase-0 review readiness.",
       "Schema, pricing, or benefit truth drifts from the published Genesis metadata."
     ]
   },
   "launchTruth": {
-    "publicStatus": "end_of_month_mainnet_target",
+    "publicStatus": "founder_reservation_pending_activation",
     "primaryLaunchSku": "travel30",
     "fastDemoSku": "event7",
     "claimsTrustPhase": "operator_backed_oracle_phase0",

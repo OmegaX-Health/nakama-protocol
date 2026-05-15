@@ -6,6 +6,8 @@
 >
 > **What this is NOT**: a substitute for the operator runbook. The runbook covers operator UX and tooling — this doc covers the **state truth chain**, i.e. exactly what changes on-chain at each step.
 
+> **Founder cap note**: Travel 30 Founder reservations are not active cover. The public Founder cohort targets a reserve-indexed cap up to USD 250,000 for the first 100 seats, but the exact active cap, terms hash, reserve snapshot, waiting periods, and exclusions lock only at activation.
+
 ## Pre-conditions (already on-chain at claim time)
 
 The following objects exist before the first claim is opened. Their addresses, owners, and economic parameters are recorded in [`frontend/lib/devnet-fixtures.ts`](../../frontend/lib/devnet-fixtures.ts) (devnet) and produced by `scripts/bootstrap_genesis_live_protocol.ts` (mainnet via Genesis live bootstrap).
@@ -15,7 +17,7 @@ The following objects exist before the first claim is opened. Their addresses, o
 | `ReserveDomain` | `open-health-usdc` | Custody boundary; the domain's asset vault is the **only** source of payout funds |
 | `HealthPlan` | `genesis-protect-acute-v1` | Owns membership state, plan-level pause flags, and the `claims_operator` / `plan_admin` keys |
 | `PolicySeries` (Event 7) | `genesis-event-7-v1` | 7-day acute event cover; tier benefits up to USD 3,000; fixed-only |
-| `PolicySeries` (Travel 30) | `genesis-travel-30-v1` | 30-day acute travel cover; tier benefits + reimbursement top-up up to USD 5,000; hybrid |
+| `PolicySeries` (Travel 30) | `genesis-travel-30-v1` | 30-day acute travel cover; tier benefits + reimbursement top-up up to the cap locked at activation; hybrid |
 | `OutcomeSchema` | `genesis-protect-acute-claim` v1 | Verified evidence schema; key hash recorded in `idl/omegax_protocol.source-hash` lineage |
 | `OracleProfile` | configured oracle authority | Will sign claim attestations |
 | `FundingLine` (premium) | `genesis-event7-premium` / `genesis-travel30-premium` | Member premium income; reduces claims-paying floor when reserved against |
@@ -72,7 +74,7 @@ The default recipient is the member's own wallet. This step lets the member rout
 |--------|------------------|----|
 | Claims operator | `require_claim_operator` | `claim_case.intake_status` moves to `approved` or `denied`; adjudicator, approved/denied amounts, and decision metadata are persisted |
 
-**Member-visible**: claim shows `approved at tier 2 (overnight admission), USD 1,000 fixed benefit + reimbursement top-up inside the USD 5,000 aggregate cap` — or `denied with reason hash <hex>` for unhappy paths.
+**Member-visible**: claim shows `approved at tier 2 (overnight admission), USD 1,000 fixed benefit + reimbursement top-up inside the locked aggregate cap` — or `denied with reason hash <hex>` for unhappy paths.
 
 **Truth chain**: the protocol now has a final claim decision. The decision is the input to the next step — reserve booking against an `Obligation`.
 

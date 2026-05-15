@@ -24,7 +24,7 @@
   "launchTruth": {
     "primaryLaunchSku": "travel30",
     "fastDemoSku": "event7",
-    "publicStatus": "end_of_month_mainnet_target",
+    "publicStatus": "founder_reservation_pending_activation",
     "claimsTrustPhase": "operator_backed_oracle_phase0",
     "broadlyLiveInsurance": false,
     "predictionMarketsCountAsReserve": false,

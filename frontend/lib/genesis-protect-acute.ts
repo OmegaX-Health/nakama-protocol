@@ -28,13 +28,20 @@ export type GenesisProtectAcuteIssuanceControls = {
 };
 
 export type GenesisProtectAcuteLaunchTruth = {
-  publicStatus: "end_of_month_mainnet_target";
+  publicStatus: "founder_reservation_pending_activation";
   primaryLaunchSku: GenesisProtectAcuteSkuKey;
   fastDemoSku: GenesisProtectAcuteSkuKey;
   claimsTrustPhase: "operator_backed_oracle_phase0";
   broadlyLiveInsurance: false;
   predictionMarketsCountAsReserve: false;
   appMembershipBillingSeparate: true;
+};
+
+export type GenesisProtectAcuteCapMode = "fixed" | "reserve_indexed";
+
+export type GenesisProtectAcuteCapLadderStep = {
+  reserveBackstopUsd: number;
+  maxBenefitUsd: number;
 };
 
 export type GenesisProtectAcuteSkuDefinition = {
@@ -44,7 +51,12 @@ export type GenesisProtectAcuteSkuDefinition = {
   metadataUri: string;
   comparabilityKey: string;
   coverWindowDays: number;
-  payoutCapUsd: number;
+  capMode: GenesisProtectAcuteCapMode;
+  payoutCapUsd: number | null;
+  targetSeatCount?: number;
+  targetMaxBenefitUsd?: number;
+  capLadder?: GenesisProtectAcuteCapLadderStep[];
+  activationCapRule?: string;
   benefitStyle: "fixed_benefit_only" | "hybrid_fixed_plus_reimbursement";
   pricing: {
     retailUsd: number;
@@ -100,6 +112,15 @@ export const GENESIS_PROTECT_ACUTE_SENIOR_CLASS_ID = "genesis-senior-class";
 export const GENESIS_PROTECT_ACUTE_SENIOR_CLASS_DISPLAY_NAME = "Genesis Acute Senior Class";
 export const GENESIS_PROTECT_ACUTE_JUNIOR_CLASS_ID = "genesis-junior-class";
 export const GENESIS_PROTECT_ACUTE_JUNIOR_CLASS_DISPLAY_NAME = "Genesis Acute First-Loss Class";
+export const GENESIS_PROTECT_TRAVEL30_FOUNDER_SEAT_COUNT = 100;
+export const GENESIS_PROTECT_TRAVEL30_TARGET_MAX_BENEFIT_USD = 250_000;
+export const GENESIS_PROTECT_TRAVEL30_CAP_LADDER: GenesisProtectAcuteCapLadderStep[] = [
+  { reserveBackstopUsd: 250_000, maxBenefitUsd: 25_000 },
+  { reserveBackstopUsd: 750_000, maxBenefitUsd: 75_000 },
+  { reserveBackstopUsd: 1_500_000, maxBenefitUsd: 150_000 },
+  { reserveBackstopUsd: 2_000_000, maxBenefitUsd: 200_000 },
+  { reserveBackstopUsd: 2_500_000, maxBenefitUsd: 250_000 },
+];
 
 export const GENESIS_PROTECT_ACUTE_METADATA_URIS = {
   event7: "/metadata/protection/genesis-protect-acute-event-7-v1.json",
@@ -113,7 +134,7 @@ export const GENESIS_PROTECT_ACUTE_EVIDENCE_SCHEMA: GenesisProtectAcuteEvidenceS
 };
 
 export const GENESIS_PROTECT_ACUTE_LAUNCH_TRUTH: GenesisProtectAcuteLaunchTruth = {
-  publicStatus: "end_of_month_mainnet_target",
+  publicStatus: "founder_reservation_pending_activation",
   primaryLaunchSku: "travel30",
   fastDemoSku: "event7",
   claimsTrustPhase: "operator_backed_oracle_phase0",
@@ -130,6 +151,7 @@ export const GENESIS_PROTECT_ACUTE_SKUS: Record<GenesisProtectAcuteSkuKey, Genes
     metadataUri: GENESIS_PROTECT_ACUTE_METADATA_URIS.event7,
     comparabilityKey: "genesis-acute-event-7",
     coverWindowDays: 7,
+    capMode: "fixed",
     payoutCapUsd: 3_000,
     benefitStyle: "fixed_benefit_only",
     pricing: {
@@ -186,7 +208,7 @@ export const GENESIS_PROTECT_ACUTE_SKUS: Record<GenesisProtectAcuteSkuKey, Genes
     issuanceControls: {
       reserveAttribution: "Only posted capital, collected premiums, and explicit sponsor or backstop funds count as claims-paying reserve.",
       publicStatusRule:
-        "Keep Event 7 positioned as the fast-demo SKU for a bounded end-of-month mainnet launch target. Do not describe it as broadly live insurance today.",
+        "Keep Event 7 positioned as the fast-demo SKU for a bounded pending-activation launch target. Do not describe it as broadly live insurance today.",
       issueWhen: [
         "Event 7 reserve lanes are funded onchain or by explicit sponsor/backstop posting.",
         "Operator-backed claim review is staffed for the active issuance window.",
@@ -207,7 +229,13 @@ export const GENESIS_PROTECT_ACUTE_SKUS: Record<GenesisProtectAcuteSkuKey, Genes
     metadataUri: GENESIS_PROTECT_ACUTE_METADATA_URIS.travel30,
     comparabilityKey: "genesis-acute-travel-30",
     coverWindowDays: 30,
-    payoutCapUsd: 5_000,
+    capMode: "reserve_indexed",
+    payoutCapUsd: null,
+    targetSeatCount: GENESIS_PROTECT_TRAVEL30_FOUNDER_SEAT_COUNT,
+    targetMaxBenefitUsd: GENESIS_PROTECT_TRAVEL30_TARGET_MAX_BENEFIT_USD,
+    capLadder: GENESIS_PROTECT_TRAVEL30_CAP_LADDER,
+    activationCapRule:
+      "The exact Travel 30 cap locks only at activation from the posted claims-paying reserve/backstop snapshot, terms hash, waiting periods, exclusions, and quote expiry.",
     benefitStyle: "hybrid_fixed_plus_reimbursement",
     pricing: {
       retailUsd: 99,
@@ -236,8 +264,9 @@ export const GENESIS_PROTECT_ACUTE_SKUS: Record<GenesisProtectAcuteSkuKey, Genes
       },
     ],
     reimbursementTopUp: {
-      aggregateCapUsd: 5_000,
-      description: "Actual acute emergency medical spend above the fixed tier benefit, capped at the aggregate maximum.",
+      aggregateCapUsd: GENESIS_PROTECT_TRAVEL30_TARGET_MAX_BENEFIT_USD,
+      description:
+        "Target aggregate maximum for Founder access. The active reimbursement top-up cap is reserve-indexed and locks only at activation.",
     },
     waitingPeriods: {
       illnessDays: 7,
@@ -264,14 +293,15 @@ export const GENESIS_PROTECT_ACUTE_SKUS: Record<GenesisProtectAcuteSkuKey, Genes
     issuanceControls: {
       reserveAttribution: "Only posted capital, collected premiums, and explicit backstop funds count as claims-paying reserve.",
       publicStatusRule:
-        "Keep Travel 30 positioned as the primary SKU for a bounded end-of-month mainnet launch target. Do not describe it as broadly live insurance today.",
+        "Keep Travel 30 positioned as 99 USDC Founder access for the first 100-seat cohort, targeting reserve-indexed benefits up to 250,000 USDC only after posted reserve/backstop proof and final terms support activation. Do not describe it as broadly live insurance today.",
       issueWhen: [
-        "Travel 30 reserve lanes are funded onchain with published premium and liquidity support.",
+        "Travel 30 reserve lanes have posted claims-paying reserve/backstop that meets the published cap ladder threshold.",
+        "Activation quotes lock exact cap, reserve snapshot/hash, terms hash, waiting periods, exclusions, and quote expiry.",
         "Operator-backed claim review is staffed for the active issuance window.",
         "The shared public evidence schema stays aligned with the published metadata document.",
       ],
       pauseWhen: [
-        "Posted reserve no longer covers the marketed issuance window.",
+        "Posted reserve/backstop proof cannot support any published activation cap.",
         "Claims operator or oracle staffing falls below the required phase-0 review readiness.",
         "Schema, pricing, or benefit truth drifts from the published Genesis metadata.",
       ],

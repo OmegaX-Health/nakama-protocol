@@ -16,6 +16,7 @@
     "coverWindowDays": 7,
     "currency": "USDC",
     "benefitStyle": "fixed_benefit_only",
+    "capMode": "fixed",
     "maxPayoutUsd": 3000
   },
   "pricing": {
@@ -105,7 +106,7 @@
   },
   "issuanceControls": {
     "reserveAttribution": "Only posted capital, collected premiums, and explicit sponsor or backstop funds count as claims-paying reserve.",
-    "publicStatusRule": "Keep Event 7 positioned as the fast-demo SKU for a bounded end-of-month mainnet launch target. Do not describe it as broadly live insurance today.",
+    "publicStatusRule": "Keep Event 7 positioned as the fast-demo SKU for a bounded pending-activation launch target. Do not describe it as broadly live insurance today.",
     "issueWhen": [
       "Event 7 reserve lanes are funded onchain or by explicit sponsor/backstop posting.",
       "Operator-backed claim review is staffed for the active issuance window.",
@@ -118,7 +119,7 @@
     ]
   },
   "launchTruth": {
-    "publicStatus": "end_of_month_mainnet_target",
+    "publicStatus": "founder_reservation_pending_activation",
     "primaryLaunchSku": "travel30",
     "fastDemoSku": "event7",
     "claimsTrustPhase": "operator_backed_oracle_phase0",

@@ -194,7 +194,7 @@ export function GenesisProtectAcuteSetupPanel(props: GenesisProtectAcuteSetupPan
 
         <p className="plans-card-body">
           The Genesis template creates the canonical two-SKU shell in place.
-          Current public posture: bounded end-of-month mainnet target, not broadly live insurance today, with Phase 0 operator-backed claim review while reserve, oracle, and pool controls finish operator sign-off.
+          Current public posture: Founder reservations pending activation, not broadly live insurance today, with Phase 0 operator-backed claim review while reserve, oracle, and pool controls finish operator sign-off.
         </p>
 
         <div className="plans-settings-grid">

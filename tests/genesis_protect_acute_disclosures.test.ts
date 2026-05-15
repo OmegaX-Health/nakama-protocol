@@ -45,11 +45,13 @@ test("Genesis Protect disclosure pages keep canonical URLs and launch-truth lang
 
   assert.match(technicalTermsText, /shared public metadata route used by DeFi-native protection series/i);
   assert.match(riskDisclosuresText, /can be referenced by generic DeFi-native protection metadata/i);
-  assert.match(technicalTermsText, /Travel 30 is the primary launch SKU/i);
+  assert.match(technicalTermsText, /Travel 30 is the primary Founder reservation SKU/i);
   assert.match(technicalTermsText, /Event 7 is the fast demo SKU/i);
+  assert.match(technicalTermsText, /Founder reservations pending activation/i);
   assert.match(technicalTermsText, /Retail-open and sponsor-configured cohort issuance are both allowed in v1/i);
   assert.match(technicalTermsText, /Phase 0 AI-assisted review under operator oversight/i);
   assert.match(riskDisclosuresText, /membership remains commercially separate from Genesis Protect premiums/i);
+  assert.match(riskDisclosuresText, /Do not read a Travel 30 Founder reservation as active cover or a live 250,000 USDC cap/i);
   assert.match(riskDisclosuresText, /do not read roadmap language about AI or decentralized review as current live fact/i);
 
   assert.doesNotMatch(technicalTermsText, /AI-led review/i);
