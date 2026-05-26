@@ -256,7 +256,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
   const [selectedMemberAddress, setSelectedMemberAddress] = useState("");
   const [selectedFundingLineForClaim, setSelectedFundingLineForClaim] = useState("");
   const [claimId, setClaimId] = useState("");
-  const [claimant, setClaimant] = useState("");
   const [evidenceRef, setEvidenceRef] = useState("");
   const [decisionSupport, setDecisionSupport] = useState("");
   const [reviewState, setReviewState] = useState(String(CLAIM_INTAKE_UNDER_REVIEW));
@@ -341,8 +340,7 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
 
   useEffect(() => {
     if (publicKey && !walletAddress) setWalletAddress(publicKey.toBase58());
-    if (publicKey && !claimant) setClaimant(publicKey.toBase58());
-  }, [publicKey, walletAddress, claimant]);
+  }, [publicKey, walletAddress]);
 
   useEffect(() => {
     const member = props.members.find((entry) => entry.address === memberSelectedAddress);
@@ -423,6 +421,7 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
     () => props.members.find((member) => member.address === selectedMemberAddress) ?? null,
     [props.members, selectedMemberAddress],
   );
+  const claimIntakeClaimantAddress = selectedMemberForClaim?.wallet ?? "";
   const selectedClaimFundingLineAddress = selectedClaim?.fundingLine ?? null;
   const selectedObligationFundingLineAddress = selectedObligation?.fundingLine ?? null;
   const selectedClaimFundingLine = useMemo(
@@ -839,7 +838,12 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                   <legend className="operator-drawer-legend">Open a claim case</legend>
                   <div className="plans-wizard-row">
                     <TextField label="Claim ID" value={claimId} onChange={setClaimId} />
-                    <TextField label="Claimant" value={claimant} onChange={setClaimant} />
+                    <TextField
+                      label="Claimant"
+                      value={claimIntakeClaimantAddress}
+                      onChange={() => {}}
+                      readOnly
+                    />
                   </div>
                   <div className="plans-wizard-row">
                     <SelectField
@@ -879,6 +883,7 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                       disabled={
                         !canAct ||
                         !selectedMemberForClaim ||
+                        !claimIntakeClaimantAddress ||
                         !selectedFundingLineForClaimResolved ||
                         busyOn("Open claim case")
                       }
@@ -896,7 +901,7 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               props.series?.address ??
                               selectedFundingLineForClaimResolved!.policySeries ??
                               null,
-                            claimantAddress: claimant || publicKey!,
+                            claimantAddress: claimIntakeClaimantAddress,
                             evidenceRefHashHex: await hashReason(evidenceRef),
                           });
                         })
@@ -1876,6 +1881,7 @@ function TextField(props: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  readOnly?: boolean;
 }) {
   return (
     <label className="plans-wizard-field-group">
@@ -1887,6 +1893,7 @@ function TextField(props: {
           value={props.value}
           onChange={(event) => props.onChange(event.target.value)}
           placeholder={props.placeholder}
+          readOnly={props.readOnly}
         />
       </span>
     </label>

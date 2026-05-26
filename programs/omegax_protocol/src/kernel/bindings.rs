@@ -4,6 +4,10 @@
 
 use anchor_lang::prelude::*;
 
+use super::{
+    require_allocation_position_allocatable, require_capital_class_active,
+    require_liquidity_pool_active,
+};
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
@@ -385,10 +389,9 @@ pub(crate) fn validate_obligation_creation_scope(
         class.key(),
         OmegaXProtocolError::CapitalClassMismatch
     );
-    require!(
-        position.active,
-        OmegaXProtocolError::AllocationPositionMismatch
-    );
+    require_liquidity_pool_active(pool)?;
+    require_capital_class_active(class)?;
+    require_allocation_position_allocatable(position)?;
     validate_optional_allocation_ledger(
         allocation_ledger,
         expected_allocation_position,

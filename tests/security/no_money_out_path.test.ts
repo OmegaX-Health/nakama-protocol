@@ -1,22 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-// Pre-mainnet pen-test PoC — finding PT-2026-04-27-01 / PT-2026-04-27-02.
-// Severity: CRITICAL.
+// Pre-mainnet pen-test defense regression — findings PT-2026-04-27-01 / 02.
+// Original severity: CRITICAL.
 //
-// Hypothesis: the on-chain program accepts SPL token deposits but has no
-// instruction that releases tokens back out. All "settle / process / release"
-// instructions update ledger state but call no `transfer_checked` CPI.
+// Historical hypothesis: the on-chain program accepted SPL token deposits but
+// had no instruction that released tokens back out. All "settle / process /
+// release" instructions updated ledger state but called no `transfer_checked`
+// CPI.
 //
-// Source trace:
-// - lib.rs:5408-5459 — `transfer_to_domain_vault`, the ONLY token CPI in the program.
-// - lib.rs:1354-1416 — `settle_claim_case` (no CPI; ledger only).
-// - lib.rs:1696-1764 — `process_redemption_queue` (no CPI; ledger only).
-// - lib.rs:1159 — `release_reserve` (no CPI; ledger only).
-// - lib.rs:997 — `settle_obligation` (no CPI; ledger only).
+// Current role of this file: pin the remediation. It now asserts that real
+// money-out handlers call `transfer_from_domain_vault`, and that fee withdrawal
+// instructions remain present in the IDL.
 //
-// This test PASSES when the vulnerability is present. When the team adds an
-// outflow CPI in any of these handlers, this test should fail and be flipped
-// into a defense test that asserts the CPI exists with proper authorization.
+// `release_reserve` remains accounting-only by design: it releases reserved
+// capacity back to free reserve and does not move SPL tokens.
 
 import test from "node:test";
 import assert from "node:assert/strict";

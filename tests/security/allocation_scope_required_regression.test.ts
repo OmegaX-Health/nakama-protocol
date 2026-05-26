@@ -99,8 +99,31 @@ test("[CSO-2026-05-07] obligation creation scope binds pool class and allocation
   assert.match(body, /position\.policy_series[\s\S]+funding_line\.policy_series[\s\S]+PolicySeriesMismatch/);
   assert.match(body, /position\.liquidity_pool[\s\S]+pool\.key\(\)[\s\S]+LiquidityPoolMismatch/);
   assert.match(body, /position\.capital_class[\s\S]+class\.key\(\)[\s\S]+CapitalClassMismatch/);
-  assert.match(body, /position\.active[\s\S]+AllocationPositionMismatch/);
+  assert.match(body, /require_liquidity_pool_active\(pool\)\?/);
+  assert.match(body, /require_capital_class_active\(class\)\?/);
+  assert.match(body, /require_allocation_position_allocatable\(position\)\?/);
   assert.match(body, /validate_optional_allocation_ledger\([\s\S]+expected_allocation_position[\s\S]+funding_line\.asset_mint/);
+});
+
+test("[CSO-2026-05-24] obligation creation scope blocks inactive or deallocation-only LP surfaces", () => {
+  const body = extractRustFunctionBody("validate_obligation_creation_scope");
+  const poolGuardIndex = body.indexOf("require_liquidity_pool_active(pool)?");
+  const classGuardIndex = body.indexOf("require_capital_class_active(class)?");
+  const positionGuardIndex = body.indexOf("require_allocation_position_allocatable(position)?");
+  const ledgerValidationIndex = body.indexOf("validate_optional_allocation_ledger(");
+
+  assert(poolGuardIndex > 0, "liquidity pool must be active for fresh LP obligation intake");
+  assert(classGuardIndex > 0, "capital class must be active for fresh LP obligation intake");
+  assert(
+    positionGuardIndex > 0,
+    "allocation position must be active and not deallocation-only for fresh LP obligation intake",
+  );
+  assert(
+    poolGuardIndex < ledgerValidationIndex
+      && classGuardIndex < ledgerValidationIndex
+      && positionGuardIndex < ledgerValidationIndex,
+    "lifecycle guards should run before allocation-ledger validation returns success",
+  );
 });
 
 test("[CSO-2026-05-07] create obligation account context carries LP scope accounts", () => {
