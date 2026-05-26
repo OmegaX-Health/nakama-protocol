@@ -9,6 +9,10 @@ env:
     value: "https://api.devnet.solana.com"
     availability: [BUILD, RUNTIME]
 
+  - variable: NEXT_PUBLIC_SOLANA_DEVNET_RPC_URL_WITH_KEY
+    secret: PROTOCOL_FRONTEND_DEVNET_HELIUS_RPC_URL
+    availability: [BUILD, RUNTIME]
+
   - variable: NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL
     value: "https://api.mainnet-beta.solana.com"
     availability: [BUILD, RUNTIME]
