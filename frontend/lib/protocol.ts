@@ -212,6 +212,20 @@ export {
 } from "./protocol/encoding";
 export * from "./protocol/pdas";
 
+export function listProtocolInstructionNames(): ProtocolInstructionName[] {
+  return Object.keys(PROTOCOL_INSTRUCTION_DISCRIMINATORS) as ProtocolInstructionName[];
+}
+
+export function listProtocolInstructionAccounts(
+  instructionName: ProtocolInstructionName,
+): ProtocolInstructionAccount[] {
+  return PROTOCOL_INSTRUCTION_ACCOUNTS[instructionName] ?? [];
+}
+
+export function listProtocolAccountNames(): string[] {
+  return Object.keys(PROTOCOL_ACCOUNT_DISCRIMINATORS).sort();
+}
+
 function assertValidClaimAttestationDecision(decision: number): void {
   if (
     decision !== CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE &&
