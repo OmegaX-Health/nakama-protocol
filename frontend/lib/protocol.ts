@@ -138,7 +138,6 @@ import type {
   WalletPoolPositionSummary,
 } from "./protocol/types";
 import {
-  accountExists,
   classicTokenProgramId,
   getProgramId,
   normalizeAddress,
