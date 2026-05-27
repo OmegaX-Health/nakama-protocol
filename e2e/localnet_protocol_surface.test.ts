@@ -881,13 +881,13 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       (liquidityPool) => liquidityPool.poolId === "genesis-protect-acute-pool",
     )!;
 
-    assert.equal(DEVNET_PROTOCOL_FIXTURE_STATE.allocationPositions.length, 6);
+    assert.equal(DEVNET_PROTOCOL_FIXTURE_STATE.allocationPositions.length, 10);
     assert.equal(openClassAllocations.length, 2);
     assert.equal(
       DEVNET_PROTOCOL_FIXTURE_STATE.allocationPositions.filter(
         (allocation) => allocation.liquidityPool === genesisPool.address,
       ).length,
-      3,
+      7,
     );
     assert.equal(
       DEVNET_PROTOCOL_FIXTURE_STATE.allocationPositions.every(
@@ -904,7 +904,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     );
     assert.equal(
       protectionAllocations.length,
-      5,
+      9,
     );
   },
   impairment_and_redemption_queue_lifecycle: () => {

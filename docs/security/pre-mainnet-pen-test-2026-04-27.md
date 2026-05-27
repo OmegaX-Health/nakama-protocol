@@ -15,15 +15,22 @@
 
 **Cleanup note (2026-05-03):** Several retired workspace components named in the historical PT-06 coverage map were removed after the original review. The historical counts below are preserved as audit evidence; the runnable PoC now enumerates mounted components dynamically.
 
-The OmegaX program in `programs/omegax_protocol/` accepts SPL token deposits but has **no on-chain instruction that releases tokens back out**. Every "settle / process / release" handler updates ledger state and decrements the vault's `total_assets` counter, but **no `transfer_checked` CPI is called**. The IDL contains no `withdraw_*`, `sweep_*`, or fee-collection instruction. The frontend ships a treasury-panel UI whose imports point to nonexistent builders — `pool-treasury-panel.tsx:14-19` imports six `buildWithdraw*Tx` names from `@/lib/protocol`, none of which is exported by that file (49 builders enumerated; zero match).
+The original 2026-04-27 review found that the OmegaX program in
+`programs/omegax_protocol/` accepted SPL token deposits but had no on-chain
+instruction that released tokens back out. That historical finding is preserved
+below because it explains the remediation path. It is **not** the current tree
+state: as of the 2026-04-29 remediation table, claim settlement, obligation
+settlement, redemption processing, and fee withdrawals have PDA-signed outflow
+paths.
 
-Net effect: depositing any token into a Genesis Protect domain on mainnet today would **lock those tokens in the vault until a program upgrade ships outflow paths**. There is no on-chain user recovery route.
-
-Adjacent findings (HIGH and below) prime money-diversion and metadata-spoofing risks that activate the moment outflow paths land. The single-key SPOF for Genesis launch (one keypair holding governance, sponsor, claims-operator, and oracle roles) compounds the blast radius.
+Treat the older `VULN_CONFIRMED` / `OPEN` language in the findings section as
+the original evidence snapshot. Treat the remediation table and later security
+reports as the current status. The remaining launch concern from this report is
+operational: proving multisig/role custody before real-money mainnet funding.
 
 The CSO 2026-04-27 audit's only HIGH finding (CSO-01: claim intake authorization) **is wired in**: `require_claim_intake_submitter` (lib.rs:5166) is called from `open_claim_case` (lib.rs:1236), and the Anchor context binds `member_position` and `funding_line` to the same `health_plan` — the cross-plan path is closed.
 
-### Required-fixes-to-ship
+### Original required-fixes-to-ship (historical)
 
 | Priority | Action |
 |---|---|
@@ -449,7 +456,11 @@ No remediation required.
 
 ## Mainnet readiness checklist
 
-| ID | Severity | Status | Required for mainnet? |
+The table below is the original 2026-04-27 status matrix. It is kept for
+finding lineage only; see the remediation table immediately below for the
+current status.
+
+| ID | Severity | Original status | Required for mainnet? |
 |---|---|---|---|
 | PT-01 | CRITICAL | OPEN | **YES — design + ship** |
 | PT-02 | CRITICAL | OPEN | **YES — design + ship** |

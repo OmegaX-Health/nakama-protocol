@@ -44,7 +44,16 @@ type NetworkProviderProps = {
 };
 
 export function NetworkProvider({ children }: NetworkProviderProps) {
-  const environment = useMemo(() => buildRpcEnvironment(process.env), []);
+  const environment = useMemo(
+    () => buildRpcEnvironment({
+      NEXT_PUBLIC_SOLANA_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_RPC_URL,
+      NEXT_PUBLIC_SOLANA_DEVNET_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_DEVNET_RPC_URL,
+      NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL: process.env.NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL,
+      NEXT_PUBLIC_SOLANA_DEVNET_RPC_URL_WITH_KEY: process.env.NEXT_PUBLIC_SOLANA_DEVNET_RPC_URL_WITH_KEY,
+      NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL_WITH_KEY: process.env.NEXT_PUBLIC_SOLANA_MAINNET_RPC_URL_WITH_KEY,
+    }),
+    [],
+  );
   const [selectedNetwork, setSelectedNetworkState] = useState<NetworkMode>("devnet");
   const [rpcProfiles, setRpcProfiles] = useState<Record<NetworkMode, RpcProfile>>({
     devnet: "public",

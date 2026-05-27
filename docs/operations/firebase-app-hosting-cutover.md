@@ -84,4 +84,5 @@ This avoids disturbing the backend ID, hosted URL, or custom domain binding duri
 
 - `NEXT_PUBLIC_*` values are browser-visible by design.
 - `frontend/apphosting.yaml` is the canonical public config for browser-safe runtime values.
+- Browser-safe Helius RPC URLs should use App Hosting Secret Manager references, for example `PROTOCOL_FRONTEND_DEVNET_HELIUS_RPC_URL`, so real API keys do not land in git. `NEXT_PUBLIC_*` values are still browser-visible after build; use Helius Secure URLs or a server-side proxy for a hard frontend key boundary.
 - If runtime-only server values are added in the future, use Secret Manager references in `apphosting.yaml` or backend settings instead of committing plaintext values.
