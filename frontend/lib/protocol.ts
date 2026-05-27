@@ -9,7 +9,6 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import protocolIdl from "../../idl/omegax_protocol.json";
 
 import {
@@ -21,111 +20,189 @@ import {
   type ProtocolInstructionName,
 } from "./generated/protocol-contract";
 
-export type PublicKeyish = PublicKey | string;
-export type BigNumberish = bigint | number | string;
+import {
+  ZERO_PUBKEY,
+  ZERO_PUBKEY_KEY,
+  NATIVE_SOL_MINT,
+  NATIVE_SOL_MINT_KEY,
+  MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS,
+  CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
+  CLAIM_ATTESTATION_DECISION_SUPPORT_DENY,
+  CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW,
+  CLAIM_ATTESTATION_DECISION_ABSTAIN,
+  MEMBERSHIP_GATE_KIND_OPEN,
+  MEMBERSHIP_GATE_KIND_INVITE_ONLY,
+  MEMBERSHIP_GATE_KIND_NFT_ANCHOR,
+  MEMBERSHIP_GATE_KIND_STAKE_ANCHOR,
+  MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT,
+  SERIES_MODE_REWARD,
+  SERIES_MODE_PROTECTION,
+  SERIES_MODE_REIMBURSEMENT,
+  SERIES_MODE_PARAMETRIC,
+  SERIES_STATUS_DRAFT,
+  SERIES_STATUS_ACTIVE,
+  SERIES_STATUS_PAUSED,
+  SERIES_STATUS_CLOSED,
+  FUNDING_LINE_TYPE_SPONSOR_BUDGET,
+  FUNDING_LINE_TYPE_PREMIUM_INCOME,
+  FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+  FUNDING_LINE_TYPE_BACKSTOP,
+  FUNDING_LINE_TYPE_SUBSIDY,
+  FUNDING_LINE_STATUS_OPEN,
+  ELIGIBILITY_PENDING,
+  ELIGIBILITY_ELIGIBLE,
+  ELIGIBILITY_PAUSED,
+  ELIGIBILITY_CLOSED,
+  CLAIM_INTAKE_OPEN,
+  CLAIM_INTAKE_UNDER_REVIEW,
+  CLAIM_INTAKE_APPROVED,
+  CLAIM_INTAKE_DENIED,
+  CLAIM_INTAKE_SETTLED,
+  CLAIM_INTAKE_CLOSED,
+  OBLIGATION_STATUS_PROPOSED,
+  OBLIGATION_STATUS_RESERVED,
+  OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
+  OBLIGATION_STATUS_SETTLED,
+  OBLIGATION_STATUS_CANCELED,
+  OBLIGATION_STATUS_IMPAIRED,
+  OBLIGATION_STATUS_RECOVERED,
+  CAPITAL_CLASS_RESTRICTION_OPEN,
+  CAPITAL_CLASS_RESTRICTION_RESTRICTED,
+  CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY,
+  LP_QUEUE_STATUS_PENDING,
+} from "./protocol/constants";
+import type {
+  PublicKeyish,
+  BigNumberish,
+  ReserveBalanceSheet,
+  PartialReserveBalanceSheet,
+  ReserveScopedSnapshot,
+  ReserveDomainSnapshot,
+  DomainAssetVaultSnapshot,
+  ReserveAssetRailSnapshot,
+  ProtocolFeeVaultSnapshot,
+  PoolTreasuryVaultSnapshot,
+  PoolOracleFeeVaultSnapshot,
+  HealthPlanSnapshot,
+  PolicySeriesSnapshot,
+  MemberPositionSnapshot,
+  FundingLineSnapshot,
+  ClaimCaseSnapshot,
+  ObligationSnapshot,
+  LiquidityPoolSnapshot,
+  CapitalClassSnapshot,
+  PoolClassLedgerSnapshot,
+  LPPositionSnapshot,
+  AllocationPositionSnapshot,
+  AllocationLedgerSnapshot,
+  ProtocolGovernanceSnapshot,
+  OracleProfileSnapshot,
+  PoolOracleApprovalSnapshot,
+  PoolOraclePolicySnapshot,
+  PoolOraclePermissionSetSnapshot,
+  OutcomeSchemaSnapshot,
+  SchemaDependencyLedgerSnapshot,
+  ClaimAttestationSnapshot,
+  ProtocolConsoleSnapshot,
+  SponsorReadModel,
+  CapitalReadModel,
+  MixedReserveWaterfallRail,
+  MixedReserveWaterfallModel,
+  ClaimFundingReadinessState,
+  ClaimFundingReadinessOtherReserveAsset,
+  ClaimFundingReadiness,
+  ClaimFundingReadinessInput,
+  MemberReadModel,
+  OracleProfileSummary,
+  ReserveDomainSummary,
+  DomainAssetVaultSummary,
+  OracleSummary,
+  OracleWithProfileSummary,
+  PoolOracleApprovalSummary,
+  PoolOraclePolicySummary,
+  PoolOraclePermissionSetSummary,
+  ProtocolFeeVaultSummary,
+  PoolTreasuryReserveSummary,
+  PoolOracleFeeVaultSummary,
+  SchemaSummary,
+  SchemaDependencyLedgerSummary,
+  ProtocolConfigSummary,
+  PoolSummary,
+  RuleSummary,
+  ClaimDelegateAuthorizationSummary,
+  CoverageClaimSummary,
+  MembershipSummary,
+  OutcomeAggregateSummary,
+  PoolControlAuthoritySummary,
+  PoolRedemptionRequestSummary,
+  WalletPoolPositionSummary,
+} from "./protocol/types";
+import {
+  accountExists,
+  classicTokenProgramId,
+  getProgramId,
+  normalizeAddress,
+  toPublicKey,
+} from "./protocol/address";
+import {
+  bytesToHex,
+  hexToFixedBytes,
+  normalizeHex32,
+  normalizeOptionalHex32,
+  ZERO_HASH_HEX,
+} from "./protocol/encoding";
+import {
+  deriveAllocationLedgerPda,
+  deriveAllocationPositionPda,
+  deriveCapitalClassPda,
+  deriveClaimAttestationPda,
+  deriveClaimCasePda,
+  deriveDomainAssetLedgerPda,
+  deriveDomainAssetVaultPda,
+  deriveDomainAssetVaultTokenAccountPda,
+  deriveFundingLineLedgerPda,
+  deriveFundingLinePda,
+  deriveHealthPlanPda,
+  deriveLiquidityPoolPda,
+  deriveLpPositionPda,
+  deriveMemberPositionPda,
+  deriveMembershipAnchorSeatPda,
+  deriveObligationPda,
+  deriveOracleProfilePda,
+  deriveOutcomeSchemaPda,
+  derivePlanReserveLedgerPda,
+  derivePolicySeriesPda,
+  derivePoolClassLedgerPda,
+  derivePoolOracleApprovalPda,
+  derivePoolOracleFeeVaultPda,
+  derivePoolOraclePermissionSetPda,
+  derivePoolOraclePolicyPda,
+  derivePoolTreasuryVaultPda,
+  deriveProgramDataAddress,
+  deriveProtocolFeeVaultPda,
+  deriveProtocolGovernancePda,
+  deriveReserveAssetRailPda,
+  deriveReserveDomainPda,
+  deriveSchemaDependencyLedgerPda,
+  deriveSeriesReserveLedgerPda,
+} from "./protocol/pdas";
 
-const TEXT_ENCODER = new TextEncoder();
-
-function configuredProtocolProgramId(): string {
-  const runtimeEnv = typeof process !== "undefined" ? process.env : undefined;
-  return (
-    runtimeEnv?.NEXT_PUBLIC_PROTOCOL_PROGRAM_ID?.trim()
-    || runtimeEnv?.PROTOCOL_PROGRAM_ID?.trim()
-    || PROTOCOL_PROGRAM_ID
-  );
-}
-
-const PROGRAM_ID = new PublicKey(configuredProtocolProgramId());
-export const BPF_UPGRADEABLE_LOADER_PROGRAM_ID = new PublicKey(
-  "BPFLoaderUpgradeab1e11111111111111111111111",
-);
-
-export const ZERO_PUBKEY = "11111111111111111111111111111111";
-export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
-
-// Phase 1.7 — wrapped-SOL mint sentinel mirrors the on-chain `NATIVE_SOL_MINT`
-// constant in `programs/omegax_protocol/src/lib.rs`. SOL-rail fee vaults use
-// this as their `asset_mint` so the on-chain seeds and rail-mismatch guards
-// can distinguish lamport accounting from SPL accounting. The pool-treasury
-// panel UI surfaces SOL rails as `paymentMint === ZERO_PUBKEY` (a UI-friendly
-// sentinel that doesn't depend on the WSOL mint magic string); listers map
-// `vault.asset_mint == NATIVE_SOL_MINT` to `paymentMint = ZERO_PUBKEY` in the
-// returned summaries.
-export const NATIVE_SOL_MINT = "So11111111111111111111111111111111111111112";
-export const NATIVE_SOL_MINT_KEY = new PublicKey(NATIVE_SOL_MINT);
-export const MAX_ID_SEED_BYTES = 32;
-export const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS = 50;
-
-export function classicTokenProgramId(tokenProgramId?: PublicKeyish | null): PublicKey {
-  const candidate = toPublicKey(tokenProgramId ?? TOKEN_PROGRAM_ID);
-  if (!candidate.equals(TOKEN_PROGRAM_ID)) {
-    throw new Error("OmegaX Protocol v1 supports only the classic SPL Token program.");
-  }
-  return candidate;
-}
-
-export const SEED_PROTOCOL_GOVERNANCE = "protocol_governance";
-export const SEED_RESERVE_DOMAIN = "reserve_domain";
-export const SEED_DOMAIN_ASSET_VAULT = "domain_asset_vault";
-export const SEED_DOMAIN_ASSET_VAULT_TOKEN = "domain_asset_vault_token";
-export const SEED_DOMAIN_ASSET_LEDGER = "domain_asset_ledger";
-export const SEED_RESERVE_ASSET_RAIL = "reserve_asset_rail";
-export const SEED_PROTOCOL_FEE_VAULT = "protocol_fee_vault";
-export const SEED_POOL_TREASURY_VAULT = "pool_treasury_vault";
-export const SEED_POOL_ORACLE_FEE_VAULT = "pool_oracle_fee_vault";
-export const SEED_HEALTH_PLAN = "health_plan";
-export const SEED_PLAN_RESERVE_LEDGER = "plan_reserve_ledger";
-export const SEED_POLICY_SERIES = "policy_series";
-export const SEED_SERIES_RESERVE_LEDGER = "series_reserve_ledger";
-export const SEED_MEMBER_POSITION = "member_position";
-export const SEED_MEMBERSHIP_ANCHOR_SEAT = "membership_anchor_seat";
-export const SEED_FUNDING_LINE = "funding_line";
-export const SEED_FUNDING_LINE_LEDGER = "funding_line_ledger";
-export const SEED_CLAIM_CASE = "claim_case";
-export const SEED_OBLIGATION = "obligation";
-export const SEED_LIQUIDITY_POOL = "liquidity_pool";
-export const SEED_CAPITAL_CLASS = "capital_class";
-export const SEED_POOL_CLASS_LEDGER = "pool_class_ledger";
-export const SEED_LP_POSITION = "lp_position";
-export const SEED_ALLOCATION_POSITION = "allocation_position";
-export const SEED_ALLOCATION_LEDGER = "allocation_ledger";
-export const SEED_ORACLE_PROFILE = "oracle_profile";
-export const SEED_POOL_ORACLE_APPROVAL = "pool_oracle_approval";
-export const SEED_POOL_ORACLE_POLICY = "pool_oracle_policy";
-export const SEED_POOL_ORACLE_PERMISSION_SET = "pool_oracle_permission_set";
-export const SEED_OUTCOME_SCHEMA = "outcome_schema";
-export const SEED_SCHEMA_DEPENDENCY_LEDGER = "schema_dependency_ledger";
-export const SEED_CLAIM_ATTESTATION = "claim_attestation";
-
-export const CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE = 0;
-export const CLAIM_ATTESTATION_DECISION_SUPPORT_DENY = 1;
-export const CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW = 2;
-export const CLAIM_ATTESTATION_DECISION_ABSTAIN = 3;
-export const POOL_ORACLE_PERMISSION_ATTEST_CLAIM = 1 << 0;
-
-export const MEMBERSHIP_MODE_OPEN = 0;
-export const MEMBERSHIP_MODE_TOKEN_GATE = 1;
-export const MEMBERSHIP_MODE_INVITE_ONLY = 2;
-
-export const MEMBERSHIP_GATE_KIND_OPEN = 0;
-export const MEMBERSHIP_GATE_KIND_INVITE_ONLY = 1;
-export const MEMBERSHIP_GATE_KIND_NFT_ANCHOR = 2;
-export const MEMBERSHIP_GATE_KIND_STAKE_ANCHOR = 3;
-export const MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT = 4;
-
-export const MEMBERSHIP_PROOF_MODE_OPEN = 0;
-export const MEMBERSHIP_PROOF_MODE_TOKEN_GATE = 1;
-export const MEMBERSHIP_PROOF_MODE_INVITE_PERMIT = 2;
-
-export const RESERVE_ASSET_ROLE_PRIMARY_STABLE = 0;
-export const RESERVE_ASSET_ROLE_SECONDARY_STABLE = 1;
-export const RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL = 2;
-export const RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT = 3;
-
-export const RESERVE_ORACLE_SOURCE_NONE = 0;
-export const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM = 1;
-export const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_FEED = 2;
-export const RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED = 3;
+export * from "./protocol/constants";
+export type * from "./protocol/types";
+export {
+  accountExists,
+  classicTokenProgramId,
+  getProgramId,
+  normalizeAddress,
+  toPublicKey,
+} from "./protocol/address";
+export {
+  assertSeedId,
+  hashStringTo32Hex,
+  isSeedIdSafe,
+  utf8ByteLength,
+} from "./protocol/encoding";
+export * from "./protocol/pdas";
 
 function assertValidClaimAttestationDecision(decision: number): void {
   if (
@@ -138,1393 +215,6 @@ function assertValidClaimAttestationDecision(decision: number): void {
       "claim attestation decision must be one of 0 (approve), 1 (deny), 2 (review), or 3 (abstain)",
     );
   }
-}
-
-export const SERIES_MODE_REWARD = 0;
-export const SERIES_MODE_PROTECTION = 1;
-export const SERIES_MODE_REIMBURSEMENT = 2;
-export const SERIES_MODE_PARAMETRIC = 3;
-export const SERIES_MODE_OTHER = 255;
-
-export const SERIES_STATUS_DRAFT = 0;
-export const SERIES_STATUS_ACTIVE = 1;
-export const SERIES_STATUS_PAUSED = 2;
-export const SERIES_STATUS_CLOSED = 3;
-
-export const FUNDING_LINE_TYPE_SPONSOR_BUDGET = 0;
-export const FUNDING_LINE_TYPE_PREMIUM_INCOME = 1;
-export const FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION = 2;
-export const FUNDING_LINE_TYPE_BACKSTOP = 3;
-export const FUNDING_LINE_TYPE_SUBSIDY = 4;
-
-export const FUNDING_LINE_STATUS_OPEN = 0;
-export const FUNDING_LINE_STATUS_PAUSED = 1;
-export const FUNDING_LINE_STATUS_CLOSED = 2;
-
-export const ELIGIBILITY_PENDING = 0;
-export const ELIGIBILITY_ELIGIBLE = 1;
-export const ELIGIBILITY_PAUSED = 2;
-export const ELIGIBILITY_CLOSED = 3;
-
-export const CLAIM_INTAKE_OPEN = 0;
-export const CLAIM_INTAKE_UNDER_REVIEW = 1;
-export const CLAIM_INTAKE_APPROVED = 2;
-export const CLAIM_INTAKE_DENIED = 3;
-export const CLAIM_INTAKE_SETTLED = 4;
-export const CLAIM_INTAKE_CLOSED = 5;
-
-export const OBLIGATION_STATUS_PROPOSED = 0;
-export const OBLIGATION_STATUS_RESERVED = 1;
-export const OBLIGATION_STATUS_CLAIMABLE_PAYABLE = 2;
-export const OBLIGATION_STATUS_SETTLED = 3;
-export const OBLIGATION_STATUS_CANCELED = 4;
-export const OBLIGATION_STATUS_IMPAIRED = 5;
-export const OBLIGATION_STATUS_RECOVERED = 6;
-
-export const OBLIGATION_DELIVERY_MODE_CLAIMABLE = 0;
-export const OBLIGATION_DELIVERY_MODE_PAYABLE = 1;
-
-export const REDEMPTION_POLICY_OPEN = 0;
-export const REDEMPTION_POLICY_QUEUE_ONLY = 1;
-export const REDEMPTION_POLICY_PAUSED = 2;
-
-export const CAPITAL_CLASS_RESTRICTION_OPEN = 0;
-export const CAPITAL_CLASS_RESTRICTION_RESTRICTED = 1;
-export const CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY = 2;
-
-export const LP_QUEUE_STATUS_NONE = 0;
-export const LP_QUEUE_STATUS_PENDING = 1;
-export const LP_QUEUE_STATUS_PROCESSED = 2;
-
-export const ORACLE_TYPE_LAB = 0;
-export const ORACLE_TYPE_HOSPITAL_CLINIC = 1;
-export const ORACLE_TYPE_HEALTH_APP = 2;
-export const ORACLE_TYPE_WEARABLE_DATA_PROVIDER = 3;
-export const ORACLE_TYPE_OTHER = 255;
-
-export const SCHEMA_FAMILY_KERNEL = 0;
-export const SCHEMA_FAMILY_CLINICAL = 1;
-export const SCHEMA_FAMILY_CLAIMS_CODING = 2;
-
-export const SCHEMA_VISIBILITY_PUBLIC = 0;
-export const SCHEMA_VISIBILITY_PRIVATE = 1;
-export const SCHEMA_VISIBILITY_RESTRICTED = 2;
-
-export const PAUSE_FLAG_PROTOCOL_EMERGENCY = 1 << 0;
-export const PAUSE_FLAG_DOMAIN_RAILS = 1 << 1;
-export const PAUSE_FLAG_PLAN_OPERATIONS = 1 << 2;
-export const PAUSE_FLAG_CLAIM_INTAKE = 1 << 3;
-export const PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS = 1 << 4;
-export const PAUSE_FLAG_REDEMPTION_QUEUE_ONLY = 1 << 5;
-export const PAUSE_FLAG_ORACLE_FINALITY_HOLD = 1 << 6;
-export const PAUSE_FLAG_ALLOCATION_FREEZE = 1 << 7;
-
-export type ReserveBalanceSheet = {
-  funded: bigint;
-  allocated: bigint;
-  reserved: bigint;
-  owed: bigint;
-  claimable: bigint;
-  payable: bigint;
-  settled: bigint;
-  impaired: bigint;
-  pendingRedemption: bigint;
-  restricted: bigint;
-  free: bigint;
-  redeemable: bigint;
-};
-
-export type PartialReserveBalanceSheet = Partial<ReserveBalanceSheet> & {
-  pending_redemption?: BigNumberish;
-};
-
-export type ReserveScopedSnapshot = {
-  address: string;
-  reserveDomain: string;
-  assetMint: string;
-  sheet?: PartialReserveBalanceSheet;
-};
-
-export type ReserveDomainSnapshot = {
-  address: string;
-  domainId: string;
-  displayName: string;
-  domainAdmin?: string;
-  settlementMode: number;
-  active: boolean;
-  pauseFlags?: number;
-};
-
-export type DomainAssetVaultSnapshot = {
-  address: string;
-  reserveDomain: string;
-  assetMint: string;
-  vaultTokenAccount: string;
-  totalAssets: BigNumberish;
-  bump: number;
-};
-
-export type ReserveAssetRailSnapshot = {
-  address: string;
-  reserveDomain: string;
-  assetMint: string;
-  oracleAuthority: string;
-  assetSymbol: string;
-  role: number;
-  payoutPriority: number;
-  oracleSource: number;
-  oracleFeedIdHex: string;
-  maxStalenessSeconds: number;
-  maxConfidenceBps: number;
-  haircutBps: number;
-  maxExposureBps: number;
-  depositEnabled: boolean;
-  payoutEnabled: boolean;
-  capacityEnabled: boolean;
-  active: boolean;
-  lastPriceUsd1e8: BigNumberish;
-  lastPriceConfidenceBps: number;
-  lastPricePublishedAtTs: number;
-  lastPriceSlot: BigNumberish;
-  lastPriceProofHashHex: string;
-  auditNonce: BigNumberish;
-  bump: number;
-};
-
-// Phase 1.6/1.7 — Fee-vault snapshot types. The panel surfaces SOL rails
-// as `paymentMint === ZERO_PUBKEY`; the listers below translate
-// `assetMint === NATIVE_SOL_MINT` to that UI sentinel.
-export type ProtocolFeeVaultSnapshot = {
-  address: string;
-  reserveDomain: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
-export type PoolTreasuryVaultSnapshot = {
-  address: string;
-  liquidityPool: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
-export type PoolOracleFeeVaultSnapshot = {
-  address: string;
-  liquidityPool: string;
-  oracle: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
-export type HealthPlanSnapshot = {
-  address: string;
-  reserveDomain: string;
-  planId: string;
-  displayName: string;
-  sponsorLabel: string;
-  planAdmin: string;
-  sponsorOperator: string;
-  claimsOperator: string;
-  oracleAuthority?: string;
-  membershipModel: string;
-  membershipGateKind?: string;
-  membershipModeValue?: number;
-  membershipGateKindValue?: number;
-  membershipGateMint?: string;
-  membershipGateMinAmount?: BigNumberish;
-  membershipInviteAuthority?: string;
-  pauseFlags?: number;
-  active: boolean;
-};
-
-export type PolicySeriesSnapshot = {
-  address: string;
-  healthPlan: string;
-  seriesId: string;
-  displayName: string;
-  metadataUri?: string;
-  mode: number;
-  status: number;
-  assetMint: string;
-  cycleSeconds?: number;
-  termsVersion: string;
-  comparabilityKey: string;
-  comparabilityHashHex?: string;
-};
-
-export type MemberPositionSnapshot = {
-  address: string;
-  wallet: string;
-  healthPlan: string;
-  policySeries: string;
-  eligibilityStatus: number;
-  delegatedRights: string[];
-  active: boolean;
-};
-
-export type FundingLineSnapshot = {
-  address: string;
-  reserveDomain: string;
-  healthPlan: string;
-  policySeries?: string | null;
-  assetMint: string;
-  lineId: string;
-  displayName: string;
-  lineType: number;
-  fundingPriority: number;
-  fundedAmount: BigNumberish;
-  reservedAmount?: BigNumberish;
-  spentAmount?: BigNumberish;
-  releasedAmount?: BigNumberish;
-  returnedAmount?: BigNumberish;
-  status: number;
-  sheet?: PartialReserveBalanceSheet;
-};
-
-export type ClaimCaseSnapshot = {
-  address: string;
-  reserveDomain: string;
-  healthPlan: string;
-  policySeries?: string | null;
-  fundingLine: string;
-  memberPosition: string;
-  claimant: string;
-  adjudicator?: string | null;
-  claimId: string;
-  intakeStatus: number;
-  approvedAmount: BigNumberish;
-  deniedAmount?: BigNumberish;
-  paidAmount?: BigNumberish;
-  reservedAmount?: BigNumberish;
-  attestationCount?: number;
-  linkedObligation?: string | null;
-};
-
-export type ObligationSnapshot = {
-  address: string;
-  reserveDomain: string;
-  assetMint: string;
-  healthPlan: string;
-  policySeries?: string | null;
-  memberWallet?: string | null;
-  beneficiary?: string | null;
-  fundingLine: string;
-  claimCase?: string | null;
-  liquidityPool?: string | null;
-  capitalClass?: string | null;
-  allocationPosition?: string | null;
-  obligationId: string;
-  status: number;
-  deliveryMode: number;
-  principalAmount: BigNumberish;
-  outstandingAmount?: BigNumberish;
-  reservedAmount?: BigNumberish;
-  claimableAmount?: BigNumberish;
-  payableAmount?: BigNumberish;
-  settledAmount?: BigNumberish;
-  impairedAmount?: BigNumberish;
-  recoveredAmount?: BigNumberish;
-};
-
-export type LiquidityPoolSnapshot = {
-  address: string;
-  reserveDomain: string;
-  curator?: string;
-  allocator?: string;
-  sentinel?: string;
-  poolId: string;
-  displayName: string;
-  depositAssetMint: string;
-  strategyThesis: string;
-  strategyHashHex?: string;
-  allowedExposureHashHex?: string;
-  externalYieldAdapterHashHex?: string;
-  redemptionPolicy: number;
-  pauseFlags?: number;
-  totalValueLocked: BigNumberish;
-  totalAllocated?: BigNumberish;
-  totalReserved?: BigNumberish;
-  totalImpaired?: BigNumberish;
-  totalPendingRedemptions?: BigNumberish;
-  active: boolean;
-};
-
-export type CapitalClassSnapshot = {
-  address: string;
-  liquidityPool: string;
-  classId: string;
-  displayName: string;
-  priority: number;
-  restrictionMode: number;
-  feeBps?: number;
-  totalShares: BigNumberish;
-  navAssets: BigNumberish;
-  allocatedAssets?: BigNumberish;
-  pendingRedemptions?: BigNumberish;
-  nextRedemptionSequence?: BigNumberish;
-  nextRedemptionToProcess?: BigNumberish;
-  minLockupSeconds?: number;
-  queueOnlyRedemptions?: boolean;
-  active: boolean;
-};
-
-export type PoolClassLedgerSnapshot = {
-  address: string;
-  capitalClass: string;
-  assetMint: string;
-  sheet: PartialReserveBalanceSheet;
-  totalShares: BigNumberish;
-  realizedYieldAmount?: BigNumberish;
-  realizedLossAmount?: BigNumberish;
-};
-
-export type LPPositionSnapshot = {
-  address: string;
-  owner: string;
-  capitalClass: string;
-  shares: BigNumberish;
-  subscriptionBasis: BigNumberish;
-  pendingRedemptionShares?: BigNumberish;
-  pendingRedemptionAssets?: BigNumberish;
-  realizedDistributions?: BigNumberish;
-  impairedPrincipal?: BigNumberish;
-  lockupEndsAt?: number;
-  credentialed?: boolean;
-  queueStatus?: number;
-  redemptionSequence?: BigNumberish;
-  redemptionRequestedAt?: number;
-};
-
-export type AllocationPositionSnapshot = {
-  address: string;
-  reserveDomain: string;
-  liquidityPool: string;
-  capitalClass: string;
-  healthPlan: string;
-  policySeries?: string | null;
-  fundingLine: string;
-  capAmount: BigNumberish;
-  weightBps: number;
-  allocatedAmount?: BigNumberish;
-  utilizedAmount?: BigNumberish;
-  reservedCapacity?: BigNumberish;
-  realizedPnl?: BigNumberish;
-  impairedAmount?: BigNumberish;
-  deallocationOnly?: boolean;
-  active: boolean;
-};
-
-export type AllocationLedgerSnapshot = {
-  address: string;
-  allocationPosition: string;
-  assetMint: string;
-  sheet: PartialReserveBalanceSheet;
-  realizedPnl?: BigNumberish;
-};
-
-export type ProtocolGovernanceSnapshot = {
-  address: string;
-  governanceAuthority: string;
-  pendingGovernanceAuthority: string;
-  pendingGovernanceProposedAt: number;
-  pendingGovernanceExpiresAt: number;
-  protocolFeeBps: number;
-  emergencyPause: boolean;
-  auditNonce: BigNumberish;
-};
-
-export type OracleProfileSnapshot = {
-  address: string;
-  oracle: string;
-  admin: string;
-  oracleType: number;
-  displayName: string;
-  legalName: string;
-  websiteUrl: string;
-  appUrl: string;
-  logoUri: string;
-  webhookUrl: string;
-  supportedSchemaCount: number;
-  supportedSchemaKeyHashesHex: string[];
-  active: boolean;
-  claimed: boolean;
-  createdAtTs: number;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type PoolOracleApprovalSnapshot = {
-  address: string;
-  liquidityPool: string;
-  oracle: string;
-  active: boolean;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type PoolOraclePolicySnapshot = {
-  address: string;
-  liquidityPool: string;
-  quorumM: number;
-  quorumN: number;
-  requireVerifiedSchema: boolean;
-  oracleFeeBps: number;
-  allowDelegateClaim: boolean;
-  challengeWindowSecs: number;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type PoolOraclePermissionSetSnapshot = {
-  address: string;
-  liquidityPool: string;
-  oracle: string;
-  permissions: number;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type OutcomeSchemaSnapshot = {
-  address: string;
-  publisher: string;
-  schemaKeyHashHex: string;
-  schemaKey: string;
-  version: number;
-  schemaHashHex: string;
-  schemaFamily: number;
-  visibility: number;
-  metadataUri: string;
-  verified: boolean;
-  createdAtTs: number;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type SchemaDependencyLedgerSnapshot = {
-  address: string;
-  schemaKeyHashHex: string;
-  poolRuleAddresses: string[];
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type ClaimAttestationSnapshot = {
-  address: string;
-  oracle: string;
-  oracleProfile: string;
-  claimCase: string;
-  healthPlan: string;
-  policySeries?: string | null;
-  decision: number;
-  attestationHashHex: string;
-  attestationRefHashHex: string;
-  evidenceRefHashHex?: string;
-  decisionSupportHashHex?: string;
-  schemaKeyHashHex: string;
-  schemaHashHex?: string;
-  schemaVersion?: number;
-  liquidityPool?: string | null;
-  allocationPosition?: string | null;
-  createdAtTs: number;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type ProtocolConsoleSnapshot = {
-  protocolGovernance: ProtocolGovernanceSnapshot | null;
-  reserveDomains: ReserveDomainSnapshot[];
-  domainAssetVaults: DomainAssetVaultSnapshot[];
-  reserveAssetRails: ReserveAssetRailSnapshot[];
-  domainAssetLedgers: ReserveScopedSnapshot[];
-  healthPlans: HealthPlanSnapshot[];
-  policySeries: PolicySeriesSnapshot[];
-  memberPositions: MemberPositionSnapshot[];
-  fundingLines: FundingLineSnapshot[];
-  claimCases: ClaimCaseSnapshot[];
-  obligations: ObligationSnapshot[];
-  liquidityPools: LiquidityPoolSnapshot[];
-  capitalClasses: CapitalClassSnapshot[];
-  lpPositions: LPPositionSnapshot[];
-  allocationPositions: AllocationPositionSnapshot[];
-  planReserveLedgers: ReserveScopedSnapshot[];
-  seriesReserveLedgers: ReserveScopedSnapshot[];
-  fundingLineLedgers: ReserveScopedSnapshot[];
-  poolClassLedgers: PoolClassLedgerSnapshot[];
-  allocationLedgers: AllocationLedgerSnapshot[];
-  outcomesBySeries: Record<string, bigint>;
-  oracleProfiles: OracleProfileSnapshot[];
-  poolOracleApprovals: PoolOracleApprovalSnapshot[];
-  poolOraclePolicies: PoolOraclePolicySnapshot[];
-  poolOraclePermissionSets: PoolOraclePermissionSetSnapshot[];
-  outcomeSchemas: OutcomeSchemaSnapshot[];
-  schemaDependencyLedgers: SchemaDependencyLedgerSnapshot[];
-  claimAttestations: ClaimAttestationSnapshot[];
-  protocolFeeVaults: ProtocolFeeVaultSnapshot[];
-  poolTreasuryVaults: PoolTreasuryVaultSnapshot[];
-  poolOracleFeeVaults: PoolOracleFeeVaultSnapshot[];
-};
-
-export type SponsorReadModel = {
-  healthPlanAddress: string;
-  planId: string;
-  fundedSponsorBudget: bigint;
-  remainingSponsorBudget: bigint;
-  accruedRewards: bigint;
-  paidRewards: bigint;
-  reserveCoverageBps: bigint | null;
-  claimCounts: Record<string, number>;
-  activeClaimCount: number;
-  committedSponsorBudget: bigint;
-  perSeriesPerformance: Array<{
-    policySeries: string;
-    seriesId: string;
-    mode: string;
-    obligations: number;
-    settled: bigint;
-    reserved: bigint;
-    claimCount: number;
-    approvedClaims: bigint;
-    paidClaims: bigint;
-    costPerOutcome: bigint | null;
-  }>;
-};
-
-export type CapitalReadModel = {
-  liquidityPoolAddress: string;
-  poolId: string;
-  totalNav: bigint;
-  totalAllocated: bigint;
-  totalUnallocated: bigint;
-  totalPendingRedemptions: bigint;
-  classes: Array<{
-    capitalClass: string;
-    classId: string;
-    nav: bigint;
-    redeemable: bigint;
-    allocated: bigint;
-    reservedLiabilities: bigint;
-    pendingRedemptions: bigint;
-    realizedYield: bigint;
-    impairments: bigint;
-    restriction: string;
-    exposureMix: Array<{
-      healthPlan: string;
-      policySeries: string | null;
-      fundingLine: string;
-      allocatedAmount: bigint;
-      reservedCapacity: bigint;
-      weightBps: number;
-    }>;
-  }>;
-};
-
-export type MixedReserveWaterfallRail = {
-  reserveAssetRail: string;
-  reserveDomain: string;
-  assetMint: string;
-  assetSymbol: string;
-  role: number;
-  payoutPriority: number;
-  payoutEnabled: boolean;
-  capacityEnabled: boolean;
-  active: boolean;
-  oracleSource: number;
-  oracleFeedIdHex: string;
-  priceFresh: boolean;
-  priceUsd1e8: bigint;
-  freeAmountRaw: bigint;
-  haircutBps: number;
-  maxExposureBps: number;
-  effectiveCapacityUsd1e8: bigint;
-};
-
-export type MixedReserveWaterfallModel = {
-  reserveDomain: string;
-  totalEffectiveCapacityUsd1e8: bigint;
-  payoutOrder: MixedReserveWaterfallRail[];
-};
-
-export type ClaimFundingReadinessState =
-  | "settle_now"
-  | "reserve_then_settle"
-  | "queue_or_refund"
-  | "operator_action_required";
-
-export type ClaimFundingReadinessOtherReserveAsset = {
-  reserveAssetRail: string | null;
-  reserveDomain: string;
-  assetMint: string;
-  assetSymbol: string;
-  payoutEnabled: boolean;
-  payoutPriority: number;
-  freeAmountRaw: bigint;
-  priceFresh: boolean;
-  priceUsd1e8: bigint | null;
-  haircutBps: number;
-  estimatedValueUsd1e8: bigint | null;
-  haircutAdjustedValueUsd1e8: bigint | null;
-  selectedForPayout: boolean;
-  immediatelySettleable: false;
-  warnings: string[];
-};
-
-export type ClaimFundingReadiness = {
-  reserveDomain: string | null;
-  settlementMint: string;
-  requestedAmount: bigint;
-  directSettlementAssetCapacityAmount: bigint;
-  fundingLineAvailableAmount: bigint;
-  immediatelySettleableAmount: bigint;
-  reservedOrPayableAmount: bigint;
-  pendingObligationsAmount: bigint;
-  queuedRedemptionsAmount: bigint;
-  availableLpAllocationCapacityAmount: bigint;
-  otherReserveAssets: ClaimFundingReadinessOtherReserveAsset[];
-  selectedPayoutAsset: ClaimFundingReadinessOtherReserveAsset | null;
-  estimatedSelectedPayoutAmountRaw: bigint | null;
-  readiness: ClaimFundingReadinessState;
-  warnings: string[];
-};
-
-export type ClaimFundingReadinessInput = {
-  snapshot: Pick<
-    ProtocolConsoleSnapshot,
-    | "domainAssetVaults"
-    | "reserveAssetRails"
-    | "domainAssetLedgers"
-    | "fundingLines"
-    | "obligations"
-    | "liquidityPools"
-    | "capitalClasses"
-    | "lpPositions"
-    | "allocationPositions"
-  >;
-  settlementMint: PublicKeyish;
-  requestedAmount: BigNumberish;
-  reserveDomainAddress?: PublicKeyish | null;
-  healthPlanAddress?: PublicKeyish | null;
-  policySeriesAddress?: PublicKeyish | null;
-  fundingLineAddress?: PublicKeyish | null;
-  assetDecimalsByMint?: Record<string, number>;
-  nowTs?: number;
-};
-
-export type MemberReadModel = {
-  wallet: string;
-  planParticipations: Array<{
-    healthPlan: string;
-    policySeries: string;
-    eligibility: string;
-    delegatedRights: string[];
-    claimableRewards: bigint;
-    payableClaims: bigint;
-    payoutHistory: bigint;
-    claimStatusCounts: Record<string, number>;
-  }>;
-};
-
-export type OracleProfileSummary = OracleProfileSnapshot;
-
-export type ReserveDomainSummary = ReserveDomainSnapshot;
-
-export type DomainAssetVaultSummary = DomainAssetVaultSnapshot;
-
-export type OracleSummary = {
-  address: string;
-  oracle: string;
-  active: boolean;
-  claimed: boolean;
-  admin: string;
-  bump: number;
-  metadataUri: string;
-  profile?: OracleProfileSummary;
-};
-
-export type OracleWithProfileSummary = OracleSummary;
-
-export type PoolOracleApprovalSummary = PoolOracleApprovalSnapshot;
-
-export type PoolOraclePolicySummary = PoolOraclePolicySnapshot;
-
-export type PoolOraclePermissionSetSummary = PoolOraclePermissionSetSnapshot;
-
-// Phase 1.6/1.7 — Fee-vault summaries surfaced to the pool-treasury panel.
-//
-// `paymentMint` is the panel's UI sentinel: SOL rails expose
-// `paymentMint === ZERO_PUBKEY` (the all-zeros system program key, not the
-// real wrapped-SOL mint). Listers translate the on-chain
-// `assetMint === NATIVE_SOL_MINT` to that sentinel so the panel's
-// `paymentMint === ZERO_PUBKEY ? sol : spl` switching code can stay simple.
-//
-// `availableFees = accruedFees - withdrawnFees` is the safe withdrawable
-// headroom; computed via saturating subtraction so a misordered chain read
-// (e.g., withdrawn briefly leading accrued during indexing) doesn't surface
-// as a bigint underflow in the UI.
-
-export type ProtocolFeeVaultSummary = {
-  address: string;
-  reserveDomain: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  bump: number;
-};
-
-export type PoolTreasuryReserveSummary = {
-  address: string;
-  /** Pool the treasury vault is scoped to. */
-  pool: string;
-  reserveDomain: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  // Display-only ledger counters surfaced by the panel. The on-chain
-  // PoolTreasuryVault tracks only accrued/withdrawn fees — these aliases
-  // are populated by joining DomainAssetLedger / PolicySeries / Obligation
-  // sums in a follow-up. PR3 ships them as 0n placeholders so the panel
-  // renders zeros without crashing; they are NOT used for any withdrawal
-  // safety check (only `availableFees` gates the panel).
-  reservedRewardAmount: bigint;
-  reservedCoverageClaimAmount: bigint;
-  paidCoverageClaimAmount: bigint;
-  impairedAmount: bigint;
-  bump: number;
-};
-
-export type PoolOracleFeeVaultSummary = {
-  address: string;
-  /** Pool the oracle-fee vault is scoped to. */
-  pool: string;
-  /** Reserve domain (joined via the pool's `liquidityPool.reserveDomain`).
-   *  Required by SPL withdraw builders to derive the matching DomainAssetVault. */
-  reserveDomain: string;
-  /** Registered oracle wallet receiving the fee accruals. */
-  oracle: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  bump: number;
-};
-
-export type SchemaSummary = OutcomeSchemaSnapshot;
-
-export type SchemaDependencyLedgerSummary = SchemaDependencyLedgerSnapshot;
-
-export type ProtocolConfigSummary = {
-  address: string;
-  admin: string;
-  governanceAuthority: string;
-  pendingGovernanceAuthority?: string | null;
-  pendingGovernanceExpiresAt?: number;
-  governanceRealm: string;
-  governanceConfig: string;
-  protocolFeeBps: number;
-  defaultStakeMint: string;
-  minOracleStake: bigint;
-  emergencyPaused: boolean;
-  allowedPayoutMintsHashHex: string;
-};
-
-export type PoolSummary = {
-  address: string;
-  poolId: string;
-  displayName: string;
-  reserveDomain: string;
-  depositAssetMint: string;
-  authority: string;
-  organizationRef: string;
-  active: boolean;
-};
-
-export type RuleSummary = {
-  address: string;
-  ruleId: string;
-  pool: string;
-  schemaKeyHashHex: string;
-  schemaVersion: number;
-  enabled: boolean;
-  policySeries: string;
-  healthPlan: string;
-};
-
-// Phase 1.7 PR4 — Stub summary types referenced by lib/ui-capabilities.ts.
-// These were imported there before the file was added to the typecheck graph;
-// adding minimal shapes here lets ui-capabilities compile without a separate
-// migration. They preserve the structural contract of the field accesses
-// already in ui-capabilities (`walletClaimDelegate?.active`, etc.) — wider
-// definitions land in a follow-up that wires the actual data sources.
-
-export type ClaimDelegateAuthorizationSummary = {
-  active: boolean;
-  delegate: string;
-};
-
-export type CoverageClaimSummary = {
-  address: string;
-};
-
-export type MembershipSummary = {
-  address: string;
-  member: string;
-  status?: string;
-};
-
-export type OutcomeAggregateSummary = {
-  address: string;
-  passed?: boolean;
-  claimed?: boolean;
-};
-
-export type PoolControlAuthoritySummary = {
-  operatorAuthority?: string;
-  riskManagerAuthority?: string;
-  complianceAuthority?: string;
-  guardianAuthority?: string;
-};
-
-export type PoolRedemptionRequestSummary = {
-  address: string;
-};
-
-export type WalletPoolPositionSummary = {
-  capitalPositionActive: boolean;
-  pendingRedemptionRequestCount: number;
-  pendingCoverageClaimCount: number;
-};
-
-export function getProgramId(): PublicKey {
-  return PROGRAM_ID;
-}
-
-export function listProtocolInstructionNames(): ProtocolInstructionName[] {
-  return Object.keys(PROTOCOL_INSTRUCTION_DISCRIMINATORS) as ProtocolInstructionName[];
-}
-
-export function listProtocolInstructionAccounts(
-  instructionName: ProtocolInstructionName,
-): ProtocolInstructionAccount[] {
-  return PROTOCOL_INSTRUCTION_ACCOUNTS[instructionName] ?? [];
-}
-
-export function listProtocolAccountNames(): string[] {
-  return Object.keys(PROTOCOL_ACCOUNT_DISCRIMINATORS).sort();
-}
-
-export async function accountExists(connection: Connection, address: PublicKeyish): Promise<boolean> {
-  const info = await connection.getAccountInfo(toPublicKey(address), "confirmed");
-  return info !== null;
-}
-
-export function utf8ByteLength(value: string): number {
-  return TEXT_ENCODER.encode(value).length;
-}
-
-export function isSeedIdSafe(value: string): boolean {
-  const length = utf8ByteLength(value);
-  return length > 0 && length <= MAX_ID_SEED_BYTES;
-}
-
-export function assertSeedId(value: string, label = "seed id"): void {
-  if (!isSeedIdSafe(value)) {
-    throw new Error(`${label} must be 1..${MAX_ID_SEED_BYTES} UTF-8 bytes.`);
-  }
-}
-
-export function toPublicKey(value: PublicKeyish): PublicKey {
-  return value instanceof PublicKey ? value : new PublicKey(value);
-}
-
-export function normalizeAddress(value: PublicKeyish): string {
-  return toPublicKey(value).toBase58();
-}
-
-function derivePda(seeds: Uint8Array[], programId = PROGRAM_ID): PublicKey {
-  return PublicKey.findProgramAddressSync(seeds, programId)[0];
-}
-
-function stringSeed(value: string, label: string): Uint8Array {
-  assertSeedId(value, label);
-  return TEXT_ENCODER.encode(value);
-}
-
-export function deriveProtocolGovernancePda(programId = PROGRAM_ID): PublicKey {
-  return derivePda([TEXT_ENCODER.encode(SEED_PROTOCOL_GOVERNANCE)], programId);
-}
-
-export function deriveProgramDataAddress(programId = PROGRAM_ID): PublicKey {
-  return derivePda([programId.toBuffer()], BPF_UPGRADEABLE_LOADER_PROGRAM_ID);
-}
-
-export function deriveReserveDomainPda(params: {
-  domainId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_RESERVE_DOMAIN), stringSeed(params.domainId, "domain id")],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveDomainAssetVaultPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_DOMAIN_ASSET_VAULT),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-// PDA-derived address for the SPL token account that holds vault assets. The
-// program initialises this account with `token::authority = domain_asset_vault`
-// (see CreateDomainAssetVault context) so outflow CPIs can sign as the vault
-// PDA. Operators no longer pre-create this token account.
-export function deriveDomainAssetVaultTokenAccountPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_DOMAIN_ASSET_VAULT_TOKEN),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveDomainAssetLedgerPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_DOMAIN_ASSET_LEDGER),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveReserveAssetRailPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_RESERVE_ASSET_RAIL),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-// Phase 1.6/1.7 — Fee-vault PDA derivers. SPL rails pass `assetMint = the
-// SPL mint pubkey`; SOL rails pass `assetMint = NATIVE_SOL_MINT_KEY` (the
-// canonical wrapped-SOL mint). The on-chain seeds are identical for both
-// rails — the rail is selected at withdraw time by which asset_mint the
-// vault was initialized with.
-
-export function deriveProtocolFeeVaultPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_PROTOCOL_FEE_VAULT),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePoolTreasuryVaultPda(params: {
-  liquidityPool: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_TREASURY_VAULT),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePoolOracleFeeVaultPda(params: {
-  liquidityPool: PublicKeyish;
-  oracle: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_ORACLE_FEE_VAULT),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveHealthPlanPda(params: {
-  reserveDomain: PublicKeyish;
-  planId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_HEALTH_PLAN),
-      toPublicKey(params.reserveDomain).toBytes(),
-      stringSeed(params.planId, "plan id"),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePlanReserveLedgerPda(params: {
-  healthPlan: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_PLAN_RESERVE_LEDGER),
-      toPublicKey(params.healthPlan).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePolicySeriesPda(params: {
-  healthPlan: PublicKeyish;
-  seriesId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POLICY_SERIES),
-      toPublicKey(params.healthPlan).toBytes(),
-      stringSeed(params.seriesId, "series id"),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveSeriesReserveLedgerPda(params: {
-  policySeries: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_SERIES_RESERVE_LEDGER),
-      toPublicKey(params.policySeries).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveMemberPositionPda(params: {
-  healthPlan: PublicKeyish;
-  wallet: PublicKeyish;
-  seriesScope?: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_MEMBER_POSITION),
-      toPublicKey(params.healthPlan).toBytes(),
-      toPublicKey(params.wallet).toBytes(),
-      toPublicKey(params.seriesScope ?? ZERO_PUBKEY_KEY).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveMembershipAnchorSeatPda(params: {
-  healthPlan: PublicKeyish;
-  anchorRef: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_MEMBERSHIP_ANCHOR_SEAT),
-      toPublicKey(params.healthPlan).toBytes(),
-      toPublicKey(params.anchorRef).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveFundingLinePda(params: {
-  healthPlan: PublicKeyish;
-  lineId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_FUNDING_LINE),
-      toPublicKey(params.healthPlan).toBytes(),
-      stringSeed(params.lineId, "funding line id"),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveFundingLineLedgerPda(params: {
-  fundingLine: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_FUNDING_LINE_LEDGER),
-      toPublicKey(params.fundingLine).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveClaimCasePda(params: {
-  healthPlan: PublicKeyish;
-  claimId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_CLAIM_CASE),
-      toPublicKey(params.healthPlan).toBytes(),
-      stringSeed(params.claimId, "claim id"),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveObligationPda(params: {
-  fundingLine: PublicKeyish;
-  obligationId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_OBLIGATION),
-      toPublicKey(params.fundingLine).toBytes(),
-      stringSeed(params.obligationId, "obligation id"),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveLiquidityPoolPda(params: {
-  reserveDomain: PublicKeyish;
-  poolId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_LIQUIDITY_POOL),
-      toPublicKey(params.reserveDomain).toBytes(),
-      stringSeed(params.poolId, "pool id"),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveCapitalClassPda(params: {
-  liquidityPool: PublicKeyish;
-  classId: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_CAPITAL_CLASS),
-      toPublicKey(params.liquidityPool).toBytes(),
-      stringSeed(params.classId, "capital class id"),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePoolClassLedgerPda(params: {
-  capitalClass: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_CLASS_LEDGER),
-      toPublicKey(params.capitalClass).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveLpPositionPda(params: {
-  capitalClass: PublicKeyish;
-  owner: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_LP_POSITION),
-      toPublicKey(params.capitalClass).toBytes(),
-      toPublicKey(params.owner).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveAllocationPositionPda(params: {
-  capitalClass: PublicKeyish;
-  fundingLine: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_ALLOCATION_POSITION),
-      toPublicKey(params.capitalClass).toBytes(),
-      toPublicKey(params.fundingLine).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveAllocationLedgerPda(params: {
-  allocationPosition: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_ALLOCATION_LEDGER),
-      toPublicKey(params.allocationPosition).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveOracleProfilePda(params: {
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_ORACLE_PROFILE), toPublicKey(params.oracle).toBytes()],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePoolOracleApprovalPda(params: {
-  liquidityPool: PublicKeyish;
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_ORACLE_APPROVAL),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePoolOraclePolicyPda(params: {
-  liquidityPool: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_POOL_ORACLE_POLICY), toPublicKey(params.liquidityPool).toBytes()],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function derivePoolOraclePermissionSetPda(params: {
-  liquidityPool: PublicKeyish;
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_ORACLE_PERMISSION_SET),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveOutcomeSchemaPda(params: {
-  schemaKeyHashHex: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_OUTCOME_SCHEMA), hexToFixedBytes(params.schemaKeyHashHex, 32)],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveSchemaDependencyLedgerPda(params: {
-  schemaKeyHashHex: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_SCHEMA_DEPENDENCY_LEDGER), hexToFixedBytes(params.schemaKeyHashHex, 32)],
-    params.programId ?? PROGRAM_ID,
-  );
-}
-
-export function deriveClaimAttestationPda(params: {
-  claimCase: PublicKeyish;
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_CLAIM_ATTESTATION),
-      toPublicKey(params.claimCase).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-    ],
-    params.programId ?? PROGRAM_ID,
-  );
 }
 
 export function toBigIntAmount(value: BigNumberish | null | undefined): bigint {
@@ -2435,115 +1125,6 @@ export const MEMBER_DELEGATED_RIGHT_FLAGS = [
   "review_decisions",
 ] as const;
 
-const ZERO_HASH_HEX = "00".repeat(32);
-
-function accountDiscriminatorKey(data: Uint8Array): string | null {
-  if (data.length < 8) return null;
-  return Array.from(data.subarray(0, 8)).join(",");
-}
-
-function snakeCaseKey(value: string): string {
-  return value.replace(/[A-Z]/g, (match) => `_${match.toLowerCase()}`);
-}
-
-function decodedField<T = unknown>(
-  decoded: Record<string, unknown>,
-  key: string,
-  alternateKey?: string,
-): T | undefined {
-  const snakeKey = alternateKey ?? snakeCaseKey(key);
-  return (decoded[key] ?? decoded[snakeKey]) as T | undefined;
-}
-
-function resolveProtocolAccountName(data: Uint8Array): string | null {
-  const key = accountDiscriminatorKey(data);
-  if (!key) return null;
-  return PROTOCOL_ACCOUNT_NAME_BY_DISCRIMINATOR.get(key) ?? null;
-}
-
-function createReadonlyProtocolProgram(connection: Connection): Program {
-  return new Program(PROTOCOL_IDL, { connection });
-}
-
-function asPublicKey(value: unknown): PublicKey {
-  if (value instanceof PublicKey) return value;
-  if (typeof value === "string") return new PublicKey(value);
-  if (value instanceof Uint8Array || Array.isArray(value)) return new PublicKey(value);
-  if (value && typeof value === "object" && "toBase58" in value && typeof value.toBase58 === "function") {
-    return new PublicKey(value.toBase58());
-  }
-  throw new Error("Invalid public key value.");
-}
-
-function asAddress(value: unknown): string {
-  return asPublicKey(value).toBase58();
-}
-
-function asOptionalAddress(value: unknown): string | null {
-  const address = asAddress(value);
-  return address === ZERO_PUBKEY ? null : address;
-}
-
-function bigintFromAnchorValue(value: unknown): bigint {
-  if (value === null || value === undefined) return 0n;
-  if (typeof value === "bigint") return value;
-  if (typeof value === "number") return BigInt(Math.trunc(value));
-  if (typeof value === "string") return BigInt(value);
-  if (value && typeof value === "object" && "toString" in value && typeof value.toString === "function") {
-    return BigInt(value.toString());
-  }
-  return 0n;
-}
-
-function numberFromAnchorValue(value: unknown): number {
-  return Number(bigintFromAnchorValue(value));
-}
-
-function stringFromAnchorValue(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (value && typeof value === "object" && "toString" in value && typeof value.toString === "function") {
-    return value.toString();
-  }
-  return "";
-}
-
-function bytesToHex(value: unknown): string {
-  if (value instanceof Uint8Array) {
-    return Array.from(value, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  }
-  if (Array.isArray(value)) {
-    return Array.from(value, (byte) => Number(byte).toString(16).padStart(2, "0")).join("");
-  }
-  return "";
-}
-
-function normalizeHex32(value: string): string {
-  const normalized = value.trim().toLowerCase().replace(/^0x/, "");
-  if (!/^[0-9a-f]{64}$/.test(normalized)) {
-    throw new Error("Expected a 32-byte hex string.");
-  }
-  return normalized;
-}
-
-function normalizeOptionalHex32(value?: string | null): string {
-  const trimmed = value?.trim();
-  if (!trimmed) return ZERO_HASH_HEX;
-  return normalizeHex32(trimmed);
-}
-
-function hexToFixedBytes(value: string, size: number): Uint8Array {
-  const normalized = value.trim().toLowerCase().replace(/^0x/, "");
-  const expectedLength = size * 2;
-  if (!new RegExp(`^[0-9a-f]{${expectedLength}}$`).test(normalized)) {
-    throw new Error(`Expected a ${size}-byte hex string.`);
-  }
-  const bytes = new Uint8Array(size);
-  for (let index = 0; index < size; index += 1) {
-    bytes[index] = Number.parseInt(normalized.slice(index * 2, index * 2 + 2), 16);
-  }
-  return bytes;
-}
-
 function membershipModelLabel(membershipMode: number, membershipGateKind: number): string {
   if (membershipMode === 1 || membershipGateKind === 2 || membershipGateKind === 3 || membershipGateKind === 4) {
     return "token_gate";
@@ -2592,11 +1173,6 @@ function reserveLedgerSnapshot(params: {
 
 function sortByLabel<T>(rows: T[], label: (value: T) => string): T[] {
   return [...rows].sort((left, right) => label(left).localeCompare(label(right)));
-}
-
-export async function hashStringTo32Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", TEXT_ENCODER.encode(value));
-  return bytesToHex(new Uint8Array(digest));
 }
 
 export async function loadProtocolConsoleSnapshot(connection: Connection): Promise<ProtocolConsoleSnapshot> {

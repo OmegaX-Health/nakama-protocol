@@ -15,7 +15,8 @@ This directory contains the Next.js protocol console for the canonical OmegaX he
 ## Key directories
 
 - `app/` contains routes, layouts, and API handlers
-- `lib/protocol.ts` contains PDA helpers, transaction builders, reserve math, and deterministic read models
+- `lib/protocol.ts` is the public protocol frontend barrel for PDA helpers, transaction builders, reserve math, and deterministic read models
+- `lib/protocol/` contains shared protocol constants and structural snapshot/read-model types used by that barrel
 - `lib/use-protocol-console-snapshot.ts` is the live snapshot adapter used by the mounted canonical routes
 - `lib/devnet-fixtures.ts` contains stable canonical fixture ids used for tests, docs, and devnet bootstrap output
 - `lib/console-model.ts` builds the sponsor/member/capital views used by the console
