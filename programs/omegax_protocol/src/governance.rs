@@ -15,6 +15,8 @@ use crate::state::*;
 use crate::types::*;
 #[cfg(feature = "quasar")]
 use crate::OmegaxProtocol;
+#[cfg(feature = "quasar")]
+use anchor_lang::ProgramData;
 
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn initialize_protocol_governance(

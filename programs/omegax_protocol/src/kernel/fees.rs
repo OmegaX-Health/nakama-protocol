@@ -3,6 +3,9 @@
 //! Fee accrual, recipient, vault-balance, and SOL-rail transfer helpers.
 
 use crate::platform::*;
+#[cfg(feature = "quasar")]
+use anchor_lang::prelude::AccountInfo;
+#[cfg(not(feature = "quasar"))]
 use anchor_spl::token_interface::TokenAccount;
 
 use crate::constants::*;
@@ -90,6 +93,7 @@ pub(crate) fn require_fee_recipient_owner(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_fee_recipient_token_owner<'info>(
     recipient_token_account: &InterfaceAccount<'info, TokenAccount>,
     configured_recipient: Pubkey,

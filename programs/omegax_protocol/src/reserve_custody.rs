@@ -149,11 +149,12 @@ pub struct CreateReserveDomain<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + ReserveDomain::INIT_SPACE,
-            seeds = [SEED_RESERVE_DOMAIN, args.domain_id.as_bytes()],
-            bump
+            constraint = quasar_pda_matches(
+                reserve_domain.address(),
+                &crate::ID,
+                &[SEED_RESERVE_DOMAIN, args.domain_id.as_bytes()],
+                reserve_domain.bump,
+            ) @ OmegaXProtocolError::ReserveDomainMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -180,7 +181,15 @@ pub struct UpdateReserveDomainControls<'info> {
     #[account(mut, seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
     pub reserve_domain: Account<'info, ReserveDomain>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            reserve_domain.address(),
+            &crate::ID,
+            &[SEED_RESERVE_DOMAIN, reserve_domain.domain_id().as_bytes()],
+            reserve_domain.bump,
+        ) @ OmegaXProtocolError::ReserveDomainMismatch
+    )]
     pub reserve_domain: &'info mut Account<ReserveDomainAccountData<'info>>,
 }
 
@@ -202,7 +211,15 @@ pub struct CreateDomainAssetVault<'info> {
     #[account(mut, seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
     pub reserve_domain: Account<'info, ReserveDomain>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            reserve_domain.address(),
+            &crate::ID,
+            &[SEED_RESERVE_DOMAIN, reserve_domain.domain_id().as_bytes()],
+            reserve_domain.bump,
+        ) @ OmegaXProtocolError::ReserveDomainMismatch
+    )]
     pub reserve_domain: &'info mut Account<ReserveDomainAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -220,11 +237,12 @@ pub struct CreateDomainAssetVault<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + DomainAssetVault::INIT_SPACE,
-            seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                domain_asset_vault.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_VAULT, reserve_domain.address().as_ref(), args.asset_mint.as_ref()],
+                domain_asset_vault.bump,
+            ) @ OmegaXProtocolError::DomainAssetVaultRequired
         )
     )]
     #[cfg(feature = "quasar")]
@@ -245,11 +263,12 @@ pub struct CreateDomainAssetVault<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + DomainAssetLedger::INIT_SPACE,
-            seeds = [SEED_DOMAIN_ASSET_LEDGER, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                domain_asset_ledger.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_LEDGER, reserve_domain.address().as_ref(), args.asset_mint.as_ref()],
+                domain_asset_ledger.bump,
+            ) @ OmegaXProtocolError::ReserveDomainMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -267,7 +286,7 @@ pub struct CreateDomainAssetVault<'info> {
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = asset_mint.key() == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+        constraint = *asset_mint.address() == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub asset_mint: &'info InterfaceAccount<Mint>,
     #[cfg_attr(
@@ -287,12 +306,11 @@ pub struct CreateDomainAssetVault<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            seeds = [SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-            bump,
-            token::mint = asset_mint,
-            token::authority = domain_asset_vault,
+            constraint = quasar_pda_matches_canonical(
+                vault_token_account.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain.address().as_ref(), args.asset_mint.as_ref()],
+            ) @ OmegaXProtocolError::VaultTokenAccountMismatch
         )
     )]
     #[cfg(feature = "quasar")]

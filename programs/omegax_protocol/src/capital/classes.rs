@@ -114,7 +114,14 @@ pub struct CreateCapitalClass<'info> {
     #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Account<'info, LiquidityPool>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
+    )]
     pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -132,11 +139,12 @@ pub struct CreateCapitalClass<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + CapitalClass::INIT_SPACE,
-            seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), args.class_id.as_bytes()],
-            bump
+            constraint = quasar_pda_matches(
+                capital_class.address(),
+                &crate::ID,
+                &[SEED_CAPITAL_CLASS, liquidity_pool.address().as_ref(), capital_class.class_id().as_bytes()],
+                capital_class.bump,
+            ) @ OmegaXProtocolError::CapitalClassMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -157,11 +165,12 @@ pub struct CreateCapitalClass<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + PoolClassLedger::INIT_SPACE,
-            seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                pool_class_ledger.address(),
+                &crate::ID,
+                &[SEED_POOL_CLASS_LEDGER, capital_class.address().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
+                pool_class_ledger.bump,
+            ) @ OmegaXProtocolError::CapitalClassMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -187,12 +196,27 @@ pub struct UpdateCapitalClassControls<'info> {
     #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Account<'info, LiquidityPool>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
+    )]
     pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Account<'info, CapitalClass>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            capital_class.address(),
+            &crate::ID,
+            &[SEED_CAPITAL_CLASS, liquidity_pool.address().as_ref(), capital_class.class_id().as_bytes()],
+            capital_class.bump,
+        ) @ OmegaXProtocolError::CapitalClassMismatch
+    )]
     pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
 }

@@ -356,11 +356,12 @@ pub struct RegisterOracle<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = admin,
-            space = 8 + OracleProfile::INIT_SPACE,
-            seeds = [SEED_ORACLE_PROFILE, args.oracle.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                oracle_profile.address(),
+                &crate::ID,
+                &[SEED_ORACLE_PROFILE, args.oracle.as_ref()],
+                oracle_profile.bump,
+            ) @ OmegaXProtocolError::OracleProfileMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -386,8 +387,13 @@ pub struct ClaimOracle<'info> {
     pub oracle_profile: Account<'info, OracleProfile>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
-        bump = oracle_profile.bump
+        mut,
+        constraint = quasar_pda_matches(
+            oracle_profile.address(),
+            &crate::ID,
+            &[SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
+            oracle_profile.bump,
+        ) @ OmegaXProtocolError::OracleProfileMismatch
     )]
     pub oracle_profile: &'info mut Account<OracleProfileAccountData<'info>>,
 }
@@ -413,8 +419,13 @@ pub struct UpdateOracleProfile<'info> {
     pub oracle_profile: Account<'info, OracleProfile>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
-        bump = oracle_profile.bump
+        mut,
+        constraint = quasar_pda_matches(
+            oracle_profile.address(),
+            &crate::ID,
+            &[SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
+            oracle_profile.bump,
+        ) @ OmegaXProtocolError::OracleProfileMismatch
     )]
     pub oracle_profile: &'info mut Account<OracleProfileAccountData<'info>>,
 }
@@ -440,8 +451,12 @@ pub struct SetPoolOracle<'info> {
     pub liquidity_pool: Account<'info, LiquidityPool>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()],
-        bump = liquidity_pool.bump
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
     pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -452,8 +467,12 @@ pub struct SetPoolOracle<'info> {
     pub oracle_profile: Account<'info, OracleProfile>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
-        bump = oracle_profile.bump
+        constraint = quasar_pda_matches(
+            oracle_profile.address(),
+            &crate::ID,
+            &[SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
+            oracle_profile.bump,
+        ) @ OmegaXProtocolError::OracleProfileMismatch
     )]
     pub oracle_profile: &'info Account<OracleProfileAccountData<'info>>,
     #[cfg_attr(
@@ -472,11 +491,12 @@ pub struct SetPoolOracle<'info> {
         feature = "quasar",
         account(
             mut,
-            init_if_needed,
-            payer = authority,
-            space = 8 + PoolOracleApproval::INIT_SPACE,
-            seeds = [SEED_POOL_ORACLE_APPROVAL, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                pool_oracle_approval.address(),
+                &crate::ID,
+                &[SEED_POOL_ORACLE_APPROVAL, liquidity_pool.address().as_ref(), oracle_profile.oracle.as_ref()],
+                pool_oracle_approval.bump,
+            ) @ OmegaXProtocolError::PoolOracleApprovalRequired
         )
     )]
     #[cfg(feature = "quasar")]
@@ -508,8 +528,12 @@ pub struct SetPoolOraclePermissions<'info> {
     pub liquidity_pool: Account<'info, LiquidityPool>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()],
-        bump = liquidity_pool.bump
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
     pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -520,8 +544,12 @@ pub struct SetPoolOraclePermissions<'info> {
     pub oracle_profile: Account<'info, OracleProfile>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
-        bump = oracle_profile.bump
+        constraint = quasar_pda_matches(
+            oracle_profile.address(),
+            &crate::ID,
+            &[SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
+            oracle_profile.bump,
+        ) @ OmegaXProtocolError::OracleProfileMismatch
     )]
     pub oracle_profile: &'info Account<OracleProfileAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -532,8 +560,12 @@ pub struct SetPoolOraclePermissions<'info> {
     pub pool_oracle_approval: Account<'info, PoolOracleApproval>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_POOL_ORACLE_APPROVAL, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
-        bump = pool_oracle_approval.bump
+        constraint = quasar_pda_matches(
+            pool_oracle_approval.address(),
+            &crate::ID,
+            &[SEED_POOL_ORACLE_APPROVAL, liquidity_pool.address().as_ref(), oracle_profile.oracle.as_ref()],
+            pool_oracle_approval.bump,
+        ) @ OmegaXProtocolError::PoolOracleApprovalRequired
     )]
     pub pool_oracle_approval: &'info Account<PoolOracleApproval>,
     #[cfg_attr(
@@ -552,11 +584,12 @@ pub struct SetPoolOraclePermissions<'info> {
         feature = "quasar",
         account(
             mut,
-            init_if_needed,
-            payer = authority,
-            space = 8 + PoolOraclePermissionSet::INIT_SPACE,
-            seeds = [SEED_POOL_ORACLE_PERMISSION_SET, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                pool_oracle_permission_set.address(),
+                &crate::ID,
+                &[SEED_POOL_ORACLE_PERMISSION_SET, liquidity_pool.address().as_ref(), oracle_profile.oracle.as_ref()],
+                pool_oracle_permission_set.bump,
+            ) @ OmegaXProtocolError::PoolOraclePermissionRequired
         )
     )]
     #[cfg(feature = "quasar")]
@@ -588,8 +621,12 @@ pub struct SetPoolOraclePolicy<'info> {
     pub liquidity_pool: Account<'info, LiquidityPool>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()],
-        bump = liquidity_pool.bump
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
     pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
     #[cfg_attr(
@@ -608,11 +645,12 @@ pub struct SetPoolOraclePolicy<'info> {
         feature = "quasar",
         account(
             mut,
-            init_if_needed,
-            payer = authority,
-            space = 8 + PoolOraclePolicy::INIT_SPACE,
-            seeds = [SEED_POOL_ORACLE_POLICY, liquidity_pool.key().as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                pool_oracle_policy.address(),
+                &crate::ID,
+                &[SEED_POOL_ORACLE_POLICY, liquidity_pool.address().as_ref()],
+                pool_oracle_policy.bump,
+            ) @ OmegaXProtocolError::PoolOracleApprovalRequired
         )
     )]
     #[cfg(feature = "quasar")]
@@ -647,11 +685,12 @@ pub struct RegisterOutcomeSchema<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = publisher,
-            space = 8 + OutcomeSchema::INIT_SPACE,
-            seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                outcome_schema.address(),
+                &crate::ID,
+                &[SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
+                outcome_schema.bump,
+            ) @ OmegaXProtocolError::ClaimAttestationSchemaRequired
         )
     )]
     #[cfg(feature = "quasar")]
@@ -672,11 +711,12 @@ pub struct RegisterOutcomeSchema<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = publisher,
-            space = 8 + SchemaDependencyLedger::INIT_SPACE,
-            seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                schema_dependency_ledger.address(),
+                &crate::ID,
+                &[SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
+                schema_dependency_ledger.bump,
+            ) @ OmegaXProtocolError::TooManySchemaDependencies
         )
     )]
     #[cfg(feature = "quasar")]
@@ -708,8 +748,13 @@ pub struct VerifyOutcomeSchema<'info> {
     pub outcome_schema: Account<'info, OutcomeSchema>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_OUTCOME_SCHEMA, outcome_schema.schema_key_hash.as_ref()],
-        bump = outcome_schema.bump
+        mut,
+        constraint = quasar_pda_matches(
+            outcome_schema.address(),
+            &crate::ID,
+            &[SEED_OUTCOME_SCHEMA, outcome_schema.schema_key_hash.as_ref()],
+            outcome_schema.bump,
+        ) @ OmegaXProtocolError::ClaimAttestationSchemaRequired
     )]
     pub outcome_schema: &'info mut Account<OutcomeSchemaAccountData<'info>>,
 }
@@ -736,8 +781,12 @@ pub struct BackfillSchemaDependencyLedger<'info> {
     pub outcome_schema: Account<'info, OutcomeSchema>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
-        bump = outcome_schema.bump
+        constraint = quasar_pda_matches(
+            outcome_schema.address(),
+            &crate::ID,
+            &[SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
+            outcome_schema.bump,
+        ) @ OmegaXProtocolError::ClaimAttestationSchemaRequired
     )]
     pub outcome_schema: &'info Account<OutcomeSchemaAccountData<'info>>,
     #[cfg_attr(
@@ -756,11 +805,12 @@ pub struct BackfillSchemaDependencyLedger<'info> {
         feature = "quasar",
         account(
             mut,
-            init_if_needed,
-            payer = governance_authority,
-            space = 8 + SchemaDependencyLedger::INIT_SPACE,
-            seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                schema_dependency_ledger.address(),
+                &crate::ID,
+                &[SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
+                schema_dependency_ledger.bump,
+            ) @ OmegaXProtocolError::TooManySchemaDependencies
         )
     )]
     #[cfg(feature = "quasar")]
@@ -793,8 +843,13 @@ pub struct CloseOutcomeSchema<'info> {
     pub outcome_schema: Account<'info, OutcomeSchema>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_OUTCOME_SCHEMA, outcome_schema.schema_key_hash.as_ref()],
-        bump = outcome_schema.bump,
+        mut,
+        constraint = quasar_pda_matches(
+            outcome_schema.address(),
+            &crate::ID,
+            &[SEED_OUTCOME_SCHEMA, outcome_schema.schema_key_hash.as_ref()],
+            outcome_schema.bump,
+        ) @ OmegaXProtocolError::ClaimAttestationSchemaRequired,
         close = recipient_system_account
     )]
     pub outcome_schema: &'info mut Account<OutcomeSchemaAccountData<'info>>,
@@ -808,8 +863,13 @@ pub struct CloseOutcomeSchema<'info> {
     pub schema_dependency_ledger: Account<'info, SchemaDependencyLedger>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, outcome_schema.schema_key_hash.as_ref()],
-        bump = schema_dependency_ledger.bump,
+        mut,
+        constraint = quasar_pda_matches(
+            schema_dependency_ledger.address(),
+            &crate::ID,
+            &[SEED_SCHEMA_DEPENDENCY_LEDGER, outcome_schema.schema_key_hash.as_ref()],
+            schema_dependency_ledger.bump,
+        ) @ OmegaXProtocolError::TooManySchemaDependencies,
         close = recipient_system_account
     )]
     pub schema_dependency_ledger: &'info mut Account<SchemaDependencyLedgerAccountData<'info>>,

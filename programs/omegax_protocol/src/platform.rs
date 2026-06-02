@@ -16,7 +16,7 @@ pub use anchor_lang::{
 pub use quasar_lang::prelude::*;
 
 #[cfg(feature = "quasar")]
-pub type Result<T = ()> = core::result::Result<T, ProgramError>;
+pub type Result<T = (), E = ProgramError> = core::result::Result<T, E>;
 
 #[cfg(feature = "quasar")]
 pub type Pubkey = Address;
@@ -55,3 +55,44 @@ pub(crate) use require_keys_neq;
 
 #[cfg(feature = "quasar")]
 pub use quasar_spl::{InterfaceAccount, Mint, Token as TokenAccount, TokenInterface};
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+pub fn quasar_pda_matches(
+    expected: &Address,
+    program_id: &Address,
+    seeds: &[&[u8]],
+    bump: u8,
+) -> bool {
+    if seeds.len() >= 17 || seeds.iter().any(|seed| seed.len() > 32) {
+        return false;
+    }
+
+    let bump_seed = [bump];
+    let mut full_seeds: [&[u8]; 17] = [&[]; 17];
+    let mut index = 0;
+    while index < seeds.len() {
+        full_seeds[index] = seeds[index];
+        index += 1;
+    }
+    full_seeds[index] = &bump_seed;
+
+    quasar_lang::pda::verify_program_address(&full_seeds[..=index], program_id, expected).is_ok()
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+pub fn quasar_pda_matches_canonical(
+    expected: &Address,
+    program_id: &Address,
+    seeds: &[&[u8]],
+) -> bool {
+    if seeds.len() > 16 || seeds.iter().any(|seed| seed.len() > 32) {
+        return false;
+    }
+
+    match quasar_lang::pda::based_try_find_program_address(seeds, program_id) {
+        Ok((address, _bump)) => quasar_lang::keys_eq(&address, expected),
+        Err(_) => false,
+    }
+}

@@ -3,12 +3,16 @@
 //! Classic SPL-token custody checks and vault transfer helpers.
 
 use crate::platform::*;
+#[cfg(not(feature = "quasar"))]
+use anchor_lang::prelude::CpiContext;
+#[cfg(not(feature = "quasar"))]
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_classic_token_program_keys(
     mint_owner: Pubkey,
     token_program: Pubkey,
@@ -26,6 +30,7 @@ pub(crate) fn require_classic_token_program_keys(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_classic_spl_token<'info>(
     asset_mint: &InterfaceAccount<'info, Mint>,
     token_program: &Interface<'info, TokenInterface>,
@@ -33,6 +38,7 @@ pub(crate) fn require_classic_spl_token<'info>(
     require_classic_token_program_keys(*asset_mint.to_account_info().owner, token_program.key())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn transfer_to_domain_vault<'info>(
     amount: u64,
     authority: &Signer<'info>,
@@ -99,6 +105,7 @@ pub(crate) fn transfer_to_domain_vault<'info>(
 // `token::authority = domain_asset_vault`. Without that refactor in place the
 // CPI will fail at runtime with TokenOwnerMismatch — by design.
 #[allow(dead_code)]
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn transfer_from_domain_vault<'info>(
     amount: u64,
     domain_asset_vault: &Account<'info, DomainAssetVault>,

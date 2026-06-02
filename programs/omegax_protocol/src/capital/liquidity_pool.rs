@@ -74,13 +74,27 @@ pub struct CreateLiquidityPool<'info> {
     #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
     pub reserve_domain: Account<'info, ReserveDomain>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            reserve_domain.address(),
+            &crate::ID,
+            &[SEED_RESERVE_DOMAIN, reserve_domain.domain_id().as_bytes()],
+            reserve_domain.bump,
+        ) @ OmegaXProtocolError::ReserveDomainMismatch
+    )]
     pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.deposit_asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Account<'info, DomainAssetVault>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.deposit_asset_mint.as_ref()], bump = domain_asset_vault.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            domain_asset_vault.address(),
+            &crate::ID,
+            &[SEED_DOMAIN_ASSET_VAULT, reserve_domain.address().as_ref(), domain_asset_vault.asset_mint.as_ref()],
+            domain_asset_vault.bump,
+        ) @ OmegaXProtocolError::ReserveDomainMismatch
+    )]
     pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -98,11 +112,12 @@ pub struct CreateLiquidityPool<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + LiquidityPool::INIT_SPACE,
-            seeds = [SEED_LIQUIDITY_POOL, reserve_domain.key().as_ref(), args.pool_id.as_bytes()],
-            bump
+            constraint = quasar_pda_matches(
+                liquidity_pool.address(),
+                &crate::ID,
+                &[SEED_LIQUIDITY_POOL, reserve_domain.address().as_ref(), liquidity_pool.pool_id().as_bytes()],
+                liquidity_pool.bump,
+            ) @ OmegaXProtocolError::LiquidityPoolMismatch
         )
     )]
     #[cfg(feature = "quasar")]

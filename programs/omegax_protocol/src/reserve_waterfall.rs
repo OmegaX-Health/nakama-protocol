@@ -379,8 +379,12 @@ pub struct ConfigureReserveAssetRail<'info> {
     pub reserve_domain: Box<Account<'info, ReserveDomain>>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()],
-        bump = reserve_domain.bump,
+        constraint = quasar_pda_matches(
+            reserve_domain.address(),
+            &crate::ID,
+            &[SEED_RESERVE_DOMAIN, reserve_domain.domain_id().as_bytes()],
+            reserve_domain.bump,
+        ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
     pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
     #[cfg_attr(
@@ -399,11 +403,12 @@ pub struct ConfigureReserveAssetRail<'info> {
         feature = "quasar",
         account(
             mut,
-            init_if_needed,
-            payer = authority,
-            space = 8 + ReserveAssetRail::INIT_SPACE,
-            seeds = [SEED_RESERVE_ASSET_RAIL, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-            bump,
+            constraint = quasar_pda_matches(
+                reserve_asset_rail.address(),
+                &crate::ID,
+                &[SEED_RESERVE_ASSET_RAIL, reserve_domain.address().as_ref(), args.asset_mint.as_ref()],
+                reserve_asset_rail.bump,
+            ) @ OmegaXProtocolError::ReserveAssetRailMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -439,12 +444,13 @@ pub struct PublishReserveAssetRailPrice<'info> {
     pub reserve_asset_rail: Box<Account<'info, ReserveAssetRail>>,
     #[cfg(feature = "quasar")]
     #[account(
-        seeds = [
-            SEED_RESERVE_ASSET_RAIL,
-            reserve_asset_rail.reserve_domain.as_ref(),
-            reserve_asset_rail.asset_mint.as_ref(),
-        ],
-        bump = reserve_asset_rail.bump,
+        mut,
+        constraint = quasar_pda_matches(
+            reserve_asset_rail.address(),
+            &crate::ID,
+            &[SEED_RESERVE_ASSET_RAIL, reserve_asset_rail.reserve_domain.as_ref(), reserve_asset_rail.asset_mint.as_ref()],
+            reserve_asset_rail.bump,
+        ) @ OmegaXProtocolError::ReserveAssetRailMismatch
     )]
     pub reserve_asset_rail: &'info mut Account<ReserveAssetRailAccountData<'info>>,
 }

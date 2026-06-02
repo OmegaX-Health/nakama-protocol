@@ -118,19 +118,41 @@ pub struct OpenFundingLine<'info> {
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            health_plan.address(),
+            &crate::ID,
+            &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
+            health_plan.bump,
+        ) @ OmegaXProtocolError::HealthPlanMismatch
+    )]
     pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            domain_asset_vault.address(),
+            &crate::ID,
+            &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()],
+            domain_asset_vault.bump,
+        ) @ OmegaXProtocolError::DomainAssetVaultRequired
+    )]
     pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            domain_asset_ledger.address(),
+            &crate::ID,
+            &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()],
+            domain_asset_ledger.bump,
+        ) @ OmegaXProtocolError::ReserveDomainMismatch
+    )]
     pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -148,11 +170,12 @@ pub struct OpenFundingLine<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + FundingLine::INIT_SPACE,
-            seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), args.line_id.as_bytes()],
-            bump
+            constraint = quasar_pda_matches(
+                funding_line.address(),
+                &crate::ID,
+                &[SEED_FUNDING_LINE, health_plan.address().as_ref(), args.line_id.as_bytes()],
+                funding_line.bump,
+            ) @ OmegaXProtocolError::FundingLineMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -173,11 +196,12 @@ pub struct OpenFundingLine<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + FundingLineLedger::INIT_SPACE,
-            seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), args.asset_mint.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                funding_line_ledger.address(),
+                &crate::ID,
+                &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), args.asset_mint.as_ref()],
+                funding_line_ledger.bump,
+            ) @ OmegaXProtocolError::FundingLineMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -198,11 +222,12 @@ pub struct OpenFundingLine<'info> {
         feature = "quasar",
         account(
             mut,
-            init_if_needed,
-            payer = authority,
-            space = 8 + PlanReserveLedger::INIT_SPACE,
-            seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), args.asset_mint.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                plan_reserve_ledger.address(),
+                &crate::ID,
+                &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), args.asset_mint.as_ref()],
+                plan_reserve_ledger.bump,
+            ) @ OmegaXProtocolError::HealthPlanMismatch
         )
     )]
     #[cfg(feature = "quasar")]

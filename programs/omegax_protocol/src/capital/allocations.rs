@@ -235,25 +235,53 @@ pub struct CreateAllocationPosition<'info> {
     #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Box<Account<'info, LiquidityPool>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
+    )]
     pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            capital_class.address(),
+            &crate::ID,
+            &[SEED_CAPITAL_CLASS, liquidity_pool.address().as_ref(), capital_class.class_id().as_bytes()],
+            capital_class.bump,
+        ) @ OmegaXProtocolError::CapitalClassMismatch
+    )]
     pub capital_class: &'info Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            health_plan.address(),
+            &crate::ID,
+            &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
+            health_plan.bump,
+        ) @ OmegaXProtocolError::HealthPlanMismatch
+    )]
     pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            funding_line.address(),
+            &crate::ID,
+            &[SEED_FUNDING_LINE, health_plan.address().as_ref(), funding_line.line_id().as_bytes()],
+            funding_line.bump,
+        ) @ OmegaXProtocolError::FundingLineMismatch
+    )]
     pub funding_line: &'info Account<FundingLineAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -271,11 +299,12 @@ pub struct CreateAllocationPosition<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + AllocationPosition::INIT_SPACE,
-            seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                allocation_position.address(),
+                &crate::ID,
+                &[SEED_ALLOCATION_POSITION, capital_class.address().as_ref(), funding_line.address().as_ref()],
+                allocation_position.bump,
+            ) @ OmegaXProtocolError::AllocationPositionMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -296,11 +325,12 @@ pub struct CreateAllocationPosition<'info> {
         feature = "quasar",
         account(
             mut,
-            init,
-            payer = authority,
-            space = 8 + AllocationLedger::INIT_SPACE,
-            seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()],
-            bump
+            constraint = quasar_pda_matches(
+                allocation_ledger.address(),
+                &crate::ID,
+                &[SEED_ALLOCATION_LEDGER, allocation_position.address().as_ref(), funding_line.asset_mint.as_ref()],
+                allocation_ledger.bump,
+            ) @ OmegaXProtocolError::AllocationPositionMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -326,13 +356,28 @@ pub struct UpdateAllocationCaps<'info> {
     #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Account<'info, LiquidityPool>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
+    )]
     pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_POSITION, allocation_position.capital_class.as_ref(), allocation_position.funding_line.as_ref()], bump = allocation_position.bump)]
     pub allocation_position: Account<'info, AllocationPosition>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_ALLOCATION_POSITION, allocation_position.capital_class.as_ref(), allocation_position.funding_line.as_ref()], bump = allocation_position.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            allocation_position.address(),
+            &crate::ID,
+            &[SEED_ALLOCATION_POSITION, allocation_position.capital_class.as_ref(), allocation_position.funding_line.as_ref()],
+            allocation_position.bump,
+        ) @ OmegaXProtocolError::AllocationPositionMismatch
+    )]
     pub allocation_position: &'info mut Account<AllocationPosition>,
 }
 #[derive(Accounts)]
@@ -351,37 +396,84 @@ pub struct AllocateCapital<'info> {
     #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Box<Account<'info, LiquidityPool>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
+    )]
     pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            capital_class.address(),
+            &crate::ID,
+            &[SEED_CAPITAL_CLASS, liquidity_pool.address().as_ref(), capital_class.class_id().as_bytes()],
+            capital_class.bump,
+        ) @ OmegaXProtocolError::CapitalClassMismatch
+    )]
     pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            pool_class_ledger.address(),
+            &crate::ID,
+            &[SEED_POOL_CLASS_LEDGER, capital_class.address().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
+            pool_class_ledger.bump,
+        ) @ OmegaXProtocolError::CapitalClassMismatch
+    )]
     pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            funding_line.address(),
+            &crate::ID,
+            &[SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id().as_bytes()],
+            funding_line.bump,
+        ) @ OmegaXProtocolError::FundingLineMismatch
+    )]
     pub funding_line: &'info Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()], bump = allocation_position.bump)]
     pub allocation_position: Box<Account<'info, AllocationPosition>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()], bump = allocation_position.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            allocation_position.address(),
+            &crate::ID,
+            &[SEED_ALLOCATION_POSITION, capital_class.address().as_ref(), funding_line.address().as_ref()],
+            allocation_position.bump,
+        ) @ OmegaXProtocolError::AllocationPositionMismatch
+    )]
     pub allocation_position: &'info mut Account<AllocationPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()], bump = allocation_ledger.bump)]
     pub allocation_ledger: Box<Account<'info, AllocationLedger>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()], bump = allocation_ledger.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            allocation_ledger.address(),
+            &crate::ID,
+            &[SEED_ALLOCATION_LEDGER, allocation_position.address().as_ref(), funding_line.asset_mint.as_ref()],
+            allocation_ledger.bump,
+        ) @ OmegaXProtocolError::AllocationPositionMismatch
+    )]
     pub allocation_ledger: &'info mut Account<AllocationLedger>,
 }
 #[derive(Accounts)]
@@ -400,36 +492,83 @@ pub struct DeallocateCapital<'info> {
     #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Box<Account<'info, LiquidityPool>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id().as_bytes()],
+            liquidity_pool.bump,
+        ) @ OmegaXProtocolError::LiquidityPoolMismatch
+    )]
     pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            capital_class.address(),
+            &crate::ID,
+            &[SEED_CAPITAL_CLASS, liquidity_pool.address().as_ref(), capital_class.class_id().as_bytes()],
+            capital_class.bump,
+        ) @ OmegaXProtocolError::CapitalClassMismatch
+    )]
     pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            pool_class_ledger.address(),
+            &crate::ID,
+            &[SEED_POOL_CLASS_LEDGER, capital_class.address().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
+            pool_class_ledger.bump,
+        ) @ OmegaXProtocolError::CapitalClassMismatch
+    )]
     pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    #[account(
+        constraint = quasar_pda_matches(
+            funding_line.address(),
+            &crate::ID,
+            &[SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id().as_bytes()],
+            funding_line.bump,
+        ) @ OmegaXProtocolError::FundingLineMismatch
+    )]
     pub funding_line: &'info Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()], bump = allocation_position.bump)]
     pub allocation_position: Box<Account<'info, AllocationPosition>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()], bump = allocation_position.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            allocation_position.address(),
+            &crate::ID,
+            &[SEED_ALLOCATION_POSITION, capital_class.address().as_ref(), funding_line.address().as_ref()],
+            allocation_position.bump,
+        ) @ OmegaXProtocolError::AllocationPositionMismatch
+    )]
     pub allocation_position: &'info mut Account<AllocationPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()], bump = allocation_ledger.bump)]
     pub allocation_ledger: Box<Account<'info, AllocationLedger>>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()], bump = allocation_ledger.bump)]
+    #[account(
+        mut,
+        constraint = quasar_pda_matches(
+            allocation_ledger.address(),
+            &crate::ID,
+            &[SEED_ALLOCATION_LEDGER, allocation_position.address().as_ref(), funding_line.asset_mint.as_ref()],
+            allocation_ledger.bump,
+        ) @ OmegaXProtocolError::AllocationPositionMismatch
+    )]
     pub allocation_ledger: &'info mut Account<AllocationLedger>,
 }

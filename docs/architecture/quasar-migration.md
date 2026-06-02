@@ -76,14 +76,16 @@ The active Quasar compile inventory is:
 npm run quasar:check
 ```
 
-As of this migration checkpoint, that command reaches `omegax_protocol` under
-Rust 1.89 and then fails on source-port work with 1624 compiler errors. The
-dynamic account lifetime bucket is reduced from 189 diagnostics to 0 by moving
-shared helpers, Quasar-only reference fields, and all current public
-account-context domains onto account-data aliases. The next compiler bucket is
-Quasar PDA seed-expression shape, where field references such as
-`liquidity_pool.reserve_domain` need to move to Quasar-compatible account
-field access. The remaining cross-repo failure buckets are:
+As of the latest migration checkpoint, that command reaches `omegax_protocol`
+under Rust 1.89 and then fails on source-port work with 640 compiler errors
+and 97 warnings. The dynamic account lifetime bucket is reduced from 189
+diagnostics to 0 by moving shared helpers, Quasar-only reference fields, and
+all current public account-context domains onto account-data aliases. The
+Quasar PDA seed-expression bucket is also reduced across the current public
+account-context surface by moving dynamic seeds into explicit Quasar-only PDA
+constraints and by using canonical PDA verification where Anchor previously
+generated a bump for token-account init. The remaining cross-repo failure
+buckets are:
 
 - instruction handlers: the Quasar facade is declared and dispatches fail
   closed, but each public handler still needs its real body ported from Anchor
@@ -100,7 +102,14 @@ field access. The remaining cross-repo failure buckets are:
   expect field lists such as `#[instruction(domain_id: String<u32, 32>, ...)]`,
   not Anchor's `#[instruction(args: CreateReserveDomainArgs)]`. The public
   handlers likewise need Quasar `#[instruction(discriminator = [...])]`
-  wrappers and direct POD/dynamic parameters.
+  wrappers and direct POD/dynamic parameters. This is now the leading compiler
+  bucket: Anchor arg structs are not valid Quasar zero-copy instruction
+  snapshots, and dynamic string/vector args need direct Quasar parameters or a
+  deliberate manual parsing path.
+- SPL seams: remaining Quasar account contexts and helper paths must
+  consistently use `quasar-spl` `Mint`, `TokenAccount`, and `TokenInterface`
+  marker types, while Anchor CPI helper bodies stay on the Anchor-only path
+  until the Quasar CPI port lands.
 - account state follow-up: ledger accounts that embed `ReserveBalanceSheet`
   still need a Quasar POD layout instead of a nested native-`u64` helper before
   the zero-copy companion alignment check can pass.
