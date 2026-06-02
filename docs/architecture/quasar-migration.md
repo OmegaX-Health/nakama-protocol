@@ -24,6 +24,14 @@ Completed setup:
   `idl/omegax_protocol.json`.
 - `tests/quasar_discriminators.test.ts` verifies instruction, account, and
   event discriminator parity against the checked-in IDL.
+- Quasar account definitions now have explicit account discriminators. Dynamic
+  account-state structs are split from the Anchor Borsh definitions behind
+  `cfg(feature = "quasar")`, with fixed fields first and bounded Quasar
+  `String`/`Vec` fields at the tail so the zero-copy account macro accepts the
+  layout.
+- The Quasar platform seam aliases `Pubkey` to Quasar `Address` for account
+  state during the staged port, and state accounts expose a Quasar `INIT_SPACE`
+  compatibility constant for existing init-site expressions.
 
 The active Quasar compile inventory is:
 
@@ -41,10 +49,14 @@ Rust 1.89 and then fails on source-port work. The failure buckets are:
   `&'info Signer`, `&'info mut Account<T>`, `&'info Program<System>`, and
   `&'info InterfaceAccount<T>`, not Anchor `Signer<'info>`,
   `Account<'info, T>`, `Program<'info, T>`, or `Box<Account<'info, T>>`.
-- account state: Quasar `#[account]` requires explicit discriminators and
-  zero-copy-compatible layouts. Existing Borsh `String` fields must be mapped
-  deliberately to Quasar dynamic `String<u32, MAX>` fields to preserve the
-  current length-prefix shape.
+- instruction args: Quasar account-context `#[instruction(...)]` attributes
+  expect field lists such as `#[instruction(domain_id: String<u32, 32>, ...)]`,
+  not Anchor's `#[instruction(args: CreateReserveDomainArgs)]`. The public
+  handlers likewise need Quasar `#[instruction(discriminator = [...])]`
+  wrappers and direct POD/dynamic parameters.
+- account state follow-up: ledger accounts that embed `ReserveBalanceSheet`
+  still need a Quasar POD layout instead of a nested native-`u64` helper before
+  the zero-copy companion alignment check can pass.
 - events: Quasar `#[event]` requires explicit discriminators and only supports
   primitive integer, bool, and `Address` fields without padding.
 - args and IDs: Quasar uses `Address` and POD/dynamic instruction parameters;

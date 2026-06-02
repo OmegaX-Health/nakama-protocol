@@ -16,4 +16,7 @@ pub use anchor_lang::{
 pub use quasar_lang::prelude::*;
 
 #[cfg(feature = "quasar")]
+pub type Pubkey = Address;
+
+#[cfg(feature = "quasar")]
 pub use quasar_spl::{InterfaceAccount, Mint, TokenAccountState as TokenAccount, TokenInterface};

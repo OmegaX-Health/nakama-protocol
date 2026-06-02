@@ -7,7 +7,7 @@ use crate::platform::*;
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [71, 235, 253, 251, 202, 254, 132, 177]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct ProtocolGovernance {
     pub governance_authority: Pubkey,
     pub pending_governance_authority: Pubkey,
@@ -19,9 +19,9 @@ pub struct ProtocolGovernance {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [119, 76, 223, 192, 177, 116, 88, 178]))]
-#[derive(InitSpace)]
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct ReserveDomain {
     pub protocol_governance: Pubkey,
     pub domain_admin: Pubkey,
@@ -39,9 +39,26 @@ pub struct ReserveDomain {
     pub bump: u8,
 }
 
+#[cfg(feature = "quasar")]
+#[account(discriminator = [119, 76, 223, 192, 177, 116, 88, 178])]
+pub struct ReserveDomain<'info> {
+    pub protocol_governance: Pubkey,
+    pub domain_admin: Pubkey,
+    pub settlement_mode: u8,
+    pub legal_structure_hash: [u8; 32],
+    pub compliance_baseline_hash: [u8; 32],
+    pub allowed_rail_mask: u16,
+    pub pause_flags: u32,
+    pub active: bool,
+    pub audit_nonce: u64,
+    pub bump: u8,
+    pub domain_id: String<u32, 32>,
+    pub display_name: String<u32, 64>,
+}
+
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [105, 110, 75, 179, 247, 58, 135, 229]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct DomainAssetVault {
     pub reserve_domain: Pubkey,
     pub asset_mint: Pubkey,
@@ -50,9 +67,9 @@ pub struct DomainAssetVault {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [48, 92, 233, 170, 158, 126, 122, 67]))]
-#[derive(InitSpace)]
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct ReserveAssetRail {
     pub reserve_domain: Pubkey,
     pub asset_mint: Pubkey,
@@ -80,6 +97,34 @@ pub struct ReserveAssetRail {
     pub bump: u8,
 }
 
+#[cfg(feature = "quasar")]
+#[account(discriminator = [48, 92, 233, 170, 158, 126, 122, 67])]
+pub struct ReserveAssetRail<'info> {
+    pub reserve_domain: Pubkey,
+    pub asset_mint: Pubkey,
+    pub oracle_authority: Pubkey,
+    pub role: u8,
+    pub payout_priority: u8,
+    pub oracle_source: u8,
+    pub oracle_feed_id: [u8; 32],
+    pub max_staleness_seconds: i64,
+    pub max_confidence_bps: u16,
+    pub haircut_bps: u16,
+    pub max_exposure_bps: u16,
+    pub deposit_enabled: bool,
+    pub payout_enabled: bool,
+    pub capacity_enabled: bool,
+    pub active: bool,
+    pub last_price_usd_1e8: u64,
+    pub last_price_confidence_bps: u16,
+    pub last_price_published_at_ts: i64,
+    pub last_price_slot: u64,
+    pub last_price_proof_hash: [u8; 32],
+    pub audit_nonce: u64,
+    pub bump: u8,
+    pub asset_symbol: String<u32, 32>,
+}
+
 // Fee accounting account types. SPL tokens for fees physically reside in the
 // matching DomainAssetVault.vault_token_account; these accounts track each
 // rail's claim against that pool. Withdrawals decrement `withdrawn_fees` and
@@ -87,7 +132,7 @@ pub struct ReserveAssetRail {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [199, 15, 107, 45, 108, 244, 162, 105]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct ProtocolFeeVault {
     pub reserve_domain: Pubkey,
     pub asset_mint: Pubkey,
@@ -99,7 +144,7 @@ pub struct ProtocolFeeVault {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [93, 195, 95, 29, 127, 28, 59, 193]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PoolTreasuryVault {
     pub liquidity_pool: Pubkey,
     pub asset_mint: Pubkey,
@@ -111,7 +156,7 @@ pub struct PoolTreasuryVault {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [167, 128, 29, 44, 248, 197, 244, 23]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PoolOracleFeeVault {
     pub liquidity_pool: Pubkey,
     pub oracle: Pubkey,
@@ -122,9 +167,9 @@ pub struct PoolOracleFeeVault {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [66, 134, 136, 77, 63, 55, 103, 191]))]
-#[derive(InitSpace)]
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct HealthPlan {
     pub reserve_domain: Pubkey,
     pub sponsor: Pubkey,
@@ -156,9 +201,38 @@ pub struct HealthPlan {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [196, 117, 121, 249, 37, 71, 245, 23]))]
-#[derive(InitSpace)]
+#[cfg(feature = "quasar")]
+#[account(discriminator = [66, 134, 136, 77, 63, 55, 103, 191])]
+pub struct HealthPlan<'info> {
+    pub reserve_domain: Pubkey,
+    pub sponsor: Pubkey,
+    pub plan_admin: Pubkey,
+    pub sponsor_operator: Pubkey,
+    pub claims_operator: Pubkey,
+    pub oracle_authority: Pubkey,
+    pub membership_mode: u8,
+    pub membership_gate_kind: u8,
+    pub membership_gate_mint: Pubkey,
+    pub membership_gate_min_amount: u64,
+    pub membership_invite_authority: Pubkey,
+    pub allowed_rail_mask: u16,
+    pub default_funding_priority: u8,
+    pub oracle_policy_hash: [u8; 32],
+    pub schema_binding_hash: [u8; 32],
+    pub compliance_baseline_hash: [u8; 32],
+    pub pause_flags: u32,
+    pub active: bool,
+    pub audit_nonce: u64,
+    pub bump: u8,
+    pub health_plan_id: String<u32, 32>,
+    pub display_name: String<u32, 64>,
+    pub organization_ref: String<u32, 64>,
+    pub metadata_uri: String<u32, 160>,
+}
+
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PolicySeries {
     pub reserve_domain: Pubkey,
     pub health_plan: Pubkey,
@@ -188,9 +262,37 @@ pub struct PolicySeries {
     pub bump: u8,
 }
 
+#[cfg(feature = "quasar")]
+#[account(discriminator = [196, 117, 121, 249, 37, 71, 245, 23])]
+pub struct PolicySeries<'info> {
+    pub reserve_domain: Pubkey,
+    pub health_plan: Pubkey,
+    pub asset_mint: Pubkey,
+    pub mode: u8,
+    pub status: u8,
+    pub adjudication_mode: u8,
+    pub terms_hash: [u8; 32],
+    pub pricing_hash: [u8; 32],
+    pub payout_hash: [u8; 32],
+    pub reserve_model_hash: [u8; 32],
+    pub evidence_requirements_hash: [u8; 32],
+    pub comparability_hash: [u8; 32],
+    pub policy_overrides_hash: [u8; 32],
+    pub cycle_seconds: i64,
+    pub terms_version: u16,
+    pub prior_series: Pubkey,
+    pub successor_series: Pubkey,
+    pub live_since_ts: i64,
+    pub material_locked: bool,
+    pub bump: u8,
+    pub series_id: String<u32, 32>,
+    pub display_name: String<u32, 64>,
+    pub metadata_uri: String<u32, 160>,
+}
+
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [88, 118, 224, 251, 240, 186, 123, 175]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct MemberPosition {
     pub health_plan: Pubkey,
     pub policy_series: Pubkey,
@@ -211,7 +313,7 @@ pub struct MemberPosition {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [36, 200, 103, 9, 158, 27, 35, 104]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct MembershipAnchorSeat {
     pub health_plan: Pubkey,
     pub anchor_ref: Pubkey,
@@ -224,9 +326,9 @@ pub struct MembershipAnchorSeat {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [112, 72, 52, 244, 254, 229, 217, 235]))]
-#[derive(InitSpace)]
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct FundingLine {
     pub reserve_domain: Pubkey,
     pub health_plan: Pubkey,
@@ -247,9 +349,30 @@ pub struct FundingLine {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [7, 178, 225, 1, 54, 47, 117, 180]))]
-#[derive(InitSpace)]
+#[cfg(feature = "quasar")]
+#[account(discriminator = [112, 72, 52, 244, 254, 229, 217, 235])]
+pub struct FundingLine<'info> {
+    pub reserve_domain: Pubkey,
+    pub health_plan: Pubkey,
+    pub policy_series: Pubkey,
+    pub asset_mint: Pubkey,
+    pub line_type: u8,
+    pub funding_priority: u8,
+    pub committed_amount: u64,
+    pub funded_amount: u64,
+    pub reserved_amount: u64,
+    pub spent_amount: u64,
+    pub released_amount: u64,
+    pub returned_amount: u64,
+    pub status: u8,
+    pub caps_hash: [u8; 32],
+    pub bump: u8,
+    pub line_id: String<u32, 32>,
+}
+
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct ClaimCase {
     pub reserve_domain: Pubkey,
     pub health_plan: Pubkey,
@@ -286,9 +409,46 @@ pub struct ClaimCase {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [168, 206, 141, 106, 88, 76, 172, 167]))]
-#[derive(InitSpace)]
+#[cfg(feature = "quasar")]
+#[account(discriminator = [7, 178, 225, 1, 54, 47, 117, 180])]
+pub struct ClaimCase<'info> {
+    pub reserve_domain: Pubkey,
+    pub health_plan: Pubkey,
+    pub policy_series: Pubkey,
+    pub member_position: Pubkey,
+    pub funding_line: Pubkey,
+    pub asset_mint: Pubkey,
+    pub claimant: Pubkey,
+    pub adjudicator: Pubkey,
+    // PT-2026-04-27-04 design: when settlement transfers SPL out, the recipient
+    // is `delegate_recipient` if non-zero, else `member_position.wallet`. The
+    // `claimant` field above is informational metadata constrained to equal
+    // `member_position.wallet` at intake (see require_claim_intake_submitter);
+    // routing is exclusively controlled here, set by the member via
+    // `authorize_claim_recipient`. ZERO_PUBKEY means "pay member.wallet".
+    pub delegate_recipient: Pubkey,
+    pub evidence_ref_hash: [u8; 32],
+    pub decision_support_hash: [u8; 32],
+    pub intake_status: u8,
+    pub review_state: u8,
+    pub approved_amount: u64,
+    pub denied_amount: u64,
+    pub paid_amount: u64,
+    pub reserved_amount: u64,
+    pub recovered_amount: u64,
+    pub appeal_count: u16,
+    pub attestation_count: u16,
+    pub linked_obligation: Pubkey,
+    pub opened_at: i64,
+    pub updated_at: i64,
+    pub closed_at: i64,
+    pub bump: u8,
+    pub claim_id: String<u32, 32>,
+}
+
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct Obligation {
     pub reserve_domain: Pubkey,
     pub asset_mint: Pubkey,
@@ -320,9 +480,41 @@ pub struct Obligation {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [66, 38, 17, 64, 188, 80, 68, 129]))]
-#[derive(InitSpace)]
+#[cfg(feature = "quasar")]
+#[account(discriminator = [168, 206, 141, 106, 88, 76, 172, 167])]
+pub struct Obligation<'info> {
+    pub reserve_domain: Pubkey,
+    pub asset_mint: Pubkey,
+    pub health_plan: Pubkey,
+    pub policy_series: Pubkey,
+    pub member_wallet: Pubkey,
+    pub beneficiary: Pubkey,
+    pub funding_line: Pubkey,
+    pub claim_case: Pubkey,
+    pub liquidity_pool: Pubkey,
+    pub capital_class: Pubkey,
+    pub allocation_position: Pubkey,
+    pub creation_reason_hash: [u8; 32],
+    pub settlement_reason_hash: [u8; 32],
+    pub status: u8,
+    pub delivery_mode: u8,
+    pub principal_amount: u64,
+    pub outstanding_amount: u64,
+    pub reserved_amount: u64,
+    pub claimable_amount: u64,
+    pub payable_amount: u64,
+    pub settled_amount: u64,
+    pub impaired_amount: u64,
+    pub recovered_amount: u64,
+    pub created_at: i64,
+    pub updated_at: i64,
+    pub bump: u8,
+    pub obligation_id: String<u32, 32>,
+}
+
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct LiquidityPool {
     pub reserve_domain: Pubkey,
     pub curator: Pubkey,
@@ -349,9 +541,35 @@ pub struct LiquidityPool {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [161, 52, 78, 54, 200, 103, 206, 252]))]
-#[derive(InitSpace)]
+#[cfg(feature = "quasar")]
+#[account(discriminator = [66, 38, 17, 64, 188, 80, 68, 129])]
+pub struct LiquidityPool<'info> {
+    pub reserve_domain: Pubkey,
+    pub curator: Pubkey,
+    pub allocator: Pubkey,
+    pub sentinel: Pubkey,
+    pub deposit_asset_mint: Pubkey,
+    pub strategy_hash: [u8; 32],
+    pub allowed_exposure_hash: [u8; 32],
+    pub external_yield_adapter_hash: [u8; 32],
+    pub fee_bps: u16,
+    pub redemption_policy: u8,
+    pub pause_flags: u32,
+    pub total_value_locked: u64,
+    pub total_allocated: u64,
+    pub total_reserved: u64,
+    pub total_impaired: u64,
+    pub total_pending_redemptions: u64,
+    pub active: bool,
+    pub audit_nonce: u64,
+    pub bump: u8,
+    pub pool_id: String<u32, 32>,
+    pub display_name: String<u32, 64>,
+}
+
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct CapitalClass {
     pub reserve_domain: Pubkey,
     pub liquidity_pool: Pubkey,
@@ -382,9 +600,39 @@ pub struct CapitalClass {
     pub bump: u8,
 }
 
+#[cfg(feature = "quasar")]
+#[account(discriminator = [161, 52, 78, 54, 200, 103, 206, 252])]
+pub struct CapitalClass<'info> {
+    pub reserve_domain: Pubkey,
+    pub liquidity_pool: Pubkey,
+    pub share_mint: Pubkey,
+    pub priority: u8,
+    pub impairment_rank: u8,
+    pub restriction_mode: u8,
+    pub redemption_terms_mode: u8,
+    pub wrapper_metadata_hash: [u8; 32],
+    pub permissioning_hash: [u8; 32],
+    pub fee_bps: u16,
+    pub min_lockup_seconds: i64,
+    pub pause_flags: u32,
+    pub queue_only_redemptions: bool,
+    pub total_shares: u64,
+    pub nav_assets: u64,
+    pub allocated_assets: u64,
+    pub reserved_assets: u64,
+    pub impaired_assets: u64,
+    pub pending_redemptions: u64,
+    pub next_redemption_sequence: u64,
+    pub next_redemption_to_process: u64,
+    pub active: bool,
+    pub bump: u8,
+    pub class_id: String<u32, 32>,
+    pub display_name: String<u32, 64>,
+}
+
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [196, 56, 115, 198, 14, 117, 32, 224]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct LPPosition {
     pub capital_class: Pubkey,
     pub owner: Pubkey,
@@ -404,7 +652,7 @@ pub struct LPPosition {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [243, 106, 252, 36, 249, 56, 227, 55]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct AllocationPosition {
     pub reserve_domain: Pubkey,
     pub liquidity_pool: Pubkey,
@@ -425,9 +673,21 @@ pub struct AllocationPosition {
     pub bump: u8,
 }
 
-#[derive(
-    AnchorSerialize, AnchorDeserialize, Clone, Copy, Default, Debug, PartialEq, Eq, InitSpace,
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(
+        AnchorSerialize,
+        AnchorDeserialize,
+        Clone,
+        Copy,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        InitSpace
+    )
 )]
+#[cfg_attr(feature = "quasar", derive(Clone, Copy, Default, Debug, PartialEq, Eq))]
 pub struct ReserveBalanceSheet {
     pub funded: u64,
     pub allocated: u64,
@@ -445,7 +705,7 @@ pub struct ReserveBalanceSheet {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [82, 42, 164, 106, 70, 160, 154, 99]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct DomainAssetLedger {
     pub reserve_domain: Pubkey,
     pub asset_mint: Pubkey,
@@ -455,7 +715,7 @@ pub struct DomainAssetLedger {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [243, 245, 230, 224, 27, 105, 48, 128]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PlanReserveLedger {
     pub health_plan: Pubkey,
     pub asset_mint: Pubkey,
@@ -465,7 +725,7 @@ pub struct PlanReserveLedger {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [0, 109, 195, 30, 140, 79, 210, 234]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct SeriesReserveLedger {
     pub policy_series: Pubkey,
     pub asset_mint: Pubkey,
@@ -475,7 +735,7 @@ pub struct SeriesReserveLedger {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [233, 46, 244, 60, 190, 65, 156, 68]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct FundingLineLedger {
     pub funding_line: Pubkey,
     pub asset_mint: Pubkey,
@@ -485,7 +745,7 @@ pub struct FundingLineLedger {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [147, 125, 17, 88, 188, 78, 109, 204]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PoolClassLedger {
     pub capital_class: Pubkey,
     pub asset_mint: Pubkey,
@@ -498,7 +758,7 @@ pub struct PoolClassLedger {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [53, 81, 62, 163, 68, 200, 187, 50]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct AllocationLedger {
     pub allocation_position: Pubkey,
     pub asset_mint: Pubkey,
@@ -507,9 +767,9 @@ pub struct AllocationLedger {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [232, 217, 185, 162, 237, 208, 114, 142]))]
-#[derive(InitSpace)]
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct OracleProfile {
     pub oracle: Pubkey,
     pub admin: Pubkey,
@@ -535,9 +795,30 @@ pub struct OracleProfile {
     pub bump: u8,
 }
 
+#[cfg(feature = "quasar")]
+#[account(discriminator = [232, 217, 185, 162, 237, 208, 114, 142])]
+pub struct OracleProfile<'info> {
+    pub oracle: Pubkey,
+    pub admin: Pubkey,
+    pub oracle_type: u8,
+    pub supported_schema_count: u8,
+    pub supported_schema_key_hashes: [[u8; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS],
+    pub active: bool,
+    pub claimed: bool,
+    pub created_at_ts: i64,
+    pub updated_at_ts: i64,
+    pub bump: u8,
+    pub display_name: String<u32, 64>,
+    pub legal_name: String<u32, 96>,
+    pub website_url: String<u32, 160>,
+    pub app_url: String<u32, 160>,
+    pub logo_uri: String<u32, 160>,
+    pub webhook_url: String<u32, 160>,
+}
+
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [116, 241, 25, 184, 205, 21, 153, 29]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PoolOracleApproval {
     pub liquidity_pool: Pubkey,
     pub oracle: Pubkey,
@@ -548,7 +829,7 @@ pub struct PoolOracleApproval {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [246, 134, 133, 108, 100, 203, 226, 43]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PoolOraclePolicy {
     pub liquidity_pool: Pubkey,
     pub quorum_m: u8,
@@ -563,7 +844,7 @@ pub struct PoolOraclePolicy {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [3, 136, 243, 231, 172, 143, 123, 245]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct PoolOraclePermissionSet {
     pub liquidity_pool: Pubkey,
     pub oracle: Pubkey,
@@ -574,7 +855,7 @@ pub struct PoolOraclePermissionSet {
 
 #[cfg_attr(not(feature = "quasar"), account)]
 #[cfg_attr(feature = "quasar", account(discriminator = [93, 71, 134, 41, 234, 89, 150, 80]))]
-#[derive(InitSpace)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct ClaimAttestation {
     pub oracle: Pubkey,
     pub oracle_profile: Pubkey,
@@ -596,9 +877,9 @@ pub struct ClaimAttestation {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [243, 62, 72, 224, 198, 100, 29, 58]))]
-#[derive(InitSpace)]
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct OutcomeSchema {
     pub publisher: Pubkey,
     pub schema_key_hash: [u8; 32],
@@ -616,9 +897,26 @@ pub struct OutcomeSchema {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [87, 115, 211, 54, 36, 177, 77, 131]))]
-#[derive(InitSpace)]
+#[cfg(feature = "quasar")]
+#[account(discriminator = [243, 62, 72, 224, 198, 100, 29, 58])]
+pub struct OutcomeSchema<'info> {
+    pub publisher: Pubkey,
+    pub schema_key_hash: [u8; 32],
+    pub version: u16,
+    pub schema_hash: [u8; 32],
+    pub schema_family: u8,
+    pub visibility: u8,
+    pub verified: bool,
+    pub created_at_ts: i64,
+    pub updated_at_ts: i64,
+    pub bump: u8,
+    pub schema_key: String<u32, 96>,
+    pub metadata_uri: String<u32, 160>,
+}
+
+#[cfg(not(feature = "quasar"))]
+#[account]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct SchemaDependencyLedger {
     pub schema_key_hash: [u8; 32],
     #[max_len(MAX_SCHEMA_DEPENDENCY_RULES)]
@@ -626,3 +924,73 @@ pub struct SchemaDependencyLedger {
     pub updated_at_ts: i64,
     pub bump: u8,
 }
+
+#[cfg(feature = "quasar")]
+#[account(discriminator = [87, 115, 211, 54, 36, 177, 77, 131])]
+pub struct SchemaDependencyLedger<'info> {
+    pub schema_key_hash: [u8; 32],
+    pub updated_at_ts: i64,
+    pub bump: u8,
+    pub pool_rule_addresses: Vec<Pubkey, u32, 32>,
+}
+
+#[cfg(feature = "quasar")]
+macro_rules! impl_quasar_fixed_init_space {
+    ($($name:ty),* $(,)?) => {
+        $(
+            impl $name {
+                pub const INIT_SPACE: usize = <Self as Space>::SPACE - 8;
+            }
+        )*
+    };
+}
+
+#[cfg(feature = "quasar")]
+macro_rules! impl_quasar_dynamic_init_space {
+    ($($name:ident),* $(,)?) => {
+        $(
+            impl $name<'_> {
+                pub const INIT_SPACE: usize = Self::MAX_SPACE - 8;
+            }
+        )*
+    };
+}
+
+#[cfg(feature = "quasar")]
+impl_quasar_fixed_init_space!(
+    ProtocolGovernance,
+    DomainAssetVault,
+    ProtocolFeeVault,
+    PoolTreasuryVault,
+    PoolOracleFeeVault,
+    MemberPosition,
+    MembershipAnchorSeat,
+    LPPosition,
+    AllocationPosition,
+    DomainAssetLedger,
+    PlanReserveLedger,
+    SeriesReserveLedger,
+    FundingLineLedger,
+    PoolClassLedger,
+    AllocationLedger,
+    PoolOracleApproval,
+    PoolOraclePolicy,
+    PoolOraclePermissionSet,
+    ClaimAttestation,
+);
+
+#[cfg(feature = "quasar")]
+impl_quasar_dynamic_init_space!(
+    ReserveDomain,
+    ReserveAssetRail,
+    HealthPlan,
+    PolicySeries,
+    FundingLine,
+    ClaimCase,
+    Obligation,
+    LiquidityPool,
+    CapitalClass,
+    OracleProfile,
+    OutcomeSchema,
+    SchemaDependencyLedger,
+);

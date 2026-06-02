@@ -71,15 +71,19 @@ test("Quasar account discriminators match the checked-in protocol IDL", () => {
 
 test("Quasar account attributes match the checked-in protocol IDL", () => {
   const accounts = idl.accounts ?? [];
-  const pattern =
-    /#\[cfg_attr\(feature = "quasar", account\(discriminator = \[([0-9,\s]+)\]\)\)\]\s+#\[derive\(InitSpace\)\]\s+pub struct ([A-Za-z0-9_]+)/g;
+  const patterns = [
+    /#\[cfg_attr\(feature = "quasar", account\(discriminator = \[([0-9,\s]+)\]\)\)\]\s+(?:#\[[^\]]+\]\s+)*pub struct ([A-Za-z0-9_]+)/g,
+    /#\[cfg\(feature = "quasar"\)\]\s+#\[account\(discriminator = \[([0-9,\s]+)\]\)\]\s+pub struct ([A-Za-z0-9_]+)/g,
+  ];
   const attributes = new Map<string, number[]>();
 
-  for (const match of stateSource.matchAll(pattern)) {
-    attributes.set(
-      match[2],
-      match[1].split(",").map((part) => Number.parseInt(part.trim(), 10)),
-    );
+  for (const pattern of patterns) {
+    for (const match of stateSource.matchAll(pattern)) {
+      attributes.set(
+        match[2],
+        match[1].split(",").map((part) => Number.parseInt(part.trim(), 10)),
+      );
+    }
   }
 
   assert.equal(attributes.size, accounts.length);
