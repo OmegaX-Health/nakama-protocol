@@ -5,28 +5,40 @@
 use crate::constants::*;
 use crate::platform::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct InitializeProtocolGovernanceArgs {
     pub protocol_fee_bps: u16,
     pub emergency_pause: bool,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct SetProtocolEmergencyPauseArgs {
     pub emergency_pause: bool,
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct RotateProtocolGovernanceAuthorityArgs {
     pub new_governance_authority: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateReserveDomainArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub domain_id: String,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
     pub domain_admin: Pubkey,
     pub settlement_mode: u8,
@@ -36,7 +48,10 @@ pub struct CreateReserveDomainArgs {
     pub pause_flags: u32,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct UpdateReserveDomainControlsArgs {
     pub allowed_rail_mask: u16,
     pub pause_flags: u32,
@@ -44,16 +59,22 @@ pub struct UpdateReserveDomainControlsArgs {
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateDomainAssetVaultArgs {
     pub asset_mint: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct ConfigureReserveAssetRailArgs {
     pub asset_mint: Pubkey,
     pub oracle_authority: Pubkey,
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub asset_symbol: String,
     pub role: u8,
     pub payout_priority: u8,
@@ -70,7 +91,10 @@ pub struct ConfigureReserveAssetRailArgs {
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct PublishReserveAssetRailPriceArgs {
     pub price_usd_1e8: u64,
     pub confidence_bps: u16,
@@ -78,7 +102,10 @@ pub struct PublishReserveAssetRailPriceArgs {
     pub proof_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct InitProtocolFeeVaultArgs {
     /// SPL mint for the fee rail. Pass `NATIVE_SOL_MINT` to bind a SOL-rail vault.
     pub asset_mint: Pubkey,
@@ -87,7 +114,10 @@ pub struct InitProtocolFeeVaultArgs {
     pub fee_recipient: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct InitPoolTreasuryVaultArgs {
     /// Asset mint must equal `liquidity_pool.deposit_asset_mint` for SPL pools, or
     /// `NATIVE_SOL_MINT` for the SOL rail.
@@ -96,7 +126,10 @@ pub struct InitPoolTreasuryVaultArgs {
     pub fee_recipient: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct InitPoolOracleFeeVaultArgs {
     /// Oracle wallet whose fee vault is being initialized. Must match
     /// `oracle_profile.oracle` and have an active `PoolOracleApproval` on the pool.
@@ -107,7 +140,10 @@ pub struct InitPoolOracleFeeVaultArgs {
     pub fee_recipient: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct WithdrawArgs {
     /// Amount to withdraw, in the rail's native units (lamports for SOL,
     /// SPL base units for SPL). Must satisfy
@@ -116,15 +152,18 @@ pub struct WithdrawArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateHealthPlanArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub plan_id: String,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
-    #[max_len(MAX_ORG_REF_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ORG_REF_LEN))]
     pub organization_ref: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub metadata_uri: String,
     pub sponsor: Pubkey,
     pub sponsor_operator: Pubkey,
@@ -143,7 +182,10 @@ pub struct CreateHealthPlanArgs {
     pub pause_flags: u32,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct UpdateHealthPlanControlsArgs {
     pub sponsor_operator: Pubkey,
     pub claims_operator: Pubkey,
@@ -163,13 +205,16 @@ pub struct UpdateHealthPlanControlsArgs {
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreatePolicySeriesArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub series_id: String,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub metadata_uri: String,
     pub asset_mint: Pubkey,
     pub mode: u8,
@@ -186,18 +231,24 @@ pub struct CreatePolicySeriesArgs {
     pub terms_version: u16,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct InitializeSeriesReserveLedgerArgs {
     pub asset_mint: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct VersionPolicySeriesArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub series_id: String,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub metadata_uri: String,
     pub status: u8,
     pub adjudication_mode: u8,
@@ -211,7 +262,10 @@ pub struct VersionPolicySeriesArgs {
     pub cycle_seconds: i64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct OpenMemberPositionArgs {
     pub series_scope: Pubkey,
     pub subject_commitment: [u8; 32],
@@ -224,16 +278,22 @@ pub struct OpenMemberPositionArgs {
     pub anchor_ref: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct UpdateMemberEligibilityArgs {
     pub eligibility_status: u8,
     pub delegated_rights: u32,
     pub active: bool,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct OpenFundingLineArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub line_id: String,
     pub policy_series: Pubkey,
     pub asset_mint: Pubkey,
@@ -243,19 +303,28 @@ pub struct OpenFundingLineArgs {
     pub caps_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct FundSponsorBudgetArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct RecordPremiumPaymentArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateObligationArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub obligation_id: String,
     pub asset_mint: Pubkey,
     pub policy_series: Pubkey,
@@ -270,44 +339,65 @@ pub struct CreateObligationArgs {
     pub creation_reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct ReserveObligationArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct SettleObligationArgs {
     pub next_status: u8,
     pub amount: u64,
     pub settlement_reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct ReleaseReserveArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct AuthorizeClaimRecipientArgs {
     pub delegate_recipient: Pubkey,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct OpenClaimCaseArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub claim_id: String,
     pub policy_series: Pubkey,
     pub claimant: Pubkey,
     pub evidence_ref_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct AttachClaimEvidenceRefArgs {
     pub evidence_ref_hash: [u8; 32],
     pub decision_support_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct AttestClaimCaseArgs {
     pub decision: u8,
     pub attestation_hash: [u8; 32],
@@ -315,7 +405,10 @@ pub struct AttestClaimCaseArgs {
     pub schema_key_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct AdjudicateClaimCaseArgs {
     pub review_state: u8,
     pub approved_amount: u64,
@@ -324,12 +417,18 @@ pub struct AdjudicateClaimCaseArgs {
     pub decision_support_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct SettleClaimCaseArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct SettleClaimCaseSelectedAssetArgs {
     pub claim_credit_amount: u64,
     pub payout_amount: u64,
@@ -337,11 +436,14 @@ pub struct SettleClaimCaseSelectedAssetArgs {
     pub settlement_reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateLiquidityPoolArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub pool_id: String,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
     pub curator: Pubkey,
     pub allocator: Pubkey,
@@ -355,11 +457,14 @@ pub struct CreateLiquidityPoolArgs {
     pub pause_flags: u32,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateCapitalClassArgs {
-    #[max_len(MAX_ID_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub class_id: String,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
     pub share_mint: Pubkey,
     pub priority: u8,
@@ -373,7 +478,10 @@ pub struct CreateCapitalClassArgs {
     pub pause_flags: u32,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct UpdateCapitalClassControlsArgs {
     pub pause_flags: u32,
     pub queue_only_redemptions: bool,
@@ -381,14 +489,20 @@ pub struct UpdateCapitalClassControlsArgs {
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct UpdateLpPositionCredentialingArgs {
     pub owner: Pubkey,
     pub credentialed: bool,
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct DepositIntoCapitalClassArgs {
     pub amount: u64,
     /// Minimum accepted shares out; zero means accept the program-derived
@@ -396,17 +510,26 @@ pub struct DepositIntoCapitalClassArgs {
     pub shares: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct RequestRedemptionArgs {
     pub shares: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct ProcessRedemptionQueueArgs {
     pub shares: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateAllocationPositionArgs {
     pub policy_series: Pubkey,
     pub cap_amount: u64,
@@ -415,7 +538,10 @@ pub struct CreateAllocationPositionArgs {
     pub deallocation_only: bool,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct UpdateAllocationCapsArgs {
     pub cap_amount: u64,
     pub weight_bps: u16,
@@ -424,72 +550,96 @@ pub struct UpdateAllocationCapsArgs {
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct AllocateCapitalArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct DeallocateCapitalArgs {
     pub amount: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct MarkImpairmentArgs {
     pub amount: u64,
     pub reason_hash: [u8; 32],
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct RegisterOracleArgs {
     pub oracle: Pubkey,
     pub oracle_type: u8,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
-    #[max_len(MAX_LONG_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_LONG_NAME_LEN))]
     pub legal_name: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub website_url: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub app_url: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub logo_uri: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub webhook_url: String,
-    #[max_len(MAX_ORACLE_SUPPORTED_SCHEMAS)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ORACLE_SUPPORTED_SCHEMAS))]
     pub supported_schema_key_hashes: Vec<[u8; 32]>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct UpdateOracleProfileArgs {
     pub oracle_type: u8,
-    #[max_len(MAX_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_NAME_LEN))]
     pub display_name: String,
-    #[max_len(MAX_LONG_NAME_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_LONG_NAME_LEN))]
     pub legal_name: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub website_url: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub app_url: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub logo_uri: String,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub webhook_url: String,
-    #[max_len(MAX_ORACLE_SUPPORTED_SCHEMAS)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ORACLE_SUPPORTED_SCHEMAS))]
     pub supported_schema_key_hashes: Vec<[u8; 32]>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct SetPoolOracleArgs {
     pub active: bool,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct SetPoolOraclePermissionsArgs {
     pub permissions: u32,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct SetPoolOraclePolicyArgs {
     pub quorum_m: u8,
     pub quorum_n: u8,
@@ -499,27 +649,36 @@ pub struct SetPoolOraclePolicyArgs {
     pub challenge_window_secs: u32,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct RegisterOutcomeSchemaArgs {
     pub schema_key_hash: [u8; 32],
-    #[max_len(MAX_SCHEMA_KEY_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_SCHEMA_KEY_LEN))]
     pub schema_key: String,
     pub version: u16,
     pub schema_hash: [u8; 32],
     pub schema_family: u8,
     pub visibility: u8,
-    #[max_len(MAX_URI_LEN)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
     pub metadata_uri: String,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct VerifyOutcomeSchemaArgs {
     pub verified: bool,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct BackfillSchemaDependencyLedgerArgs {
     pub schema_key_hash: [u8; 32],
-    #[max_len(MAX_SCHEMA_DEPENDENCY_RULES)]
+    #[cfg_attr(not(feature = "quasar"), max_len(MAX_SCHEMA_DEPENDENCY_RULES))]
     pub pool_rule_addresses: Vec<Pubkey>,
 }

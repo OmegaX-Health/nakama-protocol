@@ -19,4 +19,36 @@ pub use quasar_lang::prelude::*;
 pub type Pubkey = Address;
 
 #[cfg(feature = "quasar")]
+macro_rules! error {
+    ($error:expr $(,)?) => {
+        ProgramError::from($error)
+    };
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) use error;
+
+#[cfg(feature = "quasar")]
+macro_rules! err {
+    ($error:expr $(,)?) => {
+        Err(ProgramError::from($error))
+    };
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) use err;
+
+#[cfg(feature = "quasar")]
+macro_rules! require_keys_neq {
+    ($left:expr, $right:expr, $error:expr $(,)?) => {
+        if quasar_lang::keys_eq(&$left, &$right) {
+            return Err($error.into());
+        }
+    };
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) use require_keys_neq;
+
+#[cfg(feature = "quasar")]
 pub use quasar_spl::{InterfaceAccount, Mint, TokenAccountState as TokenAccount, TokenInterface};

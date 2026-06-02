@@ -32,6 +32,10 @@ Completed setup:
 - The Quasar platform seam aliases `Pubkey` to Quasar `Address` for account
   state during the staged port, and state accounts expose a Quasar `INIT_SPACE`
   compatibility constant for existing init-site expressions.
+- Anchor-only error messages, compatibility macros, instruction-arg derives,
+  and `#[max_len]` helper attributes are gated off the Quasar path so the
+  remaining Quasar compile output focuses on facade, context, and POD layout
+  work.
 
 The active Quasar compile inventory is:
 
