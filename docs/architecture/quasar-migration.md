@@ -36,6 +36,14 @@ Completed setup:
   and `#[max_len]` helper attributes are gated off the Quasar path so the
   remaining Quasar compile output focuses on facade, context, and POD layout
   work.
+- The root instruction facade is split by feature flag. The Anchor path keeps
+  forwarding to the existing handlers, while the Quasar path declares all 62
+  public instructions with literal Quasar discriminator bytes and fail-closed
+  handler bodies until their account contexts and instruction arguments are
+  fully ported.
+- Anchor-only generated `__client_accounts_*` reexports are gated off the
+  Quasar path, and the Quasar platform seam now preserves the existing
+  `Result<T>` spelling as `core::result::Result<T, ProgramError>`.
 
 The active Quasar compile inventory is:
 
@@ -46,9 +54,10 @@ npm run quasar:check
 As of this migration checkpoint, that command reaches `omegax_protocol` under
 Rust 1.89 and then fails on source-port work. The failure buckets are:
 
-- instruction facade: Quasar `#[program]` dispatch requires each public
-  instruction to be marked with `#[instruction(discriminator = [...])]` and to
-  accept `Ctx<T>` or `CtxWithRemaining<T>`, not Anchor `Context<T>`.
+- instruction handlers: the Quasar facade is declared and dispatches fail
+  closed, but each public handler still needs its real body ported from Anchor
+  `Context<T>` plus args structs into Quasar `Ctx<T>` plus POD/dynamic
+  instruction parameters.
 - account contexts: Quasar account fields use reference-shaped wrappers such as
   `&'info Signer`, `&'info mut Account<T>`, `&'info Program<System>`, and
   `&'info InterfaceAccount<T>`, not Anchor `Signer<'info>`,
@@ -72,9 +81,9 @@ Rust 1.89 and then fails on source-port work. The failure buckets are:
 
 ## Port Order
 
-1. Replace the root Anchor facade with a Quasar facade behind the Quasar path:
-   add instruction discriminators from `quasar_discriminators::instruction`,
-   switch handler signatures to `Ctx<T>`, and keep instruction names identical.
+1. Port the Quasar facade handlers from fail-closed placeholders to real
+   implementations after each account-context and instruction-argument family
+   has been converted.
 2. Rewrite `#[derive(Accounts)]` contexts by domain module, preserving PDA
    seeds, constraints, and writability exactly. Start with governance and
    reserve custody because they exercise init, update, and token-custody paths.

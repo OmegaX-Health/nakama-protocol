@@ -9,9 +9,12 @@ use crate::constants::*;
 use crate::errors::*;
 use crate::events::*;
 use crate::kernel::*;
+#[cfg(not(feature = "quasar"))]
 use crate::program::OmegaxProtocol;
 use crate::state::*;
 use crate::types::*;
+#[cfg(feature = "quasar")]
+use crate::OmegaxProtocol;
 
 pub(crate) fn initialize_protocol_governance(
     ctx: Context<InitializeProtocolGovernance>,

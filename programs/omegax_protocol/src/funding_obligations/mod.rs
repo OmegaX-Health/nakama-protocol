@@ -31,12 +31,17 @@ pub use obligations::CreateObligation;
 pub use reserves::{ReleaseReserve, ReserveObligation};
 pub use settlement::SettleObligation;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) use funding_lines::__client_accounts_open_funding_line;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use inflows::{
     __client_accounts_fund_sponsor_budget, __client_accounts_record_premium_payment,
 };
+#[cfg(not(feature = "quasar"))]
 pub(crate) use obligations::__client_accounts_create_obligation;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use reserves::{
     __client_accounts_release_reserve, __client_accounts_reserve_obligation,
 };
+#[cfg(not(feature = "quasar"))]
 pub(crate) use settlement::__client_accounts_settle_obligation;

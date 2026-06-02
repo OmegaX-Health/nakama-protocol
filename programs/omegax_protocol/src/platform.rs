@@ -16,6 +16,9 @@ pub use anchor_lang::{
 pub use quasar_lang::prelude::*;
 
 #[cfg(feature = "quasar")]
+pub type Result<T = ()> = core::result::Result<T, ProgramError>;
+
+#[cfg(feature = "quasar")]
 pub type Pubkey = Address;
 
 #[cfg(feature = "quasar")]
