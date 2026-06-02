@@ -4,6 +4,7 @@
 
 use super::*;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn settle_obligation(
     ctx: Context<SettleObligation>,
     args: SettleObligationArgs,
@@ -369,11 +370,23 @@ fn resolve_obligation_oracle_fee(
 
 #[derive(Accounts)]
 pub struct SettleObligation<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()],
         bump = reserve_asset_rail.bump,
@@ -381,40 +394,112 @@ pub struct SettleObligation<'info> {
         constraint = reserve_asset_rail.asset_mint == obligation.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
     )]
     pub reserve_asset_rail: Box<Account<'info, ReserveAssetRail>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()],
+        bump = reserve_asset_rail.bump,
+        constraint = reserve_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
+        constraint = reserve_asset_rail.asset_mint == obligation.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
+    )]
+    pub reserve_asset_rail: &'info Account<ReserveAssetRailAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
+    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), obligation.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), obligation.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
+    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_class_ledger: Option<&'info mut Account<PoolClassLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
+    #[cfg(feature = "quasar")]
+    pub allocation_position: Option<&'info mut Account<AllocationPosition>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub allocation_ledger: Option<&'info mut Account<AllocationLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_OBLIGATION, funding_line.key().as_ref(), obligation.obligation_id.as_bytes()], bump = obligation.bump)]
     pub obligation: Box<Account<'info, Obligation>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_OBLIGATION, funding_line.key().as_ref(), obligation.obligation_id.as_bytes()], bump = obligation.bump)]
+    pub obligation: &'info mut Account<ObligationAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Option<Box<Account<'info, ClaimCase>>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
+    pub claim_case: Option<&'info mut Account<ClaimCaseAccountData<'info>>>,
     // Optional for non-claim obligation transitions, but required when a
     // linked claim is being marked SETTLED so accounting cannot move without
     // the matching SPL outflow.
+    #[cfg(not(feature = "quasar"))]
     pub member_position: Option<Box<Account<'info, MemberPosition>>>,
+    #[cfg(feature = "quasar")]
+    pub member_position: Option<&'info Account<MemberPosition>>,
+    #[cfg(not(feature = "quasar"))]
     pub asset_mint: Option<InterfaceAccount<'info, Mint>>,
+    #[cfg(feature = "quasar")]
+    pub asset_mint: Option<&'info InterfaceAccount<Mint>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub vault_token_account: Option<InterfaceAccount<'info, TokenAccount>>,
+    #[cfg(feature = "quasar")]
+    pub vault_token_account: Option<&'info mut InterfaceAccount<TokenAccount>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: Option<InterfaceAccount<'info, TokenAccount>>,
+    #[cfg(feature = "quasar")]
+    pub recipient_token_account: Option<&'info mut InterfaceAccount<TokenAccount>>,
+    #[cfg(not(feature = "quasar"))]
     pub token_program: Option<Interface<'info, TokenInterface>>,
+    #[cfg(feature = "quasar")]
+    pub token_program: Option<&'info Interface<TokenInterface>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub pool_oracle_fee_vault: Option<Box<Account<'info, PoolOracleFeeVault>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_fee_vault: Option<&'info mut Account<PoolOracleFeeVault>>,
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_policy: Option<Box<Account<'info, PoolOraclePolicy>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_policy: Option<&'info Account<PoolOraclePolicy>>,
+    #[cfg(not(feature = "quasar"))]
     pub oracle_fee_attestation: Option<Box<Account<'info, ClaimAttestation>>>,
+    #[cfg(feature = "quasar")]
+    pub oracle_fee_attestation: Option<&'info Account<ClaimAttestation>>,
 }

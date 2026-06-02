@@ -60,6 +60,11 @@ Completed setup:
   adjudication, direct settlement, selected-asset settlement, and oracle
   attestation. Existing Anchor claim handler bodies are gated to the Anchor
   path while the Quasar facade remains fail-closed.
+- Fee-vault and funding-obligation account contexts now use the same Quasar
+  reference-wrapper shape across protocol/pool/oracle fee rails, funding-line
+  opening, sponsor and premium inflows, obligation creation, reserve release,
+  and settlement. Their Anchor handler bodies remain on the Anchor path while
+  the Quasar facade remains fail-closed.
 
 The active Quasar compile inventory is:
 
@@ -68,13 +73,14 @@ npm run quasar:check
 ```
 
 As of this migration checkpoint, that command reaches `omegax_protocol` under
-Rust 1.89 and then fails on source-port work with 3172 compiler errors. The
-dynamic account lifetime bucket is reduced from 189 diagnostics to 103 by
-moving shared helpers, Quasar-only reference fields, and the capital and claim
-account contexts onto account-data aliases. The capital and claims domains no
-longer have missing-lifetime diagnostics; their remaining Quasar failures are
-instruction argument `WriteBytes`/POD, PDA seed expression, event, sysvar, and
-SPL CPI surface work. The remaining cross-repo failure buckets are:
+Rust 1.89 and then fails on source-port work with 2460 compiler errors. The
+dynamic account lifetime bucket is reduced from 189 diagnostics to 52 by
+moving shared helpers, Quasar-only reference fields, and the capital, claim,
+fee, and funding-obligation account contexts onto account-data aliases. Those
+domains no longer have missing-lifetime diagnostics; their remaining Quasar
+failures are instruction argument `WriteBytes`/POD, PDA seed expression, event,
+sysvar, and SPL CPI surface work. The next remaining lifetime bucket starts in
+the governance account contexts. The remaining cross-repo failure buckets are:
 
 - instruction handlers: the Quasar facade is declared and dispatches fail
   closed, but each public handler still needs its real body ported from Anchor
@@ -84,7 +90,8 @@ SPL CPI surface work. The remaining cross-repo failure buckets are:
   `&'info Signer`, `&'info mut Account<T>`, `&'info Program<System>`, and
   `&'info InterfaceAccount<T>`, not Anchor `Signer<'info>`,
   `Account<'info, T>`, `Program<'info, T>`, or `Box<Account<'info, T>>`.
-  Capital and claims are the first completed domains for this wrapper shape.
+  Capital, claims, fees, and funding obligations are the first completed
+  domains for this wrapper shape.
 - instruction args: Quasar account-context `#[instruction(...)]` attributes
   expect field lists such as `#[instruction(domain_id: String<u32, 32>, ...)]`,
   not Anchor's `#[instruction(args: CreateReserveDomainArgs)]`. The public

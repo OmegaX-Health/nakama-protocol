@@ -4,6 +4,7 @@
 
 use super::*;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn create_obligation(
     ctx: Context<CreateObligation>,
     args: CreateObligationArgs,
@@ -107,29 +108,74 @@ pub(crate) fn create_obligation(
 #[derive(Accounts)]
 #[instruction(args: CreateObligationArgs)]
 pub struct CreateObligation<'info> {
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info mut Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
+    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), args.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), args.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
+    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
+    #[cfg(not(feature = "quasar"))]
     pub liquidity_pool: Option<Box<Account<'info, LiquidityPool>>>,
+    #[cfg(feature = "quasar")]
+    pub liquidity_pool: Option<&'info Account<LiquidityPoolAccountData<'info>>>,
+    #[cfg(not(feature = "quasar"))]
     pub capital_class: Option<Box<Account<'info, CapitalClass>>>,
+    #[cfg(feature = "quasar")]
+    pub capital_class: Option<&'info Account<CapitalClassAccountData<'info>>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_class_ledger: Option<&'info mut Account<PoolClassLedger>>,
+    #[cfg(not(feature = "quasar"))]
     pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
+    #[cfg(feature = "quasar")]
+    pub allocation_position: Option<&'info Account<AllocationPosition>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub allocation_ledger: Option<&'info mut Account<AllocationLedger>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -154,7 +200,7 @@ pub struct CreateObligation<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub obligation: &'info mut Account<Obligation<'info>>,
+    pub obligation: &'info mut Account<ObligationAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]

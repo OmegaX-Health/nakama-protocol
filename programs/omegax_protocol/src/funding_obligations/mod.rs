@@ -3,6 +3,7 @@
 //! Funding-line and obligation instruction module group.
 
 use crate::platform::*;
+#[cfg(not(feature = "quasar"))]
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::args::*;
@@ -19,10 +20,15 @@ mod obligations;
 mod reserves;
 mod settlement;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) use funding_lines::open_funding_line;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use inflows::{fund_sponsor_budget, record_premium_payment};
+#[cfg(not(feature = "quasar"))]
 pub(crate) use obligations::create_obligation;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use reserves::{release_reserve, reserve_obligation};
+#[cfg(not(feature = "quasar"))]
 pub(crate) use settlement::settle_obligation;
 
 pub use funding_lines::OpenFundingLine;

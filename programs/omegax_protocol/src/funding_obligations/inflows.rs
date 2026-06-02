@@ -4,6 +4,7 @@
 
 use super::*;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn fund_sponsor_budget(
     ctx: Context<FundSponsorBudget>,
     args: FundSponsorBudgetArgs,
@@ -54,6 +55,7 @@ pub(crate) fn fund_sponsor_budget(
 
     Ok(())
 }
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn record_premium_payment(
     ctx: Context<RecordPremiumPayment>,
     args: RecordPremiumPaymentArgs,
@@ -150,49 +152,130 @@ pub(crate) fn record_premium_payment(
 
 #[derive(Accounts)]
 pub struct FundSponsorBudget<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
+    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
+    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub source_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    pub source_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     pub asset_mint: InterfaceAccount<'info, Mint>,
+    #[cfg(feature = "quasar")]
+    pub asset_mint: &'info InterfaceAccount<Mint>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
+    #[cfg(feature = "quasar")]
+    pub token_program: &'info Interface<TokenInterface>,
 }
 #[derive(Accounts)]
 pub struct RecordPremiumPayment<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
+    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
+    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
@@ -201,10 +284,30 @@ pub struct RecordPremiumPayment<'info> {
         constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
     )]
     pub protocol_fee_vault: Box<Account<'info, ProtocolFeeVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
+        bump = protocol_fee_vault.bump,
+        constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
+        constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
+    )]
+    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub source_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    pub source_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     pub asset_mint: InterfaceAccount<'info, Mint>,
+    #[cfg(feature = "quasar")]
+    pub asset_mint: &'info InterfaceAccount<Mint>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
+    #[cfg(feature = "quasar")]
+    pub token_program: &'info Interface<TokenInterface>,
 }
