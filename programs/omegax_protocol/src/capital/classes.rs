@@ -97,13 +97,13 @@ pub(crate) fn update_capital_class_controls(
 }
 
 #[derive(Accounts)]
-#[instruction(args: CreateCapitalClassArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: CreateCapitalClassArgs))]
 pub struct CreateCapitalClass<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -122,7 +122,7 @@ pub struct CreateCapitalClass<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -148,7 +148,7 @@ pub struct CreateCapitalClass<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub capital_class: &'info mut Account<CapitalClass<'info>>,
+    pub capital_class: Account<CapitalClass<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -174,7 +174,7 @@ pub struct CreateCapitalClass<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -204,7 +204,7 @@ pub struct UpdateCapitalClassControls<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Account<'info, CapitalClass>,
@@ -218,5 +218,5 @@ pub struct UpdateCapitalClassControls<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
 }

@@ -15,7 +15,7 @@ use crate::state::*;
 use crate::types::*;
 #[cfg(feature = "quasar")]
 use crate::OmegaxProtocol;
-#[cfg(feature = "quasar")]
+#[cfg(not(feature = "quasar"))]
 use anchor_lang::ProgramData;
 
 #[cfg(not(feature = "quasar"))]
@@ -157,7 +157,7 @@ pub struct InitializeProtocolGovernance<'info> {
     #[account(mut)]
     pub governance_authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub governance_authority: &'info mut Signer,
+    pub governance_authority: &'info Signer,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -182,7 +182,7 @@ pub struct InitializeProtocolGovernance<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = program.programdata_address()? == Some(program_data.key()) @ OmegaXProtocolError::Unauthorized
@@ -196,7 +196,7 @@ pub struct InitializeProtocolGovernance<'info> {
     )]
     pub program_data: Account<'info, ProgramData>,
     #[cfg(feature = "quasar")]
-    pub program_data: &'info Account<ProgramData>,
+    pub program_data: &'info UncheckedAccount,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -214,7 +214,7 @@ pub struct SetProtocolEmergencyPause<'info> {
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
 }
 
 #[derive(Accounts)]
@@ -228,7 +228,7 @@ pub struct RotateProtocolGovernanceAuthority<'info> {
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
 }
 
 #[derive(Accounts)]
@@ -242,7 +242,7 @@ pub struct AcceptProtocolGovernanceAuthority<'info> {
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
 }
 
 #[derive(Accounts)]
@@ -256,5 +256,5 @@ pub struct CancelProtocolGovernanceAuthorityTransfer<'info> {
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
 }

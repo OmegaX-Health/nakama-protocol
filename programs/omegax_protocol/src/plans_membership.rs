@@ -380,13 +380,34 @@ pub(crate) fn update_member_eligibility(
 }
 
 #[derive(Accounts)]
-#[instruction(args: CreateHealthPlanArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: CreateHealthPlanArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(
+        _sponsor: Pubkey,
+        _sponsor_operator: Pubkey,
+        _claims_operator: Pubkey,
+        _oracle_authority: Pubkey,
+        _membership_mode: u8,
+        _membership_gate_kind: u8,
+        _membership_gate_mint: Pubkey,
+        _membership_gate_min_amount: u64,
+        _membership_invite_authority: Pubkey,
+        _allowed_rail_mask: u16,
+        _default_funding_priority: u8,
+        _oracle_policy_hash: [u8; 32],
+        _schema_binding_hash: [u8; 32],
+        _compliance_baseline_hash: [u8; 32],
+        _pause_flags: u32,
+        plan_id: String<u32, 32>
+    )
+)]
 pub struct CreateHealthPlan<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub plan_admin: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub plan_admin: &'info mut Signer,
+    pub plan_admin: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -405,7 +426,7 @@ pub struct CreateHealthPlan<'info> {
             reserve_domain.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
+    pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -425,13 +446,13 @@ pub struct CreateHealthPlan<'info> {
             constraint = quasar_pda_matches(
                 health_plan.address(),
                 &crate::ID,
-                &[SEED_HEALTH_PLAN, reserve_domain.address().as_ref(), args.plan_id.as_bytes()],
+                &[SEED_HEALTH_PLAN, reserve_domain.address().as_ref(), plan_id],
                 health_plan.bump,
             ) @ OmegaXProtocolError::HealthPlanMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub health_plan: &'info mut Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -463,17 +484,36 @@ pub struct UpdateHealthPlanControls<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info mut Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
 }
 
 #[derive(Accounts)]
-#[instruction(args: CreatePolicySeriesArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: CreatePolicySeriesArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(
+        asset_mint: Pubkey,
+        _mode: u8,
+        _status: u8,
+        _adjudication_mode: u8,
+        _terms_hash: [u8; 32],
+        _pricing_hash: [u8; 32],
+        _payout_hash: [u8; 32],
+        _reserve_model_hash: [u8; 32],
+        _evidence_requirements_hash: [u8; 32],
+        _comparability_hash: [u8; 32],
+        _policy_overrides_hash: [u8; 32],
+        _cycle_seconds: i64,
+        _terms_version: u16,
+        series_id: String<u32, 32>
+    )
+)]
 pub struct CreatePolicySeries<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -492,7 +532,7 @@ pub struct CreatePolicySeries<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -512,13 +552,13 @@ pub struct CreatePolicySeries<'info> {
             constraint = quasar_pda_matches(
                 policy_series.address(),
                 &crate::ID,
-                &[SEED_POLICY_SERIES, health_plan.address().as_ref(), args.series_id.as_bytes()],
+                &[SEED_POLICY_SERIES, health_plan.address().as_ref(), series_id],
                 policy_series.bump,
             ) @ OmegaXProtocolError::PolicySeriesMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub policy_series: &'info mut Account<PolicySeriesAccountData<'info>>,
+    pub policy_series: Account<PolicySeriesAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -538,13 +578,13 @@ pub struct CreatePolicySeries<'info> {
             constraint = quasar_pda_matches(
                 series_reserve_ledger.address(),
                 &crate::ID,
-                &[SEED_SERIES_RESERVE_LEDGER, policy_series.address().as_ref(), args.asset_mint.as_ref()],
+                &[SEED_SERIES_RESERVE_LEDGER, policy_series.address().as_ref(), asset_mint.as_ref()],
                 series_reserve_ledger.bump,
             ) @ OmegaXProtocolError::PolicySeriesMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub series_reserve_ledger: &'info mut Account<SeriesReserveLedger>,
+    pub series_reserve_ledger: &'info Account<SeriesReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -552,13 +592,14 @@ pub struct CreatePolicySeries<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(args: InitializeSeriesReserveLedgerArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: InitializeSeriesReserveLedgerArgs))]
+#[cfg_attr(feature = "quasar", instruction(asset_mint: Pubkey))]
 pub struct InitializeSeriesReserveLedger<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
@@ -577,7 +618,7 @@ pub struct InitializeSeriesReserveLedger<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_POLICY_SERIES, health_plan.key().as_ref(), policy_series.series_id.as_bytes()], bump = policy_series.bump)]
     pub policy_series: Box<Account<'info, PolicySeries>>,
@@ -590,7 +631,7 @@ pub struct InitializeSeriesReserveLedger<'info> {
             policy_series.bump,
         ) @ OmegaXProtocolError::PolicySeriesMismatch
     )]
-    pub policy_series: &'info Account<PolicySeriesAccountData<'info>>,
+    pub policy_series: Account<PolicySeriesAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -610,13 +651,13 @@ pub struct InitializeSeriesReserveLedger<'info> {
             constraint = quasar_pda_matches(
                 series_reserve_ledger.address(),
                 &crate::ID,
-                &[SEED_SERIES_RESERVE_LEDGER, policy_series.address().as_ref(), args.asset_mint.as_ref()],
+                &[SEED_SERIES_RESERVE_LEDGER, policy_series.address().as_ref(), asset_mint.as_ref()],
                 series_reserve_ledger.bump,
             ) @ OmegaXProtocolError::PolicySeriesMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub series_reserve_ledger: &'info mut Account<SeriesReserveLedger>,
+    pub series_reserve_ledger: &'info Account<SeriesReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -624,13 +665,29 @@ pub struct InitializeSeriesReserveLedger<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(args: VersionPolicySeriesArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: VersionPolicySeriesArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(
+        _status: u8,
+        _adjudication_mode: u8,
+        _terms_hash: [u8; 32],
+        _pricing_hash: [u8; 32],
+        _payout_hash: [u8; 32],
+        _reserve_model_hash: [u8; 32],
+        _evidence_requirements_hash: [u8; 32],
+        _comparability_hash: [u8; 32],
+        _policy_overrides_hash: [u8; 32],
+        _cycle_seconds: i64,
+        series_id: String<u32, 32>
+    )
+)]
 pub struct VersionPolicySeries<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
@@ -649,7 +706,7 @@ pub struct VersionPolicySeries<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POLICY_SERIES, health_plan.key().as_ref(), current_policy_series.series_id.as_bytes()], bump = current_policy_series.bump)]
     pub current_policy_series: Box<Account<'info, PolicySeries>>,
@@ -663,7 +720,7 @@ pub struct VersionPolicySeries<'info> {
             current_policy_series.bump,
         ) @ OmegaXProtocolError::PolicySeriesMismatch
     )]
-    pub current_policy_series: &'info mut Account<PolicySeriesAccountData<'info>>,
+    pub current_policy_series: Account<PolicySeriesAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -683,13 +740,13 @@ pub struct VersionPolicySeries<'info> {
             constraint = quasar_pda_matches(
                 next_policy_series.address(),
                 &crate::ID,
-                &[SEED_POLICY_SERIES, health_plan.address().as_ref(), args.series_id.as_bytes()],
+                &[SEED_POLICY_SERIES, health_plan.address().as_ref(), series_id],
                 next_policy_series.bump,
             ) @ OmegaXProtocolError::PolicySeriesMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub next_policy_series: &'info mut Account<PolicySeriesAccountData<'info>>,
+    pub next_policy_series: Account<PolicySeriesAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -715,7 +772,7 @@ pub struct VersionPolicySeries<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub next_series_reserve_ledger: &'info mut Account<SeriesReserveLedger>,
+    pub next_series_reserve_ledger: &'info Account<SeriesReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -723,13 +780,27 @@ pub struct VersionPolicySeries<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(args: OpenMemberPositionArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: OpenMemberPositionArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(
+        series_scope: Pubkey,
+        _subject_commitment: [u8; 32],
+        _eligibility_status: u8,
+        _delegated_rights: u32,
+        _proof_mode: u8,
+        _token_gate_amount_snapshot: u64,
+        _invite_id_hash: [u8; 32],
+        _invite_expires_at: i64,
+        anchor_ref: Pubkey
+    )
+)]
 pub struct OpenMemberPosition<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub wallet: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub wallet: &'info mut Signer,
+    pub wallet: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -748,11 +819,11 @@ pub struct OpenMemberPosition<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub policy_series: Option<Box<Account<'info, PolicySeries>>>,
     #[cfg(feature = "quasar")]
-    pub policy_series: Option<&'info Account<PolicySeriesAccountData<'info>>>,
+    pub policy_series: Option<Account<PolicySeriesAccountData<'info>>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -772,13 +843,13 @@ pub struct OpenMemberPosition<'info> {
             constraint = quasar_pda_matches(
                 member_position.address(),
                 &crate::ID,
-                &[SEED_MEMBER_POSITION, health_plan.address().as_ref(), wallet.address().as_ref(), args.series_scope.as_ref()],
+                &[SEED_MEMBER_POSITION, health_plan.address().as_ref(), wallet.address().as_ref(), series_scope.as_ref()],
                 member_position.bump,
             ) @ OmegaXProtocolError::Unauthorized
         )
     )]
     #[cfg(feature = "quasar")]
-    pub member_position: &'info mut Account<MemberPosition>,
+    pub member_position: &'info Account<MemberPosition>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -798,7 +869,7 @@ pub struct OpenMemberPosition<'info> {
             constraint = quasar_pda_matches(
                 membership_anchor_seat.address(),
                 &crate::ID,
-                &[SEED_MEMBERSHIP_ANCHOR_SEAT, health_plan.address().as_ref(), args.anchor_ref.as_ref()],
+                &[SEED_MEMBERSHIP_ANCHOR_SEAT, health_plan.address().as_ref(), anchor_ref.as_ref()],
                 membership_anchor_seat.bump,
             ) @ OmegaXProtocolError::MembershipAnchorSeatMismatch
         )
@@ -843,7 +914,7 @@ pub struct UpdateMemberEligibility<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_MEMBER_POSITION, health_plan.key().as_ref(), member_position.wallet.as_ref(), member_position.policy_series.as_ref()], bump = member_position.bump)]
     pub member_position: Account<'info, MemberPosition>,
@@ -857,7 +928,7 @@ pub struct UpdateMemberEligibility<'info> {
             member_position.bump,
         ) @ OmegaXProtocolError::Unauthorized
     )]
-    pub member_position: &'info mut Account<MemberPosition>,
+    pub member_position: &'info Account<MemberPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub membership_anchor_seat: Option<Account<'info, MembershipAnchorSeat>>,

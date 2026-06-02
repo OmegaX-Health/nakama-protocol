@@ -142,13 +142,16 @@ pub(crate) fn deposit_into_capital_class(
 }
 
 #[derive(Accounts)]
-#[instruction(args: UpdateLpPositionCredentialingArgs)]
+#[cfg_attr(
+    not(feature = "quasar"),
+    instruction(args: UpdateLpPositionCredentialingArgs)
+)]
 pub struct UpdateLpPositionCredentialing<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -167,7 +170,7 @@ pub struct UpdateLpPositionCredentialing<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Account<'info, CapitalClass>,
@@ -180,7 +183,7 @@ pub struct UpdateLpPositionCredentialing<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -206,7 +209,7 @@ pub struct UpdateLpPositionCredentialing<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub lp_position: &'info mut Account<LPPosition>,
+    pub lp_position: &'info Account<LPPosition>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -218,7 +221,7 @@ pub struct DepositIntoCapitalClass<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub owner: &'info mut Signer,
+    pub owner: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
@@ -238,7 +241,7 @@ pub struct DepositIntoCapitalClass<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
@@ -252,7 +255,7 @@ pub struct DepositIntoCapitalClass<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Box<Account<'info, LiquidityPool>>,
@@ -266,7 +269,7 @@ pub struct DepositIntoCapitalClass<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
@@ -280,7 +283,7 @@ pub struct DepositIntoCapitalClass<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
@@ -294,7 +297,7 @@ pub struct DepositIntoCapitalClass<'info> {
             pool_class_ledger.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info Account<PoolClassLedger>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -320,7 +323,7 @@ pub struct DepositIntoCapitalClass<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub lp_position: &'info mut Account<LPPosition>,
+    pub lp_position: &'info Account<LPPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -342,12 +345,12 @@ pub struct DepositIntoCapitalClass<'info> {
         constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
     )]
-    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
+    pub pool_treasury_vault: &'info Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub source_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub source_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub source_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[cfg(feature = "quasar")]
@@ -356,7 +359,7 @@ pub struct DepositIntoCapitalClass<'info> {
     #[account(mut)]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]

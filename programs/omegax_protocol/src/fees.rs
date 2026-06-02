@@ -427,13 +427,14 @@ pub(crate) fn withdraw_pool_oracle_fee_sol(
 }
 
 #[derive(Accounts)]
-#[instruction(args: InitProtocolFeeVaultArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: InitProtocolFeeVaultArgs))]
+#[cfg_attr(feature = "quasar", instruction(asset_mint: Pubkey, _fee_recipient: Pubkey))]
 pub struct InitProtocolFeeVault<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -452,7 +453,7 @@ pub struct InitProtocolFeeVault<'info> {
             reserve_domain.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
+    pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     /// Optional anchor to the SPL-rail DomainAssetVault. Required when
     /// `args.asset_mint != NATIVE_SOL_MINT`; absent for SOL-rail vaults.
     #[cfg(not(feature = "quasar"))]
@@ -465,15 +466,15 @@ pub struct InitProtocolFeeVault<'info> {
     pub domain_asset_vault: Option<Box<Account<'info, DomainAssetVault>>>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = quasar_pda_matches(
-            domain_asset_vault.address(),
-            &crate::ID,
-            &[SEED_DOMAIN_ASSET_VAULT, reserve_domain.address().as_ref(), args.asset_mint.as_ref()],
-            domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired,
-        constraint = domain_asset_vault.reserve_domain == *reserve_domain.address() @ OmegaXProtocolError::DomainAssetVaultRequired,
-        constraint = domain_asset_vault.asset_mint == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
-    )]
+            constraint = quasar_pda_matches(
+                domain_asset_vault.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_VAULT, reserve_domain.address().as_ref(), asset_mint.as_ref()],
+                domain_asset_vault.bump,
+            ) @ OmegaXProtocolError::DomainAssetVaultRequired,
+            constraint = domain_asset_vault.reserve_domain == *reserve_domain.address() @ OmegaXProtocolError::DomainAssetVaultRequired,
+            constraint = domain_asset_vault.asset_mint == asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+        )]
     pub domain_asset_vault: Option<&'info Account<DomainAssetVault>>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -494,13 +495,13 @@ pub struct InitProtocolFeeVault<'info> {
             constraint = quasar_pda_matches(
                 protocol_fee_vault.address(),
                 &crate::ID,
-                &[SEED_PROTOCOL_FEE_VAULT, reserve_domain.address().as_ref(), args.asset_mint.as_ref()],
+                &[SEED_PROTOCOL_FEE_VAULT, reserve_domain.address().as_ref(), asset_mint.as_ref()],
                 protocol_fee_vault.bump,
             ) @ OmegaXProtocolError::FeeVaultMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
+    pub protocol_fee_vault: &'info Account<ProtocolFeeVault>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -508,13 +509,14 @@ pub struct InitProtocolFeeVault<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(args: InitPoolTreasuryVaultArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: InitPoolTreasuryVaultArgs))]
+#[cfg_attr(feature = "quasar", instruction(asset_mint: Pubkey, _fee_recipient: Pubkey))]
 pub struct InitPoolTreasuryVault<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -536,7 +538,7 @@ pub struct InitPoolTreasuryVault<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     /// Required for SPL rails. Must match (liquidity_pool.reserve_domain, args.asset_mint).
     #[cfg(not(feature = "quasar"))]
     #[account(
@@ -548,15 +550,15 @@ pub struct InitPoolTreasuryVault<'info> {
     pub domain_asset_vault: Option<Box<Account<'info, DomainAssetVault>>>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = quasar_pda_matches(
-            domain_asset_vault.address(),
-            &crate::ID,
-            &[SEED_DOMAIN_ASSET_VAULT, liquidity_pool.reserve_domain.as_ref(), args.asset_mint.as_ref()],
-            domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired,
-        constraint = domain_asset_vault.reserve_domain == liquidity_pool.reserve_domain @ OmegaXProtocolError::DomainAssetVaultRequired,
-        constraint = domain_asset_vault.asset_mint == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
-    )]
+            constraint = quasar_pda_matches(
+                domain_asset_vault.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_VAULT, liquidity_pool.reserve_domain.as_ref(), asset_mint.as_ref()],
+                domain_asset_vault.bump,
+            ) @ OmegaXProtocolError::DomainAssetVaultRequired,
+            constraint = domain_asset_vault.reserve_domain == liquidity_pool.reserve_domain @ OmegaXProtocolError::DomainAssetVaultRequired,
+            constraint = domain_asset_vault.asset_mint == asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+        )]
     pub domain_asset_vault: Option<&'info Account<DomainAssetVault>>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -577,13 +579,13 @@ pub struct InitPoolTreasuryVault<'info> {
             constraint = quasar_pda_matches(
                 pool_treasury_vault.address(),
                 &crate::ID,
-                &[SEED_POOL_TREASURY_VAULT, liquidity_pool.address().as_ref(), args.asset_mint.as_ref()],
+                &[SEED_POOL_TREASURY_VAULT, liquidity_pool.address().as_ref(), asset_mint.as_ref()],
                 pool_treasury_vault.bump,
             ) @ OmegaXProtocolError::FeeVaultMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
+    pub pool_treasury_vault: &'info Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -591,13 +593,17 @@ pub struct InitPoolTreasuryVault<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(args: InitPoolOracleFeeVaultArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: InitPoolOracleFeeVaultArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(oracle: Pubkey, asset_mint: Pubkey, _fee_recipient: Pubkey)
+)]
 pub struct InitPoolOracleFeeVault<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -619,7 +625,7 @@ pub struct InitPoolOracleFeeVault<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_ORACLE_PROFILE, args.oracle.as_ref()],
@@ -629,15 +635,15 @@ pub struct InitPoolOracleFeeVault<'info> {
     pub oracle_profile: Box<Account<'info, OracleProfile>>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = quasar_pda_matches(
-            oracle_profile.address(),
-            &crate::ID,
-            &[SEED_ORACLE_PROFILE, args.oracle.as_ref()],
-            oracle_profile.bump,
-        ) @ OmegaXProtocolError::OracleProfileMismatch,
-        constraint = oracle_profile.oracle == args.oracle @ OmegaXProtocolError::OracleProfileMismatch,
+            constraint = quasar_pda_matches(
+                oracle_profile.address(),
+                &crate::ID,
+                &[SEED_ORACLE_PROFILE, oracle.as_ref()],
+                oracle_profile.bump,
+            ) @ OmegaXProtocolError::OracleProfileMismatch,
+        constraint = oracle_profile.oracle == oracle @ OmegaXProtocolError::OracleProfileMismatch,
     )]
-    pub oracle_profile: &'info Account<OracleProfileAccountData<'info>>,
+    pub oracle_profile: Account<OracleProfileAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_POOL_ORACLE_APPROVAL, liquidity_pool.key().as_ref(), args.oracle.as_ref()],
@@ -649,15 +655,15 @@ pub struct InitPoolOracleFeeVault<'info> {
     pub pool_oracle_approval: Box<Account<'info, PoolOracleApproval>>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = quasar_pda_matches(
-            pool_oracle_approval.address(),
-            &crate::ID,
-            &[SEED_POOL_ORACLE_APPROVAL, liquidity_pool.address().as_ref(), args.oracle.as_ref()],
-            pool_oracle_approval.bump,
-        ) @ OmegaXProtocolError::LiquidityPoolMismatch,
-        constraint = pool_oracle_approval.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::LiquidityPoolMismatch,
-        constraint = pool_oracle_approval.oracle == args.oracle @ OmegaXProtocolError::OracleProfileMismatch,
-        constraint = pool_oracle_approval.active @ OmegaXProtocolError::PoolOracleApprovalRequired,
+            constraint = quasar_pda_matches(
+                pool_oracle_approval.address(),
+                &crate::ID,
+                &[SEED_POOL_ORACLE_APPROVAL, liquidity_pool.address().as_ref(), oracle.as_ref()],
+                pool_oracle_approval.bump,
+            ) @ OmegaXProtocolError::LiquidityPoolMismatch,
+            constraint = pool_oracle_approval.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::LiquidityPoolMismatch,
+        constraint = pool_oracle_approval.oracle == oracle @ OmegaXProtocolError::OracleProfileMismatch,
+        constraint = pool_oracle_approval.active.get() @ OmegaXProtocolError::PoolOracleApprovalRequired,
     )]
     pub pool_oracle_approval: &'info Account<PoolOracleApproval>,
     /// Required for SPL rails. The oracle fee vault accrues claims against the
@@ -672,15 +678,15 @@ pub struct InitPoolOracleFeeVault<'info> {
     pub domain_asset_vault: Option<Box<Account<'info, DomainAssetVault>>>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = quasar_pda_matches(
-            domain_asset_vault.address(),
-            &crate::ID,
-            &[SEED_DOMAIN_ASSET_VAULT, liquidity_pool.reserve_domain.as_ref(), args.asset_mint.as_ref()],
-            domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired,
-        constraint = domain_asset_vault.reserve_domain == liquidity_pool.reserve_domain @ OmegaXProtocolError::DomainAssetVaultRequired,
-        constraint = domain_asset_vault.asset_mint == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
-    )]
+            constraint = quasar_pda_matches(
+                domain_asset_vault.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_VAULT, liquidity_pool.reserve_domain.as_ref(), asset_mint.as_ref()],
+                domain_asset_vault.bump,
+            ) @ OmegaXProtocolError::DomainAssetVaultRequired,
+            constraint = domain_asset_vault.reserve_domain == liquidity_pool.reserve_domain @ OmegaXProtocolError::DomainAssetVaultRequired,
+            constraint = domain_asset_vault.asset_mint == asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+        )]
     pub domain_asset_vault: Option<&'info Account<DomainAssetVault>>,
     #[cfg_attr(
         not(feature = "quasar"),
@@ -701,13 +707,13 @@ pub struct InitPoolOracleFeeVault<'info> {
             constraint = quasar_pda_matches(
                 pool_oracle_fee_vault.address(),
                 &crate::ID,
-                &[SEED_POOL_ORACLE_FEE_VAULT, liquidity_pool.address().as_ref(), args.oracle.as_ref(), args.asset_mint.as_ref()],
+                &[SEED_POOL_ORACLE_FEE_VAULT, liquidity_pool.address().as_ref(), oracle.as_ref(), asset_mint.as_ref()],
                 pool_oracle_fee_vault.bump,
             ) @ OmegaXProtocolError::FeeVaultMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub pool_oracle_fee_vault: &'info mut Account<PoolOracleFeeVault>,
+    pub pool_oracle_fee_vault: &'info Account<PoolOracleFeeVault>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -738,7 +744,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
             reserve_domain.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
+    pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -760,7 +766,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
         constraint = protocol_fee_vault.reserve_domain == *reserve_domain.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = protocol_fee_vault.asset_mint != NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
+    pub protocol_fee_vault: &'info Account<ProtocolFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -778,7 +784,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -796,7 +802,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == protocol_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -817,12 +823,12 @@ pub struct WithdrawProtocolFeeSpl<'info> {
     #[account(
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub recipient_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
@@ -853,7 +859,7 @@ pub struct WithdrawProtocolFeeSol<'info> {
             reserve_domain.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
+    pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -875,7 +881,7 @@ pub struct WithdrawProtocolFeeSol<'info> {
         constraint = protocol_fee_vault.reserve_domain == *reserve_domain.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = protocol_fee_vault.asset_mint == NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
+    pub protocol_fee_vault: &'info Account<ProtocolFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
@@ -914,7 +920,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -936,7 +942,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
         constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = pool_treasury_vault.asset_mint != NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
+    pub pool_treasury_vault: &'info Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -954,7 +960,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -972,7 +978,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == pool_treasury_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -993,12 +999,12 @@ pub struct WithdrawPoolTreasurySpl<'info> {
     #[account(
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub recipient_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
@@ -1032,7 +1038,7 @@ pub struct WithdrawPoolTreasurySol<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -1054,7 +1060,7 @@ pub struct WithdrawPoolTreasurySol<'info> {
         constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = pool_treasury_vault.asset_mint == NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
+    pub pool_treasury_vault: &'info Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
@@ -1093,7 +1099,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
@@ -1109,7 +1115,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
             oracle_profile.bump,
         ) @ OmegaXProtocolError::OracleProfileMismatch
     )]
-    pub oracle_profile: &'info Account<OracleProfileAccountData<'info>>,
+    pub oracle_profile: Account<OracleProfileAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -1133,7 +1139,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
         constraint = pool_oracle_fee_vault.oracle == oracle_profile.oracle @ OmegaXProtocolError::OracleProfileMismatch,
         constraint = pool_oracle_fee_vault.asset_mint != NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub pool_oracle_fee_vault: &'info mut Account<PoolOracleFeeVault>,
+    pub pool_oracle_fee_vault: &'info Account<PoolOracleFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -1151,7 +1157,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -1169,7 +1175,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == pool_oracle_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -1190,12 +1196,12 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
     #[account(
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub recipient_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
@@ -1229,7 +1235,7 @@ pub struct WithdrawPoolOracleFeeSol<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
@@ -1245,7 +1251,7 @@ pub struct WithdrawPoolOracleFeeSol<'info> {
             oracle_profile.bump,
         ) @ OmegaXProtocolError::OracleProfileMismatch
     )]
-    pub oracle_profile: &'info Account<OracleProfileAccountData<'info>>,
+    pub oracle_profile: Account<OracleProfileAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -1269,7 +1275,7 @@ pub struct WithdrawPoolOracleFeeSol<'info> {
         constraint = pool_oracle_fee_vault.oracle == oracle_profile.oracle @ OmegaXProtocolError::OracleProfileMismatch,
         constraint = pool_oracle_fee_vault.asset_mint == NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub pool_oracle_fee_vault: &'info mut Account<PoolOracleFeeVault>,
+    pub pool_oracle_fee_vault: &'info Account<PoolOracleFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient: SystemAccount<'info>,

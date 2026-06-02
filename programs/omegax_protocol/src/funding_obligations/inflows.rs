@@ -174,7 +174,7 @@ pub struct FundSponsorBudget<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
@@ -188,7 +188,7 @@ pub struct FundSponsorBudget<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
@@ -202,7 +202,7 @@ pub struct FundSponsorBudget<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -216,7 +216,7 @@ pub struct FundSponsorBudget<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
@@ -230,7 +230,7 @@ pub struct FundSponsorBudget<'info> {
             funding_line_ledger.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    pub funding_line_ledger: &'info Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
@@ -244,7 +244,7 @@ pub struct FundSponsorBudget<'info> {
             plan_reserve_ledger.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    pub plan_reserve_ledger: &'info Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
@@ -254,7 +254,7 @@ pub struct FundSponsorBudget<'info> {
     #[account(mut)]
     pub source_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub source_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub source_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[cfg(feature = "quasar")]
@@ -263,7 +263,7 @@ pub struct FundSponsorBudget<'info> {
     #[account(mut)]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
@@ -293,7 +293,7 @@ pub struct RecordPremiumPayment<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
@@ -307,7 +307,7 @@ pub struct RecordPremiumPayment<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
@@ -321,7 +321,7 @@ pub struct RecordPremiumPayment<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -335,7 +335,7 @@ pub struct RecordPremiumPayment<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
@@ -349,7 +349,7 @@ pub struct RecordPremiumPayment<'info> {
             funding_line_ledger.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    pub funding_line_ledger: &'info Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
@@ -363,7 +363,7 @@ pub struct RecordPremiumPayment<'info> {
             plan_reserve_ledger.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    pub plan_reserve_ledger: &'info Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
@@ -390,12 +390,12 @@ pub struct RecordPremiumPayment<'info> {
         constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
     )]
-    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
+    pub protocol_fee_vault: &'info Account<ProtocolFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub source_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub source_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub source_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[cfg(feature = "quasar")]
@@ -404,7 +404,7 @@ pub struct RecordPremiumPayment<'info> {
     #[account(mut)]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]

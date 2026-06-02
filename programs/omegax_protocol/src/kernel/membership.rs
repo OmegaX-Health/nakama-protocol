@@ -7,6 +7,7 @@ use crate::platform::*;
 use crate::args::*;
 use crate::constants::*;
 use crate::errors::*;
+#[cfg(not(feature = "quasar"))]
 use crate::plans_membership::OpenMemberPosition;
 use crate::state::*;
 
@@ -94,6 +95,7 @@ pub(crate) fn validate_membership_gate_update_config(
     )
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn validate_membership_proof(
     ctx: &Context<OpenMemberPosition>,
     args: &OpenMemberPositionArgs,

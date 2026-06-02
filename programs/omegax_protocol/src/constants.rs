@@ -169,4 +169,7 @@ pub const ZERO_PUBKEY: Pubkey = Pubkey::new_from_array([0u8; 32]);
 // drains them with rent-exemption preserved. For SPL fee vaults the tokens
 // physically reside in the matching `DomainAssetVault.vault_token_account`
 // and `transfer_from_domain_vault` (PDA-signed) drains them.
+#[cfg(not(feature = "quasar"))]
 pub const NATIVE_SOL_MINT: Pubkey = anchor_spl::token::spl_token::native_mint::ID;
+#[cfg(feature = "quasar")]
+pub const NATIVE_SOL_MINT: Pubkey = address!("So11111111111111111111111111111111111111112");

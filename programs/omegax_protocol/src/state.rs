@@ -688,6 +688,7 @@ pub struct AllocationPosition {
     )
 )]
 #[cfg_attr(feature = "quasar", derive(Clone, Copy, Default, Debug, PartialEq, Eq))]
+#[cfg_attr(feature = "quasar", repr(C, packed))]
 pub struct ReserveBalanceSheet {
     pub funded: u64,
     pub allocated: u64,

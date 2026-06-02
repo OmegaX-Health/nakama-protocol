@@ -98,7 +98,7 @@ pub struct MarkImpairment<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
@@ -112,7 +112,7 @@ pub struct MarkImpairment<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -126,7 +126,7 @@ pub struct MarkImpairment<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
@@ -140,7 +140,7 @@ pub struct MarkImpairment<'info> {
             funding_line_ledger.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    pub funding_line_ledger: &'info Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
@@ -154,7 +154,7 @@ pub struct MarkImpairment<'info> {
             plan_reserve_ledger.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    pub plan_reserve_ledger: &'info Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
@@ -179,5 +179,5 @@ pub struct MarkImpairment<'info> {
     #[account(mut)]
     pub obligation: Option<Box<Account<'info, Obligation>>>,
     #[cfg(feature = "quasar")]
-    pub obligation: Option<&'info mut Account<ObligationAccountData<'info>>>,
+    pub obligation: Option<Account<ObligationAccountData<'info>>>,
 }

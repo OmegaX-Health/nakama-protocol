@@ -106,13 +106,30 @@ pub(crate) fn create_obligation(
 }
 
 #[derive(Accounts)]
-#[instruction(args: CreateObligationArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: CreateObligationArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(
+        asset_mint: Pubkey,
+        _policy_series_arg: Pubkey,
+        _member_wallet: Pubkey,
+        _beneficiary: Pubkey,
+        _claim_case: Pubkey,
+        _liquidity_pool_arg: Pubkey,
+        _capital_class_arg: Pubkey,
+        _allocation_position_arg: Pubkey,
+        _delivery_mode: u8,
+        _amount: u64,
+        _creation_reason_hash: [u8; 32],
+        obligation_id: String<u32, 32>
+    )
+)]
 pub struct CreateObligation<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
@@ -131,21 +148,21 @@ pub struct CreateObligation<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
     #[cfg(feature = "quasar")]
     #[account(
         mut,
-        constraint = quasar_pda_matches(
-            domain_asset_ledger.address(),
-            &crate::ID,
-            &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()],
-            domain_asset_ledger.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
-    )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+            constraint = quasar_pda_matches(
+                domain_asset_ledger.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), asset_mint.as_ref()],
+                domain_asset_ledger.bump,
+            ) @ OmegaXProtocolError::ReserveDomainMismatch
+        )]
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -159,7 +176,7 @@ pub struct CreateObligation<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
@@ -173,21 +190,21 @@ pub struct CreateObligation<'info> {
             funding_line_ledger.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    pub funding_line_ledger: &'info Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), args.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
     #[cfg(feature = "quasar")]
     #[account(
         mut,
-        constraint = quasar_pda_matches(
-            plan_reserve_ledger.address(),
-            &crate::ID,
-            &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), args.asset_mint.as_ref()],
-            plan_reserve_ledger.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
-    )]
-    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+            constraint = quasar_pda_matches(
+                plan_reserve_ledger.address(),
+                &crate::ID,
+                &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), asset_mint.as_ref()],
+                plan_reserve_ledger.bump,
+            ) @ OmegaXProtocolError::HealthPlanMismatch
+        )]
+    pub plan_reserve_ledger: &'info Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
@@ -196,11 +213,11 @@ pub struct CreateObligation<'info> {
     #[cfg(not(feature = "quasar"))]
     pub liquidity_pool: Option<Box<Account<'info, LiquidityPool>>>,
     #[cfg(feature = "quasar")]
-    pub liquidity_pool: Option<&'info Account<LiquidityPoolAccountData<'info>>>,
+    pub liquidity_pool: Option<Account<LiquidityPoolAccountData<'info>>>,
     #[cfg(not(feature = "quasar"))]
     pub capital_class: Option<Box<Account<'info, CapitalClass>>>,
     #[cfg(feature = "quasar")]
-    pub capital_class: Option<&'info Account<CapitalClassAccountData<'info>>>,
+    pub capital_class: Option<Account<CapitalClassAccountData<'info>>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
@@ -234,13 +251,13 @@ pub struct CreateObligation<'info> {
             constraint = quasar_pda_matches(
                 obligation.address(),
                 &crate::ID,
-                &[SEED_OBLIGATION, funding_line.address().as_ref(), args.obligation_id.as_bytes()],
+                &[SEED_OBLIGATION, funding_line.address().as_ref(), obligation_id],
                 obligation.bump,
             ) @ OmegaXProtocolError::ObligationMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub obligation: &'info mut Account<ObligationAccountData<'info>>,
+    pub obligation: Account<ObligationAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]

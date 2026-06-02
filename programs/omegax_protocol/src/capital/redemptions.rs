@@ -237,7 +237,7 @@ pub struct RequestRedemption<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Account<'info, CapitalClass>,
@@ -251,7 +251,7 @@ pub struct RequestRedemption<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Account<'info, PoolClassLedger>,
@@ -265,7 +265,7 @@ pub struct RequestRedemption<'info> {
             pool_class_ledger.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Account<'info, DomainAssetLedger>,
@@ -279,7 +279,7 @@ pub struct RequestRedemption<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), owner.key().as_ref()], bump = lp_position.bump, constraint = lp_position.owner == owner.key() @ OmegaXProtocolError::Unauthorized)]
     pub lp_position: Account<'info, LPPosition>,
@@ -294,7 +294,7 @@ pub struct RequestRedemption<'info> {
         ) @ OmegaXProtocolError::AllocationPositionMismatch,
         constraint = lp_position.owner == *owner.address() @ OmegaXProtocolError::Unauthorized
     )]
-    pub lp_position: &'info mut Account<LPPosition>,
+    pub lp_position: &'info Account<LPPosition>,
 }
 #[derive(Accounts)]
 pub struct ProcessRedemptionQueue<'info> {
@@ -321,7 +321,7 @@ pub struct ProcessRedemptionQueue<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
@@ -335,7 +335,7 @@ pub struct ProcessRedemptionQueue<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Box<Account<'info, LiquidityPool>>,
@@ -349,7 +349,7 @@ pub struct ProcessRedemptionQueue<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
@@ -363,7 +363,7 @@ pub struct ProcessRedemptionQueue<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
@@ -377,7 +377,7 @@ pub struct ProcessRedemptionQueue<'info> {
             pool_class_ledger.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), lp_position.owner.as_ref()], bump = lp_position.bump)]
     pub lp_position: Box<Account<'info, LPPosition>>,
@@ -391,7 +391,7 @@ pub struct ProcessRedemptionQueue<'info> {
             lp_position.bump,
         ) @ OmegaXProtocolError::AllocationPositionMismatch
     )]
-    pub lp_position: &'info mut Account<LPPosition>,
+    pub lp_position: &'info Account<LPPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -413,7 +413,7 @@ pub struct ProcessRedemptionQueue<'info> {
         constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
     )]
-    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
+    pub pool_treasury_vault: &'info Account<PoolTreasuryVault>,
     // PT-2026-04-27-01/02 fix: outflow CPI accounts. Recipient must be the LP
     // position's owner — there is no delegate-recipient pattern for redemptions.
     #[cfg(not(feature = "quasar"))]
@@ -437,12 +437,12 @@ pub struct ProcessRedemptionQueue<'info> {
         mut,
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    pub recipient_token_account: &'info InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]

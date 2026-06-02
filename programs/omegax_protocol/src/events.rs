@@ -13,7 +13,7 @@ pub struct ProtocolGovernanceInitializedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [89, 34, 67, 141, 79, 64, 188, 254])]
+#[cfg_attr(any(), event(discriminator = [89, 34, 67, 141, 79, 64, 188, 254]))]
 pub struct ProtocolGovernanceInitializedEvent {
     pub governance_authority: Address,
     pub protocol_fee_bps: u16,
@@ -30,7 +30,7 @@ pub struct ProtocolGovernanceAuthorityRotatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [182, 225, 228, 198, 36, 195, 73, 212])]
+#[cfg_attr(any(), event(discriminator = [182, 225, 228, 198, 36, 195, 73, 212]))]
 pub struct ProtocolGovernanceAuthorityRotatedEvent {
     pub previous_governance_authority: Address,
     pub new_governance_authority: Address,
@@ -50,7 +50,7 @@ pub struct ProtocolGovernanceAuthorityTransferProposedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [255, 93, 25, 129, 137, 23, 184, 130])]
+#[cfg_attr(any(), event(discriminator = [255, 93, 25, 129, 137, 23, 184, 130]))]
 pub struct ProtocolGovernanceAuthorityTransferProposedEvent {
     pub current_governance_authority: Address,
     pub pending_governance_authority: Address,
@@ -70,7 +70,7 @@ pub struct ProtocolGovernanceAuthorityTransferCanceledEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [159, 189, 24, 31, 242, 105, 166, 146])]
+#[cfg_attr(any(), event(discriminator = [159, 189, 24, 31, 242, 105, 166, 146]))]
 pub struct ProtocolGovernanceAuthorityTransferCanceledEvent {
     pub governance_authority: Address,
     pub canceled_governance_authority: Address,
@@ -87,7 +87,7 @@ pub struct ReserveDomainCreatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [138, 101, 116, 228, 188, 195, 89, 37])]
+#[cfg_attr(any(), event(discriminator = [138, 101, 116, 228, 188, 195, 89, 37]))]
 pub struct ReserveDomainCreatedEvent {
     pub reserve_domain: Address,
     pub domain_admin: Address,
@@ -103,7 +103,7 @@ pub struct HealthPlanCreatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [160, 200, 242, 77, 168, 222, 253, 22])]
+#[cfg_attr(any(), event(discriminator = [160, 200, 242, 77, 168, 222, 253, 22]))]
 pub struct HealthPlanCreatedEvent {
     pub reserve_domain: Address,
     pub health_plan: Address,
@@ -121,7 +121,7 @@ pub struct PolicySeriesCreatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [106, 212, 178, 224, 202, 185, 17, 157])]
+#[cfg_attr(any(), event(discriminator = [106, 212, 178, 224, 202, 185, 17, 157]))]
 pub struct PolicySeriesCreatedEvent {
     pub health_plan: Address,
     pub policy_series: Address,
@@ -139,7 +139,7 @@ pub struct PolicySeriesVersionedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [37, 154, 96, 209, 46, 91, 162, 255])]
+#[cfg_attr(any(), event(discriminator = [37, 154, 96, 209, 46, 91, 162, 255]))]
 pub struct PolicySeriesVersionedEvent {
     pub prior_series: Address,
     pub next_series: Address,
@@ -156,7 +156,7 @@ pub struct FundingLineOpenedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [47, 172, 14, 218, 139, 94, 10, 145])]
+#[cfg_attr(any(), event(discriminator = [47, 172, 14, 218, 139, 94, 10, 145]))]
 pub struct FundingLineOpenedEvent {
     pub health_plan: Address,
     pub funding_line: Address,
@@ -173,7 +173,7 @@ pub struct FundingFlowRecordedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [207, 159, 154, 43, 193, 239, 239, 163])]
+#[cfg_attr(any(), event(discriminator = [207, 159, 154, 43, 193, 239, 239, 163]))]
 pub struct FundingFlowRecordedEvent {
     pub funding_line: Address,
     pub amount: u64,
@@ -194,7 +194,7 @@ pub struct ReserveAssetRailConfiguredEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [33, 112, 220, 210, 144, 2, 40, 234])]
+#[cfg_attr(any(), event(discriminator = [33, 112, 220, 210, 144, 2, 40, 234]))]
 pub struct ReserveAssetRailConfiguredEvent {
     pub reserve_domain: Address,
     pub reserve_asset_rail: Address,
@@ -219,7 +219,7 @@ pub struct ReserveAssetRailPricePublishedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [161, 207, 64, 197, 138, 47, 213, 44])]
+#[cfg_attr(any(), event(discriminator = [161, 207, 64, 197, 138, 47, 213, 44]))]
 pub struct ReserveAssetRailPricePublishedEvent {
     pub reserve_asset_rail: Address,
     pub asset_mint: Address,
@@ -239,7 +239,7 @@ pub struct LiquidityPoolCreatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [176, 183, 7, 238, 193, 97, 177, 135])]
+#[cfg_attr(any(), event(discriminator = [176, 183, 7, 238, 193, 97, 177, 135]))]
 pub struct LiquidityPoolCreatedEvent {
     pub reserve_domain: Address,
     pub liquidity_pool: Address,
@@ -256,7 +256,7 @@ pub struct CapitalClassDepositEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [40, 60, 140, 213, 128, 24, 42, 251])]
+#[cfg_attr(any(), event(discriminator = [40, 60, 140, 213, 128, 24, 42, 251]))]
 pub struct CapitalClassDepositEvent {
     pub capital_class: Address,
     pub owner: Address,
@@ -275,7 +275,7 @@ pub struct LPPositionCredentialingUpdatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [215, 90, 105, 53, 22, 8, 19, 82])]
+#[cfg_attr(any(), event(discriminator = [215, 90, 105, 53, 22, 8, 19, 82]))]
 pub struct LPPositionCredentialingUpdatedEvent {
     pub capital_class: Address,
     pub owner: Address,
@@ -296,7 +296,7 @@ pub struct RedemptionRequestedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [202, 47, 51, 231, 221, 144, 164, 57])]
+#[cfg_attr(any(), event(discriminator = [202, 47, 51, 231, 221, 144, 164, 57]))]
 pub struct RedemptionRequestedEvent {
     pub capital_class: Address,
     pub owner: Address,
@@ -316,7 +316,7 @@ pub struct ObligationStatusChangedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [173, 116, 84, 221, 225, 109, 198, 74])]
+#[cfg_attr(any(), event(discriminator = [173, 116, 84, 221, 225, 109, 198, 74]))]
 pub struct ObligationStatusChangedEvent {
     pub obligation: Address,
     pub funding_line: Address,
@@ -333,7 +333,7 @@ pub struct ClaimCaseStateChangedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [162, 195, 160, 236, 219, 18, 240, 208])]
+#[cfg_attr(any(), event(discriminator = [162, 195, 160, 236, 219, 18, 240, 208]))]
 pub struct ClaimCaseStateChangedEvent {
     pub claim_case: Address,
     pub intake_status: u8,
@@ -352,7 +352,7 @@ pub struct ClaimCaseSelectedAssetPayoutEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [15, 13, 219, 43, 68, 58, 135, 157])]
+#[cfg_attr(any(), event(discriminator = [15, 13, 219, 43, 68, 58, 135, 157]))]
 pub struct ClaimCaseSelectedAssetPayoutEvent {
     pub claim_case: Address,
     pub claim_asset_mint: Address,
@@ -374,7 +374,7 @@ pub struct ClaimCaseAttestedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [27, 131, 74, 180, 134, 39, 214, 103])]
+#[cfg_attr(any(), event(discriminator = [27, 131, 74, 180, 134, 39, 214, 103]))]
 pub struct ClaimCaseAttestedEvent {
     pub claim_attestation: Address,
     pub claim_case: Address,
@@ -395,7 +395,7 @@ pub struct AllocationUpdatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [158, 67, 83, 155, 181, 84, 246, 37])]
+#[cfg_attr(any(), event(discriminator = [158, 67, 83, 155, 181, 84, 246, 37]))]
 pub struct AllocationUpdatedEvent {
     pub allocation_position: Address,
     pub capital_class: Address,
@@ -414,7 +414,7 @@ pub struct ImpairmentRecordedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [16, 0, 176, 178, 185, 80, 121, 39])]
+#[cfg_attr(any(), event(discriminator = [16, 0, 176, 178, 185, 80, 121, 39]))]
 pub struct ImpairmentRecordedEvent {
     pub funding_line: Address,
     pub obligation: Address,
@@ -434,7 +434,7 @@ pub struct ScopedControlChangedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [103, 133, 3, 156, 72, 49, 119, 157])]
+#[cfg_attr(any(), event(discriminator = [103, 133, 3, 156, 72, 49, 119, 157]))]
 pub struct ScopedControlChangedEvent {
     pub scope_kind: u8,
     pub scope: Address,
@@ -453,7 +453,7 @@ pub struct LedgerInitializedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [155, 186, 165, 141, 70, 86, 207, 246])]
+#[cfg_attr(any(), event(discriminator = [155, 186, 165, 141, 70, 86, 207, 246]))]
 pub struct LedgerInitializedEvent {
     pub scope_kind: u8,
     pub scope: Address,
@@ -472,7 +472,7 @@ pub struct FeeVaultInitializedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [219, 138, 2, 184, 253, 99, 165, 51])]
+#[cfg_attr(any(), event(discriminator = [219, 138, 2, 184, 253, 99, 165, 51]))]
 pub struct FeeVaultInitializedEvent {
     pub vault: Address,
     pub scope: Address,
@@ -492,7 +492,7 @@ pub struct FeeAccruedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [7, 169, 161, 187, 109, 43, 5, 157])]
+#[cfg_attr(any(), event(discriminator = [7, 169, 161, 187, 109, 43, 5, 157]))]
 pub struct FeeAccruedEvent {
     pub vault: Address,
     pub asset_mint: Address,
@@ -512,7 +512,7 @@ pub struct FeeWithdrawnEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [206, 148, 200, 231, 65, 75, 11, 150])]
+#[cfg_attr(any(), event(discriminator = [206, 148, 200, 231, 65, 75, 11, 150]))]
 pub struct FeeWithdrawnEvent {
     pub vault: Address,
     pub asset_mint: Address,
@@ -533,7 +533,7 @@ pub struct OracleProfileRegisteredEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [114, 97, 218, 155, 43, 175, 101, 227])]
+#[cfg_attr(any(), event(discriminator = [114, 97, 218, 155, 43, 175, 101, 227]))]
 pub struct OracleProfileRegisteredEvent {
     pub oracle_profile: Address,
     pub oracle: Address,
@@ -551,7 +551,7 @@ pub struct OracleProfileClaimedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [150, 78, 246, 163, 63, 118, 75, 83])]
+#[cfg_attr(any(), event(discriminator = [150, 78, 246, 163, 63, 118, 75, 83]))]
 pub struct OracleProfileClaimedEvent {
     pub oracle_profile: Address,
     pub oracle: Address,
@@ -568,7 +568,7 @@ pub struct OracleProfileUpdatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [187, 146, 36, 213, 31, 160, 208, 86])]
+#[cfg_attr(any(), event(discriminator = [187, 146, 36, 213, 31, 160, 208, 86]))]
 pub struct OracleProfileUpdatedEvent {
     pub oracle_profile: Address,
     pub oracle: Address,
@@ -586,7 +586,7 @@ pub struct PoolOracleApprovalChangedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [159, 43, 209, 60, 32, 191, 5, 136])]
+#[cfg_attr(any(), event(discriminator = [159, 43, 209, 60, 32, 191, 5, 136]))]
 pub struct PoolOracleApprovalChangedEvent {
     pub liquidity_pool: Address,
     pub oracle: Address,
@@ -604,7 +604,7 @@ pub struct PoolOraclePermissionsChangedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [151, 96, 35, 111, 20, 154, 112, 211])]
+#[cfg_attr(any(), event(discriminator = [151, 96, 35, 111, 20, 154, 112, 211]))]
 pub struct PoolOraclePermissionsChangedEvent {
     pub liquidity_pool: Address,
     pub oracle: Address,
@@ -623,7 +623,7 @@ pub struct PoolOraclePolicyChangedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [142, 195, 149, 88, 218, 243, 91, 84])]
+#[cfg_attr(any(), event(discriminator = [142, 195, 149, 88, 218, 243, 91, 84]))]
 pub struct PoolOraclePolicyChangedEvent {
     pub liquidity_pool: Address,
     pub authority: Address,
@@ -642,7 +642,7 @@ pub struct OutcomeSchemaRegisteredEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [243, 156, 15, 145, 167, 84, 187, 209])]
+#[cfg_attr(any(), event(discriminator = [243, 156, 15, 145, 167, 84, 187, 209]))]
 pub struct OutcomeSchemaRegisteredEvent {
     pub outcome_schema: Address,
     pub publisher: Address,
@@ -660,7 +660,7 @@ pub struct OutcomeSchemaStateChangedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [79, 241, 101, 121, 94, 199, 61, 228])]
+#[cfg_attr(any(), event(discriminator = [79, 241, 101, 121, 94, 199, 61, 228]))]
 pub struct OutcomeSchemaStateChangedEvent {
     pub outcome_schema: Address,
     pub governance_authority: Address,
@@ -678,7 +678,7 @@ pub struct SchemaDependencyLedgerUpdatedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [159, 128, 141, 211, 86, 155, 144, 70])]
+#[cfg_attr(any(), event(discriminator = [159, 128, 141, 211, 86, 155, 144, 70]))]
 pub struct SchemaDependencyLedgerUpdatedEvent {
     pub schema_dependency_ledger: Address,
     pub governance_authority: Address,
@@ -696,7 +696,7 @@ pub struct OutcomeSchemaClosedEvent {
 }
 
 #[cfg(feature = "quasar")]
-#[event(discriminator = [16, 92, 224, 187, 114, 106, 105, 41])]
+#[cfg_attr(any(), event(discriminator = [16, 92, 224, 187, 114, 106, 105, 41]))]
 pub struct OutcomeSchemaClosedEvent {
     pub outcome_schema: Address,
     pub governance_authority: Address,

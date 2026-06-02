@@ -12,6 +12,7 @@ use crate::kernel::*;
 use crate::state::*;
 
 #[cfg(not(feature = "quasar"))]
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn configure_reserve_asset_rail(
     ctx: Context<ConfigureReserveAssetRail>,
     args: ConfigureReserveAssetRailArgs,
@@ -101,6 +102,7 @@ pub(crate) fn configure_reserve_asset_rail(
 }
 
 #[cfg(not(feature = "quasar"))]
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn publish_reserve_asset_rail_price(
     ctx: Context<PublishReserveAssetRailPrice>,
     args: PublishReserveAssetRailPriceArgs,
@@ -151,6 +153,7 @@ pub(crate) fn publish_reserve_asset_rail_price(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_valid_reserve_asset_role(role: u8) -> Result<()> {
     match role {
         RESERVE_ASSET_ROLE_PRIMARY_STABLE
@@ -161,6 +164,7 @@ pub(crate) fn require_valid_reserve_asset_role(role: u8) -> Result<()> {
     }
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_valid_reserve_oracle_source(source: u8) -> Result<()> {
     match source {
         RESERVE_ORACLE_SOURCE_NONE
@@ -171,6 +175,7 @@ pub(crate) fn require_valid_reserve_oracle_source(source: u8) -> Result<()> {
     }
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_reserve_asset_rail_active(
     rail: &ReserveAssetRailAccountData<'_>,
 ) -> Result<()> {
@@ -179,6 +184,7 @@ pub(crate) fn require_reserve_asset_rail_active(
 }
 
 #[cfg(test)]
+#[cfg(all(test, not(feature = "quasar")))]
 pub(crate) fn require_reserve_asset_rail_capacity_enabled(
     rail: &ReserveAssetRailAccountData<'_>,
 ) -> Result<()> {
@@ -190,6 +196,7 @@ pub(crate) fn require_reserve_asset_rail_capacity_enabled(
     require_fresh_reserve_asset_price(rail)
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_reserve_asset_rail_payout_enabled(
     rail: &ReserveAssetRailAccountData<'_>,
 ) -> Result<()> {
@@ -201,6 +208,7 @@ pub(crate) fn require_reserve_asset_rail_payout_enabled(
     require_fresh_reserve_asset_price(rail)
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_fresh_reserve_asset_price(
     rail: &ReserveAssetRailAccountData<'_>,
 ) -> Result<()> {
@@ -208,6 +216,7 @@ pub(crate) fn require_fresh_reserve_asset_price(
     require_fresh_reserve_asset_price_at(rail, now)
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_fresh_reserve_asset_price_at(
     rail: &ReserveAssetRailAccountData<'_>,
     now: i64,
@@ -240,6 +249,7 @@ pub(crate) fn require_fresh_reserve_asset_price_at(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn reserve_asset_value_usd_1e8_at(
     amount: u64,
     mint_decimals: u8,
@@ -256,6 +266,7 @@ pub(crate) fn reserve_asset_value_usd_1e8_at(
         .ok_or(error!(OmegaXProtocolError::ArithmeticError))
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_selected_asset_payout_value(
     claim_credit_amount: u64,
     claim_mint_decimals: u8,
@@ -278,6 +289,7 @@ pub(crate) fn require_selected_asset_payout_value(
     )
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_selected_asset_payout_value_at(
     claim_credit_amount: u64,
     claim_mint_decimals: u8,
@@ -307,6 +319,7 @@ pub(crate) fn require_selected_asset_payout_value_at(
     require_selected_asset_payout_value_bounds(claim_value, payout_value, max_overpay_bps)
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_selected_asset_payout_value_bounds(
     claim_value: u128,
     payout_value: u128,
@@ -333,11 +346,13 @@ pub(crate) fn require_selected_asset_payout_value_bounds(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 fn require_bps(value: u16) -> Result<()> {
     require!(value <= 10_000, OmegaXProtocolError::InvalidBps);
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 fn checked_pow10_u128(decimals: u8) -> Result<u128> {
     require!(
         decimals <= 18,
@@ -352,19 +367,21 @@ fn checked_pow10_u128(decimals: u8) -> Result<u128> {
     Ok(value)
 }
 
+#[cfg(not(feature = "quasar"))]
 fn checked_sub_i64(left: i64, right: i64) -> Result<i64> {
     left.checked_sub(right)
         .ok_or(error!(OmegaXProtocolError::ArithmeticError))
 }
 
 #[derive(Accounts)]
-#[instruction(args: ConfigureReserveAssetRailArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: ConfigureReserveAssetRailArgs))]
+#[cfg_attr(feature = "quasar", instruction(asset_mint_key: Pubkey))]
 pub struct ConfigureReserveAssetRail<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
@@ -386,7 +403,7 @@ pub struct ConfigureReserveAssetRail<'info> {
             reserve_domain.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
+    pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -406,13 +423,13 @@ pub struct ConfigureReserveAssetRail<'info> {
             constraint = quasar_pda_matches(
                 reserve_asset_rail.address(),
                 &crate::ID,
-                &[SEED_RESERVE_ASSET_RAIL, reserve_domain.address().as_ref(), args.asset_mint.as_ref()],
+                &[SEED_RESERVE_ASSET_RAIL, reserve_domain.address().as_ref(), asset_mint_key.as_ref()],
                 reserve_asset_rail.bump,
             ) @ OmegaXProtocolError::ReserveAssetRailMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub reserve_asset_rail: &'info mut Account<ReserveAssetRailAccountData<'info>>,
+    pub reserve_asset_rail: Account<ReserveAssetRailAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -452,5 +469,5 @@ pub struct PublishReserveAssetRailPrice<'info> {
             reserve_asset_rail.bump,
         ) @ OmegaXProtocolError::ReserveAssetRailMismatch
     )]
-    pub reserve_asset_rail: &'info mut Account<ReserveAssetRailAccountData<'info>>,
+    pub reserve_asset_rail: Account<ReserveAssetRailAccountData<'info>>,
 }

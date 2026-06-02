@@ -5,6 +5,7 @@
 use super::*;
 
 #[cfg(not(feature = "quasar"))]
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn settle_obligation(
     ctx: Context<SettleObligation>,
     args: SettleObligationArgs,
@@ -281,6 +282,7 @@ pub(crate) fn settle_obligation(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 fn resolve_obligation_oracle_fee(
     health_plan_key: Pubkey,
     obligation: &ObligationAccountData<'_>,
@@ -392,7 +394,7 @@ pub struct SettleObligation<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()],
@@ -412,7 +414,7 @@ pub struct SettleObligation<'info> {
         constraint = reserve_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
         constraint = reserve_asset_rail.asset_mint == obligation.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
     )]
-    pub reserve_asset_rail: &'info Account<ReserveAssetRailAccountData<'info>>,
+    pub reserve_asset_rail: Account<ReserveAssetRailAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
@@ -426,7 +428,7 @@ pub struct SettleObligation<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
@@ -440,7 +442,7 @@ pub struct SettleObligation<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -454,7 +456,7 @@ pub struct SettleObligation<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
@@ -468,7 +470,7 @@ pub struct SettleObligation<'info> {
             funding_line_ledger.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    pub funding_line_ledger: &'info Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), obligation.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
@@ -482,7 +484,7 @@ pub struct SettleObligation<'info> {
             plan_reserve_ledger.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    pub plan_reserve_ledger: &'info Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
@@ -516,7 +518,7 @@ pub struct SettleObligation<'info> {
             obligation.bump,
         ) @ OmegaXProtocolError::ObligationMismatch
     )]
-    pub obligation: &'info mut Account<ObligationAccountData<'info>>,
+    pub obligation: Account<ObligationAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Option<Box<Account<'info, ClaimCase>>>,
@@ -530,7 +532,7 @@ pub struct SettleObligation<'info> {
             claim_case.bump,
         ) @ OmegaXProtocolError::ClaimCaseLinkMismatch
     )]
-    pub claim_case: Option<&'info mut Account<ClaimCaseAccountData<'info>>>,
+    pub claim_case: Option<Account<ClaimCaseAccountData<'info>>>,
     // Optional for non-claim obligation transitions, but required when a
     // linked claim is being marked SETTLED so accounting cannot move without
     // the matching SPL outflow.

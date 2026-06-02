@@ -224,7 +224,7 @@ pub struct CreateAllocationPosition<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
@@ -243,7 +243,7 @@ pub struct CreateAllocationPosition<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
@@ -256,7 +256,7 @@ pub struct CreateAllocationPosition<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
@@ -269,7 +269,7 @@ pub struct CreateAllocationPosition<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -282,7 +282,7 @@ pub struct CreateAllocationPosition<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -308,7 +308,7 @@ pub struct CreateAllocationPosition<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub allocation_position: &'info mut Account<AllocationPosition>,
+    pub allocation_position: &'info Account<AllocationPosition>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -334,7 +334,7 @@ pub struct CreateAllocationPosition<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub allocation_ledger: &'info mut Account<AllocationLedger>,
+    pub allocation_ledger: &'info Account<AllocationLedger>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -364,7 +364,7 @@ pub struct UpdateAllocationCaps<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_POSITION, allocation_position.capital_class.as_ref(), allocation_position.funding_line.as_ref()], bump = allocation_position.bump)]
     pub allocation_position: Account<'info, AllocationPosition>,
@@ -378,7 +378,7 @@ pub struct UpdateAllocationCaps<'info> {
             allocation_position.bump,
         ) @ OmegaXProtocolError::AllocationPositionMismatch
     )]
-    pub allocation_position: &'info mut Account<AllocationPosition>,
+    pub allocation_position: &'info Account<AllocationPosition>,
 }
 #[derive(Accounts)]
 pub struct AllocateCapital<'info> {
@@ -405,7 +405,7 @@ pub struct AllocateCapital<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
@@ -419,7 +419,7 @@ pub struct AllocateCapital<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
@@ -433,7 +433,7 @@ pub struct AllocateCapital<'info> {
             pool_class_ledger.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -446,7 +446,7 @@ pub struct AllocateCapital<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()], bump = allocation_position.bump)]
     pub allocation_position: Box<Account<'info, AllocationPosition>>,
@@ -460,7 +460,7 @@ pub struct AllocateCapital<'info> {
             allocation_position.bump,
         ) @ OmegaXProtocolError::AllocationPositionMismatch
     )]
-    pub allocation_position: &'info mut Account<AllocationPosition>,
+    pub allocation_position: &'info Account<AllocationPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()], bump = allocation_ledger.bump)]
     pub allocation_ledger: Box<Account<'info, AllocationLedger>>,
@@ -474,7 +474,7 @@ pub struct AllocateCapital<'info> {
             allocation_ledger.bump,
         ) @ OmegaXProtocolError::AllocationPositionMismatch
     )]
-    pub allocation_ledger: &'info mut Account<AllocationLedger>,
+    pub allocation_ledger: &'info Account<AllocationLedger>,
 }
 #[derive(Accounts)]
 pub struct DeallocateCapital<'info> {
@@ -501,7 +501,7 @@ pub struct DeallocateCapital<'info> {
             liquidity_pool.bump,
         ) @ OmegaXProtocolError::LiquidityPoolMismatch
     )]
-    pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
+    pub liquidity_pool: Account<LiquidityPoolAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
@@ -515,7 +515,7 @@ pub struct DeallocateCapital<'info> {
             capital_class.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    pub capital_class: Account<CapitalClassAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
@@ -529,7 +529,7 @@ pub struct DeallocateCapital<'info> {
             pool_class_ledger.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_FUNDING_LINE, allocation_position.health_plan.as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -542,7 +542,7 @@ pub struct DeallocateCapital<'info> {
             funding_line.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line: &'info Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()], bump = allocation_position.bump)]
     pub allocation_position: Box<Account<'info, AllocationPosition>>,
@@ -556,7 +556,7 @@ pub struct DeallocateCapital<'info> {
             allocation_position.bump,
         ) @ OmegaXProtocolError::AllocationPositionMismatch
     )]
-    pub allocation_position: &'info mut Account<AllocationPosition>,
+    pub allocation_position: &'info Account<AllocationPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()], bump = allocation_ledger.bump)]
     pub allocation_ledger: Box<Account<'info, AllocationLedger>>,
@@ -570,5 +570,5 @@ pub struct DeallocateCapital<'info> {
             allocation_ledger.bump,
         ) @ OmegaXProtocolError::AllocationPositionMismatch
     )]
-    pub allocation_ledger: &'info mut Account<AllocationLedger>,
+    pub allocation_ledger: &'info Account<AllocationLedger>,
 }

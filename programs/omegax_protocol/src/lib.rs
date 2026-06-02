@@ -526,27 +526,29 @@ pub mod omegax_protocol {
     #[instruction(discriminator = [220, 188, 231, 198, 20, 71, 42, 123])]
     pub fn initialize_protocol_governance(
         ctx: Ctx<InitializeProtocolGovernance>,
-        args: InitializeProtocolGovernanceArgs,
+        protocol_fee_bps: u16,
+        emergency_pause: bool,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &protocol_fee_bps, &emergency_pause);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [180, 209, 92, 144, 227, 14, 97, 94])]
     pub fn set_protocol_emergency_pause(
         ctx: Ctx<SetProtocolEmergencyPause>,
-        args: SetProtocolEmergencyPauseArgs,
+        emergency_pause: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &emergency_pause, &reason_hash);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [173, 25, 179, 236, 198, 190, 207, 98])]
     pub fn rotate_protocol_governance_authority(
         ctx: Ctx<RotateProtocolGovernanceAuthority>,
-        args: RotateProtocolGovernanceAuthorityArgs,
+        new_governance_authority: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &new_governance_authority);
         quasar_handler_port_pending()
     }
 
@@ -569,396 +571,791 @@ pub mod omegax_protocol {
     #[instruction(discriminator = [222, 2, 8, 218, 45, 157, 193, 246])]
     pub fn create_reserve_domain(
         ctx: Ctx<CreateReserveDomain>,
-        args: CreateReserveDomainArgs,
+        domain_admin: Pubkey,
+        settlement_mode: u8,
+        legal_structure_hash: [u8; 32],
+        compliance_baseline_hash: [u8; 32],
+        allowed_rail_mask: u16,
+        pause_flags: u32,
+        domain_id: String<u32, 32>,
+        display_name: String<u32, 64>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &domain_admin,
+            &settlement_mode,
+            &legal_structure_hash,
+            &compliance_baseline_hash,
+            &allowed_rail_mask,
+            &pause_flags,
+            &domain_id,
+            &display_name,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [3, 60, 38, 233, 198, 167, 116, 197])]
     pub fn update_reserve_domain_controls(
         ctx: Ctx<UpdateReserveDomainControls>,
-        args: UpdateReserveDomainControlsArgs,
+        allowed_rail_mask: u16,
+        pause_flags: u32,
+        active: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &allowed_rail_mask,
+            &pause_flags,
+            &active,
+            &reason_hash,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [31, 13, 112, 128, 23, 164, 26, 108])]
     pub fn create_domain_asset_vault(
         ctx: Ctx<CreateDomainAssetVault>,
-        args: CreateDomainAssetVaultArgs,
+        asset_mint_key: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &asset_mint_key);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [78, 48, 108, 190, 181, 203, 194, 176])]
     pub fn configure_reserve_asset_rail(
         ctx: Ctx<ConfigureReserveAssetRail>,
-        args: ConfigureReserveAssetRailArgs,
+        asset_mint: Pubkey,
+        oracle_authority: Pubkey,
+        role: u8,
+        payout_priority: u8,
+        oracle_source: u8,
+        oracle_feed_id: [u8; 32],
+        max_staleness_seconds: i64,
+        max_confidence_bps: u16,
+        haircut_bps: u16,
+        max_exposure_bps: u16,
+        deposit_enabled: bool,
+        payout_enabled: bool,
+        capacity_enabled: bool,
+        active: bool,
+        reason_hash: [u8; 32],
+        asset_symbol: String<u32, 32>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &asset_mint,
+            &oracle_authority,
+            &role,
+            &payout_priority,
+            &oracle_source,
+            &oracle_feed_id,
+            &max_staleness_seconds,
+            &max_confidence_bps,
+            &haircut_bps,
+            &max_exposure_bps,
+            &deposit_enabled,
+            &payout_enabled,
+            &capacity_enabled,
+            &active,
+            &reason_hash,
+            &asset_symbol,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [132, 35, 143, 147, 59, 80, 162, 117])]
     pub fn publish_reserve_asset_rail_price(
         ctx: Ctx<PublishReserveAssetRailPrice>,
-        args: PublishReserveAssetRailPriceArgs,
+        price_usd_1e8: u64,
+        confidence_bps: u16,
+        published_at_ts: i64,
+        proof_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &price_usd_1e8,
+            &confidence_bps,
+            &published_at_ts,
+            &proof_hash,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [212, 235, 61, 42, 96, 183, 225, 57])]
     pub fn init_protocol_fee_vault(
         ctx: Ctx<InitProtocolFeeVault>,
-        args: InitProtocolFeeVaultArgs,
+        asset_mint: Pubkey,
+        fee_recipient: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &asset_mint, &fee_recipient);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [96, 169, 51, 224, 0, 207, 141, 47])]
     pub fn init_pool_treasury_vault(
         ctx: Ctx<InitPoolTreasuryVault>,
-        args: InitPoolTreasuryVaultArgs,
+        asset_mint: Pubkey,
+        fee_recipient: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &asset_mint, &fee_recipient);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [68, 122, 148, 84, 91, 98, 198, 167])]
     pub fn init_pool_oracle_fee_vault(
         ctx: Ctx<InitPoolOracleFeeVault>,
-        args: InitPoolOracleFeeVaultArgs,
+        oracle: Pubkey,
+        asset_mint: Pubkey,
+        fee_recipient: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &oracle, &asset_mint, &fee_recipient);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [136, 7, 197, 134, 241, 206, 83, 171])]
     pub fn create_health_plan(
         ctx: Ctx<CreateHealthPlan>,
-        args: CreateHealthPlanArgs,
+        sponsor: Pubkey,
+        sponsor_operator: Pubkey,
+        claims_operator: Pubkey,
+        oracle_authority: Pubkey,
+        membership_mode: u8,
+        membership_gate_kind: u8,
+        membership_gate_mint: Pubkey,
+        membership_gate_min_amount: u64,
+        membership_invite_authority: Pubkey,
+        allowed_rail_mask: u16,
+        default_funding_priority: u8,
+        oracle_policy_hash: [u8; 32],
+        schema_binding_hash: [u8; 32],
+        compliance_baseline_hash: [u8; 32],
+        pause_flags: u32,
+        plan_id: String<u32, 32>,
+        display_name: String<u32, 64>,
+        organization_ref: String<u32, 64>,
+        metadata_uri: String<u32, 160>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &sponsor,
+            &sponsor_operator,
+            &claims_operator,
+            &oracle_authority,
+            &membership_mode,
+            &membership_gate_kind,
+            &membership_gate_mint,
+            &membership_gate_min_amount,
+            &membership_invite_authority,
+            &allowed_rail_mask,
+            &default_funding_priority,
+            &oracle_policy_hash,
+            &schema_binding_hash,
+            &compliance_baseline_hash,
+            &pause_flags,
+            &plan_id,
+            &display_name,
+            &organization_ref,
+            &metadata_uri,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [108, 11, 28, 140, 226, 164, 239, 113])]
     pub fn update_health_plan_controls(
         ctx: Ctx<UpdateHealthPlanControls>,
-        args: UpdateHealthPlanControlsArgs,
+        sponsor_operator: Pubkey,
+        claims_operator: Pubkey,
+        oracle_authority: Pubkey,
+        membership_mode: u8,
+        membership_gate_kind: u8,
+        membership_gate_mint: Pubkey,
+        membership_gate_min_amount: u64,
+        membership_invite_authority: Pubkey,
+        allowed_rail_mask: u16,
+        default_funding_priority: u8,
+        oracle_policy_hash: [u8; 32],
+        schema_binding_hash: [u8; 32],
+        compliance_baseline_hash: [u8; 32],
+        pause_flags: u32,
+        active: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &sponsor_operator,
+            &claims_operator,
+            &oracle_authority,
+            &membership_mode,
+            &membership_gate_kind,
+            &membership_gate_mint,
+            &membership_gate_min_amount,
+            &membership_invite_authority,
+            &allowed_rail_mask,
+            &default_funding_priority,
+            &oracle_policy_hash,
+            &schema_binding_hash,
+            &compliance_baseline_hash,
+            &pause_flags,
+            &active,
+            &reason_hash,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [70, 162, 231, 218, 211, 136, 110, 176])]
     pub fn create_policy_series(
         ctx: Ctx<CreatePolicySeries>,
-        args: CreatePolicySeriesArgs,
+        asset_mint: Pubkey,
+        mode: u8,
+        status: u8,
+        adjudication_mode: u8,
+        terms_hash: [u8; 32],
+        pricing_hash: [u8; 32],
+        payout_hash: [u8; 32],
+        reserve_model_hash: [u8; 32],
+        evidence_requirements_hash: [u8; 32],
+        comparability_hash: [u8; 32],
+        policy_overrides_hash: [u8; 32],
+        cycle_seconds: i64,
+        terms_version: u16,
+        series_id: String<u32, 32>,
+        display_name: String<u32, 64>,
+        metadata_uri: String<u32, 160>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &asset_mint,
+            &mode,
+            &status,
+            &adjudication_mode,
+            &terms_hash,
+            &pricing_hash,
+            &payout_hash,
+            &reserve_model_hash,
+            &evidence_requirements_hash,
+            &comparability_hash,
+            &policy_overrides_hash,
+            &cycle_seconds,
+            &terms_version,
+            &series_id,
+            &display_name,
+            &metadata_uri,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [113, 155, 191, 126, 81, 152, 220, 249])]
     pub fn initialize_series_reserve_ledger(
         ctx: Ctx<InitializeSeriesReserveLedger>,
-        args: InitializeSeriesReserveLedgerArgs,
+        asset_mint: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &asset_mint);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [64, 76, 132, 253, 41, 220, 169, 146])]
     pub fn version_policy_series(
         ctx: Ctx<VersionPolicySeries>,
-        args: VersionPolicySeriesArgs,
+        status: u8,
+        adjudication_mode: u8,
+        terms_hash: [u8; 32],
+        pricing_hash: [u8; 32],
+        payout_hash: [u8; 32],
+        reserve_model_hash: [u8; 32],
+        evidence_requirements_hash: [u8; 32],
+        comparability_hash: [u8; 32],
+        policy_overrides_hash: [u8; 32],
+        cycle_seconds: i64,
+        series_id: String<u32, 32>,
+        display_name: String<u32, 64>,
+        metadata_uri: String<u32, 160>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &status,
+            &adjudication_mode,
+            &terms_hash,
+            &pricing_hash,
+            &payout_hash,
+            &reserve_model_hash,
+            &evidence_requirements_hash,
+            &comparability_hash,
+            &policy_overrides_hash,
+            &cycle_seconds,
+            &series_id,
+            &display_name,
+            &metadata_uri,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [161, 42, 115, 196, 30, 87, 104, 236])]
     pub fn open_member_position(
         ctx: Ctx<OpenMemberPosition>,
-        args: OpenMemberPositionArgs,
+        series_scope: Pubkey,
+        subject_commitment: [u8; 32],
+        eligibility_status: u8,
+        delegated_rights: u32,
+        proof_mode: u8,
+        token_gate_amount_snapshot: u64,
+        invite_id_hash: [u8; 32],
+        invite_expires_at: i64,
+        anchor_ref: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &series_scope,
+            &subject_commitment,
+            &eligibility_status,
+            &delegated_rights,
+            &proof_mode,
+            &token_gate_amount_snapshot,
+            &invite_id_hash,
+            &invite_expires_at,
+            &anchor_ref,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [254, 66, 68, 244, 98, 157, 111, 191])]
     pub fn update_member_eligibility(
         ctx: Ctx<UpdateMemberEligibility>,
-        args: UpdateMemberEligibilityArgs,
+        eligibility_status: u8,
+        delegated_rights: u32,
+        active: bool,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &eligibility_status, &delegated_rights, &active);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [231, 140, 66, 127, 163, 1, 197, 9])]
-    pub fn open_funding_line(ctx: Ctx<OpenFundingLine>, args: OpenFundingLineArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn open_funding_line(
+        ctx: Ctx<OpenFundingLine>,
+        policy_series_arg: Pubkey,
+        asset_mint: Pubkey,
+        line_type: u8,
+        funding_priority: u8,
+        committed_amount: u64,
+        caps_hash: [u8; 32],
+        line_id: String<u32, 32>,
+    ) -> Result<()> {
+        let _ = (
+            &ctx,
+            &policy_series_arg,
+            &asset_mint,
+            &line_type,
+            &funding_priority,
+            &committed_amount,
+            &caps_hash,
+            &line_id,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [150, 210, 161, 31, 50, 12, 224, 32])]
-    pub fn fund_sponsor_budget(
-        ctx: Ctx<FundSponsorBudget>,
-        args: FundSponsorBudgetArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn fund_sponsor_budget(ctx: Ctx<FundSponsorBudget>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [196, 182, 182, 56, 146, 87, 170, 29])]
-    pub fn record_premium_payment(
-        ctx: Ctx<RecordPremiumPayment>,
-        args: RecordPremiumPaymentArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn record_premium_payment(ctx: Ctx<RecordPremiumPayment>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [216, 144, 172, 223, 19, 106, 220, 54])]
-    pub fn create_obligation(ctx: Ctx<CreateObligation>, args: CreateObligationArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn create_obligation(
+        ctx: Ctx<CreateObligation>,
+        asset_mint: Pubkey,
+        policy_series: Pubkey,
+        member_wallet: Pubkey,
+        beneficiary: Pubkey,
+        claim_case: Pubkey,
+        liquidity_pool_arg: Pubkey,
+        capital_class_arg: Pubkey,
+        allocation_position_arg: Pubkey,
+        delivery_mode: u8,
+        amount: u64,
+        creation_reason_hash: [u8; 32],
+        obligation_id: String<u32, 32>,
+    ) -> Result<()> {
+        let _ = (
+            &ctx,
+            &asset_mint,
+            &policy_series,
+            &member_wallet,
+            &beneficiary,
+            &claim_case,
+            &liquidity_pool_arg,
+            &capital_class_arg,
+            &allocation_position_arg,
+            &delivery_mode,
+            &amount,
+            &creation_reason_hash,
+            &obligation_id,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [48, 113, 133, 225, 40, 36, 197, 86])]
-    pub fn reserve_obligation(
-        ctx: Ctx<ReserveObligation>,
-        args: ReserveObligationArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn reserve_obligation(ctx: Ctx<ReserveObligation>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [209, 166, 218, 35, 147, 139, 238, 208])]
-    pub fn settle_obligation(ctx: Ctx<SettleObligation>, args: SettleObligationArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn settle_obligation(
+        ctx: Ctx<SettleObligation>,
+        next_status: u8,
+        amount: u64,
+        settlement_reason_hash: [u8; 32],
+    ) -> Result<()> {
+        let _ = (&ctx, &next_status, &amount, &settlement_reason_hash);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [170, 102, 52, 144, 33, 176, 41, 60])]
-    pub fn release_reserve(ctx: Ctx<ReleaseReserve>, args: ReleaseReserveArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn release_reserve(ctx: Ctx<ReleaseReserve>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [151, 125, 231, 211, 63, 132, 248, 184])]
-    pub fn open_claim_case(ctx: Ctx<OpenClaimCase>, args: OpenClaimCaseArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn open_claim_case(
+        ctx: Ctx<OpenClaimCase>,
+        policy_series: Pubkey,
+        claimant: Pubkey,
+        evidence_ref_hash: [u8; 32],
+        claim_id: String<u32, 32>,
+    ) -> Result<()> {
+        let _ = (
+            &ctx,
+            &policy_series,
+            &claimant,
+            &evidence_ref_hash,
+            &claim_id,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [112, 97, 129, 42, 125, 165, 226, 163])]
     pub fn authorize_claim_recipient(
         ctx: Ctx<AuthorizeClaimRecipient>,
-        args: AuthorizeClaimRecipientArgs,
+        delegate_recipient: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &delegate_recipient);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [52, 246, 203, 87, 244, 143, 132, 131])]
     pub fn attach_claim_evidence_ref(
         ctx: Ctx<AttachClaimEvidenceRef>,
-        args: AttachClaimEvidenceRefArgs,
+        evidence_ref_hash: [u8; 32],
+        decision_support_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &evidence_ref_hash, &decision_support_hash);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [146, 99, 255, 26, 223, 88, 235, 114])]
     pub fn adjudicate_claim_case(
         ctx: Ctx<AdjudicateClaimCase>,
-        args: AdjudicateClaimCaseArgs,
+        review_state: u8,
+        approved_amount: u64,
+        denied_amount: u64,
+        reserve_amount: u64,
+        decision_support_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &review_state,
+            &approved_amount,
+            &denied_amount,
+            &reserve_amount,
+            &decision_support_hash,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [178, 123, 229, 204, 50, 204, 91, 71])]
-    pub fn settle_claim_case(ctx: Ctx<SettleClaimCase>, args: SettleClaimCaseArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn settle_claim_case(ctx: Ctx<SettleClaimCase>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [21, 218, 248, 73, 41, 97, 47, 212])]
     pub fn settle_claim_case_selected_asset(
         ctx: Ctx<SettleClaimCaseSelectedAsset>,
-        args: SettleClaimCaseSelectedAssetArgs,
+        claim_credit_amount: u64,
+        payout_amount: u64,
+        max_overpay_bps: u16,
+        settlement_reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &claim_credit_amount,
+            &payout_amount,
+            &max_overpay_bps,
+            &settlement_reason_hash,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [175, 75, 181, 165, 224, 254, 6, 131])]
     pub fn create_liquidity_pool(
         ctx: Ctx<CreateLiquidityPool>,
-        args: CreateLiquidityPoolArgs,
+        curator: Pubkey,
+        allocator: Pubkey,
+        sentinel: Pubkey,
+        deposit_asset_mint: Pubkey,
+        strategy_hash: [u8; 32],
+        allowed_exposure_hash: [u8; 32],
+        external_yield_adapter_hash: [u8; 32],
+        fee_bps: u16,
+        redemption_policy: u8,
+        pause_flags: u32,
+        pool_id: String<u32, 32>,
+        display_name: String<u32, 64>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &curator,
+            &allocator,
+            &sentinel,
+            &deposit_asset_mint,
+            &strategy_hash,
+            &allowed_exposure_hash,
+            &external_yield_adapter_hash,
+            &fee_bps,
+            &redemption_policy,
+            &pause_flags,
+            &pool_id,
+            &display_name,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [0, 161, 244, 112, 151, 137, 35, 221])]
     pub fn create_capital_class(
         ctx: Ctx<CreateCapitalClass>,
-        args: CreateCapitalClassArgs,
+        share_mint: Pubkey,
+        priority: u8,
+        impairment_rank: u8,
+        restriction_mode: u8,
+        redemption_terms_mode: u8,
+        wrapper_metadata_hash: [u8; 32],
+        permissioning_hash: [u8; 32],
+        fee_bps: u16,
+        min_lockup_seconds: i64,
+        pause_flags: u32,
+        class_id: String<u32, 32>,
+        display_name: String<u32, 64>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &share_mint,
+            &priority,
+            &impairment_rank,
+            &restriction_mode,
+            &redemption_terms_mode,
+            &wrapper_metadata_hash,
+            &permissioning_hash,
+            &fee_bps,
+            &min_lockup_seconds,
+            &pause_flags,
+            &class_id,
+            &display_name,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [34, 4, 113, 70, 79, 197, 244, 109])]
     pub fn update_capital_class_controls(
         ctx: Ctx<UpdateCapitalClassControls>,
-        args: UpdateCapitalClassControlsArgs,
+        pause_flags: u32,
+        queue_only_redemptions: bool,
+        active: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &pause_flags,
+            &queue_only_redemptions,
+            &active,
+            &reason_hash,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [54, 194, 211, 94, 197, 61, 228, 202])]
     pub fn update_lp_position_credentialing(
         ctx: Ctx<UpdateLpPositionCredentialing>,
-        args: UpdateLpPositionCredentialingArgs,
+        owner: Pubkey,
+        credentialed: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &owner, &credentialed, &reason_hash);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [40, 215, 33, 115, 185, 101, 196, 167])]
     pub fn deposit_into_capital_class(
         ctx: Ctx<DepositIntoCapitalClass>,
-        args: DepositIntoCapitalClassArgs,
+        amount: u64,
+        shares: u64,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &amount, &shares);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [14, 62, 182, 237, 59, 79, 149, 22])]
-    pub fn request_redemption(
-        ctx: Ctx<RequestRedemption>,
-        args: RequestRedemptionArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn request_redemption(ctx: Ctx<RequestRedemption>, shares: u64) -> Result<()> {
+        let _ = (&ctx, &shares);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [244, 120, 208, 73, 216, 200, 158, 93])]
-    pub fn process_redemption_queue(
-        ctx: Ctx<ProcessRedemptionQueue>,
-        args: ProcessRedemptionQueueArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn process_redemption_queue(ctx: Ctx<ProcessRedemptionQueue>, shares: u64) -> Result<()> {
+        let _ = (&ctx, &shares);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [120, 62, 236, 14, 227, 240, 52, 253])]
-    pub fn withdraw_protocol_fee_spl(
-        ctx: Ctx<WithdrawProtocolFeeSpl>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn withdraw_protocol_fee_spl(ctx: Ctx<WithdrawProtocolFeeSpl>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [193, 33, 140, 185, 45, 190, 112, 7])]
-    pub fn withdraw_protocol_fee_sol(
-        ctx: Ctx<WithdrawProtocolFeeSol>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn withdraw_protocol_fee_sol(ctx: Ctx<WithdrawProtocolFeeSol>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [43, 146, 116, 123, 106, 69, 242, 104])]
     pub fn withdraw_pool_treasury_spl(
         ctx: Ctx<WithdrawPoolTreasurySpl>,
-        args: WithdrawArgs,
+        amount: u64,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [50, 115, 51, 120, 221, 37, 200, 169])]
     pub fn withdraw_pool_treasury_sol(
         ctx: Ctx<WithdrawPoolTreasurySol>,
-        args: WithdrawArgs,
+        amount: u64,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [242, 75, 247, 122, 255, 183, 48, 189])]
     pub fn withdraw_pool_oracle_fee_spl(
         ctx: Ctx<WithdrawPoolOracleFeeSpl>,
-        args: WithdrawArgs,
+        amount: u64,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [208, 223, 250, 62, 199, 8, 221, 185])]
     pub fn withdraw_pool_oracle_fee_sol(
         ctx: Ctx<WithdrawPoolOracleFeeSol>,
-        args: WithdrawArgs,
+        amount: u64,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [165, 80, 76, 13, 12, 202, 112, 31])]
     pub fn create_allocation_position(
         ctx: Ctx<CreateAllocationPosition>,
-        args: CreateAllocationPositionArgs,
+        policy_series: Pubkey,
+        cap_amount: u64,
+        weight_bps: u16,
+        allocation_mode: u8,
+        deallocation_only: bool,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &policy_series,
+            &cap_amount,
+            &weight_bps,
+            &allocation_mode,
+            &deallocation_only,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [224, 101, 103, 146, 78, 5, 48, 132])]
     pub fn update_allocation_caps(
         ctx: Ctx<UpdateAllocationCaps>,
-        args: UpdateAllocationCapsArgs,
+        cap_amount: u64,
+        weight_bps: u16,
+        deallocation_only: bool,
+        active: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &cap_amount,
+            &weight_bps,
+            &deallocation_only,
+            &active,
+            &reason_hash,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [146, 129, 60, 205, 88, 225, 60, 183])]
-    pub fn allocate_capital(ctx: Ctx<AllocateCapital>, args: AllocateCapitalArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn allocate_capital(ctx: Ctx<AllocateCapital>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [10, 97, 97, 189, 60, 170, 102, 29])]
-    pub fn deallocate_capital(
-        ctx: Ctx<DeallocateCapital>,
-        args: DeallocateCapitalArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn deallocate_capital(ctx: Ctx<DeallocateCapital>, amount: u64) -> Result<()> {
+        let _ = (&ctx, &amount);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [58, 97, 30, 157, 211, 45, 174, 238])]
-    pub fn mark_impairment(ctx: Ctx<MarkImpairment>, args: MarkImpairmentArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn mark_impairment(
+        ctx: Ctx<MarkImpairment>,
+        amount: u64,
+        reason_hash: [u8; 32],
+    ) -> Result<()> {
+        let _ = (&ctx, &amount, &reason_hash);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [176, 200, 234, 37, 199, 129, 164, 111])]
-    pub fn register_oracle(ctx: Ctx<RegisterOracle>, args: RegisterOracleArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn register_oracle(
+        ctx: Ctx<RegisterOracle>,
+        oracle: Pubkey,
+        oracle_type: u8,
+        display_name: String<u32, 64>,
+        legal_name: String<u32, 96>,
+        website_url: String<u32, 160>,
+        app_url: String<u32, 160>,
+        logo_uri: String<u32, 160>,
+        webhook_url: String<u32, 160>,
+        supported_schema_key_hashes: Vec<[u8; 32], u32, 16>,
+    ) -> Result<()> {
+        let _ = (
+            &ctx,
+            &oracle,
+            &oracle_type,
+            &display_name,
+            &legal_name,
+            &website_url,
+            &app_url,
+            &logo_uri,
+            &webhook_url,
+            &supported_schema_key_hashes,
+        );
         quasar_handler_port_pending()
     }
 
@@ -971,60 +1368,103 @@ pub mod omegax_protocol {
     #[instruction(discriminator = [175, 66, 157, 51, 96, 190, 163, 98])]
     pub fn update_oracle_profile(
         ctx: Ctx<UpdateOracleProfile>,
-        args: UpdateOracleProfileArgs,
+        oracle_type: u8,
+        display_name: String<u32, 64>,
+        legal_name: String<u32, 96>,
+        website_url: String<u32, 160>,
+        app_url: String<u32, 160>,
+        logo_uri: String<u32, 160>,
+        webhook_url: String<u32, 160>,
+        supported_schema_key_hashes: Vec<[u8; 32], u32, 16>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &oracle_type,
+            &display_name,
+            &legal_name,
+            &website_url,
+            &app_url,
+            &logo_uri,
+            &webhook_url,
+            &supported_schema_key_hashes,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [140, 225, 146, 45, 210, 81, 225, 223])]
-    pub fn set_pool_oracle(ctx: Ctx<SetPoolOracle>, args: SetPoolOracleArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn set_pool_oracle(ctx: Ctx<SetPoolOracle>, active: bool) -> Result<()> {
+        let _ = (&ctx, &active);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [168, 14, 22, 106, 118, 145, 105, 44])]
     pub fn set_pool_oracle_permissions(
         ctx: Ctx<SetPoolOraclePermissions>,
-        args: SetPoolOraclePermissionsArgs,
+        permissions: u32,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &permissions);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [190, 13, 51, 113, 230, 140, 103, 82])]
     pub fn set_pool_oracle_policy(
         ctx: Ctx<SetPoolOraclePolicy>,
-        args: SetPoolOraclePolicyArgs,
+        quorum_m: u8,
+        quorum_n: u8,
+        require_verified_schema: bool,
+        oracle_fee_bps: u16,
+        allow_delegate_claim: bool,
+        challenge_window_secs: u32,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &quorum_m,
+            &quorum_n,
+            &require_verified_schema,
+            &oracle_fee_bps,
+            &allow_delegate_claim,
+            &challenge_window_secs,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [187, 68, 109, 211, 168, 181, 105, 32])]
     pub fn register_outcome_schema(
         ctx: Ctx<RegisterOutcomeSchema>,
-        args: RegisterOutcomeSchemaArgs,
+        schema_key_hash: [u8; 32],
+        version: u16,
+        schema_hash: [u8; 32],
+        schema_family: u8,
+        visibility: u8,
+        schema_key: String<u32, 96>,
+        metadata_uri: String<u32, 160>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (
+            &ctx,
+            &schema_key_hash,
+            &version,
+            &schema_hash,
+            &schema_family,
+            &visibility,
+            &schema_key,
+            &metadata_uri,
+        );
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [221, 10, 144, 137, 106, 214, 205, 170])]
-    pub fn verify_outcome_schema(
-        ctx: Ctx<VerifyOutcomeSchema>,
-        args: VerifyOutcomeSchemaArgs,
-    ) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn verify_outcome_schema(ctx: Ctx<VerifyOutcomeSchema>, verified: bool) -> Result<()> {
+        let _ = (&ctx, &verified);
         quasar_handler_port_pending()
     }
 
     #[instruction(discriminator = [109, 109, 247, 151, 229, 78, 52, 167])]
     pub fn backfill_schema_dependency_ledger(
         ctx: Ctx<BackfillSchemaDependencyLedger>,
-        args: BackfillSchemaDependencyLedgerArgs,
+        schema_key_hash: [u8; 32],
+        pool_rule_addresses: Vec<Pubkey, u32, 32>,
     ) -> Result<()> {
-        let _ = (&ctx, &args);
+        let _ = (&ctx, &schema_key_hash, &pool_rule_addresses);
         quasar_handler_port_pending()
     }
 
@@ -1035,8 +1475,20 @@ pub mod omegax_protocol {
     }
 
     #[instruction(discriminator = [111, 40, 46, 51, 76, 157, 214, 136])]
-    pub fn attest_claim_case(ctx: Ctx<AttestClaimCase>, args: AttestClaimCaseArgs) -> Result<()> {
-        let _ = (&ctx, &args);
+    pub fn attest_claim_case(
+        ctx: Ctx<AttestClaimCase>,
+        decision: u8,
+        attestation_hash: [u8; 32],
+        attestation_ref_hash: [u8; 32],
+        schema_key_hash: [u8; 32],
+    ) -> Result<()> {
+        let _ = (
+            &ctx,
+            &decision,
+            &attestation_hash,
+            &attestation_ref_hash,
+            &schema_key_hash,
+        );
         quasar_handler_port_pending()
     }
 }

@@ -101,13 +101,25 @@ pub(crate) fn open_funding_line(
 }
 
 #[derive(Accounts)]
-#[instruction(args: OpenFundingLineArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: OpenFundingLineArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(
+        _policy_series_arg: Pubkey,
+        asset_mint: Pubkey,
+        _line_type: u8,
+        _funding_priority: u8,
+        _committed_amount: u64,
+        _caps_hash: [u8; 32],
+        line_id: String<u32, 32>
+    )
+)]
 pub struct OpenFundingLine<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
@@ -126,19 +138,19 @@ pub struct OpenFundingLine<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = quasar_pda_matches(
-            domain_asset_vault.address(),
-            &crate::ID,
-            &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()],
-            domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired
-    )]
+            constraint = quasar_pda_matches(
+                domain_asset_vault.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), asset_mint.as_ref()],
+                domain_asset_vault.bump,
+            ) @ OmegaXProtocolError::DomainAssetVaultRequired
+        )]
     pub domain_asset_vault: &'info Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
@@ -146,14 +158,14 @@ pub struct OpenFundingLine<'info> {
     #[cfg(feature = "quasar")]
     #[account(
         mut,
-        constraint = quasar_pda_matches(
-            domain_asset_ledger.address(),
-            &crate::ID,
-            &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()],
-            domain_asset_ledger.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
-    )]
-    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+            constraint = quasar_pda_matches(
+                domain_asset_ledger.address(),
+                &crate::ID,
+                &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), asset_mint.as_ref()],
+                domain_asset_ledger.bump,
+            ) @ OmegaXProtocolError::ReserveDomainMismatch
+        )]
+    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -173,13 +185,13 @@ pub struct OpenFundingLine<'info> {
             constraint = quasar_pda_matches(
                 funding_line.address(),
                 &crate::ID,
-                &[SEED_FUNDING_LINE, health_plan.address().as_ref(), args.line_id.as_bytes()],
+                &[SEED_FUNDING_LINE, health_plan.address().as_ref(), line_id],
                 funding_line.bump,
             ) @ OmegaXProtocolError::FundingLineMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -199,13 +211,13 @@ pub struct OpenFundingLine<'info> {
             constraint = quasar_pda_matches(
                 funding_line_ledger.address(),
                 &crate::ID,
-                &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), args.asset_mint.as_ref()],
+                &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), asset_mint.as_ref()],
                 funding_line_ledger.bump,
             ) @ OmegaXProtocolError::FundingLineMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    pub funding_line_ledger: &'info Account<FundingLineLedger>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -225,17 +237,17 @@ pub struct OpenFundingLine<'info> {
             constraint = quasar_pda_matches(
                 plan_reserve_ledger.address(),
                 &crate::ID,
-                &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), args.asset_mint.as_ref()],
+                &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), asset_mint.as_ref()],
                 plan_reserve_ledger.bump,
             ) @ OmegaXProtocolError::HealthPlanMismatch
         )
     )]
     #[cfg(feature = "quasar")]
-    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    pub plan_reserve_ledger: &'info Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     pub policy_series: Option<Box<Account<'info, PolicySeries>>>,
     #[cfg(feature = "quasar")]
-    pub policy_series: Option<&'info Account<PolicySeriesAccountData<'info>>>,
+    pub policy_series: Option<Account<PolicySeriesAccountData<'info>>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,

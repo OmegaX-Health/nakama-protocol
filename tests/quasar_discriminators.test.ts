@@ -109,15 +109,19 @@ test("Quasar event discriminators match the checked-in protocol IDL", () => {
 
 test("Quasar event attributes match the checked-in protocol IDL", () => {
   const events = idl.events ?? [];
-  const pattern =
-    /#\[cfg\(feature = "quasar"\)\]\s+#\[event\(discriminator = \[([0-9,\s]+)\]\)\]\s+pub struct ([A-Za-z0-9_]+)/g;
+  const patterns = [
+    /#\[cfg\(feature = "quasar"\)\]\s+#\[event\(discriminator = \[([0-9,\s]+)\]\)\]\s+pub struct ([A-Za-z0-9_]+)/g,
+    /#\[cfg\(feature = "quasar"\)\]\s+#\[cfg_attr\(any\(\), event\(discriminator = \[([0-9,\s]+)\]\)\)\]\s+pub struct ([A-Za-z0-9_]+)/g,
+  ];
   const attributes = new Map<string, number[]>();
 
-  for (const match of eventsSource.matchAll(pattern)) {
-    attributes.set(
-      match[2],
-      match[1].split(",").map((part) => Number.parseInt(part.trim(), 10)),
-    );
+  for (const pattern of patterns) {
+    for (const match of eventsSource.matchAll(pattern)) {
+      attributes.set(
+        match[2],
+        match[1].split(",").map((part) => Number.parseInt(part.trim(), 10)),
+      );
+    }
   }
 
   assert.equal(attributes.size, events.length);

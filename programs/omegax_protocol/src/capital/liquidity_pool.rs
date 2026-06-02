@@ -57,13 +57,13 @@ pub(crate) fn create_liquidity_pool(
 }
 
 #[derive(Accounts)]
-#[instruction(args: CreateLiquidityPoolArgs)]
+#[cfg_attr(not(feature = "quasar"), instruction(args: CreateLiquidityPoolArgs))]
 pub struct CreateLiquidityPool<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
     #[cfg(feature = "quasar")]
-    pub authority: &'info mut Signer,
+    pub authority: &'info Signer,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
@@ -82,7 +82,7 @@ pub struct CreateLiquidityPool<'info> {
             reserve_domain.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub reserve_domain: &'info Account<ReserveDomainAccountData<'info>>,
+    pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.deposit_asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Account<'info, DomainAssetVault>,
@@ -121,7 +121,7 @@ pub struct CreateLiquidityPool<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub liquidity_pool: &'info mut Account<LiquidityPool<'info>>,
+    pub liquidity_pool: Account<LiquidityPool<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
