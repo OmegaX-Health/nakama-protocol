@@ -53,8 +53,9 @@ test("[PT-11] OpenClaimCase context binds member_position.health_plan to the sup
   // The Anchor context constraints that block cross-plan substitution.
   const ctxIdx = programSrc.indexOf("pub struct OpenClaimCase<");
   assert.notEqual(ctxIdx, -1, "OpenClaimCase context must exist");
-  // Capture the next ~1000 characters which contain all the account constraints.
-  const ctx = programSrc.slice(ctxIdx, ctxIdx + 1500);
+  const nextCtxIdx = programSrc.indexOf("pub struct AuthorizeClaimRecipient<", ctxIdx);
+  assert.notEqual(nextCtxIdx, -1, "AuthorizeClaimRecipient context must exist after OpenClaimCase");
+  const ctx = programSrc.slice(ctxIdx, nextCtxIdx);
 
   assert.ok(
     /member_position\.health_plan\s*==\s*health_plan\.key\(\)/.test(ctx),

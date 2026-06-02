@@ -3,6 +3,7 @@
 //! Claim lifecycle and claim-attestation instruction handlers and account validation contexts.
 
 use crate::platform::*;
+#[cfg(not(feature = "quasar"))]
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::args::*;
@@ -12,6 +13,7 @@ use crate::events::*;
 use crate::kernel::*;
 use crate::state::*;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn open_claim_case(ctx: Context<OpenClaimCase>, args: OpenClaimCaseArgs) -> Result<()> {
     require_protocol_not_paused(&ctx.accounts.protocol_governance)?;
     require_id(&args.claim_id)?;
@@ -64,6 +66,7 @@ pub(crate) fn open_claim_case(ctx: Context<OpenClaimCase>, args: OpenClaimCaseAr
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn authorize_claim_recipient(
     ctx: Context<AuthorizeClaimRecipient>,
     args: AuthorizeClaimRecipientArgs,
@@ -82,6 +85,7 @@ pub(crate) fn authorize_claim_recipient(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn attach_claim_evidence_ref(
     ctx: Context<AttachClaimEvidenceRef>,
     args: AttachClaimEvidenceRefArgs,
@@ -101,6 +105,7 @@ pub(crate) fn attach_claim_evidence_ref(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn adjudicate_claim_case(
     ctx: Context<AdjudicateClaimCase>,
     args: AdjudicateClaimCaseArgs,
@@ -165,6 +170,7 @@ pub(crate) fn adjudicate_claim_case(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn settle_claim_case(
     ctx: Context<SettleClaimCase>,
     args: SettleClaimCaseArgs,
@@ -453,6 +459,7 @@ pub(crate) fn require_oracle_fee_accounts_canonical(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn settle_claim_case_selected_asset(
     ctx: Context<SettleClaimCaseSelectedAsset>,
     args: SettleClaimCaseSelectedAssetArgs,
@@ -575,6 +582,7 @@ pub(crate) fn settle_claim_case_selected_asset(
     Ok(())
 }
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn attest_claim_case(
     ctx: Context<AttestClaimCase>,
     args: AttestClaimCaseArgs,
@@ -974,12 +982,23 @@ fn validate_claim_attestation_pool_scope(
 #[derive(Accounts)]
 #[instruction(args: OpenClaimCaseArgs)]
 pub struct OpenClaimCase<'info> {
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info mut Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
     #[account(
         seeds = [SEED_MEMBER_POSITION, health_plan.key().as_ref(), member_position.wallet.as_ref(), member_position.policy_series.as_ref()],
         bump = member_position.bump,
@@ -988,6 +1007,7 @@ pub struct OpenClaimCase<'info> {
         constraint = member_position.active @ OmegaXProtocolError::Unauthorized,
         constraint = member_position.eligibility_status == ELIGIBILITY_ELIGIBLE @ OmegaXProtocolError::Unauthorized,
     )]
+    #[cfg(not(feature = "quasar"))]
     pub member_position: Box<Account<'info, MemberPosition>>,
     #[account(
         seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()],
@@ -996,7 +1016,32 @@ pub struct OpenClaimCase<'info> {
         constraint = funding_line.policy_series == args.policy_series @ OmegaXProtocolError::PolicySeriesMismatch,
         constraint = funding_line.status == FUNDING_LINE_STATUS_OPEN @ OmegaXProtocolError::FundingLineMismatch,
     )]
+    #[cfg(not(feature = "quasar"))]
     pub funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [
+            SEED_MEMBER_POSITION,
+            health_plan.key().as_ref(),
+            member_position.wallet.as_ref(),
+            member_position.policy_series.as_ref(),
+        ],
+        bump = member_position.bump,
+        constraint = member_position.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
+        constraint = member_position.policy_series == args.policy_series @ OmegaXProtocolError::PolicySeriesMismatch,
+        constraint = member_position.active @ OmegaXProtocolError::Unauthorized,
+        constraint = member_position.eligibility_status == ELIGIBILITY_ELIGIBLE @ OmegaXProtocolError::Unauthorized,
+    )]
+    pub member_position: &'info Account<MemberPosition>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()],
+        bump = funding_line.bump,
+        constraint = funding_line.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
+        constraint = funding_line.policy_series == args.policy_series @ OmegaXProtocolError::PolicySeriesMismatch,
+        constraint = funding_line.status == FUNDING_LINE_STATUS_OPEN @ OmegaXProtocolError::FundingLineMismatch,
+    )]
+    pub funding_line: &'info Account<FundingLineAccountData<'info>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -1021,7 +1066,7 @@ pub struct OpenClaimCase<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub claim_case: &'info mut Account<ClaimCase<'info>>,
+    pub claim_case: &'info mut Account<ClaimCaseAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -1030,9 +1075,16 @@ pub struct OpenClaimCase<'info> {
 
 #[derive(Accounts)]
 pub struct AuthorizeClaimRecipient<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
     #[account(
         seeds = [
             SEED_MEMBER_POSITION,
@@ -1044,47 +1096,114 @@ pub struct AuthorizeClaimRecipient<'info> {
         constraint = member_position.wallet == authority.key() @ OmegaXProtocolError::Unauthorized,
         constraint = member_position.active @ OmegaXProtocolError::Unauthorized,
     )]
+    #[cfg(not(feature = "quasar"))]
     pub member_position: Box<Account<'info, MemberPosition>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [
+            SEED_MEMBER_POSITION,
+            member_position.health_plan.as_ref(),
+            member_position.wallet.as_ref(),
+            member_position.policy_series.as_ref(),
+        ],
+        bump = member_position.bump,
+        constraint = member_position.wallet == authority.key() @ OmegaXProtocolError::Unauthorized,
+        constraint = member_position.active @ OmegaXProtocolError::Unauthorized,
+    )]
+    pub member_position: &'info Account<MemberPosition>,
     #[account(
         mut,
         seeds = [SEED_CLAIM_CASE, claim_case.health_plan.as_ref(), claim_case.claim_id.as_bytes()],
         bump = claim_case.bump,
         constraint = claim_case.member_position == member_position.key() @ OmegaXProtocolError::Unauthorized,
     )]
+    #[cfg(not(feature = "quasar"))]
     pub claim_case: Box<Account<'info, ClaimCase>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_CLAIM_CASE, claim_case.health_plan.as_ref(), claim_case.claim_id.as_bytes()],
+        bump = claim_case.bump,
+        constraint = claim_case.member_position == member_position.key() @ OmegaXProtocolError::Unauthorized,
+    )]
+    pub claim_case: &'info mut Account<ClaimCaseAccountData<'info>>,
 }
 
 #[derive(Accounts)]
 pub struct AttachClaimEvidenceRef<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Account<'info, HealthPlan>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Account<'info, ClaimCase>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
+    pub claim_case: &'info mut Account<ClaimCaseAccountData<'info>>,
 }
 
 #[derive(Accounts)]
 pub struct AdjudicateClaimCase<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Account<'info, HealthPlan>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Account<'info, ClaimCase>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
+    pub claim_case: &'info mut Account<ClaimCaseAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub obligation: Option<Box<Account<'info, Obligation>>>,
+    #[cfg(feature = "quasar")]
+    pub obligation: Option<&'info mut Account<ObligationAccountData<'info>>>,
 }
 
 #[derive(Accounts)]
 pub struct SettleClaimCase<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
         bump = reserve_asset_rail.bump,
@@ -1092,28 +1211,76 @@ pub struct SettleClaimCase<'info> {
         constraint = reserve_asset_rail.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
     )]
     pub reserve_asset_rail: Box<Account<'info, ReserveAssetRail>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
+        bump = reserve_asset_rail.bump,
+        constraint = reserve_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
+        constraint = reserve_asset_rail.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
+    )]
+    pub reserve_asset_rail: &'info Account<ReserveAssetRailAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
+    pub funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), funding_line.asset_mint.as_ref()], bump = funding_line_ledger.bump)]
+    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), funding_line.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
+    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_class_ledger: Option<&'info mut Account<PoolClassLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
+    #[cfg(feature = "quasar")]
+    pub allocation_position: Option<&'info mut Account<AllocationPosition>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub allocation_ledger: Option<&'info mut Account<AllocationLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Box<Account<'info, ClaimCase>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
+    pub claim_case: &'info mut Account<ClaimCaseAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub obligation: Option<Box<Account<'info, Obligation>>>,
+    #[cfg(feature = "quasar")]
+    pub obligation: Option<&'info mut Account<ObligationAccountData<'info>>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
@@ -1122,19 +1289,36 @@ pub struct SettleClaimCase<'info> {
         constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
     )]
     pub protocol_fee_vault: Box<Account<'info, ProtocolFeeVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
+        bump = protocol_fee_vault.bump,
+        constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
+        constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
+    )]
+    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
     /// Phase 1.6 — optional pool-oracle fee vault for attesting-oracle revshare.
     /// When supplied alongside `pool_oracle_policy` and `oracle_fee_attestation`,
     /// the bps from policy is applied to the gross amount and credited to the
     /// oracle that signed the supplied attestation.
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub pool_oracle_fee_vault: Option<Box<Account<'info, PoolOracleFeeVault>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_fee_vault: Option<&'info mut Account<PoolOracleFeeVault>>,
     /// Phase 1.6 — pairs with pool_oracle_fee_vault. The handler reads
     /// `oracle_fee_bps` from policy. Required when pool_oracle_fee_vault is Some;
     /// ignored otherwise. Validated at runtime.
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_policy: Option<Box<Account<'info, PoolOraclePolicy>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_policy: Option<&'info Account<PoolOraclePolicy>>,
     /// Phase 1.6 — matching claim attestation for the oracle fee recipient.
     /// Required when pool_oracle_fee_vault and pool_oracle_policy are supplied.
+    #[cfg(not(feature = "quasar"))]
     pub oracle_fee_attestation: Option<Box<Account<'info, ClaimAttestation>>>,
+    #[cfg(feature = "quasar")]
+    pub oracle_fee_attestation: Option<&'info Account<ClaimAttestation>>,
     // PT-2026-04-27-01/02 fix: outflow CPI accounts. The handler resolves the
     // settlement recipient as `claim_case.delegate_recipient` if non-zero,
     // else `member_position.wallet`, and asserts
@@ -1143,28 +1327,64 @@ pub struct SettleClaimCase<'info> {
     #[account(
         constraint = member_position.key() == claim_case.member_position @ OmegaXProtocolError::Unauthorized,
     )]
+    #[cfg(not(feature = "quasar"))]
     pub member_position: Box<Account<'info, MemberPosition>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = member_position.key() == claim_case.member_position @ OmegaXProtocolError::Unauthorized,
+    )]
+    pub member_position: &'info Account<MemberPosition>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = asset_mint.key() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub asset_mint: &'info InterfaceAccount<Mint>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
+    )]
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
+    #[cfg(feature = "quasar")]
+    pub token_program: &'info Interface<TokenInterface>,
 }
 
 #[derive(Accounts)]
 pub struct SettleClaimCaseSelectedAsset<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), claim_case.asset_mint.as_ref()],
         bump = claim_asset_rail.bump,
@@ -1172,6 +1392,15 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
         constraint = claim_asset_rail.asset_mint == claim_case.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
     )]
     pub claim_asset_rail: Box<Account<'info, ReserveAssetRail>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), claim_case.asset_mint.as_ref()],
+        bump = claim_asset_rail.bump,
+        constraint = claim_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
+        constraint = claim_asset_rail.asset_mint == claim_case.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
+    )]
+    pub claim_asset_rail: &'info Account<ReserveAssetRailAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), payout_funding_line.asset_mint.as_ref()],
         bump = payout_asset_rail.bump,
@@ -1179,6 +1408,15 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
         constraint = payout_asset_rail.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
     )]
     pub payout_asset_rail: Box<Account<'info, ReserveAssetRail>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), payout_funding_line.asset_mint.as_ref()],
+        bump = payout_asset_rail.bump,
+        constraint = payout_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
+        constraint = payout_asset_rail.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
+    )]
+    pub payout_asset_rail: &'info Account<ReserveAssetRailAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), payout_funding_line.asset_mint.as_ref()],
@@ -1187,6 +1425,15 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
         constraint = payout_domain_asset_vault.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub payout_domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), payout_funding_line.asset_mint.as_ref()],
+        bump = payout_domain_asset_vault.bump,
+        constraint = payout_domain_asset_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveDomainMismatch,
+        constraint = payout_domain_asset_vault.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub payout_domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), payout_funding_line.asset_mint.as_ref()],
@@ -1195,12 +1442,28 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
         constraint = payout_domain_asset_ledger.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub payout_domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), payout_funding_line.asset_mint.as_ref()],
+        bump = payout_domain_asset_ledger.bump,
+        constraint = payout_domain_asset_ledger.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveDomainMismatch,
+        constraint = payout_domain_asset_ledger.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub payout_domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), payout_funding_line.line_id.as_bytes()],
         bump = payout_funding_line.bump,
     )]
     pub payout_funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), payout_funding_line.line_id.as_bytes()],
+        bump = payout_funding_line.bump,
+    )]
+    pub payout_funding_line: &'info mut Account<FundingLineAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_FUNDING_LINE_LEDGER, payout_funding_line.key().as_ref(), payout_funding_line.asset_mint.as_ref()],
@@ -1209,6 +1472,15 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
         constraint = payout_funding_line_ledger.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub payout_funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_FUNDING_LINE_LEDGER, payout_funding_line.key().as_ref(), payout_funding_line.asset_mint.as_ref()],
+        bump = payout_funding_line_ledger.bump,
+        constraint = payout_funding_line_ledger.funding_line == payout_funding_line.key() @ OmegaXProtocolError::FundingLineMismatch,
+        constraint = payout_funding_line_ledger.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub payout_funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), payout_funding_line.asset_mint.as_ref()],
@@ -1217,45 +1489,106 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
         constraint = payout_plan_reserve_ledger.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub payout_plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), payout_funding_line.asset_mint.as_ref()],
+        bump = payout_plan_reserve_ledger.bump,
+        constraint = payout_plan_reserve_ledger.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
+        constraint = payout_plan_reserve_ledger.asset_mint == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub payout_plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub payout_series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    #[cfg(feature = "quasar")]
+    pub payout_series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Box<Account<'info, ClaimCase>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
+    pub claim_case: &'info mut Account<ClaimCaseAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = member_position.key() == claim_case.member_position @ OmegaXProtocolError::Unauthorized,
     )]
     pub member_position: Box<Account<'info, MemberPosition>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = member_position.key() == claim_case.member_position @ OmegaXProtocolError::Unauthorized,
+    )]
+    pub member_position: &'info Account<MemberPosition>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = claim_asset_mint.key() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub claim_asset_mint: InterfaceAccount<'info, Mint>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = claim_asset_mint.key() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub claim_asset_mint: &'info InterfaceAccount<Mint>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = payout_asset_mint.key() == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub payout_asset_mint: InterfaceAccount<'info, Mint>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = payout_asset_mint.key() == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub payout_asset_mint: &'info InterfaceAccount<Mint>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         constraint = payout_vault_token_account.key() == payout_domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
     pub payout_vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = payout_vault_token_account.key() == payout_domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
+    )]
+    pub payout_vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
+    #[cfg(feature = "quasar")]
+    pub token_program: &'info Interface<TokenInterface>,
 }
 
 #[derive(Accounts)]
 #[instruction(args: AttestClaimCaseArgs)]
 pub struct AttestClaimCase<'info> {
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub oracle: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub oracle: &'info mut Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()],
         bump = health_plan.bump,
         constraint = health_plan.active @ OmegaXProtocolError::HealthPlanPaused,
     )]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()],
+        bump = health_plan.bump,
+        constraint = health_plan.active @ OmegaXProtocolError::HealthPlanPaused,
+    )]
+    pub health_plan: &'info Account<HealthPlanAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
         bump = oracle_profile.bump,
@@ -1264,6 +1597,16 @@ pub struct AttestClaimCase<'info> {
         constraint = oracle_profile.claimed @ OmegaXProtocolError::OracleProfileUnclaimed,
     )]
     pub oracle_profile: Box<Account<'info, OracleProfile>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
+        bump = oracle_profile.bump,
+        constraint = oracle_profile.oracle == oracle.key() @ OmegaXProtocolError::Unauthorized,
+        constraint = oracle_profile.active @ OmegaXProtocolError::OracleProfileInactive,
+        constraint = oracle_profile.claimed @ OmegaXProtocolError::OracleProfileUnclaimed,
+    )]
+    pub oracle_profile: &'info Account<OracleProfileAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_CLAIM_CASE, claim_case.health_plan.as_ref(), claim_case.claim_id.as_bytes()],
@@ -1271,6 +1614,14 @@ pub struct AttestClaimCase<'info> {
         constraint = claim_case.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
     )]
     pub claim_case: Box<Account<'info, ClaimCase>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_CLAIM_CASE, claim_case.health_plan.as_ref(), claim_case.claim_id.as_bytes()],
+        bump = claim_case.bump,
+        constraint = claim_case.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
+    )]
+    pub claim_case: &'info mut Account<ClaimCaseAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()],
         bump = funding_line.bump,
@@ -1280,17 +1631,52 @@ pub struct AttestClaimCase<'info> {
         constraint = funding_line.asset_mint == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub funding_line: Box<Account<'info, FundingLine>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()],
+        bump = funding_line.bump,
+        constraint = funding_line.key() == claim_case.funding_line @ OmegaXProtocolError::FundingLineMismatch,
+        constraint = funding_line.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
+        constraint = funding_line.policy_series == claim_case.policy_series @ OmegaXProtocolError::PolicySeriesMismatch,
+        constraint = funding_line.asset_mint == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub funding_line: &'info Account<FundingLineAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
         bump = outcome_schema.bump,
     )]
     pub outcome_schema: Box<Account<'info, OutcomeSchema>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
+        bump = outcome_schema.bump,
+    )]
+    pub outcome_schema: &'info Account<OutcomeSchemaAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     pub liquidity_pool: Option<Box<Account<'info, LiquidityPool>>>,
+    #[cfg(feature = "quasar")]
+    pub liquidity_pool: Option<&'info Account<LiquidityPoolAccountData<'info>>>,
+    #[cfg(not(feature = "quasar"))]
     pub capital_class: Option<Box<Account<'info, CapitalClass>>>,
+    #[cfg(feature = "quasar")]
+    pub capital_class: Option<&'info Account<CapitalClassAccountData<'info>>>,
+    #[cfg(not(feature = "quasar"))]
     pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
+    #[cfg(feature = "quasar")]
+    pub allocation_position: Option<&'info Account<AllocationPosition>>,
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_approval: Option<Box<Account<'info, PoolOracleApproval>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_approval: Option<&'info Account<PoolOracleApproval>>,
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_permission_set: Option<Box<Account<'info, PoolOraclePermissionSet>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_permission_set: Option<&'info Account<PoolOraclePermissionSet>>,
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_policy: Option<Box<Account<'info, PoolOraclePolicy>>>,
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_policy: Option<&'info Account<PoolOraclePolicy>>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
