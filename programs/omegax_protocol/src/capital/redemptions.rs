@@ -4,6 +4,7 @@
 
 use super::*;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn request_redemption(
     ctx: Context<RequestRedemption>,
     args: RequestRedemptionArgs,
@@ -74,6 +75,7 @@ pub(crate) fn request_redemption(
 
     Ok(())
 }
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn process_redemption_queue(
     ctx: Context<ProcessRedemptionQueue>,
     args: ProcessRedemptionQueueArgs,
@@ -212,37 +214,96 @@ pub(crate) fn process_redemption_queue(
 
 #[derive(Accounts)]
 pub struct RequestRedemption<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub owner: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub owner: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Account<'info, LiquidityPool>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Account<'info, CapitalClass>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
+    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Account<'info, PoolClassLedger>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
+    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Account<'info, DomainAssetLedger>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), owner.key().as_ref()], bump = lp_position.bump, constraint = lp_position.owner == owner.key() @ OmegaXProtocolError::Unauthorized)]
     pub lp_position: Account<'info, LPPosition>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), owner.key().as_ref()], bump = lp_position.bump, constraint = lp_position.owner == owner.key() @ OmegaXProtocolError::Unauthorized)]
+    pub lp_position: &'info mut Account<LPPosition>,
 }
 #[derive(Accounts)]
 pub struct ProcessRedemptionQueue<'info> {
+    #[cfg(not(feature = "quasar"))]
     pub authority: Signer<'info>,
+    #[cfg(feature = "quasar")]
+    pub authority: &'info Signer,
+    #[cfg(not(feature = "quasar"))]
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_vault.bump)]
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Box<Account<'info, LiquidityPool>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    pub liquidity_pool: &'info mut Account<LiquidityPoolAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Box<Account<'info, CapitalClass>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
+    pub capital_class: &'info mut Account<CapitalClassAccountData<'info>>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
+    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), lp_position.owner.as_ref()], bump = lp_position.bump)]
     pub lp_position: Box<Account<'info, LPPosition>>,
+    #[cfg(feature = "quasar")]
+    #[account(seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), lp_position.owner.as_ref()], bump = lp_position.bump)]
+    pub lp_position: &'info mut Account<LPPosition>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
@@ -251,18 +312,44 @@ pub struct ProcessRedemptionQueue<'info> {
         constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
     )]
     pub pool_treasury_vault: Box<Account<'info, PoolTreasuryVault>>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
+        bump = pool_treasury_vault.bump,
+        constraint = pool_treasury_vault.liquidity_pool == liquidity_pool.key() @ OmegaXProtocolError::FeeVaultMismatch,
+        constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
+    )]
+    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
     // PT-2026-04-27-01/02 fix: outflow CPI accounts. Recipient must be the LP
     // position's owner — there is no delegate-recipient pattern for redemptions.
+    #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = asset_mint.key() == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::AssetMintMismatch,
+    )]
+    pub asset_mint: &'info InterfaceAccount<Mint>,
+    #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
         constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    #[account(
+        constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
+    )]
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg(feature = "quasar")]
+    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
+    #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
+    #[cfg(feature = "quasar")]
+    pub token_program: &'info Interface<TokenInterface>,
 }

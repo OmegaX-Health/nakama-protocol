@@ -20,13 +20,19 @@ mod liquidity_pool;
 mod lp_positions;
 mod redemptions;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) use allocations::{
     allocate_capital, create_allocation_position, deallocate_capital, update_allocation_caps,
 };
+#[cfg(not(feature = "quasar"))]
 pub(crate) use classes::{create_capital_class, update_capital_class_controls};
+#[cfg(not(feature = "quasar"))]
 pub(crate) use impairments::mark_impairment;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use liquidity_pool::create_liquidity_pool;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use lp_positions::{deposit_into_capital_class, update_lp_position_credentialing};
+#[cfg(not(feature = "quasar"))]
 pub(crate) use redemptions::{process_redemption_queue, request_redemption};
 
 pub use allocations::{

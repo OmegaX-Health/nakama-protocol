@@ -49,6 +49,12 @@ Completed setup:
   structs, while Quasar resolves them to the borrowed dynamic account views,
   letting shared helpers and most account wrappers carry the required lifetime
   without changing default-path behavior.
+- Capital-market account contexts now have feature-gated Quasar reference
+  wrappers across liquidity pools, classes, allocations, impairments, LP
+  positions, and redemptions. Their existing Anchor handler bodies are gated to
+  the Anchor path until the Quasar facade ports real handlers, and the Quasar
+  SPL seam maps the existing `TokenAccount` spelling to the zero-copy
+  `quasar-spl` token marker.
 
 The active Quasar compile inventory is:
 
@@ -57,11 +63,13 @@ npm run quasar:check
 ```
 
 As of this migration checkpoint, that command reaches `omegax_protocol` under
-Rust 1.89 and then fails on source-port work. The dynamic account lifetime
-bucket is reduced from 189 diagnostics to 173 by moving shared helpers and
-Quasar-only reference fields onto account-data aliases; the remaining lifetime
-errors are inside still-Anchor-shaped `#[derive(Accounts)]` contexts that
-Quasar must parse as reference-wrapper contexts. The failure buckets are:
+Rust 1.89 and then fails on source-port work with 3511 compiler errors. The
+dynamic account lifetime bucket is reduced from 189 diagnostics to 135 by
+moving shared helpers, Quasar-only reference fields, and the capital-market
+account contexts onto account-data aliases. The capital domain no longer has
+missing-lifetime diagnostics; its remaining Quasar failures are instruction
+argument `WriteBytes`/POD, PDA seed expression, and SPL CPI surface work. The
+remaining cross-repo failure buckets are:
 
 - instruction handlers: the Quasar facade is declared and dispatches fail
   closed, but each public handler still needs its real body ported from Anchor
@@ -71,6 +79,7 @@ Quasar must parse as reference-wrapper contexts. The failure buckets are:
   `&'info Signer`, `&'info mut Account<T>`, `&'info Program<System>`, and
   `&'info InterfaceAccount<T>`, not Anchor `Signer<'info>`,
   `Account<'info, T>`, `Program<'info, T>`, or `Box<Account<'info, T>>`.
+  Capital is the first completed domain for this wrapper shape.
 - instruction args: Quasar account-context `#[instruction(...)]` attributes
   expect field lists such as `#[instruction(domain_id: String<u32, 32>, ...)]`,
   not Anchor's `#[instruction(args: CreateReserveDomainArgs)]`. The public

@@ -54,4 +54,4 @@ macro_rules! require_keys_neq {
 pub(crate) use require_keys_neq;
 
 #[cfg(feature = "quasar")]
-pub use quasar_spl::{InterfaceAccount, Mint, TokenAccountState as TokenAccount, TokenInterface};
+pub use quasar_spl::{InterfaceAccount, Mint, Token as TokenAccount, TokenInterface};
