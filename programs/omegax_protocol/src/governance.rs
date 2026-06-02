@@ -17,6 +17,8 @@ use crate::types::*;
 use crate::OmegaxProtocol;
 #[cfg(not(feature = "quasar"))]
 use anchor_lang::ProgramData;
+#[cfg(feature = "quasar")]
+use quasar_lang::sysvars::Sysvar;
 
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn initialize_protocol_governance(
@@ -151,6 +153,183 @@ pub(crate) fn cancel_protocol_governance_authority_transfer(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_governance(authority: &Pubkey, governance: &ProtocolGovernance) -> Result<()> {
+    require_keys_eq!(
+        *authority,
+        governance.governance_authority,
+        OmegaXProtocolError::Unauthorized
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn initialize_protocol_governance<'info>(
+    ctx: &mut Ctx<'info, InitializeProtocolGovernance<'info>>,
+    protocol_fee_bps: u16,
+    emergency_pause: bool,
+) -> Result<()> {
+    require!(
+        protocol_fee_bps <= MAX_CONFIGURED_FEE_BPS,
+        OmegaXProtocolError::InvalidBps
+    );
+
+    ctx.accounts.protocol_governance.set_inner(
+        *ctx.accounts.governance_authority.address(),
+        ZERO_PUBKEY,
+        0,
+        0,
+        protocol_fee_bps,
+        emergency_pause,
+        0,
+        ctx.bumps.protocol_governance,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn set_protocol_emergency_pause<'info>(
+    ctx: &mut Ctx<'info, SetProtocolEmergencyPause<'info>>,
+    emergency_pause: bool,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    let governance = &mut ctx.accounts.protocol_governance;
+    require_quasar_governance(&authority, governance)?;
+    let governance_authority = governance.governance_authority;
+    let pending_governance_authority = governance.pending_governance_authority;
+    let pending_governance_proposed_at = governance.pending_governance_proposed_at.get();
+    let pending_governance_expires_at = governance.pending_governance_expires_at.get();
+    let protocol_fee_bps = governance.protocol_fee_bps.get();
+    let audit_nonce = governance.audit_nonce.get().saturating_add(1);
+    let bump = governance.bump;
+
+    governance.set_inner(
+        governance_authority,
+        pending_governance_authority,
+        pending_governance_proposed_at,
+        pending_governance_expires_at,
+        protocol_fee_bps,
+        emergency_pause,
+        audit_nonce,
+        bump,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn rotate_protocol_governance_authority<'info>(
+    ctx: &mut Ctx<'info, RotateProtocolGovernanceAuthority<'info>>,
+    new_governance_authority: Pubkey,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    let governance = &mut ctx.accounts.protocol_governance;
+    require_quasar_governance(&authority, governance)?;
+    require!(
+        new_governance_authority != ZERO_PUBKEY,
+        OmegaXProtocolError::InvalidGovernanceAuthority
+    );
+    require!(
+        new_governance_authority != governance.governance_authority,
+        OmegaXProtocolError::InvalidGovernanceAuthority
+    );
+
+    let now_ts = Clock::get()?.unix_timestamp.get();
+    let expires_at_ts = now_ts
+        .checked_add(GOVERNANCE_AUTHORITY_TRANSFER_WINDOW_SECONDS)
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    let governance_authority = governance.governance_authority;
+    let protocol_fee_bps = governance.protocol_fee_bps.get();
+    let emergency_pause = governance.emergency_pause.get();
+    let audit_nonce = governance.audit_nonce.get().saturating_add(1);
+    let bump = governance.bump;
+
+    governance.set_inner(
+        governance_authority,
+        new_governance_authority,
+        now_ts,
+        expires_at_ts,
+        protocol_fee_bps,
+        emergency_pause,
+        audit_nonce,
+        bump,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn accept_protocol_governance_authority<'info>(
+    ctx: &mut Ctx<'info, AcceptProtocolGovernanceAuthority<'info>>,
+) -> Result<()> {
+    let accepting_authority = *ctx.accounts.pending_authority.address();
+    let governance = &mut ctx.accounts.protocol_governance;
+    let pending_governance_authority = governance.pending_governance_authority;
+    require!(
+        pending_governance_authority != ZERO_PUBKEY,
+        OmegaXProtocolError::GovernanceAuthorityTransferMissing
+    );
+    require_keys_eq!(
+        accepting_authority,
+        pending_governance_authority,
+        OmegaXProtocolError::InvalidGovernanceAuthority
+    );
+    require!(
+        Clock::get()?.unix_timestamp.get() <= governance.pending_governance_expires_at.get(),
+        OmegaXProtocolError::GovernanceAuthorityTransferExpired
+    );
+    let protocol_fee_bps = governance.protocol_fee_bps.get();
+    let emergency_pause = governance.emergency_pause.get();
+    let audit_nonce = governance.audit_nonce.get().saturating_add(1);
+    let bump = governance.bump;
+
+    governance.set_inner(
+        pending_governance_authority,
+        ZERO_PUBKEY,
+        0,
+        0,
+        protocol_fee_bps,
+        emergency_pause,
+        audit_nonce,
+        bump,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn cancel_protocol_governance_authority_transfer<'info>(
+    ctx: &mut Ctx<'info, CancelProtocolGovernanceAuthorityTransfer<'info>>,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    let governance = &mut ctx.accounts.protocol_governance;
+    require_quasar_governance(&authority, governance)?;
+    require!(
+        governance.pending_governance_authority != ZERO_PUBKEY,
+        OmegaXProtocolError::GovernanceAuthorityTransferMissing
+    );
+    let governance_authority = governance.governance_authority;
+    let protocol_fee_bps = governance.protocol_fee_bps.get();
+    let emergency_pause = governance.emergency_pause.get();
+    let audit_nonce = governance.audit_nonce.get().saturating_add(1);
+    let bump = governance.bump;
+
+    governance.set_inner(
+        governance_authority,
+        ZERO_PUBKEY,
+        0,
+        0,
+        protocol_fee_bps,
+        emergency_pause,
+        audit_nonce,
+        bump,
+    );
+
+    Ok(())
+}
+
 #[derive(Accounts)]
 pub struct InitializeProtocolGovernance<'info> {
     #[cfg(not(feature = "quasar"))]
@@ -182,7 +361,7 @@ pub struct InitializeProtocolGovernance<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = program.programdata_address()? == Some(program_data.key()) @ OmegaXProtocolError::Unauthorized
@@ -213,8 +392,8 @@ pub struct SetProtocolEmergencyPause<'info> {
     #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
 }
 
 #[derive(Accounts)]
@@ -227,8 +406,8 @@ pub struct RotateProtocolGovernanceAuthority<'info> {
     #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
 }
 
 #[derive(Accounts)]
@@ -241,8 +420,8 @@ pub struct AcceptProtocolGovernanceAuthority<'info> {
     #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
 }
 
 #[derive(Accounts)]
@@ -255,6 +434,6 @@ pub struct CancelProtocolGovernanceAuthorityTransfer<'info> {
     #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[cfg(feature = "quasar")]
-    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
-    pub protocol_governance: &'info Account<ProtocolGovernance>,
+    #[account(mut, seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
 }
