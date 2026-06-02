@@ -103,23 +103,60 @@ pub struct CreateCapitalClass<'info> {
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[account(seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Account<'info, LiquidityPool>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + CapitalClass::INIT_SPACE,
-        seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), args.class_id.as_bytes()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + CapitalClass::INIT_SPACE,
+            seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), args.class_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub capital_class: Account<'info, CapitalClass>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + PoolClassLedger::INIT_SPACE,
-        seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
-        bump
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + CapitalClass::INIT_SPACE,
+            seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), args.class_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(feature = "quasar")]
+    pub capital_class: &'info mut Account<CapitalClass>,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + PoolClassLedger::INIT_SPACE,
+            seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(not(feature = "quasar"))]
     pub pool_class_ledger: Account<'info, PoolClassLedger>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + PoolClassLedger::INIT_SPACE,
+            seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 #[derive(Accounts)]
 pub struct UpdateCapitalClassControls<'info> {

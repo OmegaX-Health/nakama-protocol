@@ -145,14 +145,31 @@ pub(crate) fn cancel_protocol_governance_authority_transfer(
 pub struct InitializeProtocolGovernance<'info> {
     #[account(mut)]
     pub governance_authority: Signer<'info>,
-    #[account(
-        init,
-        payer = governance_authority,
-        space = 8 + ProtocolGovernance::INIT_SPACE,
-        seeds = [SEED_PROTOCOL_GOVERNANCE],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = governance_authority,
+            space = 8 + ProtocolGovernance::INIT_SPACE,
+            seeds = [SEED_PROTOCOL_GOVERNANCE],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = governance_authority,
+            space = 8 + ProtocolGovernance::INIT_SPACE,
+            seeds = [SEED_PROTOCOL_GOVERNANCE],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub protocol_governance: &'info mut Account<ProtocolGovernance>,
     #[account(
         constraint = program.programdata_address()? == Some(program_data.key()) @ OmegaXProtocolError::Unauthorized
     )]
@@ -161,7 +178,10 @@ pub struct InitializeProtocolGovernance<'info> {
         constraint = program_data.upgrade_authority_address == Some(governance_authority.key()) @ OmegaXProtocolError::Unauthorized
     )]
     pub program_data: Account<'info, ProgramData>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]

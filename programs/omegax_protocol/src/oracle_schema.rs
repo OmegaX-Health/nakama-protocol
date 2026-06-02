@@ -327,15 +327,35 @@ pub(crate) fn close_outcome_schema(ctx: Context<CloseOutcomeSchema>) -> Result<(
 pub struct RegisterOracle<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
-    #[account(
-        init,
-        payer = admin,
-        space = 8 + OracleProfile::INIT_SPACE,
-        seeds = [SEED_ORACLE_PROFILE, args.oracle.as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = admin,
+            space = 8 + OracleProfile::INIT_SPACE,
+            seeds = [SEED_ORACLE_PROFILE, args.oracle.as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub oracle_profile: Account<'info, OracleProfile>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = admin,
+            space = 8 + OracleProfile::INIT_SPACE,
+            seeds = [SEED_ORACLE_PROFILE, args.oracle.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub oracle_profile: &'info mut Account<OracleProfile>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -378,15 +398,35 @@ pub struct SetPoolOracle<'info> {
         bump = oracle_profile.bump
     )]
     pub oracle_profile: Account<'info, OracleProfile>,
-    #[account(
-        init_if_needed,
-        payer = authority,
-        space = 8 + PoolOracleApproval::INIT_SPACE,
-        seeds = [SEED_POOL_ORACLE_APPROVAL, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = authority,
+            space = 8 + PoolOracleApproval::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_APPROVAL, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_approval: Account<'info, PoolOracleApproval>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = authority,
+            space = 8 + PoolOracleApproval::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_APPROVAL, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_approval: &'info mut Account<PoolOracleApproval>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -410,15 +450,35 @@ pub struct SetPoolOraclePermissions<'info> {
         bump = pool_oracle_approval.bump
     )]
     pub pool_oracle_approval: Account<'info, PoolOracleApproval>,
-    #[account(
-        init_if_needed,
-        payer = authority,
-        space = 8 + PoolOraclePermissionSet::INIT_SPACE,
-        seeds = [SEED_POOL_ORACLE_PERMISSION_SET, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = authority,
+            space = 8 + PoolOraclePermissionSet::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_PERMISSION_SET, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_permission_set: Account<'info, PoolOraclePermissionSet>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = authority,
+            space = 8 + PoolOraclePermissionSet::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_PERMISSION_SET, liquidity_pool.key().as_ref(), oracle_profile.oracle.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_permission_set: &'info mut Account<PoolOraclePermissionSet>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -432,15 +492,35 @@ pub struct SetPoolOraclePolicy<'info> {
         bump = liquidity_pool.bump
     )]
     pub liquidity_pool: Account<'info, LiquidityPool>,
-    #[account(
-        init_if_needed,
-        payer = authority,
-        space = 8 + PoolOraclePolicy::INIT_SPACE,
-        seeds = [SEED_POOL_ORACLE_POLICY, liquidity_pool.key().as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = authority,
+            space = 8 + PoolOraclePolicy::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_POLICY, liquidity_pool.key().as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_policy: Account<'info, PoolOraclePolicy>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = authority,
+            space = 8 + PoolOraclePolicy::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_POLICY, liquidity_pool.key().as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_policy: &'info mut Account<PoolOraclePolicy>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -448,23 +528,60 @@ pub struct SetPoolOraclePolicy<'info> {
 pub struct RegisterOutcomeSchema<'info> {
     #[account(mut)]
     pub publisher: Signer<'info>,
-    #[account(
-        init,
-        payer = publisher,
-        space = 8 + OutcomeSchema::INIT_SPACE,
-        seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = publisher,
+            space = 8 + OutcomeSchema::INIT_SPACE,
+            seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub outcome_schema: Account<'info, OutcomeSchema>,
-    #[account(
-        init,
-        payer = publisher,
-        space = 8 + SchemaDependencyLedger::INIT_SPACE,
-        seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
-        bump
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = publisher,
+            space = 8 + OutcomeSchema::INIT_SPACE,
+            seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
+            bump
+        )
     )]
+    #[cfg(feature = "quasar")]
+    pub outcome_schema: &'info mut Account<OutcomeSchema>,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = publisher,
+            space = 8 + SchemaDependencyLedger::INIT_SPACE,
+            seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(not(feature = "quasar"))]
     pub schema_dependency_ledger: Account<'info, SchemaDependencyLedger>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = publisher,
+            space = 8 + SchemaDependencyLedger::INIT_SPACE,
+            seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub schema_dependency_ledger: &'info mut Account<SchemaDependencyLedger>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -492,15 +609,35 @@ pub struct BackfillSchemaDependencyLedger<'info> {
         bump = outcome_schema.bump
     )]
     pub outcome_schema: Account<'info, OutcomeSchema>,
-    #[account(
-        init_if_needed,
-        payer = governance_authority,
-        space = 8 + SchemaDependencyLedger::INIT_SPACE,
-        seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = governance_authority,
+            space = 8 + SchemaDependencyLedger::INIT_SPACE,
+            seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub schema_dependency_ledger: Account<'info, SchemaDependencyLedger>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = governance_authority,
+            space = 8 + SchemaDependencyLedger::INIT_SPACE,
+            seeds = [SEED_SCHEMA_DEPENDENCY_LEDGER, args.schema_key_hash.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub schema_dependency_ledger: &'info mut Account<SchemaDependencyLedger>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]

@@ -112,32 +112,86 @@ pub struct OpenFundingLine<'info> {
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), args.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + FundingLine::INIT_SPACE,
-        seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), args.line_id.as_bytes()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + FundingLine::INIT_SPACE,
+            seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), args.line_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub funding_line: Box<Account<'info, FundingLine>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + FundingLineLedger::INIT_SPACE,
-        seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), args.asset_mint.as_ref()],
-        bump
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + FundingLine::INIT_SPACE,
+            seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), args.line_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(feature = "quasar")]
+    pub funding_line: &'info mut Account<FundingLine>,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + FundingLineLedger::INIT_SPACE,
+            seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(not(feature = "quasar"))]
     pub funding_line_ledger: Box<Account<'info, FundingLineLedger>>,
-    #[account(
-        init_if_needed,
-        payer = authority,
-        space = 8 + PlanReserveLedger::INIT_SPACE,
-        seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), args.asset_mint.as_ref()],
-        bump
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + FundingLineLedger::INIT_SPACE,
+            seeds = [SEED_FUNDING_LINE_LEDGER, funding_line.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
     )]
+    #[cfg(feature = "quasar")]
+    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = authority,
+            space = 8 + PlanReserveLedger::INIT_SPACE,
+            seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(not(feature = "quasar"))]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = authority,
+            space = 8 + PlanReserveLedger::INIT_SPACE,
+            seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     pub policy_series: Option<Box<Account<'info, PolicySeries>>>,
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }

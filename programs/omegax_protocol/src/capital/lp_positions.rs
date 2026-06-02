@@ -150,15 +150,35 @@ pub struct UpdateLpPositionCredentialing<'info> {
     pub liquidity_pool: Account<'info, LiquidityPool>,
     #[account(seeds = [SEED_CAPITAL_CLASS, liquidity_pool.key().as_ref(), capital_class.class_id.as_bytes()], bump = capital_class.bump)]
     pub capital_class: Account<'info, CapitalClass>,
-    #[account(
-        init_if_needed,
-        payer = authority,
-        space = 8 + LPPosition::INIT_SPACE,
-        seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), args.owner.as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = authority,
+            space = 8 + LPPosition::INIT_SPACE,
+            seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), args.owner.as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub lp_position: Account<'info, LPPosition>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = authority,
+            space = 8 + LPPosition::INIT_SPACE,
+            seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), args.owner.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub lp_position: &'info mut Account<LPPosition>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 #[derive(Accounts)]
 pub struct DepositIntoCapitalClass<'info> {
@@ -176,14 +196,31 @@ pub struct DepositIntoCapitalClass<'info> {
     pub capital_class: Box<Account<'info, CapitalClass>>,
     #[account(mut, seeds = [SEED_POOL_CLASS_LEDGER, capital_class.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = pool_class_ledger.bump)]
     pub pool_class_ledger: Box<Account<'info, PoolClassLedger>>,
-    #[account(
-        init_if_needed,
-        payer = owner,
-        space = 8 + LPPosition::INIT_SPACE,
-        seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), owner.key().as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = owner,
+            space = 8 + LPPosition::INIT_SPACE,
+            seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), owner.key().as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub lp_position: Box<Account<'info, LPPosition>>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = owner,
+            space = 8 + LPPosition::INIT_SPACE,
+            seeds = [SEED_LP_POSITION, capital_class.key().as_ref(), owner.key().as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub lp_position: &'info mut Account<LPPosition>,
     #[account(
         mut,
         seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
@@ -198,5 +235,8 @@ pub struct DepositIntoCapitalClass<'info> {
     #[account(mut)]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     pub token_program: Interface<'info, TokenInterface>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }

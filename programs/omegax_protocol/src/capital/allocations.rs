@@ -228,23 +228,60 @@ pub struct CreateAllocationPosition<'info> {
     pub health_plan: Box<Account<'info, HealthPlan>>,
     #[account(seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + AllocationPosition::INIT_SPACE,
-        seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + AllocationPosition::INIT_SPACE,
+            seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub allocation_position: Box<Account<'info, AllocationPosition>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + AllocationLedger::INIT_SPACE,
-        seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()],
-        bump
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + AllocationPosition::INIT_SPACE,
+            seeds = [SEED_ALLOCATION_POSITION, capital_class.key().as_ref(), funding_line.key().as_ref()],
+            bump
+        )
     )]
+    #[cfg(feature = "quasar")]
+    pub allocation_position: &'info mut Account<AllocationPosition>,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + AllocationLedger::INIT_SPACE,
+            seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(not(feature = "quasar"))]
     pub allocation_ledger: Box<Account<'info, AllocationLedger>>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + AllocationLedger::INIT_SPACE,
+            seeds = [SEED_ALLOCATION_LEDGER, allocation_position.key().as_ref(), funding_line.asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub allocation_ledger: &'info mut Account<AllocationLedger>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 #[derive(Accounts)]
 pub struct UpdateAllocationCaps<'info> {

@@ -15,6 +15,8 @@ type ProtocolIdl = {
 
 const idl = JSON.parse(readFileSync("idl/omegax_protocol.json", "utf8")) as ProtocolIdl;
 const source = readFileSync("programs/omegax_protocol/src/quasar_discriminators.rs", "utf8");
+const stateSource = readFileSync("programs/omegax_protocol/src/state.rs", "utf8");
+const eventsSource = readFileSync("programs/omegax_protocol/src/events.rs", "utf8");
 
 function constName(prefix: string, name: string): string {
   return `${prefix}_${name
@@ -67,6 +69,26 @@ test("Quasar account discriminators match the checked-in protocol IDL", () => {
   }
 });
 
+test("Quasar account attributes match the checked-in protocol IDL", () => {
+  const accounts = idl.accounts ?? [];
+  const pattern =
+    /#\[cfg_attr\(feature = "quasar", account\(discriminator = \[([0-9,\s]+)\]\)\)\]\s+#\[derive\(InitSpace\)\]\s+pub struct ([A-Za-z0-9_]+)/g;
+  const attributes = new Map<string, number[]>();
+
+  for (const match of stateSource.matchAll(pattern)) {
+    attributes.set(
+      match[2],
+      match[1].split(",").map((part) => Number.parseInt(part.trim(), 10)),
+    );
+  }
+
+  assert.equal(attributes.size, accounts.length);
+
+  for (const account of accounts) {
+    assert.deepEqual(attributes.get(account.name), account.discriminator, account.name);
+  }
+});
+
 test("Quasar event discriminators match the checked-in protocol IDL", () => {
   const constants = parseConstants("event");
   const events = idl.events ?? [];
@@ -78,5 +100,25 @@ test("Quasar event discriminators match the checked-in protocol IDL", () => {
       event.discriminator,
       event.name,
     );
+  }
+});
+
+test("Quasar event attributes match the checked-in protocol IDL", () => {
+  const events = idl.events ?? [];
+  const pattern =
+    /#\[cfg\(feature = "quasar"\)\]\s+#\[event\(discriminator = \[([0-9,\s]+)\]\)\]\s+pub struct ([A-Za-z0-9_]+)/g;
+  const attributes = new Map<string, number[]>();
+
+  for (const match of eventsSource.matchAll(pattern)) {
+    attributes.set(
+      match[2],
+      match[1].split(",").map((part) => Number.parseInt(part.trim(), 10)),
+    );
+  }
+
+  assert.equal(attributes.size, events.length);
+
+  for (const event of events) {
+    assert.deepEqual(attributes.get(event.name), event.discriminator, event.name);
   }
 });

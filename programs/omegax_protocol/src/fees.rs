@@ -434,15 +434,35 @@ pub struct InitProtocolFeeVault<'info> {
         constraint = domain_asset_vault.asset_mint == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub domain_asset_vault: Option<Box<Account<'info, DomainAssetVault>>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + ProtocolFeeVault::INIT_SPACE,
-        seeds = [SEED_PROTOCOL_FEE_VAULT, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-        bump,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + ProtocolFeeVault::INIT_SPACE,
+            seeds = [SEED_PROTOCOL_FEE_VAULT, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub protocol_fee_vault: Account<'info, ProtocolFeeVault>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + ProtocolFeeVault::INIT_SPACE,
+            seeds = [SEED_PROTOCOL_FEE_VAULT, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -465,15 +485,35 @@ pub struct InitPoolTreasuryVault<'info> {
         constraint = domain_asset_vault.asset_mint == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub domain_asset_vault: Option<Box<Account<'info, DomainAssetVault>>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + PoolTreasuryVault::INIT_SPACE,
-        seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), args.asset_mint.as_ref()],
-        bump,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + PoolTreasuryVault::INIT_SPACE,
+            seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub pool_treasury_vault: Account<'info, PoolTreasuryVault>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + PoolTreasuryVault::INIT_SPACE,
+            seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -511,15 +551,35 @@ pub struct InitPoolOracleFeeVault<'info> {
         constraint = domain_asset_vault.asset_mint == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub domain_asset_vault: Option<Box<Account<'info, DomainAssetVault>>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + PoolOracleFeeVault::INIT_SPACE,
-        seeds = [SEED_POOL_ORACLE_FEE_VAULT, liquidity_pool.key().as_ref(), args.oracle.as_ref(), args.asset_mint.as_ref()],
-        bump,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + PoolOracleFeeVault::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_FEE_VAULT, liquidity_pool.key().as_ref(), args.oracle.as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub pool_oracle_fee_vault: Account<'info, PoolOracleFeeVault>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + PoolOracleFeeVault::INIT_SPACE,
+            seeds = [SEED_POOL_ORACLE_FEE_VAULT, liquidity_pool.key().as_ref(), args.oracle.as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub pool_oracle_fee_vault: &'info mut Account<PoolOracleFeeVault>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -580,7 +640,10 @@ pub struct WithdrawProtocolFeeSol<'info> {
     pub protocol_fee_vault: Box<Account<'info, ProtocolFeeVault>>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -647,7 +710,10 @@ pub struct WithdrawPoolTreasurySol<'info> {
     pub pool_treasury_vault: Box<Account<'info, PoolTreasuryVault>>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -726,5 +792,8 @@ pub struct WithdrawPoolOracleFeeSol<'info> {
     pub pool_oracle_fee_vault: Box<Account<'info, PoolOracleFeeVault>>,
     #[account(mut)]
     pub recipient: SystemAccount<'info>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }

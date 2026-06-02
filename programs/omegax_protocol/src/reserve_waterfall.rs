@@ -359,15 +359,35 @@ pub struct ConfigureReserveAssetRail<'info> {
         bump = reserve_domain.bump,
     )]
     pub reserve_domain: Box<Account<'info, ReserveDomain>>,
-    #[account(
-        init_if_needed,
-        payer = authority,
-        space = 8 + ReserveAssetRail::INIT_SPACE,
-        seeds = [SEED_RESERVE_ASSET_RAIL, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-        bump,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init_if_needed,
+            payer = authority,
+            space = 8 + ReserveAssetRail::INIT_SPACE,
+            seeds = [SEED_RESERVE_ASSET_RAIL, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub reserve_asset_rail: Box<Account<'info, ReserveAssetRail>>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init_if_needed,
+            payer = authority,
+            space = 8 + ReserveAssetRail::INIT_SPACE,
+            seeds = [SEED_RESERVE_ASSET_RAIL, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub reserve_asset_rail: &'info mut Account<ReserveAssetRail>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]

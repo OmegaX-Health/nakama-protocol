@@ -66,13 +66,33 @@ pub struct CreateLiquidityPool<'info> {
     pub reserve_domain: Account<'info, ReserveDomain>,
     #[account(seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.deposit_asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Account<'info, DomainAssetVault>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + LiquidityPool::INIT_SPACE,
-        seeds = [SEED_LIQUIDITY_POOL, reserve_domain.key().as_ref(), args.pool_id.as_bytes()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + LiquidityPool::INIT_SPACE,
+            seeds = [SEED_LIQUIDITY_POOL, reserve_domain.key().as_ref(), args.pool_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub liquidity_pool: Account<'info, LiquidityPool>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + LiquidityPool::INIT_SPACE,
+            seeds = [SEED_LIQUIDITY_POOL, reserve_domain.key().as_ref(), args.pool_id.as_bytes()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub liquidity_pool: &'info mut Account<LiquidityPool>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }

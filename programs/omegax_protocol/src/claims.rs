@@ -997,15 +997,35 @@ pub struct OpenClaimCase<'info> {
         constraint = funding_line.status == FUNDING_LINE_STATUS_OPEN @ OmegaXProtocolError::FundingLineMismatch,
     )]
     pub funding_line: Box<Account<'info, FundingLine>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + ClaimCase::INIT_SPACE,
-        seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), args.claim_id.as_bytes()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + ClaimCase::INIT_SPACE,
+            seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), args.claim_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub claim_case: Box<Account<'info, ClaimCase>>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + ClaimCase::INIT_SPACE,
+            seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), args.claim_id.as_bytes()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub claim_case: &'info mut Account<ClaimCase>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -1271,13 +1291,33 @@ pub struct AttestClaimCase<'info> {
     pub pool_oracle_approval: Option<Box<Account<'info, PoolOracleApproval>>>,
     pub pool_oracle_permission_set: Option<Box<Account<'info, PoolOraclePermissionSet>>>,
     pub pool_oracle_policy: Option<Box<Account<'info, PoolOraclePolicy>>>,
-    #[account(
-        init,
-        payer = oracle,
-        space = 8 + ClaimAttestation::INIT_SPACE,
-        seeds = [SEED_CLAIM_ATTESTATION, claim_case.key().as_ref(), oracle.key().as_ref()],
-        bump,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = oracle,
+            space = 8 + ClaimAttestation::INIT_SPACE,
+            seeds = [SEED_CLAIM_ATTESTATION, claim_case.key().as_ref(), oracle.key().as_ref()],
+            bump,
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub claim_attestation: Box<Account<'info, ClaimAttestation>>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = oracle,
+            space = 8 + ClaimAttestation::INIT_SPACE,
+            seeds = [SEED_CLAIM_ATTESTATION, claim_case.key().as_ref(), oracle.key().as_ref()],
+            bump,
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub claim_attestation: &'info mut Account<ClaimAttestation>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }

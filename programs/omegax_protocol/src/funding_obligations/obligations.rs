@@ -130,13 +130,33 @@ pub struct CreateObligation<'info> {
     pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
     #[account(mut)]
     pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + Obligation::INIT_SPACE,
-        seeds = [SEED_OBLIGATION, funding_line.key().as_ref(), args.obligation_id.as_bytes()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + Obligation::INIT_SPACE,
+            seeds = [SEED_OBLIGATION, funding_line.key().as_ref(), args.obligation_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub obligation: Box<Account<'info, Obligation>>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + Obligation::INIT_SPACE,
+            seeds = [SEED_OBLIGATION, funding_line.key().as_ref(), args.obligation_id.as_bytes()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub obligation: &'info mut Account<Obligation>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }

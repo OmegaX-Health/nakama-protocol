@@ -122,15 +122,35 @@ pub struct CreateReserveDomain<'info> {
     pub authority: Signer<'info>,
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Account<'info, ProtocolGovernance>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + ReserveDomain::INIT_SPACE,
-        seeds = [SEED_RESERVE_DOMAIN, args.domain_id.as_bytes()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + ReserveDomain::INIT_SPACE,
+            seeds = [SEED_RESERVE_DOMAIN, args.domain_id.as_bytes()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub reserve_domain: Account<'info, ReserveDomain>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + ReserveDomain::INIT_SPACE,
+            seeds = [SEED_RESERVE_DOMAIN, args.domain_id.as_bytes()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub reserve_domain: &'info mut Account<ReserveDomain>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
 
 #[derive(Accounts)]
@@ -151,22 +171,56 @@ pub struct CreateDomainAssetVault<'info> {
     pub protocol_governance: Account<'info, ProtocolGovernance>,
     #[account(mut, seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
     pub reserve_domain: Account<'info, ReserveDomain>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + DomainAssetVault::INIT_SPACE,
-        seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-        bump
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + DomainAssetVault::INIT_SPACE,
+            seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub domain_asset_vault: Account<'info, DomainAssetVault>,
-    #[account(
-        init,
-        payer = authority,
-        space = 8 + DomainAssetLedger::INIT_SPACE,
-        seeds = [SEED_DOMAIN_ASSET_LEDGER, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-        bump
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + DomainAssetVault::INIT_SPACE,
+            seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
     )]
+    #[cfg(feature = "quasar")]
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            space = 8 + DomainAssetLedger::INIT_SPACE,
+            seeds = [SEED_DOMAIN_ASSET_LEDGER, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(not(feature = "quasar"))]
     pub domain_asset_ledger: Account<'info, DomainAssetLedger>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            space = 8 + DomainAssetLedger::INIT_SPACE,
+            seeds = [SEED_DOMAIN_ASSET_LEDGER, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     // PT-2026-04-27-01/02 fix: vault token account is now PDA-owned and
     // initialized inline. SPL transfers out of this account in
     // settlement / redemption / fee-withdrawal handlers will be signed by the
@@ -177,18 +231,42 @@ pub struct CreateDomainAssetVault<'info> {
         constraint = asset_mint.to_account_info().owner == &anchor_spl::token::ID @ OmegaXProtocolError::Token2022NotSupported,
     )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
-    #[account(
-        init,
-        payer = authority,
-        seeds = [SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
-        bump,
-        token::mint = asset_mint,
-        token::authority = domain_asset_vault,
+    #[cfg_attr(
+        not(feature = "quasar"),
+        account(
+            init,
+            payer = authority,
+            seeds = [SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+            token::mint = asset_mint,
+            token::authority = domain_asset_vault,
+        )
     )]
+    #[cfg(not(feature = "quasar"))]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[cfg_attr(
+        feature = "quasar",
+        account(
+            mut,
+            init,
+            payer = authority,
+            seeds = [SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
+            bump,
+            token::mint = asset_mint,
+            token::authority = domain_asset_vault,
+        )
+    )]
+    #[cfg(feature = "quasar")]
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[account(
         constraint = token_program.key() == anchor_spl::token::ID @ OmegaXProtocolError::Token2022NotSupported,
     )]
+    #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
+    #[cfg(feature = "quasar")]
+    pub token_program: &'info Interface<TokenInterface>,
+    #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
+    #[cfg(feature = "quasar")]
+    pub system_program: &'info Program<System>,
 }
