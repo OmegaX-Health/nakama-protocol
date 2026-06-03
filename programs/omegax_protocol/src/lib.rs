@@ -1304,19 +1304,18 @@ pub mod omegax_protocol {
         webhook_url: String<u32, 160>,
         supported_schema_key_hashes: Vec<[u8; 32], u32, 16>,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &oracle,
-            &oracle_type,
-            &display_name,
-            &legal_name,
-            &website_url,
-            &app_url,
-            &logo_uri,
-            &webhook_url,
-            &supported_schema_key_hashes,
-        );
-        quasar_handler_port_pending()
+        crate::oracle_schema::register_oracle(
+            &mut ctx,
+            oracle,
+            oracle_type,
+            display_name,
+            legal_name,
+            website_url,
+            app_url,
+            logo_uri,
+            webhook_url,
+            supported_schema_key_hashes,
+        )
     }
 
     #[instruction(discriminator = [1, 252, 166, 132, 45, 24, 23, 233])]
