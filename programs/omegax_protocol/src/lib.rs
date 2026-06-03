@@ -1133,22 +1133,21 @@ pub mod omegax_protocol {
         class_id: String<u32, 32>,
         display_name: String<u32, 64>,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &share_mint,
-            &priority,
-            &impairment_rank,
-            &restriction_mode,
-            &redemption_terms_mode,
-            &wrapper_metadata_hash,
-            &permissioning_hash,
-            &fee_bps,
-            &min_lockup_seconds,
-            &pause_flags,
+        crate::capital::create_capital_class(
+            &mut ctx,
+            share_mint,
+            priority,
+            impairment_rank,
+            restriction_mode,
+            redemption_terms_mode,
+            wrapper_metadata_hash,
+            permissioning_hash,
+            fee_bps,
+            min_lockup_seconds,
+            pause_flags,
             &class_id,
             &display_name,
-        );
-        quasar_handler_port_pending()
+        )
     }
 
     #[instruction(discriminator = [34, 4, 113, 70, 79, 197, 244, 109])]

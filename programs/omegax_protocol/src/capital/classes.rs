@@ -4,6 +4,16 @@
 
 use super::*;
 
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_id(value: &str) -> Result<()> {
+    require!(
+        value.len() <= MAX_ID_LEN,
+        OmegaXProtocolError::IdentifierTooLong
+    );
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn create_capital_class(
     ctx: Context<CreateCapitalClass>,
@@ -92,6 +102,88 @@ pub(crate) fn update_capital_class_controls(
         reason_hash: args.reason_hash,
         audit_nonce: 0,
     });
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn create_capital_class<'info>(
+    ctx: &mut Ctx<'info, CreateCapitalClass<'info>>,
+    share_mint: Pubkey,
+    priority: u8,
+    impairment_rank: u8,
+    restriction_mode: u8,
+    redemption_terms_mode: u8,
+    wrapper_metadata_hash: [u8; 32],
+    permissioning_hash: [u8; 32],
+    fee_bps: u16,
+    min_lockup_seconds: i64,
+    pause_flags: u32,
+    class_id: &str,
+    display_name: &str,
+) -> Result<()> {
+    require_quasar_id(class_id)?;
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_curator_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+    require!(
+        fee_bps <= MAX_CONFIGURED_FEE_BPS,
+        OmegaXProtocolError::InvalidBps
+    );
+    require!(
+        min_lockup_seconds >= 0,
+        OmegaXProtocolError::InvalidLockupSeconds
+    );
+
+    let capital_class_key = *ctx.accounts.capital_class.address();
+    let capital_class_bump = ctx.accounts.capital_class.bump;
+    let queue_only_redemptions = derive_quasar_queue_only_redemptions(
+        pause_flags,
+        ctx.accounts.liquidity_pool.redemption_policy,
+    );
+    ctx.accounts.capital_class.set_inner(
+        ctx.accounts.liquidity_pool.reserve_domain,
+        *ctx.accounts.liquidity_pool.address(),
+        share_mint,
+        priority,
+        impairment_rank,
+        restriction_mode,
+        redemption_terms_mode,
+        wrapper_metadata_hash,
+        permissioning_hash,
+        fee_bps,
+        min_lockup_seconds,
+        pause_flags,
+        queue_only_redemptions,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        true,
+        capital_class_bump,
+        class_id,
+        display_name,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    let pool_class_ledger_bump = ctx.accounts.pool_class_ledger.bump;
+    ctx.accounts.pool_class_ledger.set_inner(
+        capital_class_key,
+        ctx.accounts.liquidity_pool.deposit_asset_mint,
+        ReserveBalanceSheet::default(),
+        0,
+        0,
+        0,
+        pool_class_ledger_bump,
+    );
 
     Ok(())
 }
@@ -193,6 +285,22 @@ pub(crate) fn update_capital_class_controls<'info>(
 
 #[derive(Accounts)]
 #[cfg_attr(not(feature = "quasar"), instruction(args: CreateCapitalClassArgs))]
+#[cfg_attr(
+    feature = "quasar",
+    instruction(
+        _share_mint: Pubkey,
+        _priority: u8,
+        _impairment_rank: u8,
+        _restriction_mode: u8,
+        _redemption_terms_mode: u8,
+        _wrapper_metadata_hash: [u8; 32],
+        _permissioning_hash: [u8; 32],
+        _fee_bps: u16,
+        _min_lockup_seconds: i64,
+        _pause_flags: u32,
+        class_id: String<u32, 32>
+    )
+)]
 pub struct CreateCapitalClass<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
@@ -237,7 +345,7 @@ pub struct CreateCapitalClass<'info> {
             constraint = quasar_pda_matches(
                 capital_class.address(),
                 &crate::ID,
-                &[SEED_CAPITAL_CLASS, liquidity_pool.address().as_ref(), capital_class.class_id().as_bytes()],
+                &[SEED_CAPITAL_CLASS, liquidity_pool.address().as_ref(), class_id],
                 capital_class.bump,
             ) @ OmegaXProtocolError::CapitalClassMismatch
         )
@@ -269,7 +377,7 @@ pub struct CreateCapitalClass<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub pool_class_ledger: &'info Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]

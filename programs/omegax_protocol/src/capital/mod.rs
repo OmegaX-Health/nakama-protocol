@@ -28,7 +28,7 @@ pub(crate) use allocations::{
 #[cfg(feature = "quasar")]
 pub(crate) use allocations::{allocate_capital, deallocate_capital, update_allocation_caps};
 #[cfg(feature = "quasar")]
-pub(crate) use classes::update_capital_class_controls;
+pub(crate) use classes::{create_capital_class, update_capital_class_controls};
 #[cfg(not(feature = "quasar"))]
 pub(crate) use classes::{create_capital_class, update_capital_class_controls};
 pub(crate) use impairments::mark_impairment;
