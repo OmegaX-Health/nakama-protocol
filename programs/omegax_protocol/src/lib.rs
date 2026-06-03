@@ -1044,8 +1044,7 @@ pub mod omegax_protocol {
         ctx: Ctx<AuthorizeClaimRecipient>,
         delegate_recipient: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &delegate_recipient);
-        quasar_handler_port_pending()
+        crate::claims::authorize_claim_recipient(&mut ctx, delegate_recipient)
     }
 
     #[instruction(discriminator = [52, 246, 203, 87, 244, 143, 132, 131])]
@@ -1054,8 +1053,7 @@ pub mod omegax_protocol {
         evidence_ref_hash: [u8; 32],
         decision_support_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &evidence_ref_hash, &decision_support_hash);
-        quasar_handler_port_pending()
+        crate::claims::attach_claim_evidence_ref(&mut ctx, evidence_ref_hash, decision_support_hash)
     }
 
     #[instruction(discriminator = [146, 99, 255, 26, 223, 88, 235, 114])]

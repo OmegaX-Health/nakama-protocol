@@ -12,6 +12,33 @@ use crate::errors::*;
 use crate::events::*;
 use crate::kernel::*;
 use crate::state::*;
+#[cfg(feature = "quasar")]
+use quasar_lang::sysvars::Sysvar;
+
+#[cfg(feature = "quasar")]
+fn require_quasar_protocol_not_paused(governance: &ProtocolGovernance) -> Result<()> {
+    require!(
+        !governance.emergency_pause.get(),
+        OmegaXProtocolError::ProtocolEmergencyPaused
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_claim_operator(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    plan: &HealthPlanAccountData<'_>,
+) -> Result<()> {
+    if *authority == plan.claims_operator
+        || *authority == plan.plan_admin
+        || *authority == governance.governance_authority
+    {
+        Ok(())
+    } else {
+        Err(OmegaXProtocolError::Unauthorized.into())
+    }
+}
 
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn open_claim_case(ctx: Context<OpenClaimCase>, args: OpenClaimCaseArgs) -> Result<()> {
@@ -85,6 +112,79 @@ pub(crate) fn authorize_claim_recipient(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+pub(crate) fn authorize_claim_recipient<'info>(
+    ctx: &mut Ctx<'info, AuthorizeClaimRecipient<'info>>,
+    delegate_recipient: Pubkey,
+) -> Result<()> {
+    require_quasar_protocol_not_paused(&ctx.accounts.protocol_governance)?;
+
+    let claim_case = &mut ctx.accounts.claim_case;
+    require!(
+        claim_case.intake_status < CLAIM_INTAKE_APPROVED && claim_case.paid_amount.get() == 0,
+        OmegaXProtocolError::ClaimRecipientLocked
+    );
+
+    let updated_at = Clock::get()?.unix_timestamp.get();
+    let reserve_domain = claim_case.reserve_domain;
+    let health_plan = claim_case.health_plan;
+    let policy_series = claim_case.policy_series;
+    let member_position = claim_case.member_position;
+    let funding_line = claim_case.funding_line;
+    let asset_mint = claim_case.asset_mint;
+    let claimant = claim_case.claimant;
+    let adjudicator = claim_case.adjudicator;
+    let evidence_ref_hash = claim_case.evidence_ref_hash;
+    let decision_support_hash = claim_case.decision_support_hash;
+    let intake_status = claim_case.intake_status;
+    let review_state = claim_case.review_state;
+    let approved_amount = claim_case.approved_amount.get();
+    let denied_amount = claim_case.denied_amount.get();
+    let paid_amount = claim_case.paid_amount.get();
+    let reserved_amount = claim_case.reserved_amount.get();
+    let recovered_amount = claim_case.recovered_amount.get();
+    let appeal_count = claim_case.appeal_count.get();
+    let attestation_count = claim_case.attestation_count.get();
+    let linked_obligation = claim_case.linked_obligation;
+    let opened_at = claim_case.opened_at.get();
+    let closed_at = claim_case.closed_at.get();
+    let bump = claim_case.bump;
+    let claim_id = claim_case.claim_id().to_owned();
+
+    claim_case.set_inner(
+        reserve_domain,
+        health_plan,
+        policy_series,
+        member_position,
+        funding_line,
+        asset_mint,
+        claimant,
+        adjudicator,
+        delegate_recipient,
+        evidence_ref_hash,
+        decision_support_hash,
+        intake_status,
+        review_state,
+        approved_amount,
+        denied_amount,
+        paid_amount,
+        reserved_amount,
+        recovered_amount,
+        appeal_count,
+        attestation_count,
+        linked_obligation,
+        opened_at,
+        updated_at,
+        closed_at,
+        bump,
+        &claim_id,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn attach_claim_evidence_ref(
     ctx: Context<AttachClaimEvidenceRef>,
@@ -102,6 +202,82 @@ pub(crate) fn attach_claim_evidence_ref(
     claim_case.evidence_ref_hash = args.evidence_ref_hash;
     claim_case.decision_support_hash = args.decision_support_hash;
     claim_case.updated_at = Clock::get()?.unix_timestamp;
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn attach_claim_evidence_ref<'info>(
+    ctx: &mut Ctx<'info, AttachClaimEvidenceRef<'info>>,
+    evidence_ref_hash: [u8; 32],
+    decision_support_hash: [u8; 32],
+) -> Result<()> {
+    require_quasar_protocol_not_paused(&ctx.accounts.protocol_governance)?;
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_claim_operator(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.health_plan,
+    )?;
+
+    let claim_case = &mut ctx.accounts.claim_case;
+    require_quasar_claim_evidence_mutable(claim_case)?;
+
+    let updated_at = Clock::get()?.unix_timestamp.get();
+    let reserve_domain = claim_case.reserve_domain;
+    let health_plan = claim_case.health_plan;
+    let policy_series = claim_case.policy_series;
+    let member_position = claim_case.member_position;
+    let funding_line = claim_case.funding_line;
+    let asset_mint = claim_case.asset_mint;
+    let claimant = claim_case.claimant;
+    let adjudicator = claim_case.adjudicator;
+    let delegate_recipient = claim_case.delegate_recipient;
+    let intake_status = claim_case.intake_status;
+    let review_state = claim_case.review_state;
+    let approved_amount = claim_case.approved_amount.get();
+    let denied_amount = claim_case.denied_amount.get();
+    let paid_amount = claim_case.paid_amount.get();
+    let reserved_amount = claim_case.reserved_amount.get();
+    let recovered_amount = claim_case.recovered_amount.get();
+    let appeal_count = claim_case.appeal_count.get();
+    let attestation_count = claim_case.attestation_count.get();
+    let linked_obligation = claim_case.linked_obligation;
+    let opened_at = claim_case.opened_at.get();
+    let closed_at = claim_case.closed_at.get();
+    let bump = claim_case.bump;
+    let claim_id = claim_case.claim_id().to_owned();
+
+    claim_case.set_inner(
+        reserve_domain,
+        health_plan,
+        policy_series,
+        member_position,
+        funding_line,
+        asset_mint,
+        claimant,
+        adjudicator,
+        delegate_recipient,
+        evidence_ref_hash,
+        decision_support_hash,
+        intake_status,
+        review_state,
+        approved_amount,
+        denied_amount,
+        paid_amount,
+        reserved_amount,
+        recovered_amount,
+        appeal_count,
+        attestation_count,
+        linked_obligation,
+        opened_at,
+        updated_at,
+        closed_at,
+        bump,
+        &claim_id,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
     Ok(())
 }
 
@@ -657,6 +833,15 @@ pub(crate) fn attest_claim_case(
 pub(crate) fn require_claim_evidence_mutable(claim_case: &ClaimCaseAccountData<'_>) -> Result<()> {
     require!(
         claim_case.attestation_count == 0,
+        OmegaXProtocolError::ClaimEvidenceLocked
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_claim_evidence_mutable(claim_case: &ClaimCaseAccountData<'_>) -> Result<()> {
+    require!(
+        claim_case.attestation_count.get() == 0,
         OmegaXProtocolError::ClaimEvidenceLocked
     );
     Ok(())
