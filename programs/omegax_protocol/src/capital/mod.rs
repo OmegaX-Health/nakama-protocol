@@ -2,9 +2,9 @@
 
 //! Capital-market instruction module group.
 
-use crate::platform::*;
 #[cfg(not(feature = "quasar"))]
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use crate::classic_token::{Mint, TokenAccount, TokenInterface};
+use crate::platform::*;
 
 use crate::args::*;
 use crate::constants::*;

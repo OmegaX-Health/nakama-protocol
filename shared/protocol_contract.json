@@ -2379,7 +2379,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
           "name": "system_program",
@@ -4016,7 +4017,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
           "name": "system_program",
@@ -4363,7 +4365,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     },
@@ -6723,7 +6726,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     },
@@ -7214,7 +7218,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     },
@@ -9591,7 +9596,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     },
@@ -10063,7 +10069,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     },
@@ -10538,7 +10545,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": true
+          "optional": true,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         },
         {
           "name": "pool_oracle_fee_vault",
@@ -12302,7 +12310,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     },
@@ -12720,7 +12729,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     },
@@ -13124,7 +13134,8 @@
           "name": "token_program",
           "writable": false,
           "signer": false,
-          "optional": false
+          "optional": false,
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
         }
       ]
     }

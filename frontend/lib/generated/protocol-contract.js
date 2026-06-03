@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: f95822562b0c1f1b2d5bddde10f63d98d49dca7135c879011e432d0706735222
+// contract_sha256: adad826b1d9566634f3c133940e042511735d7f62dce8a4851648f7c9bd14e13
 export const PROTOCOL_PROGRAM_ID = "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B";
 export const PROTOCOL_INSTRUCTION_DISCRIMINATORS = {
     "accept_protocol_governance_authority": Uint8Array.from([202, 235, 28, 119, 167, 24, 81, 85]),
@@ -361,7 +361,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "domain_asset_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "reserve_domain" }, { kind: "arg", path: "args.asset_mint" }] },
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 118, 97, 117, 108, 116, 95, 116, 111, 107, 101, 110] }, { kind: "account", path: "reserve_domain" }, { kind: "arg", path: "args.asset_mint" }] },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
         { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
     ],
     "create_health_plan": [
@@ -433,7 +433,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "source_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
         { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
     ],
     "fund_sponsor_budget": [
@@ -449,7 +449,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "source_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
     "init_pool_oracle_fee_vault": [
         { name: "authority", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -552,7 +552,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "recipient_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
     "publish_reserve_asset_rail_price": [
         { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -573,7 +573,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "source_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
     "register_oracle": [
         { name: "admin", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -681,7 +681,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "recipient_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
     "settle_claim_case_selected_asset": [
         { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -701,7 +701,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "payout_asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "payout_vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "recipient_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
     "settle_obligation": [
         { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -723,7 +723,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "asset_mint", writable: false, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
         { name: "recipient_token_account", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: true, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
         { name: "pool_oracle_fee_vault", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
         { name: "pool_oracle_policy", writable: false, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
         { name: "oracle_fee_attestation", writable: false, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
@@ -804,7 +804,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "recipient_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
     "withdraw_pool_treasury_sol": [
         { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -824,7 +824,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "recipient_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
     "withdraw_protocol_fee_sol": [
         { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -844,7 +844,7 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS = {
         { name: "asset_mint", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "vault_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
         { name: "recipient_token_account", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
-        { name: "token_program", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: undefined },
+        { name: "token_program", writable: false, signer: false, optional: false, address: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", pdaSeeds: undefined },
     ],
 };
 export const PROTOCOL_ACCOUNT_DISCRIMINATORS = {

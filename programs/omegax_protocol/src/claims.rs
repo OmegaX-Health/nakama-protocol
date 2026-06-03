@@ -2,9 +2,9 @@
 
 //! Claim lifecycle and claim-attestation instruction handlers and account validation contexts.
 
-use crate::platform::*;
 #[cfg(not(feature = "quasar"))]
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use crate::classic_token::{Mint, TokenAccount, TokenInterface};
+use crate::platform::*;
 
 use crate::args::*;
 use crate::constants::*;
@@ -3522,7 +3522,7 @@ pub struct SettleClaimCase<'info> {
     #[account(
         constraint = asset_mint.key() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *asset_mint.address() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -3533,7 +3533,7 @@ pub struct SettleClaimCase<'info> {
         mut,
         constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub vault_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
@@ -3541,11 +3541,11 @@ pub struct SettleClaimCase<'info> {
     pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
     pub token_program: &'info Interface<TokenInterface>,
 }
@@ -3754,7 +3754,7 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
     #[account(
         constraint = claim_asset_mint.key() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
-    pub claim_asset_mint: InterfaceAccount<'info, Mint>,
+    pub claim_asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *claim_asset_mint.address() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -3764,7 +3764,7 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
     #[account(
         constraint = payout_asset_mint.key() == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
-    pub payout_asset_mint: InterfaceAccount<'info, Mint>,
+    pub payout_asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *payout_asset_mint.address() == payout_funding_line.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -3775,7 +3775,7 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
         mut,
         constraint = payout_vault_token_account.key() == payout_domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub payout_vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub payout_vault_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *payout_vault_token_account.address() == payout_domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
@@ -3783,11 +3783,11 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
     pub payout_vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
     pub token_program: &'info Interface<TokenInterface>,
 }

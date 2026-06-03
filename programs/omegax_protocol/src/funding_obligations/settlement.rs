@@ -1925,21 +1925,21 @@ pub struct SettleObligation<'info> {
     #[cfg(feature = "quasar")]
     pub member_position: Option<&'info Account<MemberPosition>>,
     #[cfg(not(feature = "quasar"))]
-    pub asset_mint: Option<InterfaceAccount<'info, Mint>>,
+    pub asset_mint: Option<Account<'info, Mint>>,
     #[cfg(feature = "quasar")]
     pub asset_mint: Option<&'info InterfaceAccount<Mint>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub vault_token_account: Option<InterfaceAccount<'info, TokenAccount>>,
+    pub vault_token_account: Option<Account<'info, TokenAccount>>,
     #[cfg(feature = "quasar")]
     pub vault_token_account: Option<&'info mut InterfaceAccount<TokenAccount>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub recipient_token_account: Option<InterfaceAccount<'info, TokenAccount>>,
+    pub recipient_token_account: Option<Account<'info, TokenAccount>>,
     #[cfg(feature = "quasar")]
     pub recipient_token_account: Option<&'info mut InterfaceAccount<TokenAccount>>,
     #[cfg(not(feature = "quasar"))]
-    pub token_program: Option<Interface<'info, TokenInterface>>,
+    pub token_program: Option<Program<'info, TokenInterface>>,
     #[cfg(feature = "quasar")]
     pub token_program: Option<&'info Interface<TokenInterface>>,
     #[cfg(not(feature = "quasar"))]

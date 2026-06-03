@@ -2,9 +2,9 @@
 
 //! Health-plan, policy-series, and member-position instruction handlers and account validation contexts.
 
-use crate::platform::*;
 #[cfg(not(feature = "quasar"))]
-use anchor_spl::token_interface::TokenAccount;
+use crate::classic_token::TokenAccount;
+use crate::platform::*;
 
 use crate::args::*;
 use crate::constants::*;
@@ -1840,7 +1840,7 @@ pub struct OpenMemberPosition<'info> {
     #[cfg(feature = "quasar")]
     pub membership_anchor_seat: Option<&'info mut Account<MembershipAnchorSeat>>,
     #[cfg(not(feature = "quasar"))]
-    pub token_gate_account: Option<InterfaceAccount<'info, TokenAccount>>,
+    pub token_gate_account: Option<Account<'info, TokenAccount>>,
     #[cfg(feature = "quasar")]
     pub token_gate_account: Option<&'info InterfaceAccount<TokenAccount>>,
     #[cfg(not(feature = "quasar"))]

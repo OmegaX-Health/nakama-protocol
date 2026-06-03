@@ -850,22 +850,22 @@ pub struct DepositIntoCapitalClass<'info> {
     pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub source_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub source_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(mut)]
     pub source_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     pub asset_mint: &'info InterfaceAccount<Mint>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub vault_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(mut)]
     pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
     pub token_program: &'info Interface<TokenInterface>,
     #[cfg(not(feature = "quasar"))]

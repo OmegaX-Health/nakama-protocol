@@ -13,6 +13,8 @@ pub mod capital;
 #[cfg(feature = "certora")]
 pub mod certora;
 pub mod claims;
+#[cfg(not(feature = "quasar"))]
+pub mod classic_token;
 pub mod constants;
 pub mod errors;
 pub mod events;

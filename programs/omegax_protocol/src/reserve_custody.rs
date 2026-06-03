@@ -2,9 +2,11 @@
 
 //! Reserve-domain and custody-vault instruction handlers and account validation contexts.
 
+#[cfg(not(feature = "quasar"))]
+use crate::classic_token::{Mint, TokenAccount, TokenInterface};
 use crate::platform::*;
 #[cfg(not(feature = "quasar"))]
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token::{self, InitializeAccount3};
 
 use crate::args::*;
 use crate::constants::*;
@@ -210,6 +212,37 @@ pub(crate) fn create_domain_asset_vault(
         OmegaXProtocolError::VaultTokenAccountInvalid
     );
     require_classic_spl_token(&ctx.accounts.asset_mint, &ctx.accounts.token_program)?;
+
+    let reserve_domain_key = ctx.accounts.reserve_domain.key();
+    let token_account_bump = ctx.bumps.vault_token_account;
+    let token_account_seeds: &[&[&[u8]]] = &[&[
+        SEED_DOMAIN_ASSET_VAULT_TOKEN,
+        reserve_domain_key.as_ref(),
+        args.asset_mint.as_ref(),
+        &[token_account_bump],
+    ]];
+    let token_account_lamports = Rent::get()?.minimum_balance(TokenAccount::LEN);
+    anchor_lang::system_program::create_account(
+        CpiContext::new_with_signer(
+            ctx.accounts.system_program.to_account_info(),
+            anchor_lang::system_program::CreateAccount {
+                from: ctx.accounts.authority.to_account_info(),
+                to: ctx.accounts.vault_token_account.to_account_info(),
+            },
+            token_account_seeds,
+        ),
+        token_account_lamports,
+        TokenAccount::LEN as u64,
+        &anchor_spl::token::ID,
+    )?;
+    token::initialize_account3(CpiContext::new(
+        ctx.accounts.token_program.to_account_info(),
+        InitializeAccount3 {
+            account: ctx.accounts.vault_token_account.to_account_info(),
+            mint: ctx.accounts.asset_mint.to_account_info(),
+            authority: ctx.accounts.domain_asset_vault.to_account_info(),
+        },
+    ))?;
 
     let vault = &mut ctx.accounts.domain_asset_vault;
     vault.reserve_domain = ctx.accounts.reserve_domain.key();
@@ -442,7 +475,7 @@ pub struct CreateDomainAssetVault<'info> {
         constraint = asset_mint.key() == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
         constraint = asset_mint.to_account_info().owner == &anchor_spl::token::ID @ OmegaXProtocolError::Token2022NotSupported,
     )]
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *asset_mint.address() == asset_mint_key @ OmegaXProtocolError::AssetMintMismatch,
@@ -451,16 +484,14 @@ pub struct CreateDomainAssetVault<'info> {
     #[cfg_attr(
         not(feature = "quasar"),
         account(
-            init,
-            payer = authority,
+            mut,
             seeds = [SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain.key().as_ref(), args.asset_mint.as_ref()],
             bump,
-            token::mint = asset_mint,
-            token::authority = domain_asset_vault,
         )
     )]
     #[cfg(not(feature = "quasar"))]
-    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    /// CHECK: Created and initialized as a classic SPL token account in the handler.
+    pub vault_token_account: AccountInfo<'info>,
     #[cfg_attr(
         feature = "quasar",
         account(
@@ -478,7 +509,7 @@ pub struct CreateDomainAssetVault<'info> {
     #[account(
         constraint = token_program.key() == anchor_spl::token::ID @ OmegaXProtocolError::Token2022NotSupported,
     )]
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
     pub token_program: &'info Program<quasar_spl::Token>,
     #[cfg(not(feature = "quasar"))]

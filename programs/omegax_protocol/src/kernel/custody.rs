@@ -2,11 +2,13 @@
 
 //! Classic SPL-token custody checks and vault transfer helpers.
 
+#[cfg(not(feature = "quasar"))]
+use crate::classic_token::{Mint, TokenAccount, TokenInterface};
 use crate::platform::*;
 #[cfg(not(feature = "quasar"))]
 use anchor_lang::prelude::CpiContext;
 #[cfg(not(feature = "quasar"))]
-use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
+use anchor_spl::token::{self, TransferChecked};
 #[cfg(feature = "quasar")]
 use quasar_lang::cpi::Seed;
 #[cfg(feature = "quasar")]
@@ -54,8 +56,8 @@ pub(crate) fn require_classic_token_program_keys(
 
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn require_classic_spl_token<'info>(
-    asset_mint: &InterfaceAccount<'info, Mint>,
-    token_program: &Interface<'info, TokenInterface>,
+    asset_mint: &Account<'info, Mint>,
+    token_program: &Program<'info, TokenInterface>,
 ) -> Result<()> {
     require_classic_token_program_keys(*asset_mint.to_account_info().owner, token_program.key())
 }
@@ -75,10 +77,10 @@ pub(crate) fn require_classic_spl_token(
 pub(crate) fn transfer_to_domain_vault<'info>(
     amount: u64,
     authority: &Signer<'info>,
-    source_token_account: &InterfaceAccount<'info, TokenAccount>,
-    asset_mint: &InterfaceAccount<'info, Mint>,
-    vault_token_account: &InterfaceAccount<'info, TokenAccount>,
-    token_program: &Interface<'info, TokenInterface>,
+    source_token_account: &Account<'info, TokenAccount>,
+    asset_mint: &Account<'info, Mint>,
+    vault_token_account: &Account<'info, TokenAccount>,
+    token_program: &Program<'info, TokenInterface>,
     domain_asset_vault: &DomainAssetVault,
 ) -> Result<()> {
     require_classic_spl_token(asset_mint, token_program)?;
@@ -119,7 +121,7 @@ pub(crate) fn transfer_to_domain_vault<'info>(
         to: vault_token_account.to_account_info(),
         authority: authority.to_account_info(),
     };
-    token_interface::transfer_checked(
+    token::transfer_checked(
         CpiContext::new(token_program.to_account_info(), accounts),
         amount,
         asset_mint.decimals,
@@ -196,10 +198,10 @@ pub(crate) fn transfer_to_domain_vault(
 pub(crate) fn transfer_from_domain_vault<'info>(
     amount: u64,
     domain_asset_vault: &Account<'info, DomainAssetVault>,
-    vault_token_account: &InterfaceAccount<'info, TokenAccount>,
-    recipient_token_account: &InterfaceAccount<'info, TokenAccount>,
-    asset_mint: &InterfaceAccount<'info, Mint>,
-    token_program: &Interface<'info, TokenInterface>,
+    vault_token_account: &Account<'info, TokenAccount>,
+    recipient_token_account: &Account<'info, TokenAccount>,
+    asset_mint: &Account<'info, Mint>,
+    token_program: &Program<'info, TokenInterface>,
 ) -> Result<()> {
     require_classic_spl_token(asset_mint, token_program)?;
     require_keys_eq!(
@@ -244,7 +246,7 @@ pub(crate) fn transfer_from_domain_vault<'info>(
         to: recipient_token_account.to_account_info(),
         authority: domain_asset_vault.to_account_info(),
     };
-    token_interface::transfer_checked(
+    token::transfer_checked(
         CpiContext::new_with_signer(token_program.to_account_info(), accounts, signer_seeds),
         amount,
         asset_mint.decimals,

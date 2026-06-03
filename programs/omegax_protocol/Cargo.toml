@@ -15,7 +15,7 @@ cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
-idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+idl-build = ["anchor-lang/idl-build"]
 custom-heap = []
 custom-panic = []
 anchor-debug = []
@@ -35,7 +35,7 @@ solana_summaries = ["../../formal_verification/certora/summaries/omegax_solana_s
 
 [dependencies]
 anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
-anchor-spl = "0.32.1"
+anchor-spl = { version = "0.32.1", default-features = false, features = ["token"] }
 blake3 = "=1.8.2"
 cvlr = { version = "0.4.0", optional = true }
 quasar-lang = { version = "0.0.0", optional = true }

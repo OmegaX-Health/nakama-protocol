@@ -2,9 +2,9 @@
 
 //! Fee-vault initialization and withdrawal instruction handlers and account validation contexts.
 
-use crate::platform::*;
 #[cfg(not(feature = "quasar"))]
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use crate::classic_token::{Mint, TokenAccount, TokenInterface};
+use crate::platform::*;
 #[cfg(feature = "quasar")]
 use quasar_lang::sysvars::Sysvar;
 
@@ -1384,7 +1384,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
     #[account(
         constraint = asset_mint.key() == protocol_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *asset_mint.address() == protocol_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -1395,7 +1395,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
         mut,
         constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub vault_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
         mut,
@@ -1404,12 +1404,12 @@ pub struct WithdrawProtocolFeeSpl<'info> {
     pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(mut)]
     pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
     pub token_program: &'info Interface<TokenInterface>,
 }
@@ -1563,7 +1563,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
     #[account(
         constraint = asset_mint.key() == pool_treasury_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *asset_mint.address() == pool_treasury_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -1574,7 +1574,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
         mut,
         constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub vault_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
         mut,
@@ -1583,12 +1583,12 @@ pub struct WithdrawPoolTreasurySpl<'info> {
     pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(mut)]
     pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
     pub token_program: &'info Interface<TokenInterface>,
 }
@@ -1763,7 +1763,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
     #[account(
         constraint = asset_mint.key() == pool_oracle_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = *asset_mint.address() == pool_oracle_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -1774,7 +1774,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
         mut,
         constraint = vault_token_account.key() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub vault_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
         mut,
@@ -1783,12 +1783,12 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
     pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
-    pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub recipient_token_account: Account<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(mut)]
     pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
     pub token_program: &'info Interface<TokenInterface>,
 }
