@@ -1016,8 +1016,7 @@ pub mod omegax_protocol {
 
     #[instruction(discriminator = [170, 102, 52, 144, 33, 176, 41, 60])]
     pub fn release_reserve(ctx: Ctx<ReleaseReserve>, amount: u64) -> Result<()> {
-        let _ = (&ctx, &amount);
-        quasar_handler_port_pending()
+        crate::funding_obligations::release_reserve(&mut ctx, amount)
     }
 
     #[instruction(discriminator = [151, 125, 231, 211, 63, 132, 248, 184])]

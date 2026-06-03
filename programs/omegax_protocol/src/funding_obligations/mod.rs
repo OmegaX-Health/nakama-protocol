@@ -27,7 +27,7 @@ pub(crate) use inflows::{fund_sponsor_budget, record_premium_payment};
 #[cfg(not(feature = "quasar"))]
 pub(crate) use obligations::create_obligation;
 #[cfg(feature = "quasar")]
-pub(crate) use reserves::reserve_obligation;
+pub(crate) use reserves::{release_reserve, reserve_obligation};
 #[cfg(not(feature = "quasar"))]
 pub(crate) use reserves::{release_reserve, reserve_obligation};
 #[cfg(not(feature = "quasar"))]
