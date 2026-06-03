@@ -10,6 +10,8 @@ mod bindings;
 mod capital_math;
 #[cfg(not(feature = "quasar"))]
 mod custody;
+#[cfg(feature = "quasar")]
+mod custody;
 #[cfg(not(feature = "quasar"))]
 mod fees;
 #[cfg(not(feature = "quasar"))]
@@ -24,6 +26,8 @@ pub(crate) use bindings::*;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use capital_math::*;
 #[cfg(not(feature = "quasar"))]
+pub(crate) use custody::*;
+#[cfg(feature = "quasar")]
 pub(crate) use custody::*;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use fees::*;

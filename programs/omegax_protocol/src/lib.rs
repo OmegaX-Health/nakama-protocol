@@ -954,14 +954,12 @@ pub mod omegax_protocol {
 
     #[instruction(discriminator = [150, 210, 161, 31, 50, 12, 224, 32])]
     pub fn fund_sponsor_budget(ctx: Ctx<FundSponsorBudget>, amount: u64) -> Result<()> {
-        let _ = (&ctx, &amount);
-        quasar_handler_port_pending()
+        crate::funding_obligations::fund_sponsor_budget(&mut ctx, amount)
     }
 
     #[instruction(discriminator = [196, 182, 182, 56, 146, 87, 170, 29])]
     pub fn record_premium_payment(ctx: Ctx<RecordPremiumPayment>, amount: u64) -> Result<()> {
-        let _ = (&ctx, &amount);
-        quasar_handler_port_pending()
+        crate::funding_obligations::record_premium_payment(&mut ctx, amount)
     }
 
     #[instruction(discriminator = [216, 144, 172, 223, 19, 106, 220, 54])]

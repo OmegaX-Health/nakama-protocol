@@ -7,6 +7,8 @@ use crate::platform::*;
 use anchor_lang::prelude::CpiContext;
 #[cfg(not(feature = "quasar"))]
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
+#[cfg(feature = "quasar")]
+use quasar_spl::{TokenCpi, SPL_TOKEN_ID};
 
 use crate::constants::*;
 use crate::errors::*;
@@ -30,12 +32,41 @@ pub(crate) fn require_classic_token_program_keys(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+pub(crate) fn require_classic_token_program_keys(
+    mint_owner: Pubkey,
+    token_program: Pubkey,
+) -> Result<()> {
+    require_keys_eq!(
+        mint_owner,
+        SPL_TOKEN_ID,
+        OmegaXProtocolError::Token2022NotSupported
+    );
+    require_keys_eq!(
+        token_program,
+        SPL_TOKEN_ID,
+        OmegaXProtocolError::Token2022NotSupported
+    );
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn require_classic_spl_token<'info>(
     asset_mint: &InterfaceAccount<'info, Mint>,
     token_program: &Interface<'info, TokenInterface>,
 ) -> Result<()> {
     require_classic_token_program_keys(*asset_mint.to_account_info().owner, token_program.key())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn require_classic_spl_token(
+    asset_mint: &InterfaceAccount<Mint>,
+    token_program: &Interface<TokenInterface>,
+) -> Result<()> {
+    require_classic_token_program_keys(
+        *asset_mint.to_account_view().owner(),
+        *token_program.address(),
+    )
 }
 
 #[cfg(not(feature = "quasar"))]
@@ -91,6 +122,60 @@ pub(crate) fn transfer_to_domain_vault<'info>(
         amount,
         asset_mint.decimals,
     )
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn transfer_to_domain_vault(
+    amount: u64,
+    authority: &Signer,
+    source_token_account: &InterfaceAccount<TokenAccount>,
+    asset_mint: &InterfaceAccount<Mint>,
+    vault_token_account: &InterfaceAccount<TokenAccount>,
+    token_program: &Interface<TokenInterface>,
+    domain_asset_vault: &DomainAssetVault,
+) -> Result<()> {
+    require_classic_spl_token(asset_mint, token_program)?;
+    require_keys_eq!(
+        *source_token_account.owner(),
+        *authority.address(),
+        OmegaXProtocolError::TokenAccountOwnerMismatch
+    );
+    require_keys_neq!(
+        *source_token_account.address(),
+        *vault_token_account.address(),
+        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+    );
+    require_keys_eq!(
+        *source_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *asset_mint.address(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *vault_token_account.address(),
+        domain_asset_vault.vault_token_account,
+        OmegaXProtocolError::VaultTokenAccountMismatch
+    );
+    require_keys_eq!(
+        *vault_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+
+    token_program
+        .transfer_checked(
+            source_token_account,
+            asset_mint,
+            vault_token_account,
+            authority,
+            amount,
+            asset_mint.decimals(),
+        )
+        .invoke()
 }
 
 // PDA-signed outflow helper. Unblocks PT-2026-04-27-01 and PT-2026-04-27-02:
