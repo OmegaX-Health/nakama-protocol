@@ -22,6 +22,8 @@ mod settlement;
 
 #[cfg(not(feature = "quasar"))]
 pub(crate) use funding_lines::open_funding_line;
+#[cfg(feature = "quasar")]
+pub(crate) use funding_lines::open_funding_line;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use inflows::{fund_sponsor_budget, record_premium_payment};
 #[cfg(feature = "quasar")]

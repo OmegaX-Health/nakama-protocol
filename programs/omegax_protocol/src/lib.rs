@@ -929,17 +929,16 @@ pub mod omegax_protocol {
         caps_hash: [u8; 32],
         line_id: String<u32, 32>,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &policy_series_arg,
-            &asset_mint,
-            &line_type,
-            &funding_priority,
-            &committed_amount,
-            &caps_hash,
+        crate::funding_obligations::open_funding_line(
+            &mut ctx,
+            policy_series_arg,
+            asset_mint,
+            line_type,
+            funding_priority,
+            committed_amount,
+            caps_hash,
             &line_id,
-        );
-        quasar_handler_port_pending()
+        )
     }
 
     #[instruction(discriminator = [150, 210, 161, 31, 50, 12, 224, 32])]
