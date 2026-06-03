@@ -25,6 +25,8 @@ mod redemptions;
 pub(crate) use allocations::{
     allocate_capital, create_allocation_position, deallocate_capital, update_allocation_caps,
 };
+#[cfg(feature = "quasar")]
+pub(crate) use classes::update_capital_class_controls;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use classes::{create_capital_class, update_capital_class_controls};
 #[cfg(not(feature = "quasar"))]

@@ -96,6 +96,101 @@ pub(crate) fn update_capital_class_controls(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_curator_control(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    pool: &LiquidityPoolAccountData<'_>,
+) -> Result<()> {
+    if *authority == pool.curator || *authority == governance.governance_authority {
+        Ok(())
+    } else {
+        Err(OmegaXProtocolError::Unauthorized.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn derive_quasar_queue_only_redemptions(pause_flags: u32, redemption_policy: u8) -> bool {
+    pause_flags & PAUSE_FLAG_REDEMPTION_QUEUE_ONLY != 0
+        || redemption_policy == REDEMPTION_POLICY_QUEUE_ONLY
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn update_capital_class_controls<'info>(
+    ctx: &mut Ctx<'info, UpdateCapitalClassControls<'info>>,
+    pause_flags: u32,
+    active: bool,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_curator_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+
+    let capital_class = &mut ctx.accounts.capital_class;
+    let queue_only_redemptions = derive_quasar_queue_only_redemptions(
+        pause_flags,
+        ctx.accounts.liquidity_pool.redemption_policy,
+    );
+    let reserve_domain = capital_class.reserve_domain;
+    let liquidity_pool = capital_class.liquidity_pool;
+    let share_mint = capital_class.share_mint;
+    let priority = capital_class.priority;
+    let impairment_rank = capital_class.impairment_rank;
+    let restriction_mode = capital_class.restriction_mode;
+    let redemption_terms_mode = capital_class.redemption_terms_mode;
+    let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
+    let permissioning_hash = capital_class.permissioning_hash;
+    let fee_bps = capital_class.fee_bps.get();
+    let min_lockup_seconds = capital_class.min_lockup_seconds.get();
+    let total_shares = capital_class.total_shares.get();
+    let nav_assets = capital_class.nav_assets.get();
+    let allocated_assets = capital_class.allocated_assets.get();
+    let reserved_assets = capital_class.reserved_assets.get();
+    let impaired_assets = capital_class.impaired_assets.get();
+    let pending_redemptions = capital_class.pending_redemptions.get();
+    let next_redemption_sequence = capital_class.next_redemption_sequence.get();
+    let next_redemption_to_process = capital_class.next_redemption_to_process.get();
+    let bump = capital_class.bump;
+    let class_id = capital_class.class_id().to_owned();
+    let display_name = capital_class.display_name().to_owned();
+
+    capital_class.set_inner(
+        reserve_domain,
+        liquidity_pool,
+        share_mint,
+        priority,
+        impairment_rank,
+        restriction_mode,
+        redemption_terms_mode,
+        wrapper_metadata_hash,
+        permissioning_hash,
+        fee_bps,
+        min_lockup_seconds,
+        pause_flags,
+        queue_only_redemptions,
+        total_shares,
+        nav_assets,
+        allocated_assets,
+        reserved_assets,
+        impaired_assets,
+        pending_redemptions,
+        next_redemption_sequence,
+        next_redemption_to_process,
+        active,
+        bump,
+        &class_id,
+        &display_name,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    Ok(())
+}
+
 #[derive(Accounts)]
 #[cfg_attr(not(feature = "quasar"), instruction(args: CreateCapitalClassArgs))]
 pub struct CreateCapitalClass<'info> {

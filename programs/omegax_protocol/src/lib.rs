@@ -1174,14 +1174,8 @@ pub mod omegax_protocol {
         active: bool,
         reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &pause_flags,
-            &queue_only_redemptions,
-            &active,
-            &reason_hash,
-        );
-        quasar_handler_port_pending()
+        let _ = (&queue_only_redemptions, &reason_hash);
+        crate::capital::update_capital_class_controls(&mut ctx, pause_flags, active)
     }
 
     #[instruction(discriminator = [54, 194, 211, 94, 197, 61, 228, 202])]
