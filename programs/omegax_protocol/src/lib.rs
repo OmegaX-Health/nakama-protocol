@@ -1434,8 +1434,11 @@ pub mod omegax_protocol {
         schema_key_hash: [u8; 32],
         pool_rule_addresses: Vec<Pubkey, u32, 32>,
     ) -> Result<()> {
-        let _ = (&ctx, &schema_key_hash, &pool_rule_addresses);
-        quasar_handler_port_pending()
+        crate::oracle_schema::backfill_schema_dependency_ledger(
+            &mut ctx,
+            schema_key_hash,
+            pool_rule_addresses,
+        )
     }
 
     #[instruction(discriminator = [196, 81, 8, 61, 95, 145, 225, 2])]

@@ -676,6 +676,37 @@ pub(crate) fn backfill_schema_dependency_ledger(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+pub(crate) fn backfill_schema_dependency_ledger<'info>(
+    ctx: &mut Ctx<'info, BackfillSchemaDependencyLedger<'info>>,
+    schema_key_hash: [u8; 32],
+    pool_rule_addresses: &[Pubkey],
+) -> Result<()> {
+    let authority = *ctx.accounts.governance_authority.address();
+    require_quasar_governance(&authority, &ctx.accounts.protocol_governance)?;
+    require!(
+        ctx.accounts.outcome_schema.schema_key_hash == schema_key_hash,
+        OmegaXProtocolError::ClaimAttestationSchemaRequired
+    );
+    require!(
+        pool_rule_addresses.len() <= MAX_SCHEMA_DEPENDENCY_RULES,
+        OmegaXProtocolError::TooManySchemaDependencies
+    );
+
+    let updated_at_ts = Clock::get()?.unix_timestamp.get();
+    let bump = ctx.accounts.schema_dependency_ledger.bump;
+    ctx.accounts.schema_dependency_ledger.set_inner(
+        schema_key_hash,
+        updated_at_ts,
+        bump,
+        pool_rule_addresses,
+        ctx.accounts.governance_authority.to_account_view(),
+        None,
+    )?;
+
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn close_outcome_schema(ctx: Context<CloseOutcomeSchema>) -> Result<()> {
     require_governance(
