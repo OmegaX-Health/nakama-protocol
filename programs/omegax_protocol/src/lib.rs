@@ -1243,15 +1243,14 @@ pub mod omegax_protocol {
         allocation_mode: u8,
         deallocation_only: bool,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &policy_series,
-            &cap_amount,
-            &weight_bps,
-            &allocation_mode,
-            &deallocation_only,
-        );
-        quasar_handler_port_pending()
+        crate::capital::create_allocation_position(
+            &mut ctx,
+            policy_series,
+            cap_amount,
+            weight_bps,
+            allocation_mode,
+            deallocation_only,
+        )
     }
 
     #[instruction(discriminator = [224, 101, 103, 146, 78, 5, 48, 132])]

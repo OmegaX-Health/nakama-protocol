@@ -90,6 +90,95 @@ pub(crate) fn create_allocation_position(
 
     Ok(())
 }
+
+#[cfg(feature = "quasar")]
+pub(crate) fn create_allocation_position<'info>(
+    ctx: &mut Ctx<'info, CreateAllocationPosition<'info>>,
+    policy_series: Pubkey,
+    cap_amount: u64,
+    weight_bps: u16,
+    allocation_mode: u8,
+    deallocation_only: bool,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_allocator(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+    require_keys_eq!(
+        ctx.accounts.funding_line.asset_mint,
+        ctx.accounts.liquidity_pool.deposit_asset_mint,
+        OmegaXProtocolError::AllocationAssetMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.capital_class.reserve_domain,
+        ctx.accounts.liquidity_pool.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.capital_class.liquidity_pool,
+        *ctx.accounts.liquidity_pool.address(),
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.health_plan.reserve_domain,
+        ctx.accounts.liquidity_pool.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.funding_line.reserve_domain,
+        ctx.accounts.health_plan.reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.funding_line.health_plan,
+        *ctx.accounts.health_plan.address(),
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.funding_line.policy_series,
+        policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require!(
+        ctx.accounts.funding_line.status == FUNDING_LINE_STATUS_OPEN,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+
+    let allocation_position_key = *ctx.accounts.allocation_position.address();
+    let allocation_position_bump = ctx.accounts.allocation_position.bump;
+    ctx.accounts.allocation_position.set_inner(
+        ctx.accounts.liquidity_pool.reserve_domain,
+        *ctx.accounts.liquidity_pool.address(),
+        *ctx.accounts.capital_class.address(),
+        *ctx.accounts.health_plan.address(),
+        policy_series,
+        *ctx.accounts.funding_line.address(),
+        cap_amount,
+        weight_bps,
+        allocation_mode,
+        0,
+        0,
+        0,
+        0,
+        0,
+        deallocation_only,
+        true,
+        allocation_position_bump,
+    );
+
+    let allocation_ledger_bump = ctx.accounts.allocation_ledger.bump;
+    ctx.accounts.allocation_ledger.set_inner(
+        allocation_position_key,
+        ctx.accounts.funding_line.asset_mint,
+        ReserveBalanceSheet::default(),
+        0,
+        allocation_ledger_bump,
+    );
+
+    Ok(())
+}
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn update_allocation_caps(
     ctx: Context<UpdateAllocationCaps>,
@@ -912,7 +1001,7 @@ pub struct CreateAllocationPosition<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub allocation_position: &'info Account<AllocationPosition>,
+    pub allocation_position: &'info mut Account<AllocationPosition>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -938,7 +1027,7 @@ pub struct CreateAllocationPosition<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub allocation_ledger: &'info Account<AllocationLedger>,
+    pub allocation_ledger: &'info mut Account<AllocationLedger>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
