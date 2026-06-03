@@ -10,9 +10,24 @@ use crate::args::*;
 use crate::constants::*;
 use crate::errors::*;
 use crate::events::*;
+#[cfg(not(feature = "quasar"))]
 use crate::kernel::*;
 use crate::state::*;
 use crate::types::*;
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_domain_control(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    domain: &ReserveDomainAccountData<'_>,
+) -> Result<()> {
+    if *authority == domain.domain_admin || *authority == governance.governance_authority {
+        Ok(())
+    } else {
+        Err(OmegaXProtocolError::Unauthorized.into())
+    }
+}
 
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn create_reserve_domain(
@@ -77,6 +92,51 @@ pub(crate) fn update_reserve_domain_controls(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+pub(crate) fn update_reserve_domain_controls<'info>(
+    ctx: &mut Ctx<'info, UpdateReserveDomainControls<'info>>,
+    allowed_rail_mask: u16,
+    pause_flags: u32,
+    active: bool,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_domain_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.reserve_domain,
+    )?;
+
+    let domain = &mut ctx.accounts.reserve_domain;
+    let protocol_governance = domain.protocol_governance;
+    let domain_admin = domain.domain_admin;
+    let settlement_mode = domain.settlement_mode;
+    let legal_structure_hash = domain.legal_structure_hash;
+    let compliance_baseline_hash = domain.compliance_baseline_hash;
+    let audit_nonce = domain.audit_nonce.get().saturating_add(1);
+    let bump = domain.bump;
+    let domain_id = domain.domain_id().to_owned();
+    let display_name = domain.display_name().to_owned();
+
+    domain.set_inner(
+        protocol_governance,
+        domain_admin,
+        settlement_mode,
+        legal_structure_hash,
+        compliance_baseline_hash,
+        allowed_rail_mask,
+        pause_flags,
+        active,
+        audit_nonce,
+        bump,
+        &domain_id,
+        &display_name,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn create_domain_asset_vault(
     ctx: Context<CreateDomainAssetVault>,
@@ -111,6 +171,40 @@ pub(crate) fn create_domain_asset_vault(
         scope: vault.key(),
         asset_mint: args.asset_mint,
     });
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn create_domain_asset_vault<'info>(
+    ctx: &mut Ctx<'info, CreateDomainAssetVault<'info>>,
+    asset_mint_key: Pubkey,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_domain_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.reserve_domain,
+    )?;
+    require!(
+        asset_mint_key != ZERO_PUBKEY,
+        OmegaXProtocolError::VaultTokenAccountInvalid
+    );
+
+    ctx.accounts.domain_asset_vault.set_inner(
+        *ctx.accounts.reserve_domain.address(),
+        asset_mint_key,
+        *ctx.accounts.vault_token_account.address(),
+        0,
+        ctx.bumps.domain_asset_vault,
+    );
+
+    ctx.accounts.domain_asset_ledger.set_inner(
+        *ctx.accounts.reserve_domain.address(),
+        asset_mint_key,
+        ReserveBalanceSheet::default(),
+        ctx.bumps.domain_asset_ledger,
+    );
 
     Ok(())
 }
@@ -249,17 +343,14 @@ pub struct CreateDomainAssetVault<'info> {
     #[cfg_attr(
         feature = "quasar",
         account(
-            mut,
-            constraint = quasar_pda_matches(
-                domain_asset_vault.address(),
-                &crate::ID,
-                &[SEED_DOMAIN_ASSET_VAULT, reserve_domain.address().as_ref(), asset_mint_key.as_ref()],
-                domain_asset_vault.bump,
-            ) @ OmegaXProtocolError::DomainAssetVaultRequired
+            init,
+            payer = authority,
+            seeds = [SEED_DOMAIN_ASSET_VAULT, reserve_domain, asset_mint],
+            bump
         )
     )]
     #[cfg(feature = "quasar")]
-    pub domain_asset_vault: &'info Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -275,17 +366,14 @@ pub struct CreateDomainAssetVault<'info> {
     #[cfg_attr(
         feature = "quasar",
         account(
-            mut,
-            constraint = quasar_pda_matches(
-                domain_asset_ledger.address(),
-                &crate::ID,
-                &[SEED_DOMAIN_ASSET_LEDGER, reserve_domain.address().as_ref(), asset_mint_key.as_ref()],
-                domain_asset_ledger.bump,
-            ) @ OmegaXProtocolError::ReserveDomainMismatch
+            init,
+            payer = authority,
+            seeds = [SEED_DOMAIN_ASSET_LEDGER, reserve_domain, asset_mint],
+            bump
         )
     )]
     #[cfg(feature = "quasar")]
-    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     // PT-2026-04-27-01/02 fix: vault token account is now PDA-owned and
     // initialized inline. SPL transfers out of this account in
     // settlement / redemption / fee-withdrawal handlers will be signed by the
@@ -301,7 +389,7 @@ pub struct CreateDomainAssetVault<'info> {
     #[account(
         constraint = *asset_mint.address() == asset_mint_key @ OmegaXProtocolError::AssetMintMismatch,
     )]
-    pub asset_mint: &'info InterfaceAccount<Mint>,
+    pub asset_mint: &'info Account<quasar_spl::Mint>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -318,23 +406,23 @@ pub struct CreateDomainAssetVault<'info> {
     #[cfg_attr(
         feature = "quasar",
         account(
-            mut,
-            constraint = quasar_pda_matches_canonical(
-                vault_token_account.address(),
-                &crate::ID,
-                &[SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain.address().as_ref(), asset_mint_key.as_ref()],
-            ) @ OmegaXProtocolError::VaultTokenAccountMismatch
+            init,
+            payer = authority,
+            seeds = [SEED_DOMAIN_ASSET_VAULT_TOKEN, reserve_domain, asset_mint],
+            bump,
+            token::mint = asset_mint,
+            token::authority = domain_asset_vault
         )
     )]
     #[cfg(feature = "quasar")]
-    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info mut Account<quasar_spl::Token>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = token_program.key() == anchor_spl::token::ID @ OmegaXProtocolError::Token2022NotSupported,
     )]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
-    pub token_program: &'info Interface<TokenInterface>,
+    pub token_program: &'info Program<quasar_spl::Token>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]

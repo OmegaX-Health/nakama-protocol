@@ -602,14 +602,13 @@ pub mod omegax_protocol {
         active: bool,
         reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &allowed_rail_mask,
-            &pause_flags,
-            &active,
-            &reason_hash,
-        );
-        quasar_handler_port_pending()
+        let _ = &reason_hash;
+        crate::reserve_custody::update_reserve_domain_controls(
+            &mut ctx,
+            allowed_rail_mask,
+            pause_flags,
+            active,
+        )
     }
 
     #[instruction(discriminator = [31, 13, 112, 128, 23, 164, 26, 108])]
@@ -617,8 +616,7 @@ pub mod omegax_protocol {
         ctx: Ctx<CreateDomainAssetVault>,
         asset_mint_key: Pubkey,
     ) -> Result<()> {
-        let _ = (&ctx, &asset_mint_key);
-        quasar_handler_port_pending()
+        crate::reserve_custody::create_domain_asset_vault(&mut ctx, asset_mint_key)
     }
 
     #[instruction(discriminator = [78, 48, 108, 190, 181, 203, 194, 176])]
