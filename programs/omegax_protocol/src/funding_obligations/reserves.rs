@@ -4,6 +4,9 @@
 
 use super::*;
 
+#[cfg(feature = "quasar")]
+use quasar_lang::sysvars::Sysvar;
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn reserve_obligation(
     ctx: Context<ReserveObligation>,
@@ -97,6 +100,710 @@ pub(crate) fn reserve_obligation(
 
     Ok(())
 }
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn quasar_checked_add(lhs: u64, rhs: u64) -> Result<u64> {
+    lhs.checked_add(rhs)
+        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_protocol_not_paused(governance: &ProtocolGovernance) -> Result<()> {
+    require!(
+        !governance.emergency_pause.get(),
+        OmegaXProtocolError::ProtocolEmergencyPaused
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_positive_amount(amount: u64) -> Result<()> {
+    require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
+    let encumbered = sheet
+        .reserved
+        .checked_add(sheet.claimable)
+        .and_then(|value| value.checked_add(sheet.payable))
+        .and_then(|value| value.checked_add(sheet.impaired))
+        .and_then(|value| value.checked_add(sheet.pending_redemption))
+        .and_then(|value| value.checked_add(sheet.restricted))
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    sheet.free = sheet.funded.saturating_sub(encumbered);
+    let redeemable_encumbered = encumbered
+        .checked_add(sheet.allocated)
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    sheet.redeemable = sheet.funded.saturating_sub(redeemable_encumbered);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_book_reserve(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
+    sheet.reserved = quasar_checked_add(sheet.reserved, amount)?;
+    quasar_recompute_sheet(sheet)
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_obligation_reserve_capacity(
+    line_sheet: &ReserveBalanceSheet,
+    allocation_position: Option<&Account<AllocationPosition>>,
+    amount: u64,
+) -> Result<()> {
+    if let Some(position) = allocation_position {
+        let free_allocated = position
+            .allocated_amount
+            .get()
+            .saturating_sub(position.reserved_capacity.get());
+        require!(
+            free_allocated >= amount,
+            OmegaXProtocolError::InsufficientFreeAllocationCapacity
+        );
+        return Ok(());
+    }
+
+    require!(
+        line_sheet.free >= amount,
+        OmegaXProtocolError::InsufficientFreeReserveCapacity
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_obligation_reserve_control(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    plan: &HealthPlanAccountData<'_>,
+    obligation: &ObligationAccountData<'_>,
+) -> Result<()> {
+    if obligation.claim_case != ZERO_PUBKEY {
+        if *authority == plan.oracle_authority
+            || *authority == plan.claims_operator
+            || *authority == plan.plan_admin
+            || *authority == governance.governance_authority
+        {
+            return Ok(());
+        }
+    } else if *authority == plan.plan_admin
+        || *authority == plan.sponsor_operator
+        || *authority == governance.governance_authority
+    {
+        return Ok(());
+    }
+
+    err!(OmegaXProtocolError::Unauthorized)
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_matching_linked_claim_case(
+    claim_case: &ClaimCaseAccountData<'_>,
+    claim_case_key: Pubkey,
+    obligation: &ObligationAccountData<'_>,
+    obligation_key: Pubkey,
+    health_plan_key: Pubkey,
+) -> Result<()> {
+    require!(
+        claim_case.health_plan == health_plan_key && obligation.health_plan == health_plan_key,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require!(
+        claim_case.policy_series == obligation.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require!(
+        claim_case.funding_line == obligation.funding_line,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+    require!(
+        claim_case.asset_mint == obligation.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require!(
+        obligation.claim_case == ZERO_PUBKEY || obligation.claim_case == claim_case_key,
+        OmegaXProtocolError::ClaimCaseLinkMismatch
+    );
+    require!(
+        claim_case.linked_obligation == ZERO_PUBKEY
+            || claim_case.linked_obligation == obligation_key,
+        OmegaXProtocolError::ClaimCaseLinkMismatch
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_optional_series_ledger(
+    series_ledger: Option<&Account<SeriesReserveLedger>>,
+    expected_policy_series: Pubkey,
+    expected_asset_mint: Pubkey,
+) -> Result<()> {
+    if let Some(ledger) = series_ledger {
+        require!(
+            expected_policy_series != ZERO_PUBKEY,
+            OmegaXProtocolError::PolicySeriesMissing
+        );
+        require_keys_eq!(
+            ledger.policy_series,
+            expected_policy_series,
+            OmegaXProtocolError::PolicySeriesMismatch
+        );
+        require_keys_eq!(
+            ledger.asset_mint,
+            expected_asset_mint,
+            OmegaXProtocolError::AssetMintMismatch
+        );
+        require!(
+            quasar_pda_matches(
+                ledger.address(),
+                &crate::ID,
+                &[
+                    SEED_SERIES_RESERVE_LEDGER,
+                    expected_policy_series.as_ref(),
+                    expected_asset_mint.as_ref(),
+                ],
+                ledger.bump,
+            ),
+            OmegaXProtocolError::PolicySeriesMismatch
+        );
+    }
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_optional_pool_class_ledger(
+    pool_class_ledger: Option<&Account<PoolClassLedger>>,
+    expected_capital_class: Pubkey,
+    expected_asset_mint: Pubkey,
+) -> Result<()> {
+    if let Some(ledger) = pool_class_ledger {
+        require!(
+            expected_capital_class != ZERO_PUBKEY,
+            OmegaXProtocolError::CapitalClassMismatch
+        );
+        require_keys_eq!(
+            ledger.capital_class,
+            expected_capital_class,
+            OmegaXProtocolError::CapitalClassMismatch
+        );
+        require_keys_eq!(
+            ledger.asset_mint,
+            expected_asset_mint,
+            OmegaXProtocolError::AssetMintMismatch
+        );
+        require!(
+            quasar_pda_matches(
+                ledger.address(),
+                &crate::ID,
+                &[
+                    SEED_POOL_CLASS_LEDGER,
+                    expected_capital_class.as_ref(),
+                    expected_asset_mint.as_ref(),
+                ],
+                ledger.bump,
+            ),
+            OmegaXProtocolError::CapitalClassMismatch
+        );
+    }
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_optional_allocation_position(
+    allocation_position: Option<&Account<AllocationPosition>>,
+    expected_allocation_position: Pubkey,
+    expected_funding_line: Pubkey,
+) -> Result<()> {
+    if let Some(position) = allocation_position {
+        require!(
+            expected_allocation_position != ZERO_PUBKEY,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        require_keys_eq!(
+            *position.address(),
+            expected_allocation_position,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        require_keys_eq!(
+            position.funding_line,
+            expected_funding_line,
+            OmegaXProtocolError::FundingLineMismatch
+        );
+        require!(
+            quasar_pda_matches(
+                position.address(),
+                &crate::ID,
+                &[
+                    SEED_ALLOCATION_POSITION,
+                    position.capital_class.as_ref(),
+                    expected_funding_line.as_ref(),
+                ],
+                position.bump,
+            ),
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+    }
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_optional_allocation_ledger(
+    allocation_ledger: Option<&Account<AllocationLedger>>,
+    expected_allocation_position: Pubkey,
+    expected_asset_mint: Pubkey,
+) -> Result<()> {
+    if let Some(ledger) = allocation_ledger {
+        require!(
+            expected_allocation_position != ZERO_PUBKEY,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        require_keys_eq!(
+            ledger.allocation_position,
+            expected_allocation_position,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        require_keys_eq!(
+            ledger.asset_mint,
+            expected_asset_mint,
+            OmegaXProtocolError::AssetMintMismatch
+        );
+        require!(
+            quasar_pda_matches(
+                ledger.address(),
+                &crate::ID,
+                &[
+                    SEED_ALLOCATION_LEDGER,
+                    expected_allocation_position.as_ref(),
+                    expected_asset_mint.as_ref(),
+                ],
+                ledger.bump,
+            ),
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+    }
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_treasury_mutation_bindings(
+    series_ledger: Option<&Account<SeriesReserveLedger>>,
+    pool_class_ledger: Option<&Account<PoolClassLedger>>,
+    allocation_position: Option<&Account<AllocationPosition>>,
+    allocation_ledger: Option<&Account<AllocationLedger>>,
+    obligation: &ObligationAccountData<'_>,
+    funding_line_key: Pubkey,
+    funding_line_asset_mint: Pubkey,
+) -> Result<()> {
+    require_keys_eq!(
+        obligation.funding_line,
+        funding_line_key,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+    require_keys_eq!(
+        obligation.asset_mint,
+        funding_line_asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+
+    let allocation_scoped = obligation.liquidity_pool != ZERO_PUBKEY
+        || obligation.capital_class != ZERO_PUBKEY
+        || obligation.allocation_position != ZERO_PUBKEY;
+    if allocation_scoped {
+        require!(
+            obligation.liquidity_pool != ZERO_PUBKEY
+                && obligation.capital_class != ZERO_PUBKEY
+                && obligation.allocation_position != ZERO_PUBKEY,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        require!(
+            pool_class_ledger.is_some(),
+            OmegaXProtocolError::CapitalClassMismatch
+        );
+        require!(
+            allocation_position.is_some() && allocation_ledger.is_some(),
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+    }
+
+    validate_quasar_optional_series_ledger(
+        series_ledger,
+        obligation.policy_series,
+        obligation.asset_mint,
+    )?;
+    validate_quasar_optional_pool_class_ledger(
+        pool_class_ledger,
+        obligation.capital_class,
+        obligation.asset_mint,
+    )?;
+    validate_quasar_optional_allocation_position(
+        allocation_position,
+        obligation.allocation_position,
+        obligation.funding_line,
+    )?;
+    if let Some(position) = allocation_position {
+        require_keys_eq!(
+            position.liquidity_pool,
+            obligation.liquidity_pool,
+            OmegaXProtocolError::LiquidityPoolMismatch
+        );
+        require_keys_eq!(
+            position.capital_class,
+            obligation.capital_class,
+            OmegaXProtocolError::CapitalClassMismatch
+        );
+        require_keys_eq!(
+            position.health_plan,
+            obligation.health_plan,
+            OmegaXProtocolError::HealthPlanMismatch
+        );
+    }
+    validate_quasar_optional_allocation_ledger(
+        allocation_ledger,
+        obligation.allocation_position,
+        obligation.asset_mint,
+    )
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn reserve_obligation<'info>(
+    ctx: &mut Ctx<'info, ReserveObligation<'info>>,
+    reserve_amount: u64,
+) -> Result<()> {
+    require_quasar_protocol_not_paused(&ctx.accounts.protocol_governance)?;
+    require_quasar_positive_amount(reserve_amount)?;
+    let now_ts = Clock::get()?.unix_timestamp.get();
+    let obligation_key = *ctx.accounts.obligation.address();
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_obligation_reserve_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.health_plan,
+        &ctx.accounts.obligation,
+    )?;
+    require!(
+        ctx.accounts.obligation.status == OBLIGATION_STATUS_PROPOSED,
+        OmegaXProtocolError::InvalidObligationStateTransition
+    );
+    require!(
+        reserve_amount <= ctx.accounts.obligation.outstanding_amount.get(),
+        OmegaXProtocolError::AmountExceedsOutstandingObligation
+    );
+
+    let series_ledger = ctx
+        .accounts
+        .series_reserve_ledger
+        .as_ref()
+        .map(|ledger| &**ledger);
+    let pool_class_ledger = ctx
+        .accounts
+        .pool_class_ledger
+        .as_ref()
+        .map(|ledger| &**ledger);
+    let allocation_position = ctx
+        .accounts
+        .allocation_position
+        .as_ref()
+        .map(|position| &**position);
+    let allocation_ledger = ctx
+        .accounts
+        .allocation_ledger
+        .as_ref()
+        .map(|ledger| &**ledger);
+    validate_quasar_treasury_mutation_bindings(
+        series_ledger,
+        pool_class_ledger,
+        allocation_position,
+        allocation_ledger,
+        &ctx.accounts.obligation,
+        *ctx.accounts.funding_line.address(),
+        ctx.accounts.funding_line.asset_mint,
+    )?;
+    require_quasar_obligation_reserve_capacity(
+        &ctx.accounts.funding_line_ledger.sheet,
+        allocation_position,
+        reserve_amount,
+    )?;
+
+    let linked_claim_case = if let Some(claim_case) = ctx.accounts.claim_case.as_ref() {
+        let claim_case_key = *claim_case.address();
+        require_quasar_matching_linked_claim_case(
+            claim_case,
+            claim_case_key,
+            &ctx.accounts.obligation,
+            obligation_key,
+            *ctx.accounts.health_plan.address(),
+        )?;
+        claim_case_key
+    } else {
+        ctx.accounts.obligation.claim_case
+    };
+
+    let mut domain_sheet = ctx.accounts.domain_asset_ledger.sheet;
+    let mut plan_sheet = ctx.accounts.plan_reserve_ledger.sheet;
+    let mut funding_line_sheet = ctx.accounts.funding_line_ledger.sheet;
+    quasar_book_reserve(&mut domain_sheet, reserve_amount)?;
+    quasar_book_reserve(&mut plan_sheet, reserve_amount)?;
+    quasar_book_reserve(&mut funding_line_sheet, reserve_amount)?;
+
+    let domain_asset_ledger = &mut ctx.accounts.domain_asset_ledger;
+    let reserve_domain = domain_asset_ledger.reserve_domain;
+    let asset_mint = domain_asset_ledger.asset_mint;
+    let bump = domain_asset_ledger.bump;
+    domain_asset_ledger.set_inner(reserve_domain, asset_mint, domain_sheet, bump);
+
+    let plan_reserve_ledger = &mut ctx.accounts.plan_reserve_ledger;
+    let health_plan = plan_reserve_ledger.health_plan;
+    let asset_mint = plan_reserve_ledger.asset_mint;
+    let bump = plan_reserve_ledger.bump;
+    plan_reserve_ledger.set_inner(health_plan, asset_mint, plan_sheet, bump);
+
+    let funding_line_ledger = &mut ctx.accounts.funding_line_ledger;
+    let funding_line_key = funding_line_ledger.funding_line;
+    let asset_mint = funding_line_ledger.asset_mint;
+    let bump = funding_line_ledger.bump;
+    funding_line_ledger.set_inner(funding_line_key, asset_mint, funding_line_sheet, bump);
+
+    if let Some(series_ledger) = ctx.accounts.series_reserve_ledger.as_mut() {
+        let series_ledger = &mut **series_ledger;
+        let mut sheet = series_ledger.sheet;
+        quasar_book_reserve(&mut sheet, reserve_amount)?;
+        let policy_series = series_ledger.policy_series;
+        let asset_mint = series_ledger.asset_mint;
+        let bump = series_ledger.bump;
+        series_ledger.set_inner(policy_series, asset_mint, sheet, bump);
+    }
+
+    if let Some(pool_class_ledger) = ctx.accounts.pool_class_ledger.as_mut() {
+        let pool_class_ledger = &mut **pool_class_ledger;
+        let mut sheet = pool_class_ledger.sheet;
+        quasar_book_reserve(&mut sheet, reserve_amount)?;
+        let capital_class = pool_class_ledger.capital_class;
+        let asset_mint = pool_class_ledger.asset_mint;
+        let total_shares = pool_class_ledger.total_shares.get();
+        let realized_yield_amount = pool_class_ledger.realized_yield_amount.get();
+        let realized_loss_amount = pool_class_ledger.realized_loss_amount.get();
+        let bump = pool_class_ledger.bump;
+        pool_class_ledger.set_inner(
+            capital_class,
+            asset_mint,
+            sheet,
+            total_shares,
+            realized_yield_amount,
+            realized_loss_amount,
+            bump,
+        );
+    }
+
+    if let Some(allocation_position) = ctx.accounts.allocation_position.as_mut() {
+        let allocation_position = &mut **allocation_position;
+        let reserve_domain = allocation_position.reserve_domain;
+        let liquidity_pool = allocation_position.liquidity_pool;
+        let capital_class = allocation_position.capital_class;
+        let health_plan = allocation_position.health_plan;
+        let policy_series = allocation_position.policy_series;
+        let funding_line = allocation_position.funding_line;
+        let cap_amount = allocation_position.cap_amount.get();
+        let weight_bps = allocation_position.weight_bps.get();
+        let allocation_mode = allocation_position.allocation_mode;
+        let allocated_amount = allocation_position.allocated_amount.get();
+        let utilized_amount =
+            quasar_checked_add(allocation_position.utilized_amount.get(), reserve_amount)?;
+        let reserved_capacity =
+            quasar_checked_add(allocation_position.reserved_capacity.get(), reserve_amount)?;
+        let realized_pnl = allocation_position.realized_pnl.get();
+        let impaired_amount = allocation_position.impaired_amount.get();
+        let deallocation_only = allocation_position.deallocation_only.get();
+        let active = allocation_position.active.get();
+        let bump = allocation_position.bump;
+        allocation_position.set_inner(
+            reserve_domain,
+            liquidity_pool,
+            capital_class,
+            health_plan,
+            policy_series,
+            funding_line,
+            cap_amount,
+            weight_bps,
+            allocation_mode,
+            allocated_amount,
+            utilized_amount,
+            reserved_capacity,
+            realized_pnl,
+            impaired_amount,
+            deallocation_only,
+            active,
+            bump,
+        );
+    }
+
+    if let Some(allocation_ledger) = ctx.accounts.allocation_ledger.as_mut() {
+        let allocation_ledger = &mut **allocation_ledger;
+        let mut sheet = allocation_ledger.sheet;
+        quasar_book_reserve(&mut sheet, reserve_amount)?;
+        let allocation_position = allocation_ledger.allocation_position;
+        let asset_mint = allocation_ledger.asset_mint;
+        let realized_pnl = allocation_ledger.realized_pnl.get();
+        let bump = allocation_ledger.bump;
+        allocation_ledger.set_inner(allocation_position, asset_mint, sheet, realized_pnl, bump);
+    }
+
+    let obligation = &mut ctx.accounts.obligation;
+    let reserve_domain = obligation.reserve_domain;
+    let asset_mint = obligation.asset_mint;
+    let health_plan = obligation.health_plan;
+    let policy_series = obligation.policy_series;
+    let member_wallet = obligation.member_wallet;
+    let beneficiary = obligation.beneficiary;
+    let funding_line = obligation.funding_line;
+    let liquidity_pool = obligation.liquidity_pool;
+    let capital_class = obligation.capital_class;
+    let allocation_position = obligation.allocation_position;
+    let creation_reason_hash = obligation.creation_reason_hash;
+    let settlement_reason_hash = obligation.settlement_reason_hash;
+    let delivery_mode = obligation.delivery_mode;
+    let principal_amount = obligation.principal_amount.get();
+    let outstanding_amount = obligation.outstanding_amount.get();
+    let claimable_amount = obligation.claimable_amount.get();
+    let payable_amount = obligation.payable_amount.get();
+    let settled_amount = obligation.settled_amount.get();
+    let impaired_amount = obligation.impaired_amount.get();
+    let recovered_amount = obligation.recovered_amount.get();
+    let created_at = obligation.created_at.get();
+    let bump = obligation.bump;
+    let obligation_id = obligation.obligation_id().to_owned();
+    obligation.set_inner(
+        reserve_domain,
+        asset_mint,
+        health_plan,
+        policy_series,
+        member_wallet,
+        beneficiary,
+        funding_line,
+        linked_claim_case,
+        liquidity_pool,
+        capital_class,
+        allocation_position,
+        creation_reason_hash,
+        settlement_reason_hash,
+        OBLIGATION_STATUS_RESERVED,
+        delivery_mode,
+        principal_amount,
+        outstanding_amount,
+        reserve_amount,
+        claimable_amount,
+        payable_amount,
+        settled_amount,
+        impaired_amount,
+        recovered_amount,
+        created_at,
+        now_ts,
+        bump,
+        &obligation_id,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    let funding_line = &mut ctx.accounts.funding_line;
+    let reserve_domain = funding_line.reserve_domain;
+    let health_plan = funding_line.health_plan;
+    let policy_series = funding_line.policy_series;
+    let asset_mint = funding_line.asset_mint;
+    let line_type = funding_line.line_type;
+    let funding_priority = funding_line.funding_priority;
+    let committed_amount = funding_line.committed_amount.get();
+    let funded_amount = funding_line.funded_amount.get();
+    let reserved_amount = quasar_checked_add(funding_line.reserved_amount.get(), reserve_amount)?;
+    let spent_amount = funding_line.spent_amount.get();
+    let released_amount = funding_line.released_amount.get();
+    let returned_amount = funding_line.returned_amount.get();
+    let status = funding_line.status;
+    let caps_hash = funding_line.caps_hash;
+    let bump = funding_line.bump;
+    let line_id = funding_line.line_id().to_owned();
+    funding_line.set_inner(
+        reserve_domain,
+        health_plan,
+        policy_series,
+        asset_mint,
+        line_type,
+        funding_priority,
+        committed_amount,
+        funded_amount,
+        reserved_amount,
+        spent_amount,
+        released_amount,
+        returned_amount,
+        status,
+        caps_hash,
+        bump,
+        &line_id,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    if let Some(claim_case) = ctx.accounts.claim_case.as_mut() {
+        let reserve_domain = claim_case.reserve_domain;
+        let health_plan = claim_case.health_plan;
+        let policy_series = claim_case.policy_series;
+        let member_position = claim_case.member_position;
+        let funding_line = claim_case.funding_line;
+        let asset_mint = claim_case.asset_mint;
+        let claimant = claim_case.claimant;
+        let adjudicator = claim_case.adjudicator;
+        let delegate_recipient = claim_case.delegate_recipient;
+        let evidence_ref_hash = claim_case.evidence_ref_hash;
+        let decision_support_hash = claim_case.decision_support_hash;
+        let intake_status = claim_case.intake_status;
+        let review_state = claim_case.review_state;
+        let approved_amount = claim_case.approved_amount.get();
+        let denied_amount = claim_case.denied_amount.get();
+        let paid_amount = claim_case.paid_amount.get();
+        let recovered_amount = claim_case.recovered_amount.get();
+        let appeal_count = claim_case.appeal_count.get();
+        let attestation_count = claim_case.attestation_count.get();
+        let opened_at = claim_case.opened_at.get();
+        let closed_at = claim_case.closed_at.get();
+        let bump = claim_case.bump;
+        let claim_id = claim_case.claim_id().to_owned();
+        claim_case.set_inner(
+            reserve_domain,
+            health_plan,
+            policy_series,
+            member_position,
+            funding_line,
+            asset_mint,
+            claimant,
+            adjudicator,
+            delegate_recipient,
+            evidence_ref_hash,
+            decision_support_hash,
+            intake_status,
+            review_state,
+            approved_amount,
+            denied_amount,
+            paid_amount,
+            reserve_amount,
+            recovered_amount,
+            appeal_count,
+            attestation_count,
+            obligation_key,
+            opened_at,
+            now_ts,
+            closed_at,
+            bump,
+            &claim_id,
+            ctx.accounts.authority.to_account_view(),
+            None,
+        )?;
+    }
+
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn release_reserve(
     ctx: Context<ReleaseReserve>,
@@ -210,7 +917,7 @@ pub struct ReserveObligation<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()], bump = funding_line.bump)]
     pub funding_line: Box<Account<'info, FundingLine>>,
@@ -238,7 +945,7 @@ pub struct ReserveObligation<'info> {
             funding_line_ledger.bump,
         ) @ OmegaXProtocolError::FundingLineMismatch
     )]
-    pub funding_line_ledger: &'info Account<FundingLineLedger>,
+    pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_PLAN_RESERVE_LEDGER, health_plan.key().as_ref(), obligation.asset_mint.as_ref()], bump = plan_reserve_ledger.bump)]
     pub plan_reserve_ledger: Box<Account<'info, PlanReserveLedger>>,
@@ -252,7 +959,7 @@ pub struct ReserveObligation<'info> {
             plan_reserve_ledger.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
-    pub plan_reserve_ledger: &'info Account<PlanReserveLedger>,
+    pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,

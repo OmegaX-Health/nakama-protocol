@@ -1000,8 +1000,7 @@ pub mod omegax_protocol {
 
     #[instruction(discriminator = [48, 113, 133, 225, 40, 36, 197, 86])]
     pub fn reserve_obligation(ctx: Ctx<ReserveObligation>, amount: u64) -> Result<()> {
-        let _ = (&ctx, &amount);
-        quasar_handler_port_pending()
+        crate::funding_obligations::reserve_obligation(&mut ctx, amount)
     }
 
     #[instruction(discriminator = [209, 166, 218, 35, 147, 139, 238, 208])]
