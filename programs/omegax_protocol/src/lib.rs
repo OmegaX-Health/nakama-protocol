@@ -1436,14 +1436,13 @@ pub mod omegax_protocol {
         attestation_ref_hash: [u8; 32],
         schema_key_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &decision,
-            &attestation_hash,
-            &attestation_ref_hash,
-            &schema_key_hash,
-        );
-        quasar_handler_port_pending()
+        crate::claims::attest_claim_case(
+            &mut ctx,
+            decision,
+            attestation_hash,
+            attestation_ref_hash,
+            schema_key_hash,
+        )
     }
 }
 

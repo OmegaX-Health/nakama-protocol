@@ -2211,6 +2211,498 @@ pub(crate) fn attest_claim_case(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+fn require_quasar_valid_attestation_decision(decision: u8) -> Result<()> {
+    match decision {
+        CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE
+        | CLAIM_ATTESTATION_DECISION_SUPPORT_DENY
+        | CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW
+        | CLAIM_ATTESTATION_DECISION_ABSTAIN => Ok(()),
+        _ => err!(OmegaXProtocolError::InvalidClaimAttestationDecision),
+    }
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn quasar_hash_is_zero(value: &[u8; 32]) -> bool {
+    *value == [0; 32]
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_oracle_profile_supports_schema(
+    oracle_profile: &OracleProfileAccountData<'_>,
+    schema_key_hash: [u8; 32],
+) -> bool {
+    if quasar_hash_is_zero(&schema_key_hash) {
+        return false;
+    }
+
+    let supported_count =
+        usize::from(oracle_profile.supported_schema_count).min(MAX_ORACLE_SUPPORTED_SCHEMAS);
+    if supported_count == 0 {
+        return false;
+    }
+
+    oracle_profile
+        .supported_schema_key_hashes
+        .iter()
+        .take(supported_count)
+        .any(|supported_hash| *supported_hash == schema_key_hash)
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_claim_attestation_oracle_authority(
+    health_plan: &HealthPlanAccountData<'_>,
+    funding_line: &FundingLineAccountData<'_>,
+    oracle_profile: &OracleProfileAccountData<'_>,
+) -> Result<()> {
+    if funding_line.line_type == FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION {
+        return Ok(());
+    }
+
+    require_keys_eq!(
+        oracle_profile.oracle,
+        health_plan.oracle_authority,
+        OmegaXProtocolError::Unauthorized
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_claim_attestation_common(
+    protocol_governance: &ProtocolGovernance,
+    health_plan_key: Pubkey,
+    health_plan: &HealthPlanAccountData<'_>,
+    funding_line_key: Pubkey,
+    funding_line: &FundingLineAccountData<'_>,
+    claim_case: &ClaimCaseAccountData<'_>,
+    outcome_schema: &OutcomeSchemaAccountData<'_>,
+    oracle_profile: &OracleProfileAccountData<'_>,
+    attestation_ref_hash: [u8; 32],
+) -> Result<()> {
+    require_quasar_protocol_not_paused(protocol_governance)?;
+    require!(
+        health_plan.pause_flags.get() & PAUSE_FLAG_ORACLE_FINALITY_HOLD == 0,
+        OmegaXProtocolError::OracleFinalityHeld
+    );
+    require!(
+        !quasar_hash_is_zero(&claim_case.evidence_ref_hash),
+        OmegaXProtocolError::ClaimEvidenceRequired
+    );
+    require!(
+        attestation_ref_hash == claim_case.evidence_ref_hash,
+        OmegaXProtocolError::ClaimEvidenceMismatch
+    );
+    require!(
+        outcome_schema.verified.get(),
+        OmegaXProtocolError::OutcomeSchemaUnverified
+    );
+    require!(
+        quasar_oracle_profile_supports_schema(oracle_profile, outcome_schema.schema_key_hash),
+        OmegaXProtocolError::ClaimAttestationSchemaUnsupported
+    );
+    require_keys_eq!(
+        claim_case.health_plan,
+        funding_line.health_plan,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        health_plan.reserve_domain,
+        funding_line.reserve_domain,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+    require_keys_eq!(
+        health_plan_key,
+        claim_case.health_plan,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        funding_line_key,
+        claim_case.funding_line,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+    require_keys_eq!(
+        funding_line.policy_series,
+        claim_case.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require_keys_eq!(
+        funding_line.asset_mint,
+        claim_case.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require!(
+        funding_line.status == FUNDING_LINE_STATUS_OPEN,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+    require_quasar_claim_attestation_oracle_authority(health_plan, funding_line, oracle_profile)?;
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_lp_claim_attestation_scope(
+    health_plan: &HealthPlanAccountData<'_>,
+    funding_line: &FundingLineAccountData<'_>,
+    funding_line_key: Pubkey,
+    claim_case: &ClaimCaseAccountData<'_>,
+    oracle_profile: &OracleProfileAccountData<'_>,
+    liquidity_pool: &Account<LiquidityPoolAccountData<'_>>,
+    capital_class: &Account<CapitalClassAccountData<'_>>,
+    allocation_position: &Account<AllocationPosition>,
+    pool_oracle_approval: &Account<PoolOracleApproval>,
+    pool_oracle_permission_set: &Account<PoolOraclePermissionSet>,
+    pool_oracle_policy: &Account<PoolOraclePolicy>,
+) -> Result<(Pubkey, Pubkey)> {
+    let liquidity_pool_key = *liquidity_pool.address();
+    let capital_class_key = *capital_class.address();
+    let allocation_position_key = *allocation_position.address();
+
+    require!(
+        quasar_pda_matches(
+            liquidity_pool.address(),
+            &crate::ID,
+            &[
+                SEED_LIQUIDITY_POOL,
+                liquidity_pool.reserve_domain.as_ref(),
+                liquidity_pool.pool_id().as_bytes(),
+            ],
+            liquidity_pool.bump,
+        ),
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        liquidity_pool.reserve_domain,
+        health_plan.reserve_domain,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        liquidity_pool.deposit_asset_mint,
+        funding_line.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require!(
+        quasar_pda_matches(
+            capital_class.address(),
+            &crate::ID,
+            &[
+                SEED_CAPITAL_CLASS,
+                liquidity_pool.address().as_ref(),
+                capital_class.class_id().as_bytes(),
+            ],
+            capital_class.bump,
+        ),
+        OmegaXProtocolError::CapitalClassMismatch
+    );
+    require_keys_eq!(
+        capital_class.reserve_domain,
+        health_plan.reserve_domain,
+        OmegaXProtocolError::CapitalClassMismatch
+    );
+    require_keys_eq!(
+        capital_class.liquidity_pool,
+        liquidity_pool_key,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        allocation_position.reserve_domain,
+        health_plan.reserve_domain,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require_keys_eq!(
+        allocation_position.liquidity_pool,
+        liquidity_pool_key,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require_keys_eq!(
+        allocation_position.capital_class,
+        capital_class_key,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require!(
+        quasar_pda_matches(
+            allocation_position.address(),
+            &crate::ID,
+            &[
+                SEED_ALLOCATION_POSITION,
+                capital_class.address().as_ref(),
+                funding_line_key.as_ref(),
+            ],
+            allocation_position.bump,
+        ),
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require_keys_eq!(
+        allocation_position.health_plan,
+        claim_case.health_plan,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require_keys_eq!(
+        allocation_position.policy_series,
+        claim_case.policy_series,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require_keys_eq!(
+        allocation_position.funding_line,
+        funding_line_key,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require!(
+        allocation_position.active.get(),
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require!(
+        quasar_pda_matches(
+            pool_oracle_approval.address(),
+            &crate::ID,
+            &[
+                SEED_POOL_ORACLE_APPROVAL,
+                liquidity_pool.address().as_ref(),
+                oracle_profile.oracle.as_ref(),
+            ],
+            pool_oracle_approval.bump,
+        ),
+        OmegaXProtocolError::PoolOracleApprovalRequired
+    );
+    require_keys_eq!(
+        pool_oracle_approval.liquidity_pool,
+        liquidity_pool_key,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        pool_oracle_approval.oracle,
+        oracle_profile.oracle,
+        OmegaXProtocolError::OracleProfileMismatch
+    );
+    require!(
+        pool_oracle_approval.active.get(),
+        OmegaXProtocolError::PoolOracleApprovalRequired
+    );
+    require!(
+        quasar_pda_matches(
+            pool_oracle_permission_set.address(),
+            &crate::ID,
+            &[
+                SEED_POOL_ORACLE_PERMISSION_SET,
+                liquidity_pool.address().as_ref(),
+                oracle_profile.oracle.as_ref(),
+            ],
+            pool_oracle_permission_set.bump,
+        ),
+        OmegaXProtocolError::PoolOraclePermissionRequired
+    );
+    require_keys_eq!(
+        pool_oracle_permission_set.liquidity_pool,
+        liquidity_pool_key,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        pool_oracle_permission_set.oracle,
+        oracle_profile.oracle,
+        OmegaXProtocolError::OracleProfileMismatch
+    );
+    require!(
+        pool_oracle_permission_set.permissions.get() & POOL_ORACLE_PERMISSION_ATTEST_CLAIM != 0,
+        OmegaXProtocolError::PoolOraclePermissionRequired
+    );
+    require!(
+        quasar_pda_matches(
+            pool_oracle_policy.address(),
+            &crate::ID,
+            &[SEED_POOL_ORACLE_POLICY, liquidity_pool.address().as_ref()],
+            pool_oracle_policy.bump,
+        ),
+        OmegaXProtocolError::PoolOracleApprovalRequired
+    );
+    require_keys_eq!(
+        pool_oracle_policy.liquidity_pool,
+        liquidity_pool_key,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+
+    Ok((liquidity_pool_key, allocation_position_key))
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_claim_attestation_pool_scope(
+    accounts: &AttestClaimCase<'_>,
+) -> Result<(Pubkey, Pubkey)> {
+    if accounts.funding_line.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION {
+        require!(
+            accounts.liquidity_pool.is_none()
+                && accounts.capital_class.is_none()
+                && accounts.allocation_position.is_none()
+                && accounts.pool_oracle_approval.is_none()
+                && accounts.pool_oracle_permission_set.is_none()
+                && accounts.pool_oracle_policy.is_none(),
+            OmegaXProtocolError::FundingLineTypeMismatch
+        );
+        return Ok((ZERO_PUBKEY, ZERO_PUBKEY));
+    }
+
+    let Some(liquidity_pool) = accounts.liquidity_pool.as_ref() else {
+        return err!(OmegaXProtocolError::LiquidityPoolMismatch);
+    };
+    let Some(capital_class) = accounts.capital_class.as_ref() else {
+        return err!(OmegaXProtocolError::CapitalClassMismatch);
+    };
+    let Some(allocation_position) = accounts.allocation_position.as_ref() else {
+        return err!(OmegaXProtocolError::AllocationPositionMismatch);
+    };
+    let Some(pool_oracle_approval) = accounts.pool_oracle_approval.as_ref() else {
+        return err!(OmegaXProtocolError::PoolOracleApprovalRequired);
+    };
+    let Some(pool_oracle_permission_set) = accounts.pool_oracle_permission_set.as_ref() else {
+        return err!(OmegaXProtocolError::PoolOraclePermissionRequired);
+    };
+    let Some(pool_oracle_policy) = accounts.pool_oracle_policy.as_ref() else {
+        return err!(OmegaXProtocolError::PoolOracleApprovalRequired);
+    };
+
+    validate_quasar_lp_claim_attestation_scope(
+        &accounts.health_plan,
+        &accounts.funding_line,
+        *accounts.funding_line.address(),
+        &accounts.claim_case,
+        &accounts.oracle_profile,
+        liquidity_pool,
+        capital_class,
+        allocation_position,
+        pool_oracle_approval,
+        pool_oracle_permission_set,
+        pool_oracle_policy,
+    )
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn attest_claim_case<'info>(
+    ctx: &mut Ctx<'info, AttestClaimCase<'info>>,
+    decision: u8,
+    attestation_hash: [u8; 32],
+    attestation_ref_hash: [u8; 32],
+    schema_key_hash: [u8; 32],
+) -> Result<()> {
+    require_quasar_valid_attestation_decision(decision)?;
+    require!(
+        !quasar_hash_is_zero(&schema_key_hash),
+        OmegaXProtocolError::ClaimAttestationSchemaRequired
+    );
+
+    let now_ts = Clock::get()?.unix_timestamp.get();
+    let claim_case_key = *ctx.accounts.claim_case.address();
+    let oracle_profile_key = *ctx.accounts.oracle_profile.address();
+    let health_plan_key = *ctx.accounts.health_plan.address();
+    let funding_line_key = *ctx.accounts.funding_line.address();
+
+    validate_quasar_claim_attestation_common(
+        &ctx.accounts.protocol_governance,
+        health_plan_key,
+        &ctx.accounts.health_plan,
+        funding_line_key,
+        &ctx.accounts.funding_line,
+        &ctx.accounts.claim_case,
+        &ctx.accounts.outcome_schema,
+        &ctx.accounts.oracle_profile,
+        attestation_ref_hash,
+    )?;
+
+    let (liquidity_pool, allocation_position) =
+        validate_quasar_claim_attestation_pool_scope(&ctx.accounts)?;
+
+    let oracle = ctx.accounts.oracle_profile.oracle;
+    let health_plan = ctx.accounts.claim_case.health_plan;
+    let policy_series = ctx.accounts.claim_case.policy_series;
+    let evidence_ref_hash = ctx.accounts.claim_case.evidence_ref_hash;
+    let decision_support_hash = ctx.accounts.claim_case.decision_support_hash;
+    let schema_hash = ctx.accounts.outcome_schema.schema_hash;
+    let schema_version = ctx.accounts.outcome_schema.version.get();
+    let claim_attestation_bump = ctx.accounts.claim_attestation.bump;
+
+    ctx.accounts.claim_attestation.set_inner(
+        oracle,
+        oracle_profile_key,
+        claim_case_key,
+        health_plan,
+        policy_series,
+        decision,
+        attestation_hash,
+        attestation_ref_hash,
+        evidence_ref_hash,
+        decision_support_hash,
+        ctx.accounts.outcome_schema.schema_key_hash,
+        schema_hash,
+        schema_version,
+        liquidity_pool,
+        allocation_position,
+        now_ts,
+        now_ts,
+        claim_attestation_bump,
+    );
+
+    let claim_case = &mut ctx.accounts.claim_case;
+    let reserve_domain = claim_case.reserve_domain;
+    let health_plan = claim_case.health_plan;
+    let policy_series = claim_case.policy_series;
+    let member_position = claim_case.member_position;
+    let funding_line = claim_case.funding_line;
+    let asset_mint = claim_case.asset_mint;
+    let claimant = claim_case.claimant;
+    let adjudicator = claim_case.adjudicator;
+    let delegate_recipient = claim_case.delegate_recipient;
+    let evidence_ref_hash = claim_case.evidence_ref_hash;
+    let decision_support_hash = claim_case.decision_support_hash;
+    let intake_status = claim_case.intake_status;
+    let review_state = claim_case.review_state;
+    let approved_amount = claim_case.approved_amount.get();
+    let denied_amount = claim_case.denied_amount.get();
+    let paid_amount = claim_case.paid_amount.get();
+    let reserved_amount = claim_case.reserved_amount.get();
+    let recovered_amount = claim_case.recovered_amount.get();
+    let appeal_count = claim_case.appeal_count.get();
+    let attestation_count = claim_case
+        .attestation_count
+        .get()
+        .checked_add(1)
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    let linked_obligation = claim_case.linked_obligation;
+    let opened_at = claim_case.opened_at.get();
+    let closed_at = claim_case.closed_at.get();
+    let bump = claim_case.bump;
+    let claim_id = claim_case.claim_id().to_owned();
+
+    claim_case.set_inner(
+        reserve_domain,
+        health_plan,
+        policy_series,
+        member_position,
+        funding_line,
+        asset_mint,
+        claimant,
+        adjudicator,
+        delegate_recipient,
+        evidence_ref_hash,
+        decision_support_hash,
+        intake_status,
+        review_state,
+        approved_amount,
+        denied_amount,
+        paid_amount,
+        reserved_amount,
+        recovered_amount,
+        appeal_count,
+        attestation_count,
+        linked_obligation,
+        opened_at,
+        now_ts,
+        closed_at,
+        bump,
+        &claim_id,
+        ctx.accounts.oracle.to_account_view(),
+        None,
+    )?;
+
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn require_claim_evidence_mutable(claim_case: &ClaimCaseAccountData<'_>) -> Result<()> {
     require!(
@@ -3472,7 +3964,7 @@ pub struct AttestClaimCase<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub claim_attestation: &'info Account<ClaimAttestation>,
+    pub claim_attestation: &'info mut Account<ClaimAttestation>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
