@@ -188,6 +188,20 @@ fn require_quasar_oracle_profile_control(
 }
 
 #[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_curator_control(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    pool: &LiquidityPoolAccountData<'_>,
+) -> Result<()> {
+    if *authority == pool.curator || *authority == governance.governance_authority {
+        Ok(())
+    } else {
+        Err(OmegaXProtocolError::Unauthorized.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
 fn validate_quasar_oracle_profile_update_fields(
     display_name: &str,
     legal_name: &str,
@@ -404,6 +418,116 @@ pub(crate) fn set_pool_oracle_policy(
         quorum_n: policy.quorum_n,
         oracle_fee_bps: policy.oracle_fee_bps,
     });
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn set_pool_oracle<'info>(
+    ctx: &mut Ctx<'info, SetPoolOracle<'info>>,
+    active: bool,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_curator_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+    if active {
+        require!(
+            ctx.accounts.oracle_profile.active.get(),
+            OmegaXProtocolError::OracleProfileInactive
+        );
+    }
+
+    let liquidity_pool = *ctx.accounts.liquidity_pool.address();
+    let oracle = ctx.accounts.oracle_profile.oracle;
+    let updated_at_ts = Clock::get()?.unix_timestamp.get();
+    let bump = ctx.accounts.pool_oracle_approval.bump;
+
+    ctx.accounts.pool_oracle_approval.set_inner(
+        liquidity_pool,
+        oracle,
+        active,
+        updated_at_ts,
+        bump,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn set_pool_oracle_permissions<'info>(
+    ctx: &mut Ctx<'info, SetPoolOraclePermissions<'info>>,
+    permissions: u32,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_curator_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+    require!(
+        ctx.accounts.pool_oracle_approval.active.get() || permissions == 0,
+        OmegaXProtocolError::PoolOracleApprovalRequired
+    );
+
+    let liquidity_pool = *ctx.accounts.liquidity_pool.address();
+    let oracle = ctx.accounts.oracle_profile.oracle;
+    let updated_at_ts = Clock::get()?.unix_timestamp.get();
+    let bump = ctx.accounts.pool_oracle_permission_set.bump;
+
+    ctx.accounts.pool_oracle_permission_set.set_inner(
+        liquidity_pool,
+        oracle,
+        permissions,
+        updated_at_ts,
+        bump,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn set_pool_oracle_policy<'info>(
+    ctx: &mut Ctx<'info, SetPoolOraclePolicy<'info>>,
+    quorum_m: u8,
+    quorum_n: u8,
+    require_verified_schema: bool,
+    oracle_fee_bps: u16,
+    allow_delegate_claim: bool,
+    challenge_window_secs: u32,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_curator_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+    require!(
+        quorum_m > 0 && quorum_n > 0 && quorum_m <= quorum_n,
+        OmegaXProtocolError::InvalidOracleQuorum
+    );
+    require!(
+        oracle_fee_bps <= MAX_CONFIGURED_FEE_BPS,
+        OmegaXProtocolError::InvalidBps
+    );
+
+    let liquidity_pool = *ctx.accounts.liquidity_pool.address();
+    let updated_at_ts = Clock::get()?.unix_timestamp.get();
+    let bump = ctx.accounts.pool_oracle_policy.bump;
+
+    ctx.accounts.pool_oracle_policy.set_inner(
+        liquidity_pool,
+        quorum_m,
+        quorum_n,
+        require_verified_schema,
+        oracle_fee_bps,
+        allow_delegate_claim,
+        challenge_window_secs,
+        updated_at_ts,
+        bump,
+    );
 
     Ok(())
 }
@@ -747,7 +871,7 @@ pub struct SetPoolOracle<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub pool_oracle_approval: &'info Account<PoolOracleApproval>,
+    pub pool_oracle_approval: &'info mut Account<PoolOracleApproval>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -840,7 +964,7 @@ pub struct SetPoolOraclePermissions<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub pool_oracle_permission_set: &'info Account<PoolOraclePermissionSet>,
+    pub pool_oracle_permission_set: &'info mut Account<PoolOraclePermissionSet>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
@@ -901,7 +1025,7 @@ pub struct SetPoolOraclePolicy<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub pool_oracle_policy: &'info Account<PoolOraclePolicy>,
+    pub pool_oracle_policy: &'info mut Account<PoolOraclePolicy>,
     #[cfg(not(feature = "quasar"))]
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]

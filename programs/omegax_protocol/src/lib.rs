@@ -1367,8 +1367,7 @@ pub mod omegax_protocol {
 
     #[instruction(discriminator = [140, 225, 146, 45, 210, 81, 225, 223])]
     pub fn set_pool_oracle(ctx: Ctx<SetPoolOracle>, active: bool) -> Result<()> {
-        let _ = (&ctx, &active);
-        quasar_handler_port_pending()
+        crate::oracle_schema::set_pool_oracle(&mut ctx, active)
     }
 
     #[instruction(discriminator = [168, 14, 22, 106, 118, 145, 105, 44])]
@@ -1376,8 +1375,7 @@ pub mod omegax_protocol {
         ctx: Ctx<SetPoolOraclePermissions>,
         permissions: u32,
     ) -> Result<()> {
-        let _ = (&ctx, &permissions);
-        quasar_handler_port_pending()
+        crate::oracle_schema::set_pool_oracle_permissions(&mut ctx, permissions)
     }
 
     #[instruction(discriminator = [190, 13, 51, 113, 230, 140, 103, 82])]
@@ -1390,16 +1388,15 @@ pub mod omegax_protocol {
         allow_delegate_claim: bool,
         challenge_window_secs: u32,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &quorum_m,
-            &quorum_n,
-            &require_verified_schema,
-            &oracle_fee_bps,
-            &allow_delegate_claim,
-            &challenge_window_secs,
-        );
-        quasar_handler_port_pending()
+        crate::oracle_schema::set_pool_oracle_policy(
+            &mut ctx,
+            quorum_m,
+            quorum_n,
+            require_verified_schema,
+            oracle_fee_bps,
+            allow_delegate_claim,
+            challenge_window_secs,
+        )
     }
 
     #[instruction(discriminator = [187, 68, 109, 211, 168, 181, 105, 32])]
