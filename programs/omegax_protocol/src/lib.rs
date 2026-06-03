@@ -1065,15 +1065,14 @@ pub mod omegax_protocol {
         reserve_amount: u64,
         decision_support_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &review_state,
-            &approved_amount,
-            &denied_amount,
-            &reserve_amount,
-            &decision_support_hash,
-        );
-        quasar_handler_port_pending()
+        crate::claims::adjudicate_claim_case(
+            &mut ctx,
+            review_state,
+            approved_amount,
+            denied_amount,
+            reserve_amount,
+            decision_support_hash,
+        )
     }
 
     #[instruction(discriminator = [178, 123, 229, 204, 50, 204, 91, 71])]

@@ -346,6 +346,238 @@ pub(crate) fn adjudicate_claim_case(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+fn require_quasar_claim_adjudication_mutable(
+    claim_case: &ClaimCaseAccountData<'_>,
+    obligation: Option<&ObligationAccountData<'_>>,
+) -> Result<()> {
+    require!(
+        claim_case.paid_amount.get() == 0 && claim_case.intake_status < CLAIM_INTAKE_SETTLED,
+        OmegaXProtocolError::ClaimAdjudicationLocked
+    );
+    if let Some(obligation) = obligation {
+        require!(
+            obligation.status < OBLIGATION_STATUS_SETTLED && obligation.settled_amount.get() == 0,
+            OmegaXProtocolError::ClaimAdjudicationLocked
+        );
+    }
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_matching_linked_claim_case(
+    claim_case: &ClaimCaseAccountData<'_>,
+    claim_case_key: Pubkey,
+    obligation: &ObligationAccountData<'_>,
+    obligation_key: Pubkey,
+    health_plan_key: Pubkey,
+) -> Result<()> {
+    require!(
+        claim_case.health_plan == health_plan_key && obligation.health_plan == health_plan_key,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require!(
+        claim_case.policy_series == obligation.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require!(
+        claim_case.funding_line == obligation.funding_line,
+        OmegaXProtocolError::FundingLineMismatch
+    );
+    require!(
+        claim_case.asset_mint == obligation.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require!(
+        obligation.claim_case == ZERO_PUBKEY || obligation.claim_case == claim_case_key,
+        OmegaXProtocolError::ClaimCaseLinkMismatch
+    );
+    require!(
+        claim_case.linked_obligation == ZERO_PUBKEY
+            || claim_case.linked_obligation == obligation_key,
+        OmegaXProtocolError::ClaimCaseLinkMismatch
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn adjudicate_claim_case<'info>(
+    ctx: &mut Ctx<'info, AdjudicateClaimCase<'info>>,
+    review_state: u8,
+    approved_amount: u64,
+    denied_amount: u64,
+    reserve_amount: u64,
+    decision_support_hash: [u8; 32],
+) -> Result<()> {
+    require_quasar_protocol_not_paused(&ctx.accounts.protocol_governance)?;
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_claim_operator(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.health_plan,
+    )?;
+    require!(
+        reserve_amount <= approved_amount,
+        OmegaXProtocolError::AmountExceedsApprovedClaim
+    );
+
+    let claim_case_key = *ctx.accounts.claim_case.address();
+    let health_plan_key = *ctx.accounts.health_plan.address();
+    let now_ts = Clock::get()?.unix_timestamp.get();
+    let intake_status = if approved_amount > 0 {
+        CLAIM_INTAKE_APPROVED
+    } else {
+        CLAIM_INTAKE_DENIED
+    };
+
+    require_quasar_claim_adjudication_mutable(
+        &ctx.accounts.claim_case,
+        ctx.accounts
+            .obligation
+            .as_ref()
+            .map(|obligation| &**obligation),
+    )?;
+
+    let (linked_obligation, adjudicated_reserved_amount) =
+        if let Some(obligation) = ctx.accounts.obligation.as_mut() {
+            let obligation_key = *obligation.address();
+            require_quasar_matching_linked_claim_case(
+                &ctx.accounts.claim_case,
+                claim_case_key,
+                obligation,
+                obligation_key,
+                health_plan_key,
+            )?;
+            require!(
+                obligation.reserved_amount.get() <= approved_amount,
+                OmegaXProtocolError::AmountExceedsApprovedClaim
+            );
+
+            let reserve_domain = obligation.reserve_domain;
+            let asset_mint = obligation.asset_mint;
+            let health_plan = obligation.health_plan;
+            let policy_series = obligation.policy_series;
+            let member_wallet = obligation.member_wallet;
+            let beneficiary = obligation.beneficiary;
+            let funding_line = obligation.funding_line;
+            let liquidity_pool = obligation.liquidity_pool;
+            let capital_class = obligation.capital_class;
+            let allocation_position = obligation.allocation_position;
+            let creation_reason_hash = obligation.creation_reason_hash;
+            let settlement_reason_hash = obligation.settlement_reason_hash;
+            let status = obligation.status;
+            let delivery_mode = obligation.delivery_mode;
+            let principal_amount = obligation.principal_amount.get();
+            let outstanding_amount = obligation.outstanding_amount.get();
+            let reserved_amount = obligation.reserved_amount.get();
+            let claimable_amount = obligation.claimable_amount.get();
+            let payable_amount = obligation.payable_amount.get();
+            let settled_amount = obligation.settled_amount.get();
+            let impaired_amount = obligation.impaired_amount.get();
+            let recovered_amount = obligation.recovered_amount.get();
+            let created_at = obligation.created_at.get();
+            let updated_at = obligation.updated_at.get();
+            let bump = obligation.bump;
+            let obligation_id = obligation.obligation_id().to_owned();
+
+            obligation.set_inner(
+                reserve_domain,
+                asset_mint,
+                health_plan,
+                policy_series,
+                member_wallet,
+                beneficiary,
+                funding_line,
+                claim_case_key,
+                liquidity_pool,
+                capital_class,
+                allocation_position,
+                creation_reason_hash,
+                settlement_reason_hash,
+                status,
+                delivery_mode,
+                principal_amount,
+                outstanding_amount,
+                reserved_amount,
+                claimable_amount,
+                payable_amount,
+                settled_amount,
+                impaired_amount,
+                recovered_amount,
+                created_at,
+                updated_at,
+                bump,
+                &obligation_id,
+                ctx.accounts.authority.to_account_view(),
+                None,
+            )?;
+
+            (obligation_key, reserved_amount)
+        } else {
+            require!(
+                ctx.accounts.claim_case.linked_obligation == ZERO_PUBKEY,
+                OmegaXProtocolError::ClaimCaseLinkMismatch
+            );
+            require!(
+                reserve_amount == 0,
+                OmegaXProtocolError::DirectClaimReserveUnsupported
+            );
+            (ZERO_PUBKEY, 0)
+        };
+
+    let claim_case = &mut ctx.accounts.claim_case;
+    let reserve_domain = claim_case.reserve_domain;
+    let health_plan = claim_case.health_plan;
+    let policy_series = claim_case.policy_series;
+    let member_position = claim_case.member_position;
+    let funding_line = claim_case.funding_line;
+    let asset_mint = claim_case.asset_mint;
+    let claimant = claim_case.claimant;
+    let delegate_recipient = claim_case.delegate_recipient;
+    let evidence_ref_hash = claim_case.evidence_ref_hash;
+    let paid_amount = claim_case.paid_amount.get();
+    let recovered_amount = claim_case.recovered_amount.get();
+    let appeal_count = claim_case.appeal_count.get();
+    let attestation_count = claim_case.attestation_count.get();
+    let opened_at = claim_case.opened_at.get();
+    let closed_at = claim_case.closed_at.get();
+    let bump = claim_case.bump;
+    let claim_id = claim_case.claim_id().to_owned();
+
+    claim_case.set_inner(
+        reserve_domain,
+        health_plan,
+        policy_series,
+        member_position,
+        funding_line,
+        asset_mint,
+        claimant,
+        authority,
+        delegate_recipient,
+        evidence_ref_hash,
+        decision_support_hash,
+        intake_status,
+        review_state,
+        approved_amount,
+        denied_amount,
+        paid_amount,
+        adjudicated_reserved_amount,
+        recovered_amount,
+        appeal_count,
+        attestation_count,
+        linked_obligation,
+        opened_at,
+        now_ts,
+        closed_at,
+        bump,
+        &claim_id,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn settle_claim_case(
     ctx: Context<SettleClaimCase>,
@@ -1427,6 +1659,7 @@ pub struct AdjudicateClaimCase<'info> {
     #[account(mut)]
     pub obligation: Option<Box<Account<'info, Obligation>>>,
     #[cfg(feature = "quasar")]
+    #[account(mut)]
     pub obligation: Option<Account<ObligationAccountData<'info>>>,
 }
 
