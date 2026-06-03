@@ -967,22 +967,21 @@ pub mod omegax_protocol {
         creation_reason_hash: [u8; 32],
         obligation_id: String<u32, 32>,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &asset_mint,
-            &policy_series,
-            &member_wallet,
-            &beneficiary,
-            &claim_case,
-            &liquidity_pool_arg,
-            &capital_class_arg,
-            &allocation_position_arg,
-            &delivery_mode,
-            &amount,
-            &creation_reason_hash,
+        crate::funding_obligations::create_obligation(
+            &mut ctx,
+            asset_mint,
+            policy_series,
+            member_wallet,
+            beneficiary,
+            claim_case,
+            liquidity_pool_arg,
+            capital_class_arg,
+            allocation_position_arg,
+            delivery_mode,
+            amount,
+            creation_reason_hash,
             &obligation_id,
-        );
-        quasar_handler_port_pending()
+        )
     }
 
     #[instruction(discriminator = [48, 113, 133, 225, 40, 36, 197, 86])]
