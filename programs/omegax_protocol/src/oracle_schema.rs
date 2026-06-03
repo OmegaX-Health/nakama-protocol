@@ -170,6 +170,140 @@ pub(crate) fn update_oracle_profile(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_oracle_profile_control(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    oracle_profile: &OracleProfileAccountData<'_>,
+) -> Result<()> {
+    if *authority == oracle_profile.admin
+        || *authority == oracle_profile.oracle
+        || *authority == governance.governance_authority
+    {
+        Ok(())
+    } else {
+        Err(OmegaXProtocolError::Unauthorized.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn validate_quasar_oracle_profile_update_fields(
+    display_name: &str,
+    legal_name: &str,
+    website_url: &str,
+    app_url: &str,
+    logo_uri: &str,
+    webhook_url: &str,
+    supported_schema_count: usize,
+) -> Result<()> {
+    require!(
+        display_name.len() <= MAX_NAME_LEN,
+        OmegaXProtocolError::StringTooLong
+    );
+    require!(
+        legal_name.len() <= MAX_LONG_NAME_LEN,
+        OmegaXProtocolError::StringTooLong
+    );
+    require!(
+        website_url.len() <= MAX_URI_LEN,
+        OmegaXProtocolError::StringTooLong
+    );
+    require!(
+        app_url.len() <= MAX_URI_LEN,
+        OmegaXProtocolError::StringTooLong
+    );
+    require!(
+        logo_uri.len() <= MAX_URI_LEN,
+        OmegaXProtocolError::StringTooLong
+    );
+    require!(
+        webhook_url.len() <= MAX_URI_LEN,
+        OmegaXProtocolError::StringTooLong
+    );
+    require!(
+        supported_schema_count <= MAX_ORACLE_SUPPORTED_SCHEMAS,
+        OmegaXProtocolError::TooManyOracleSupportedSchemas
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn build_quasar_supported_schema_hashes(
+    values: &[[u8; 32]],
+) -> [[u8; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS] {
+    let mut destination = [[0u8; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS];
+    for (index, value) in values.iter().enumerate() {
+        destination[index] = *value;
+    }
+    destination
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn update_oracle_profile<'info>(
+    ctx: &mut Ctx<'info, UpdateOracleProfile<'info>>,
+    oracle_type: u8,
+    display_name: &str,
+    legal_name: &str,
+    website_url: &str,
+    app_url: &str,
+    logo_uri: &str,
+    webhook_url: &str,
+    supported_schema_key_hashes: &[[u8; 32]],
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_oracle_profile_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.oracle_profile,
+    )?;
+    validate_quasar_oracle_profile_update_fields(
+        display_name,
+        legal_name,
+        website_url,
+        app_url,
+        logo_uri,
+        webhook_url,
+        supported_schema_key_hashes.len(),
+    )?;
+
+    let supported_schema_count = supported_schema_key_hashes.len() as u8;
+    let supported_schema_key_hashes =
+        build_quasar_supported_schema_hashes(supported_schema_key_hashes);
+    let updated_at_ts = Clock::get()?.unix_timestamp.get();
+
+    let profile = &mut ctx.accounts.oracle_profile;
+    let oracle = profile.oracle;
+    let admin = profile.admin;
+    let active = profile.active.get();
+    let claimed = profile.claimed.get();
+    let created_at_ts = profile.created_at_ts.get();
+    let bump = profile.bump;
+
+    profile.set_inner(
+        oracle,
+        admin,
+        oracle_type,
+        supported_schema_count,
+        supported_schema_key_hashes,
+        active,
+        claimed,
+        created_at_ts,
+        updated_at_ts,
+        bump,
+        display_name,
+        legal_name,
+        website_url,
+        app_url,
+        logo_uri,
+        webhook_url,
+        ctx.accounts.authority.to_account_view(),
+        None,
+    )?;
+
+    Ok(())
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn set_pool_oracle(ctx: Context<SetPoolOracle>, args: SetPoolOracleArgs) -> Result<()> {
     require_curator_control(
