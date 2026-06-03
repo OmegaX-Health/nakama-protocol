@@ -889,19 +889,18 @@ pub mod omegax_protocol {
         invite_expires_at: i64,
         anchor_ref: Pubkey,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &series_scope,
-            &subject_commitment,
-            &eligibility_status,
-            &delegated_rights,
-            &proof_mode,
-            &token_gate_amount_snapshot,
-            &invite_id_hash,
-            &invite_expires_at,
-            &anchor_ref,
-        );
-        quasar_handler_port_pending()
+        crate::plans_membership::open_member_position(
+            &mut ctx,
+            series_scope,
+            subject_commitment,
+            eligibility_status,
+            delegated_rights,
+            proof_mode,
+            token_gate_amount_snapshot,
+            invite_id_hash,
+            invite_expires_at,
+            anchor_ref,
+        )
     }
 
     #[instruction(discriminator = [254, 66, 68, 244, 98, 157, 111, 191])]
