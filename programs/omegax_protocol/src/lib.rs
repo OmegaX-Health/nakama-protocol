@@ -1315,8 +1315,7 @@ pub mod omegax_protocol {
         amount: u64,
         reason_hash: [u8; 32],
     ) -> Result<()> {
-        let _ = (&ctx, &amount, &reason_hash);
-        quasar_handler_port_pending()
+        crate::capital::mark_impairment(&mut ctx, amount, reason_hash)
     }
 
     #[instruction(discriminator = [176, 200, 234, 37, 199, 129, 164, 111])]
