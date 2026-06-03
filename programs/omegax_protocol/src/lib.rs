@@ -1100,22 +1100,21 @@ pub mod omegax_protocol {
         pool_id: String<u32, 32>,
         display_name: String<u32, 64>,
     ) -> Result<()> {
-        let _ = (
-            &ctx,
-            &curator,
-            &allocator,
-            &sentinel,
-            &deposit_asset_mint,
-            &strategy_hash,
-            &allowed_exposure_hash,
-            &external_yield_adapter_hash,
-            &fee_bps,
-            &redemption_policy,
-            &pause_flags,
+        crate::capital::create_liquidity_pool(
+            &mut ctx,
+            curator,
+            allocator,
+            sentinel,
+            deposit_asset_mint,
+            strategy_hash,
+            allowed_exposure_hash,
+            external_yield_adapter_hash,
+            fee_bps,
+            redemption_policy,
+            pause_flags,
             &pool_id,
             &display_name,
-        );
-        quasar_handler_port_pending()
+        )
     }
 
     #[instruction(discriminator = [0, 161, 244, 112, 151, 137, 35, 221])]

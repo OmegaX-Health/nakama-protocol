@@ -32,6 +32,8 @@ pub(crate) use classes::update_capital_class_controls;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use classes::{create_capital_class, update_capital_class_controls};
 pub(crate) use impairments::mark_impairment;
+#[cfg(feature = "quasar")]
+pub(crate) use liquidity_pool::create_liquidity_pool;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use liquidity_pool::create_liquidity_pool;
 #[cfg(not(feature = "quasar"))]
