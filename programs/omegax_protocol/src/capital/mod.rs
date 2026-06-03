@@ -37,9 +37,6 @@ pub(crate) use liquidity_pool::create_liquidity_pool;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use lp_positions::deposit_into_capital_class;
 pub(crate) use lp_positions::update_lp_position_credentialing;
-#[cfg(feature = "quasar")]
-pub(crate) use redemptions::request_redemption;
-#[cfg(not(feature = "quasar"))]
 pub(crate) use redemptions::{process_redemption_queue, request_redemption};
 
 pub use allocations::{

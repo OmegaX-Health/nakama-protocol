@@ -1203,8 +1203,7 @@ pub mod omegax_protocol {
 
     #[instruction(discriminator = [244, 120, 208, 73, 216, 200, 158, 93])]
     pub fn process_redemption_queue(ctx: Ctx<ProcessRedemptionQueue>, shares: u64) -> Result<()> {
-        let _ = (&ctx, &shares);
-        quasar_handler_port_pending()
+        crate::capital::process_redemption_queue(&mut ctx, shares)
     }
 
     #[instruction(discriminator = [120, 62, 236, 14, 227, 240, 52, 253])]
