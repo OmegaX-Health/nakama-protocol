@@ -1179,8 +1179,7 @@ pub mod omegax_protocol {
         amount: u64,
         shares: u64,
     ) -> Result<()> {
-        let _ = (&ctx, &amount, &shares);
-        quasar_handler_port_pending()
+        crate::capital::deposit_into_capital_class(&mut ctx, amount, shares)
     }
 
     #[instruction(discriminator = [14, 62, 182, 237, 59, 79, 149, 22])]

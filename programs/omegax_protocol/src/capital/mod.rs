@@ -36,6 +36,8 @@ pub(crate) use impairments::mark_impairment;
 pub(crate) use liquidity_pool::create_liquidity_pool;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use liquidity_pool::create_liquidity_pool;
+#[cfg(feature = "quasar")]
+pub(crate) use lp_positions::deposit_into_capital_class;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use lp_positions::deposit_into_capital_class;
 pub(crate) use lp_positions::update_lp_position_credentialing;

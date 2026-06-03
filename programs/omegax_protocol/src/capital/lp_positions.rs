@@ -4,6 +4,147 @@
 
 use super::*;
 
+#[cfg(feature = "quasar")]
+use quasar_lang::sysvars::Sysvar;
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_protocol_not_paused(governance: &ProtocolGovernance) -> Result<()> {
+    require!(
+        !governance.emergency_pause.get(),
+        OmegaXProtocolError::ProtocolEmergencyPaused
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_positive_amount(amount: u64) -> Result<()> {
+    require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_capital_class_active(capital_class: &CapitalClassAccountData<'_>) -> Result<()> {
+    require!(
+        capital_class.active.get(),
+        OmegaXProtocolError::CapitalClassInactive
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn quasar_checked_add(lhs: u64, rhs: u64) -> Result<u64> {
+    lhs.checked_add(rhs)
+        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn quasar_checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
+    lhs.checked_sub(rhs)
+        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_require_class_access_mode(restriction_mode: u8, credentialed: bool) -> Result<()> {
+    match restriction_mode {
+        CAPITAL_CLASS_RESTRICTION_OPEN => Ok(()),
+        CAPITAL_CLASS_RESTRICTION_RESTRICTED | CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY => {
+            require!(credentialed, OmegaXProtocolError::RestrictedCapitalClass);
+            Ok(())
+        }
+        _ => err!(OmegaXProtocolError::RestrictedCapitalClass),
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_deposit_shares_for_nav(
+    net_amount: u64,
+    total_shares: u64,
+    nav_assets: u64,
+    min_shares_out: u64,
+) -> Result<u64> {
+    require_quasar_positive_amount(net_amount)?;
+    let shares = if total_shares == 0 && nav_assets == 0 {
+        net_amount
+    } else {
+        require!(
+            total_shares > 0 && nav_assets > 0,
+            OmegaXProtocolError::InvalidCapitalShareState
+        );
+        let computed = (net_amount as u128)
+            .checked_mul(total_shares as u128)
+            .ok_or(OmegaXProtocolError::ArithmeticError)?
+            .checked_div(nav_assets as u128)
+            .ok_or(OmegaXProtocolError::ArithmeticError)?;
+        u64::try_from(computed).map_err(|_| OmegaXProtocolError::ArithmeticError)?
+    };
+
+    require!(shares > 0, OmegaXProtocolError::InvalidDepositShares);
+    if min_shares_out > 0 {
+        require!(
+            shares >= min_shares_out,
+            OmegaXProtocolError::MinimumSharesOutNotMet
+        );
+    }
+    Ok(shares)
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
+    let encumbered = sheet
+        .reserved
+        .checked_add(sheet.claimable)
+        .and_then(|value| value.checked_add(sheet.payable))
+        .and_then(|value| value.checked_add(sheet.impaired))
+        .and_then(|value| value.checked_add(sheet.pending_redemption))
+        .and_then(|value| value.checked_add(sheet.restricted))
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    sheet.free = sheet.funded.saturating_sub(encumbered);
+    let redeemable_encumbered = encumbered
+        .checked_add(sheet.allocated)
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    sheet.redeemable = sheet.funded.saturating_sub(redeemable_encumbered);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_book_inflow_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
+    sheet.funded = quasar_checked_add(sheet.funded, amount)?;
+    quasar_recompute_sheet(sheet)
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_book_fee_accrual_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
+    if amount == 0 {
+        return Ok(());
+    }
+    sheet.funded = quasar_checked_sub(sheet.funded, amount)?;
+    quasar_recompute_sheet(sheet)
+}
+
+#[cfg(feature = "quasar")]
+fn quasar_fee_share_from_bps(amount: u64, bps: u16) -> Result<u64> {
+    if bps == 0 || amount == 0 {
+        return Ok(0);
+    }
+    require!(
+        bps <= BASIS_POINTS_DENOMINATOR,
+        OmegaXProtocolError::FeeVaultBpsMisconfigured
+    );
+    let scaled = (amount as u128)
+        .checked_mul(bps as u128)
+        .ok_or(OmegaXProtocolError::ArithmeticError)?
+        .checked_div(BASIS_POINTS_DENOMINATOR as u128)
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    let fee = u64::try_from(scaled).map_err(|_| OmegaXProtocolError::ArithmeticError)?;
+    require!(fee <= amount, OmegaXProtocolError::ArithmeticError);
+    Ok(fee)
+}
+
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn update_lp_position_credentialing(
     ctx: Context<UpdateLpPositionCredentialing>,
@@ -218,6 +359,290 @@ pub(crate) fn deposit_into_capital_class(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+pub(crate) fn deposit_into_capital_class<'info>(
+    ctx: &mut Ctx<'info, DepositIntoCapitalClass<'info>>,
+    amount: u64,
+    min_shares_out: u64,
+) -> Result<()> {
+    require_quasar_protocol_not_paused(&ctx.accounts.protocol_governance)?;
+    require_quasar_positive_amount(amount)?;
+    require_quasar_capital_class_active(&ctx.accounts.capital_class)?;
+    require!(
+        ctx.accounts.capital_class.pause_flags.get() & PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS == 0,
+        OmegaXProtocolError::CapitalSubscriptionsPaused
+    );
+    transfer_to_domain_vault(
+        amount,
+        ctx.accounts.owner,
+        ctx.accounts.source_token_account,
+        ctx.accounts.asset_mint,
+        ctx.accounts.vault_token_account,
+        ctx.accounts.token_program,
+        &ctx.accounts.domain_asset_vault,
+    )?;
+
+    let liquidity_pool_key = *ctx.accounts.liquidity_pool.address();
+    let pool_deposit_mint = ctx.accounts.liquidity_pool.deposit_asset_mint;
+    require_keys_eq!(
+        ctx.accounts.pool_treasury_vault.liquidity_pool,
+        liquidity_pool_key,
+        OmegaXProtocolError::FeeVaultMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.pool_treasury_vault.asset_mint,
+        pool_deposit_mint,
+        OmegaXProtocolError::FeeVaultMismatch
+    );
+
+    let entry_fee = quasar_fee_share_from_bps(amount, ctx.accounts.capital_class.fee_bps.get())?;
+    let net_amount = quasar_checked_sub(amount, entry_fee)?;
+    let shares = quasar_deposit_shares_for_nav(
+        net_amount,
+        ctx.accounts.capital_class.total_shares.get(),
+        ctx.accounts.capital_class.nav_assets.get(),
+        min_shares_out,
+    )?;
+
+    let owner = *ctx.accounts.owner.address();
+    let capital_class_key = *ctx.accounts.capital_class.address();
+    let restriction_mode = ctx.accounts.capital_class.restriction_mode;
+    let min_lockup_seconds = ctx.accounts.capital_class.min_lockup_seconds.get();
+    let now_ts = Clock::get()?.unix_timestamp.get();
+
+    let position = &ctx.accounts.lp_position;
+    let is_unbound = position.owner == ZERO_PUBKEY && position.capital_class == ZERO_PUBKEY;
+    if !is_unbound {
+        require_keys_eq!(
+            position.capital_class,
+            capital_class_key,
+            OmegaXProtocolError::Unauthorized
+        );
+        require_keys_eq!(position.owner, owner, OmegaXProtocolError::Unauthorized);
+    }
+    quasar_require_class_access_mode(restriction_mode, position.credentialed.get())?;
+    require!(
+        min_lockup_seconds >= 0,
+        OmegaXProtocolError::InvalidLockupSeconds
+    );
+    let position_shares = quasar_checked_add(position.shares.get(), shares)?;
+    let subscription_basis = quasar_checked_add(position.subscription_basis.get(), net_amount)?;
+    let lockup_ends_at = now_ts
+        .checked_add(min_lockup_seconds)
+        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+    let pending_redemption_shares = position.pending_redemption_shares.get();
+    let pending_redemption_assets = position.pending_redemption_assets.get();
+    let realized_distributions = position.realized_distributions.get();
+    let impaired_principal = position.impaired_principal.get();
+    let credentialed = position.credentialed.get();
+    let queue_status = if is_unbound {
+        LP_QUEUE_STATUS_NONE
+    } else {
+        position.queue_status
+    };
+    let redemption_sequence = position.redemption_sequence.get();
+    let redemption_requested_at = position.redemption_requested_at.get();
+    let lp_position_bump = position.bump;
+
+    let new_total_shares =
+        quasar_checked_add(ctx.accounts.capital_class.total_shares.get(), shares)?;
+    let new_nav_assets =
+        quasar_checked_add(ctx.accounts.capital_class.nav_assets.get(), net_amount)?;
+    let new_pool_tvl = quasar_checked_add(
+        ctx.accounts.liquidity_pool.total_value_locked.get(),
+        net_amount,
+    )?;
+    let new_total_assets =
+        quasar_checked_add(ctx.accounts.domain_asset_vault.total_assets.get(), amount)?;
+    let mut domain_sheet = ctx.accounts.domain_asset_ledger.sheet;
+    let mut pool_class_sheet = ctx.accounts.pool_class_ledger.sheet;
+    quasar_book_inflow_sheet(&mut domain_sheet, amount)?;
+    quasar_book_inflow_sheet(&mut pool_class_sheet, amount)?;
+    if entry_fee > 0 {
+        quasar_book_fee_accrual_sheet(&mut domain_sheet, entry_fee)?;
+        quasar_book_fee_accrual_sheet(&mut pool_class_sheet, entry_fee)?;
+    }
+    let new_ledger_total_shares =
+        quasar_checked_add(ctx.accounts.pool_class_ledger.total_shares.get(), shares)?;
+    let new_accrued_fees = quasar_checked_add(
+        ctx.accounts.pool_treasury_vault.accrued_fees.get(),
+        entry_fee,
+    )?;
+
+    let lp_position = &mut ctx.accounts.lp_position;
+    lp_position.set_inner(
+        capital_class_key,
+        owner,
+        position_shares,
+        subscription_basis,
+        pending_redemption_shares,
+        pending_redemption_assets,
+        realized_distributions,
+        impaired_principal,
+        lockup_ends_at,
+        credentialed,
+        queue_status,
+        redemption_sequence,
+        redemption_requested_at,
+        lp_position_bump,
+    );
+
+    let capital_class = &mut ctx.accounts.capital_class;
+    let reserve_domain = capital_class.reserve_domain;
+    let liquidity_pool = capital_class.liquidity_pool;
+    let share_mint = capital_class.share_mint;
+    let priority = capital_class.priority;
+    let impairment_rank = capital_class.impairment_rank;
+    let restriction_mode = capital_class.restriction_mode;
+    let redemption_terms_mode = capital_class.redemption_terms_mode;
+    let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
+    let permissioning_hash = capital_class.permissioning_hash;
+    let fee_bps = capital_class.fee_bps.get();
+    let min_lockup_seconds = capital_class.min_lockup_seconds.get();
+    let pause_flags = capital_class.pause_flags.get();
+    let queue_only_redemptions = capital_class.queue_only_redemptions.get();
+    let allocated_assets = capital_class.allocated_assets.get();
+    let reserved_assets = capital_class.reserved_assets.get();
+    let impaired_assets = capital_class.impaired_assets.get();
+    let pending_redemptions = capital_class.pending_redemptions.get();
+    let next_redemption_sequence = capital_class.next_redemption_sequence.get();
+    let next_redemption_to_process = capital_class.next_redemption_to_process.get();
+    let active = capital_class.active.get();
+    let bump = capital_class.bump;
+    let class_id = capital_class.class_id().to_owned();
+    let display_name = capital_class.display_name().to_owned();
+    capital_class.set_inner(
+        reserve_domain,
+        liquidity_pool,
+        share_mint,
+        priority,
+        impairment_rank,
+        restriction_mode,
+        redemption_terms_mode,
+        wrapper_metadata_hash,
+        permissioning_hash,
+        fee_bps,
+        min_lockup_seconds,
+        pause_flags,
+        queue_only_redemptions,
+        new_total_shares,
+        new_nav_assets,
+        allocated_assets,
+        reserved_assets,
+        impaired_assets,
+        pending_redemptions,
+        next_redemption_sequence,
+        next_redemption_to_process,
+        active,
+        bump,
+        &class_id,
+        &display_name,
+        ctx.accounts.owner.to_account_view(),
+        None,
+    )?;
+
+    let pool = &mut ctx.accounts.liquidity_pool;
+    let reserve_domain = pool.reserve_domain;
+    let curator = pool.curator;
+    let allocator = pool.allocator;
+    let sentinel = pool.sentinel;
+    let deposit_asset_mint = pool.deposit_asset_mint;
+    let strategy_hash = pool.strategy_hash;
+    let allowed_exposure_hash = pool.allowed_exposure_hash;
+    let external_yield_adapter_hash = pool.external_yield_adapter_hash;
+    let fee_bps = pool.fee_bps.get();
+    let redemption_policy = pool.redemption_policy;
+    let pause_flags = pool.pause_flags.get();
+    let total_allocated = pool.total_allocated.get();
+    let total_reserved = pool.total_reserved.get();
+    let total_impaired = pool.total_impaired.get();
+    let total_pending_redemptions = pool.total_pending_redemptions.get();
+    let active = pool.active.get();
+    let audit_nonce = pool.audit_nonce.get();
+    let bump = pool.bump;
+    let pool_id = pool.pool_id().to_owned();
+    let display_name = pool.display_name().to_owned();
+    pool.set_inner(
+        reserve_domain,
+        curator,
+        allocator,
+        sentinel,
+        deposit_asset_mint,
+        strategy_hash,
+        allowed_exposure_hash,
+        external_yield_adapter_hash,
+        fee_bps,
+        redemption_policy,
+        pause_flags,
+        new_pool_tvl,
+        total_allocated,
+        total_reserved,
+        total_impaired,
+        total_pending_redemptions,
+        active,
+        audit_nonce,
+        bump,
+        &pool_id,
+        &display_name,
+        ctx.accounts.owner.to_account_view(),
+        None,
+    )?;
+
+    let domain_vault = &mut ctx.accounts.domain_asset_vault;
+    let reserve_domain = domain_vault.reserve_domain;
+    let asset_mint = domain_vault.asset_mint;
+    let vault_token_account = domain_vault.vault_token_account;
+    let bump = domain_vault.bump;
+    domain_vault.set_inner(
+        reserve_domain,
+        asset_mint,
+        vault_token_account,
+        new_total_assets,
+        bump,
+    );
+
+    let domain_ledger = &mut ctx.accounts.domain_asset_ledger;
+    let reserve_domain = domain_ledger.reserve_domain;
+    let asset_mint = domain_ledger.asset_mint;
+    let bump = domain_ledger.bump;
+    domain_ledger.set_inner(reserve_domain, asset_mint, domain_sheet, bump);
+
+    let class_ledger = &mut ctx.accounts.pool_class_ledger;
+    let capital_class = class_ledger.capital_class;
+    let asset_mint = class_ledger.asset_mint;
+    let realized_yield_amount = class_ledger.realized_yield_amount.get();
+    let realized_loss_amount = class_ledger.realized_loss_amount.get();
+    let bump = class_ledger.bump;
+    class_ledger.set_inner(
+        capital_class,
+        asset_mint,
+        pool_class_sheet,
+        new_ledger_total_shares,
+        realized_yield_amount,
+        realized_loss_amount,
+        bump,
+    );
+
+    if entry_fee > 0 {
+        let treasury_vault = &mut ctx.accounts.pool_treasury_vault;
+        let liquidity_pool = treasury_vault.liquidity_pool;
+        let asset_mint = treasury_vault.asset_mint;
+        let fee_recipient = treasury_vault.fee_recipient;
+        let withdrawn_fees = treasury_vault.withdrawn_fees.get();
+        let bump = treasury_vault.bump;
+        treasury_vault.set_inner(
+            liquidity_pool,
+            asset_mint,
+            fee_recipient,
+            new_accrued_fees,
+            withdrawn_fees,
+            bump,
+        );
+    }
+
+    Ok(())
+}
+
 #[derive(Accounts)]
 #[cfg_attr(
     not(feature = "quasar"),
@@ -318,7 +743,7 @@ pub struct DepositIntoCapitalClass<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_vault: &'info Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
     pub domain_asset_ledger: Box<Account<'info, DomainAssetLedger>>,
@@ -332,7 +757,7 @@ pub struct DepositIntoCapitalClass<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
     pub liquidity_pool: Box<Account<'info, LiquidityPool>>,
@@ -374,7 +799,7 @@ pub struct DepositIntoCapitalClass<'info> {
             pool_class_ledger.bump,
         ) @ OmegaXProtocolError::CapitalClassMismatch
     )]
-    pub pool_class_ledger: &'info Account<PoolClassLedger>,
+    pub pool_class_ledger: &'info mut Account<PoolClassLedger>,
     #[cfg_attr(
         not(feature = "quasar"),
         account(
@@ -400,7 +825,7 @@ pub struct DepositIntoCapitalClass<'info> {
         )
     )]
     #[cfg(feature = "quasar")]
-    pub lp_position: &'info Account<LPPosition>,
+    pub lp_position: &'info mut Account<LPPosition>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -422,12 +847,13 @@ pub struct DepositIntoCapitalClass<'info> {
         constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
     )]
-    pub pool_treasury_vault: &'info Account<PoolTreasuryVault>,
+    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub source_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub source_token_account: &'info InterfaceAccount<TokenAccount>,
+    #[account(mut)]
+    pub source_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[cfg(feature = "quasar")]
@@ -436,7 +862,8 @@ pub struct DepositIntoCapitalClass<'info> {
     #[account(mut)]
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
+    #[account(mut)]
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
