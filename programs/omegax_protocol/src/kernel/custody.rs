@@ -8,6 +8,8 @@ use anchor_lang::prelude::CpiContext;
 #[cfg(not(feature = "quasar"))]
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 #[cfg(feature = "quasar")]
+use quasar_lang::cpi::Seed;
+#[cfg(feature = "quasar")]
 use quasar_spl::{TokenCpi, SPL_TOKEN_ID};
 
 use crate::constants::*;
@@ -247,4 +249,62 @@ pub(crate) fn transfer_from_domain_vault<'info>(
         amount,
         asset_mint.decimals,
     )
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn transfer_from_domain_vault(
+    amount: u64,
+    domain_asset_vault: &Account<DomainAssetVault>,
+    vault_token_account: &InterfaceAccount<TokenAccount>,
+    recipient_token_account: &InterfaceAccount<TokenAccount>,
+    asset_mint: &InterfaceAccount<Mint>,
+    token_program: &Interface<TokenInterface>,
+) -> Result<()> {
+    require_classic_spl_token(asset_mint, token_program)?;
+    require_keys_eq!(
+        *vault_token_account.address(),
+        domain_asset_vault.vault_token_account,
+        OmegaXProtocolError::VaultTokenAccountMismatch
+    );
+    require_keys_eq!(
+        *asset_mint.address(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *vault_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *recipient_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_neq!(
+        *vault_token_account.address(),
+        *recipient_token_account.address(),
+        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+    );
+
+    let reserve_domain = domain_asset_vault.reserve_domain;
+    let asset_mint_key = domain_asset_vault.asset_mint;
+    let bump_seed = [domain_asset_vault.bump];
+    let signer_seeds = [
+        Seed::from(SEED_DOMAIN_ASSET_VAULT),
+        Seed::from(reserve_domain.as_ref()),
+        Seed::from(asset_mint_key.as_ref()),
+        Seed::from(&bump_seed),
+    ];
+
+    token_program
+        .transfer_checked(
+            vault_token_account,
+            asset_mint,
+            recipient_token_account,
+            domain_asset_vault,
+            amount,
+            asset_mint.decimals(),
+        )
+        .invoke_signed(&signer_seeds)
 }

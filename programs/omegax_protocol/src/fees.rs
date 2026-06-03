@@ -426,6 +426,298 @@ pub(crate) fn withdraw_pool_oracle_fee_sol(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn quasar_checked_add(lhs: u64, rhs: u64) -> Result<u64> {
+    lhs.checked_add(rhs)
+        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn quasar_checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
+    lhs.checked_sub(rhs)
+        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_positive_amount(amount: u64) -> Result<()> {
+    require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_governance(authority: &Pubkey, governance: &ProtocolGovernance) -> Result<()> {
+    require_keys_eq!(
+        *authority,
+        governance.governance_authority,
+        OmegaXProtocolError::Unauthorized
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_curator_control(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    pool: &LiquidityPoolAccountData<'_>,
+) -> Result<()> {
+    if *authority == pool.curator || *authority == governance.governance_authority {
+        Ok(())
+    } else {
+        err!(OmegaXProtocolError::Unauthorized)
+    }
+}
+
+#[cfg(feature = "quasar")]
+#[inline(always)]
+fn require_quasar_oracle_profile_control(
+    authority: &Pubkey,
+    governance: &ProtocolGovernance,
+    oracle_profile: &OracleProfileAccountData<'_>,
+) -> Result<()> {
+    if *authority == oracle_profile.admin
+        || *authority == oracle_profile.oracle
+        || *authority == governance.governance_authority
+    {
+        Ok(())
+    } else {
+        err!(OmegaXProtocolError::Unauthorized)
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_fee_vault_balance(accrued: u64, withdrawn: u64, requested: u64) -> Result<u64> {
+    require_quasar_positive_amount(requested)?;
+    let new_withdrawn = quasar_checked_add(withdrawn, requested)?;
+    require!(
+        new_withdrawn <= accrued,
+        OmegaXProtocolError::FeeVaultInsufficientBalance
+    );
+    Ok(new_withdrawn)
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_configured_fee_recipient(fee_recipient: Pubkey) -> Result<Pubkey> {
+    require!(
+        fee_recipient != ZERO_PUBKEY,
+        OmegaXProtocolError::FeeRecipientInvalid
+    );
+    Ok(fee_recipient)
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_fee_recipient_owner(
+    actual_owner: Pubkey,
+    configured_recipient: Pubkey,
+) -> Result<()> {
+    require_quasar_configured_fee_recipient(configured_recipient)?;
+    require_keys_eq!(
+        actual_owner,
+        configured_recipient,
+        OmegaXProtocolError::FeeRecipientMismatch
+    );
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_fee_recipient_token_owner(
+    recipient_token_account: &InterfaceAccount<TokenAccount>,
+    configured_recipient: Pubkey,
+) -> Result<()> {
+    require_quasar_fee_recipient_owner(*recipient_token_account.owner(), configured_recipient)
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn withdraw_protocol_fee_spl<'info>(
+    ctx: &mut Ctx<'info, WithdrawProtocolFeeSpl<'info>>,
+    amount: u64,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_governance(&authority, &ctx.accounts.protocol_governance)?;
+    let new_withdrawn = require_quasar_fee_vault_balance(
+        ctx.accounts.protocol_fee_vault.accrued_fees.get(),
+        ctx.accounts.protocol_fee_vault.withdrawn_fees.get(),
+        amount,
+    )?;
+    require_quasar_fee_recipient_token_owner(
+        ctx.accounts.recipient_token_account,
+        ctx.accounts.protocol_fee_vault.fee_recipient,
+    )?;
+
+    transfer_from_domain_vault(
+        amount,
+        ctx.accounts.domain_asset_vault,
+        ctx.accounts.vault_token_account,
+        ctx.accounts.recipient_token_account,
+        ctx.accounts.asset_mint,
+        ctx.accounts.token_program,
+    )?;
+
+    let new_total_assets =
+        quasar_checked_sub(ctx.accounts.domain_asset_vault.total_assets.get(), amount)?;
+    let domain_vault = &mut ctx.accounts.domain_asset_vault;
+    let reserve_domain = domain_vault.reserve_domain;
+    let asset_mint = domain_vault.asset_mint;
+    let vault_token_account = domain_vault.vault_token_account;
+    let bump = domain_vault.bump;
+    domain_vault.set_inner(
+        reserve_domain,
+        asset_mint,
+        vault_token_account,
+        new_total_assets,
+        bump,
+    );
+
+    let fee_vault = &mut ctx.accounts.protocol_fee_vault;
+    let reserve_domain = fee_vault.reserve_domain;
+    let asset_mint = fee_vault.asset_mint;
+    let fee_recipient = fee_vault.fee_recipient;
+    let accrued_fees = fee_vault.accrued_fees.get();
+    let bump = fee_vault.bump;
+    fee_vault.set_inner(
+        reserve_domain,
+        asset_mint,
+        fee_recipient,
+        accrued_fees,
+        new_withdrawn,
+        bump,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn withdraw_pool_treasury_spl<'info>(
+    ctx: &mut Ctx<'info, WithdrawPoolTreasurySpl<'info>>,
+    amount: u64,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_curator_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+    let new_withdrawn = require_quasar_fee_vault_balance(
+        ctx.accounts.pool_treasury_vault.accrued_fees.get(),
+        ctx.accounts.pool_treasury_vault.withdrawn_fees.get(),
+        amount,
+    )?;
+    require_quasar_fee_recipient_token_owner(
+        ctx.accounts.recipient_token_account,
+        ctx.accounts.pool_treasury_vault.fee_recipient,
+    )?;
+
+    transfer_from_domain_vault(
+        amount,
+        ctx.accounts.domain_asset_vault,
+        ctx.accounts.vault_token_account,
+        ctx.accounts.recipient_token_account,
+        ctx.accounts.asset_mint,
+        ctx.accounts.token_program,
+    )?;
+
+    let new_total_assets =
+        quasar_checked_sub(ctx.accounts.domain_asset_vault.total_assets.get(), amount)?;
+    let domain_vault = &mut ctx.accounts.domain_asset_vault;
+    let reserve_domain = domain_vault.reserve_domain;
+    let asset_mint = domain_vault.asset_mint;
+    let vault_token_account = domain_vault.vault_token_account;
+    let bump = domain_vault.bump;
+    domain_vault.set_inner(
+        reserve_domain,
+        asset_mint,
+        vault_token_account,
+        new_total_assets,
+        bump,
+    );
+
+    let fee_vault = &mut ctx.accounts.pool_treasury_vault;
+    let liquidity_pool = fee_vault.liquidity_pool;
+    let asset_mint = fee_vault.asset_mint;
+    let fee_recipient = fee_vault.fee_recipient;
+    let accrued_fees = fee_vault.accrued_fees.get();
+    let bump = fee_vault.bump;
+    fee_vault.set_inner(
+        liquidity_pool,
+        asset_mint,
+        fee_recipient,
+        accrued_fees,
+        new_withdrawn,
+        bump,
+    );
+
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn withdraw_pool_oracle_fee_spl<'info>(
+    ctx: &mut Ctx<'info, WithdrawPoolOracleFeeSpl<'info>>,
+    amount: u64,
+) -> Result<()> {
+    let authority = *ctx.accounts.authority.address();
+    require_quasar_oracle_profile_control(
+        &authority,
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.oracle_profile,
+    )?;
+    let new_withdrawn = require_quasar_fee_vault_balance(
+        ctx.accounts.pool_oracle_fee_vault.accrued_fees.get(),
+        ctx.accounts.pool_oracle_fee_vault.withdrawn_fees.get(),
+        amount,
+    )?;
+    require_quasar_fee_recipient_token_owner(
+        ctx.accounts.recipient_token_account,
+        ctx.accounts.pool_oracle_fee_vault.fee_recipient,
+    )?;
+
+    transfer_from_domain_vault(
+        amount,
+        ctx.accounts.domain_asset_vault,
+        ctx.accounts.vault_token_account,
+        ctx.accounts.recipient_token_account,
+        ctx.accounts.asset_mint,
+        ctx.accounts.token_program,
+    )?;
+
+    let new_total_assets =
+        quasar_checked_sub(ctx.accounts.domain_asset_vault.total_assets.get(), amount)?;
+    let domain_vault = &mut ctx.accounts.domain_asset_vault;
+    let reserve_domain = domain_vault.reserve_domain;
+    let asset_mint = domain_vault.asset_mint;
+    let vault_token_account = domain_vault.vault_token_account;
+    let bump = domain_vault.bump;
+    domain_vault.set_inner(
+        reserve_domain,
+        asset_mint,
+        vault_token_account,
+        new_total_assets,
+        bump,
+    );
+
+    let fee_vault = &mut ctx.accounts.pool_oracle_fee_vault;
+    let liquidity_pool = fee_vault.liquidity_pool;
+    let oracle = fee_vault.oracle;
+    let asset_mint = fee_vault.asset_mint;
+    let fee_recipient = fee_vault.fee_recipient;
+    let accrued_fees = fee_vault.accrued_fees.get();
+    let bump = fee_vault.bump;
+    fee_vault.set_inner(
+        liquidity_pool,
+        oracle,
+        asset_mint,
+        fee_recipient,
+        accrued_fees,
+        new_withdrawn,
+        bump,
+    );
+
+    Ok(())
+}
+
 #[derive(Accounts)]
 #[cfg_attr(not(feature = "quasar"), instruction(args: InitProtocolFeeVaultArgs))]
 #[cfg_attr(feature = "quasar", instruction(asset_mint: Pubkey, _fee_recipient: Pubkey))]
@@ -491,7 +783,6 @@ pub struct InitProtocolFeeVault<'info> {
     #[cfg_attr(
         feature = "quasar",
         account(
-            mut,
             constraint = quasar_pda_matches(
                 protocol_fee_vault.address(),
                 &crate::ID,
@@ -766,7 +1057,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
         constraint = protocol_fee_vault.reserve_domain == *reserve_domain.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = protocol_fee_vault.asset_mint != NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub protocol_fee_vault: &'info Account<ProtocolFeeVault>,
+    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -784,7 +1075,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -802,7 +1093,7 @@ pub struct WithdrawProtocolFeeSpl<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == protocol_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -821,14 +1112,16 @@ pub struct WithdrawProtocolFeeSpl<'info> {
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
+        mut,
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub recipient_token_account: &'info InterfaceAccount<TokenAccount>,
+    #[account(mut)]
+    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
@@ -942,7 +1235,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
         constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
         constraint = pool_treasury_vault.asset_mint != NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub pool_treasury_vault: &'info Account<PoolTreasuryVault>,
+    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -960,7 +1253,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -978,7 +1271,7 @@ pub struct WithdrawPoolTreasurySpl<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == pool_treasury_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -997,14 +1290,16 @@ pub struct WithdrawPoolTreasurySpl<'info> {
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
+        mut,
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub recipient_token_account: &'info InterfaceAccount<TokenAccount>,
+    #[account(mut)]
+    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
@@ -1139,7 +1434,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
         constraint = pool_oracle_fee_vault.oracle == oracle_profile.oracle @ OmegaXProtocolError::OracleProfileMismatch,
         constraint = pool_oracle_fee_vault.asset_mint != NATIVE_SOL_MINT @ OmegaXProtocolError::FeeVaultRailMismatch,
     )]
-    pub pool_oracle_fee_vault: &'info Account<PoolOracleFeeVault>,
+    pub pool_oracle_fee_vault: &'info mut Account<PoolOracleFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -1157,7 +1452,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
             domain_asset_vault.bump,
         ) @ OmegaXProtocolError::DomainAssetVaultRequired
     )]
-    pub domain_asset_vault: &'info Account<DomainAssetVault>,
+    pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,
@@ -1175,7 +1470,7 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
             domain_asset_ledger.bump,
         ) @ OmegaXProtocolError::ReserveDomainMismatch
     )]
-    pub domain_asset_ledger: &'info Account<DomainAssetLedger>,
+    pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == pool_oracle_fee_vault.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
@@ -1194,14 +1489,16 @@ pub struct WithdrawPoolOracleFeeSpl<'info> {
     pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
     #[account(
+        mut,
         constraint = *vault_token_account.address() == domain_asset_vault.vault_token_account @ OmegaXProtocolError::VaultTokenAccountMismatch,
     )]
-    pub vault_token_account: &'info InterfaceAccount<TokenAccount>,
+    pub vault_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
     #[cfg(feature = "quasar")]
-    pub recipient_token_account: &'info InterfaceAccount<TokenAccount>,
+    #[account(mut)]
+    pub recipient_token_account: &'info mut InterfaceAccount<TokenAccount>,
     #[cfg(not(feature = "quasar"))]
     pub token_program: Interface<'info, TokenInterface>,
     #[cfg(feature = "quasar")]
