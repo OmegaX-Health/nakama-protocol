@@ -853,11 +853,6 @@ async function main() {
         sponsor_operator: planSpec.sponsorOperator,
         claims_operator: planSpec.claimsOperator,
         oracle_authority: planSpec.oracleAuthority,
-        membership_mode: planSpec.membershipMode,
-        membership_gate_kind: planSpec.membershipGateKind,
-        membership_gate_mint: protocol.ZERO_PUBKEY_KEY,
-        membership_gate_min_amount: 0n,
-        membership_invite_authority: planSpec.membershipInviteAuthority,
         allowed_rail_mask: 0xffff,
         default_funding_priority: 0,
         oracle_policy_hash: sha256Bytes(`plan:${planSpec.fixture.planId}:oracle-policy`),
@@ -1142,68 +1137,6 @@ async function main() {
         { pubkey: oracleProfileAddress },
         { pubkey: poolOracleApprovalAddress },
         { pubkey: poolOraclePermissionSetAddress, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    });
-  }
-
-  const memberPositionSpecs = [
-    {
-      address: seekerMemberPosition,
-      wallet: roleWallets.member,
-      healthPlan: seekerPlan.address,
-      policySeries: seekerRewardSeries.address,
-      rights: RIGHT_CLAIM_REWARD | RIGHT_VIEW_PAYOUT_HISTORY,
-      proofMode: MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
-      inviteAuthority: governance,
-      inviteIdHash: sha256Bytes("invite:seeker:member"),
-    },
-    {
-      address: blendedRewardMemberPosition,
-      wallet: roleWallets.member,
-      healthPlan: blendedPlan.address,
-      policySeries: blendedRewardSeries.address,
-      rights: RIGHT_CLAIM_REWARD,
-      proofMode: MEMBERSHIP_PROOF_MODE_OPEN,
-      inviteAuthority: null,
-      inviteIdHash: Array(32).fill(0),
-    },
-    {
-      address: blendedProtectionMemberPosition,
-      wallet: roleWallets.secondMember,
-      healthPlan: blendedPlan.address,
-      policySeries: blendedProtectionSeries.address,
-      rights: RIGHT_OPEN_CLAIM_CASE | RIGHT_APPOINT_DELEGATE,
-      proofMode: MEMBERSHIP_PROOF_MODE_OPEN,
-      inviteAuthority: null,
-      inviteIdHash: Array(32).fill(0),
-    },
-  ];
-  for (const memberPosition of memberPositionSpecs) {
-    if (await protocol.accountExists(connection, memberPosition.address)) continue;
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: memberPosition.wallet,
-      signers: memberPosition.inviteAuthority ? [memberPosition.inviteAuthority] : [],
-      label: `open_member_position:${memberPosition.address.slice(0, 8)}`,
-      instructionName: "open_member_position",
-      args: {
-        series_scope: new PublicKey(memberPosition.policySeries),
-        subject_commitment: sha256Bytes(`member:${memberPosition.wallet.publicKey.toBase58()}`),
-        eligibility_status: protocol.ELIGIBILITY_ELIGIBLE,
-        delegated_rights: memberPosition.rights,
-        proof_mode: memberPosition.proofMode,
-        invite_id_hash: memberPosition.inviteIdHash,
-        invite_expires_at: 0n,
-      },
-      accounts: [
-        { pubkey: memberPosition.wallet.publicKey, isSigner: true, isWritable: true },
-        { pubkey: governanceAddress },
-        { pubkey: memberPosition.healthPlan },
-        { pubkey: memberPosition.policySeries === protocol.ZERO_PUBKEY ? null : memberPosition.policySeries },
-        { pubkey: memberPosition.address, isWritable: true },
-        { pubkey: memberPosition.inviteAuthority?.publicKey ?? null, isSigner: true },
         { pubkey: SystemProgram.programId },
       ],
     });

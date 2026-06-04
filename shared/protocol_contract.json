@@ -426,51 +426,6 @@
           "optional": false
         },
         {
-          "name": "member_position",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  109,
-                  98,
-                  101,
-                  114,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "member_position.health_plan",
-                "account": "MemberPosition"
-              },
-              {
-                "kind": "account",
-                "path": "member_position.wallet",
-                "account": "MemberPosition"
-              },
-              {
-                "kind": "account",
-                "path": "member_position.policy_series",
-                "account": "MemberPosition"
-              }
-            ]
-          }
-        },
-        {
           "name": "claim_case",
           "writable": true,
           "signer": false,
@@ -1971,50 +1926,6 @@
           }
         },
         {
-          "name": "member_position",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  109,
-                  98,
-                  101,
-                  114,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "member_position.wallet",
-                "account": "MemberPosition"
-              },
-              {
-                "kind": "account",
-                "path": "member_position.policy_series",
-                "account": "MemberPosition"
-              }
-            ]
-          }
-        },
-        {
           "name": "funding_line",
           "writable": false,
           "signer": false,
@@ -2371,134 +2282,6 @@
           "name": "series_reserve_ledger",
           "writable": true,
           "signer": false,
-          "optional": true
-        },
-        {
-          "name": "system_program",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "address": "11111111111111111111111111111111"
-        }
-      ]
-    },
-    {
-      "name": "open_member_position",
-      "discriminator": [
-        161,
-        42,
-        115,
-        196,
-        30,
-        87,
-        104,
-        236
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "OpenMemberPositionArgs"
-            }
-          }
-        }
-      ],
-      "accounts": [
-        {
-          "name": "wallet",
-          "writable": true,
-          "signer": true,
-          "optional": false
-        },
-        {
-          "name": "health_plan",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  104,
-                  101,
-                  97,
-                  108,
-                  116,
-                  104,
-                  95,
-                  112,
-                  108,
-                  97,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.health_plan_id",
-                "account": "HealthPlan"
-              }
-            ]
-          }
-        },
-        {
-          "name": "policy_series",
-          "writable": false,
-          "signer": false,
-          "optional": true
-        },
-        {
-          "name": "member_position",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  109,
-                  98,
-                  101,
-                  114,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "wallet"
-              },
-              {
-                "kind": "arg",
-                "path": "args.series_scope"
-              }
-            ]
-          }
-        },
-        {
-          "name": "invite_authority",
-          "writable": false,
-          "signer": true,
           "optional": true
         },
         {
@@ -3869,12 +3652,6 @@
           "optional": true
         },
         {
-          "name": "member_position",
-          "writable": false,
-          "signer": false,
-          "optional": false
-        },
-        {
           "name": "asset_mint",
           "writable": false,
           "signer": false,
@@ -4293,12 +4070,6 @@
           }
         },
         {
-          "name": "member_position",
-          "writable": false,
-          "signer": false,
-          "optional": true
-        },
-        {
           "name": "asset_mint",
           "writable": false,
           "signer": false,
@@ -4386,117 +4157,6 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "update_member_eligibility",
-      "discriminator": [
-        254,
-        66,
-        68,
-        244,
-        98,
-        157,
-        111,
-        191
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "UpdateMemberEligibilityArgs"
-            }
-          }
-        }
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": false,
-          "signer": true,
-          "optional": false
-        },
-        {
-          "name": "health_plan",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  104,
-                  101,
-                  97,
-                  108,
-                  116,
-                  104,
-                  95,
-                  112,
-                  108,
-                  97,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.health_plan_id",
-                "account": "HealthPlan"
-              }
-            ]
-          }
-        },
-        {
-          "name": "member_position",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  109,
-                  101,
-                  109,
-                  98,
-                  101,
-                  114,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "member_position.wallet",
-                "account": "MemberPosition"
-              },
-              {
-                "kind": "account",
-                "path": "member_position.policy_series",
-                "account": "MemberPosition"
               }
             ]
           }
@@ -4832,16 +4492,6 @@
       103,
       191
     ],
-    "MemberPosition": [
-      88,
-      118,
-      224,
-      251,
-      240,
-      186,
-      123,
-      175
-    ],
     "Obligation": [
       168,
       206,
@@ -4947,12 +4597,6 @@
       "series_reserve_ledger",
       "<policy_series>",
       "<asset_mint>"
-    ],
-    "member_position": [
-      "member_position",
-      "<health_plan>",
-      "<wallet>",
-      "<series_scope>"
     ],
     "funding_line": [
       "funding_line",

@@ -20,7 +20,6 @@ pub const SEED_HEALTH_PLAN: &[u8] = b"health_plan";
 pub const SEED_PLAN_RESERVE_LEDGER: &[u8] = b"plan_reserve_ledger";
 pub const SEED_POLICY_SERIES: &[u8] = b"policy_series";
 pub const SEED_SERIES_RESERVE_LEDGER: &[u8] = b"series_reserve_ledger";
-pub const SEED_MEMBER_POSITION: &[u8] = b"member_position";
 pub const SEED_FUNDING_LINE: &[u8] = b"funding_line";
 pub const SEED_FUNDING_LINE_LEDGER: &[u8] = b"funding_line_ledger";
 pub const SEED_CLAIM_CASE: &[u8] = b"claim_case";
@@ -66,20 +65,6 @@ pub const RESERVE_ORACLE_SOURCE_NONE: u8 = 0;
 pub const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM: u8 = 1;
 pub const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_FEED: u8 = 2;
 pub const RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED: u8 = 3;
-
-pub const ELIGIBILITY_PENDING: u8 = 0;
-pub const ELIGIBILITY_ELIGIBLE: u8 = 1;
-pub const ELIGIBILITY_PAUSED: u8 = 2;
-pub const ELIGIBILITY_CLOSED: u8 = 3;
-
-pub const MEMBERSHIP_MODE_OPEN: u8 = 0;
-pub const MEMBERSHIP_MODE_INVITE_ONLY: u8 = 2;
-
-pub const MEMBERSHIP_GATE_KIND_OPEN: u8 = 0;
-pub const MEMBERSHIP_GATE_KIND_INVITE_ONLY: u8 = 1;
-
-pub const MEMBERSHIP_PROOF_MODE_OPEN: u8 = 0;
-pub const MEMBERSHIP_PROOF_MODE_INVITE_PERMIT: u8 = 2;
 
 pub const CLAIM_INTAKE_OPEN: u8 = 0;
 pub const CLAIM_INTAKE_UNDER_REVIEW: u8 = 1;

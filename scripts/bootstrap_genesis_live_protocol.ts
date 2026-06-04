@@ -348,13 +348,6 @@ async function main() {
         sponsor_operator: new PublicKey(config.roles.sponsorOperator),
         claims_operator: new PublicKey(config.roles.claimsOperator),
         oracle_authority: new PublicKey(config.roles.oracleAuthority),
-        membership_mode: config.healthPlan.membershipMode,
-        membership_gate_kind: config.healthPlan.membershipGateKind,
-        membership_gate_mint: protocol.ZERO_PUBKEY_KEY,
-        membership_gate_min_amount: 0n,
-        membership_invite_authority: config.healthPlan.membershipInviteAuthority
-          ? new PublicKey(config.healthPlan.membershipInviteAuthority)
-          : protocol.ZERO_PUBKEY_KEY,
         allowed_rail_mask: 0xffff,
         default_funding_priority: 0,
         oracle_policy_hash: sha256Bytes(`plan:${config.healthPlan.planId}:oracle-policy`),

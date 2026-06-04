@@ -131,20 +131,6 @@ pub mod omegax_protocol {
         crate::plans_membership::version_policy_series(ctx, args)
     }
 
-    pub fn open_member_position(
-        ctx: Context<OpenMemberPosition>,
-        args: OpenMemberPositionArgs,
-    ) -> Result<()> {
-        crate::plans_membership::open_member_position(ctx, args)
-    }
-
-    pub fn update_member_eligibility(
-        ctx: Context<UpdateMemberEligibility>,
-        args: UpdateMemberEligibilityArgs,
-    ) -> Result<()> {
-        crate::plans_membership::update_member_eligibility(ctx, args)
-    }
-
     pub fn open_funding_line(
         ctx: Context<OpenFundingLine>,
         args: OpenFundingLineArgs,
@@ -355,11 +341,6 @@ pub mod omegax_protocol {
         sponsor_operator: Pubkey,
         claims_operator: Pubkey,
         oracle_authority: Pubkey,
-        membership_mode: u8,
-        membership_gate_kind: u8,
-        membership_gate_mint: Pubkey,
-        membership_gate_min_amount: u64,
-        membership_invite_authority: Pubkey,
         allowed_rail_mask: u16,
         default_funding_priority: u8,
         oracle_policy_hash: [u8; 32],
@@ -377,11 +358,6 @@ pub mod omegax_protocol {
             sponsor_operator,
             claims_operator,
             oracle_authority,
-            membership_mode,
-            membership_gate_kind,
-            membership_gate_mint,
-            membership_gate_min_amount,
-            membership_invite_authority,
             allowed_rail_mask,
             default_funding_priority,
             oracle_policy_hash,
@@ -401,11 +377,6 @@ pub mod omegax_protocol {
         sponsor_operator: Pubkey,
         claims_operator: Pubkey,
         oracle_authority: Pubkey,
-        membership_mode: u8,
-        membership_gate_kind: u8,
-        membership_gate_mint: Pubkey,
-        membership_gate_min_amount: u64,
-        membership_invite_authority: Pubkey,
         allowed_rail_mask: u16,
         default_funding_priority: u8,
         oracle_policy_hash: [u8; 32],
@@ -421,11 +392,6 @@ pub mod omegax_protocol {
             sponsor_operator,
             claims_operator,
             oracle_authority,
-            membership_mode,
-            membership_gate_kind,
-            membership_gate_mint,
-            membership_gate_min_amount,
-            membership_invite_authority,
             allowed_rail_mask,
             default_funding_priority,
             oracle_policy_hash,
@@ -517,44 +483,6 @@ pub mod omegax_protocol {
             series_id,
             display_name,
             metadata_uri,
-        )
-    }
-
-    #[instruction(discriminator = [161, 42, 115, 196, 30, 87, 104, 236])]
-    pub fn open_member_position(
-        ctx: Ctx<OpenMemberPosition>,
-        series_scope: Pubkey,
-        subject_commitment: [u8; 32],
-        eligibility_status: u8,
-        delegated_rights: u32,
-        proof_mode: u8,
-        invite_id_hash: [u8; 32],
-        invite_expires_at: i64,
-    ) -> Result<()> {
-        crate::plans_membership::open_member_position(
-            &mut ctx,
-            series_scope,
-            subject_commitment,
-            eligibility_status,
-            delegated_rights,
-            proof_mode,
-            invite_id_hash,
-            invite_expires_at,
-        )
-    }
-
-    #[instruction(discriminator = [254, 66, 68, 244, 98, 157, 111, 191])]
-    pub fn update_member_eligibility(
-        ctx: Ctx<UpdateMemberEligibility>,
-        eligibility_status: u8,
-        delegated_rights: u32,
-        active: bool,
-    ) -> Result<()> {
-        crate::plans_membership::update_member_eligibility(
-            &mut ctx,
-            eligibility_status,
-            delegated_rights,
-            active,
         )
     }
 

@@ -385,7 +385,6 @@ fn sample_claim_case(
         reserve_domain: Pubkey::new_unique(),
         health_plan,
         policy_series,
-        member_position: Pubkey::new_unique(),
         funding_line,
         asset_mint,
         claim_id: "claim-protect-001".to_string(),
@@ -789,17 +788,6 @@ fn terminal_or_settled_obligation_locks_adjudication() {
         .contains("Claim adjudication is locked after payout or terminal state"));
 }
 
-fn membership_proof_input(membership_mode: u8, proof_mode: u8) -> MembershipProofValidationInput {
-    MembershipProofValidationInput {
-        membership_mode,
-        membership_invite_authority: Pubkey::new_unique(),
-        proof_mode,
-        invite_expires_at: 0,
-        invite_authority: None,
-        now_ts: 100,
-    }
-}
-
 fn sample_health_plan_roles(
     plan_admin: Pubkey,
     sponsor_operator: Pubkey,
@@ -817,11 +805,6 @@ fn sample_health_plan_roles(
         display_name: "Sample Plan".to_string(),
         organization_ref: String::new(),
         metadata_uri: String::new(),
-        membership_mode: MEMBERSHIP_MODE_OPEN,
-        membership_gate_kind: MEMBERSHIP_GATE_KIND_OPEN,
-        membership_gate_mint: ZERO_PUBKEY,
-        membership_gate_min_amount: 0,
-        membership_invite_authority: ZERO_PUBKEY,
         allowed_rail_mask: 0,
         default_funding_priority: 0,
         oracle_policy_hash: [0; 32],
@@ -830,23 +813,6 @@ fn sample_health_plan_roles(
         pause_flags: 0,
         active: true,
         audit_nonce: 0,
-        bump: 1,
-    }
-}
-
-fn sample_member_position(wallet: Pubkey, policy_series: Pubkey) -> MemberPosition {
-    MemberPosition {
-        health_plan: Pubkey::new_unique(),
-        policy_series,
-        wallet,
-        subject_commitment: [0u8; 32],
-        eligibility_status: ELIGIBILITY_ELIGIBLE,
-        delegated_rights: 0,
-        enrollment_proof_mode: MEMBERSHIP_PROOF_MODE_OPEN,
-        invite_id_hash: [0u8; 32],
-        active: true,
-        opened_at: 1,
-        updated_at: 1,
         bump: 1,
     }
 }
@@ -889,8 +855,8 @@ fn sample_funding_line(
 }
 
 #[test]
-fn claim_intake_submitter_allows_member_self_submission() {
-    let member_wallet = Pubkey::new_unique();
+fn claim_intake_submitter_allows_claimant_self_submission() {
+    let claimant = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
     let plan = sample_health_plan_roles(
         Pubkey::new_unique(),
@@ -898,15 +864,14 @@ fn claim_intake_submitter_allows_member_self_submission() {
         Pubkey::new_unique(),
         Pubkey::new_unique(),
     );
-    let member_position = sample_member_position(member_wallet, policy_series);
-    let args = sample_open_claim_case_args(member_wallet, policy_series);
+    let args = sample_open_claim_case_args(claimant, policy_series);
 
-    assert!(require_claim_intake_submitter(&member_wallet, &plan, &member_position, &args).is_ok());
+    assert!(require_claim_intake_submitter(&claimant, &plan, args.claimant).is_ok());
 }
 
 #[test]
 fn claim_intake_submitter_allows_plan_claim_operators() {
-    let member_wallet = Pubkey::new_unique();
+    let claimant = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
     let plan_admin = Pubkey::new_unique();
     let claims_operator = Pubkey::new_unique();
@@ -916,24 +881,15 @@ fn claim_intake_submitter_allows_plan_claim_operators() {
         claims_operator,
         Pubkey::new_unique(),
     );
-    let member_position = sample_member_position(member_wallet, policy_series);
-    // PT-2026-04-27-04 fix: operator submissions require args.claimant to
-    // equal member_position.wallet. Custom recipient routing is handled by
-    // ClaimCase.delegate_recipient instead.
-    let args = sample_open_claim_case_args(member_wallet, policy_series);
+    let args = sample_open_claim_case_args(claimant, policy_series);
 
-    assert!(
-        require_claim_intake_submitter(&claims_operator, &plan, &member_position, &args).is_ok()
-    );
-    assert!(require_claim_intake_submitter(&plan_admin, &plan, &member_position, &args).is_ok());
+    assert!(require_claim_intake_submitter(&claims_operator, &plan, args.claimant).is_ok());
+    assert!(require_claim_intake_submitter(&plan_admin, &plan, args.claimant).is_ok());
 }
 
 #[test]
-fn claim_intake_submitter_rejects_operator_with_attacker_claimant() {
-    // PT-2026-04-27-04 regression test. An operator (claims_operator or
-    // plan_admin) cannot mint a claim with an arbitrary attacker pubkey in
-    // args.claimant; the gate now requires args.claimant == member.wallet.
-    let member_wallet = Pubkey::new_unique();
+fn claim_intake_submitter_allows_operator_for_explicit_claimant() {
+    let claimant = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
     let plan_admin = Pubkey::new_unique();
     let claims_operator = Pubkey::new_unique();
@@ -943,26 +899,15 @@ fn claim_intake_submitter_rejects_operator_with_attacker_claimant() {
         claims_operator,
         Pubkey::new_unique(),
     );
-    let member_position = sample_member_position(member_wallet, policy_series);
-    let attacker = Pubkey::new_unique();
-    let args = sample_open_claim_case_args(attacker, policy_series);
+    let args = sample_open_claim_case_args(claimant, policy_series);
 
-    let claims_op_err =
-        require_claim_intake_submitter(&claims_operator, &plan, &member_position, &args)
-            .unwrap_err();
-    assert!(claims_op_err.to_string().contains("Unauthorized"));
-
-    let plan_admin_err =
-        require_claim_intake_submitter(&plan_admin, &plan, &member_position, &args).unwrap_err();
-    assert!(plan_admin_err.to_string().contains("Unauthorized"));
+    assert!(require_claim_intake_submitter(&claims_operator, &plan, args.claimant).is_ok());
+    assert!(require_claim_intake_submitter(&plan_admin, &plan, args.claimant).is_ok());
 }
 
 #[test]
-fn claim_settlement_routes_to_member_wallet_when_no_delegate() {
-    // PT-2026-04-27-04 routing: when delegate_recipient is the ZERO_PUBKEY
-    // (the default after open_claim_case) settle_claim_case must pay
-    // member_position.wallet's ATA.
-    let member_wallet = Pubkey::new_unique();
+fn claim_settlement_routes_to_claimant_when_no_delegate() {
+    let claimant = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
     let mut claim_case = sample_claim_case(
         Pubkey::new_unique(),
@@ -970,19 +915,16 @@ fn claim_settlement_routes_to_member_wallet_when_no_delegate() {
         Pubkey::new_unique(),
         Pubkey::new_unique(),
     );
+    claim_case.claimant = claimant;
     claim_case.delegate_recipient = ZERO_PUBKEY;
-    let member_position = sample_member_position(member_wallet, policy_series);
 
-    let resolved = resolve_claim_settlement_recipient(&claim_case, &member_position);
-    assert_eq!(resolved, member_wallet);
+    let resolved = resolve_claim_settlement_recipient(&claim_case);
+    assert_eq!(resolved, claimant);
 }
 
 #[test]
 fn claim_settlement_routes_to_delegate_when_authorized() {
-    // PT-2026-04-27-04 routing: when the member has called
-    // authorize_claim_recipient with a non-zero delegate,
-    // settle_claim_case pays that delegate's ATA instead.
-    let member_wallet = Pubkey::new_unique();
+    let claimant = Pubkey::new_unique();
     let delegate = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
     let mut claim_case = sample_claim_case(
@@ -991,17 +933,17 @@ fn claim_settlement_routes_to_delegate_when_authorized() {
         Pubkey::new_unique(),
         Pubkey::new_unique(),
     );
+    claim_case.claimant = claimant;
     claim_case.delegate_recipient = delegate;
-    let member_position = sample_member_position(member_wallet, policy_series);
 
-    let resolved = resolve_claim_settlement_recipient(&claim_case, &member_position);
+    let resolved = resolve_claim_settlement_recipient(&claim_case);
     assert_eq!(resolved, delegate);
-    assert_ne!(resolved, member_wallet);
+    assert_ne!(resolved, claimant);
 }
 
 #[test]
 fn claim_intake_submitter_rejects_unrelated_signers() {
-    let member_wallet = Pubkey::new_unique();
+    let claimant = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
     let plan = sample_health_plan_roles(
         Pubkey::new_unique(),
@@ -1009,19 +951,16 @@ fn claim_intake_submitter_rejects_unrelated_signers() {
         Pubkey::new_unique(),
         Pubkey::new_unique(),
     );
-    let member_position = sample_member_position(member_wallet, policy_series);
-    let args = sample_open_claim_case_args(member_wallet, policy_series);
+    let args = sample_open_claim_case_args(claimant, policy_series);
     let attacker = Pubkey::new_unique();
 
-    let error =
-        require_claim_intake_submitter(&attacker, &plan, &member_position, &args).unwrap_err();
+    let error = require_claim_intake_submitter(&attacker, &plan, args.claimant).unwrap_err();
 
     assert!(error.to_string().contains("Unauthorized"));
 }
 
 #[test]
-fn claim_intake_submitter_rejects_member_claimant_override() {
-    let member_wallet = Pubkey::new_unique();
+fn claim_intake_submitter_rejects_zero_claimant() {
     let policy_series = Pubkey::new_unique();
     let plan = sample_health_plan_roles(
         Pubkey::new_unique(),
@@ -1029,11 +968,10 @@ fn claim_intake_submitter_rejects_member_claimant_override() {
         Pubkey::new_unique(),
         Pubkey::new_unique(),
     );
-    let member_position = sample_member_position(member_wallet, policy_series);
-    let args = sample_open_claim_case_args(Pubkey::new_unique(), policy_series);
+    let args = sample_open_claim_case_args(ZERO_PUBKEY, policy_series);
 
     let error =
-        require_claim_intake_submitter(&member_wallet, &plan, &member_position, &args).unwrap_err();
+        require_claim_intake_submitter(&plan.claims_operator, &plan, args.claimant).unwrap_err();
 
     assert!(error.to_string().contains("Unauthorized"));
 }
@@ -1140,36 +1078,6 @@ fn unlinked_obligation_reserve_control_preserves_sponsor_operator_path() {
 
     assert!(require_obligation_reserve_control(&sponsor_operator, &plan, &obligation,).is_ok());
     assert!(require_obligation_settlement_control(&sponsor_operator, &plan, &obligation,).is_ok());
-}
-
-#[test]
-fn membership_proof_validation_accepts_open_and_invite_modes() {
-    let open_input = membership_proof_input(MEMBERSHIP_MODE_OPEN, MEMBERSHIP_PROOF_MODE_OPEN);
-    assert!(validate_membership_proof_inputs(&open_input).is_ok());
-
-    let mut invite_input = membership_proof_input(
-        MEMBERSHIP_MODE_INVITE_ONLY,
-        MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
-    );
-    invite_input.invite_authority = Some(invite_input.membership_invite_authority);
-    invite_input.invite_expires_at = invite_input.now_ts + 10;
-    assert!(validate_membership_proof_inputs(&invite_input).is_ok());
-}
-
-#[test]
-fn membership_proof_validation_rejects_legacy_token_gate_mode() {
-    let legacy_token_gate_mode = 1;
-    let input = membership_proof_input(legacy_token_gate_mode, legacy_token_gate_mode);
-    assert!(validate_membership_proof_inputs(&input).is_err());
-
-    assert!(validate_membership_gate_fields(
-        legacy_token_gate_mode,
-        legacy_token_gate_mode,
-        Pubkey::new_unique(),
-        1,
-        ZERO_PUBKEY,
-    )
-    .is_err());
 }
 
 #[test]

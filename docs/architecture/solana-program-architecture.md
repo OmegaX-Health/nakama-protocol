@@ -91,7 +91,7 @@ The canonical public instruction surface is declared in [`programs/omegax_protoc
 
 - `governance.rs` for protocol governance and emergency controls
 - `reserve_custody.rs` for reserve domains and domain asset vaults
-- `plans_membership.rs` for health plans, policy series, and member positions
+- `plans_membership.rs` for health plans and policy series
 - `funding_obligations/` for funding lines, reserve movements, obligations, and obligation settlement
 - `claims.rs` for claim lifecycle, direct claim settlement, and attestations
 - `capital/` for liquidity pools, capital classes, LP positions, redemptions, allocations, and impairments

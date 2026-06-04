@@ -22,7 +22,7 @@ Instruction implementation now sits next to its account validation context in
 audit-domain modules:
 
 - [`src/reserve_custody.rs`](./src/reserve_custody.rs)
-- [`src/plans_membership.rs`](./src/plans_membership.rs)
+- [`src/plans_membership.rs`](./src/plans_membership.rs) for health plans and policy series
 - [`src/funding_obligations/`](./src/funding_obligations/)
 - [`src/claims.rs`](./src/claims.rs)
 - [`src/oracle_schema.rs`](./src/oracle_schema.rs)
@@ -45,17 +45,16 @@ The active public object model is:
 - `PlanReserveLedger`
 - `PolicySeries`
 - `SeriesReserveLedger`
-- `MemberPosition`
 - `FundingLine`
 - `FundingLineLedger`
 - `ClaimCase`
 - `Obligation`
 
 The former governance, fee-vault, liquidity-pool, capital-class, LP-position,
-allocation, redemption, impairment, and outcome-schema registry accounts have
-been removed from the live program surface. Reserve movement now flows through
-reserve domains, health plans, policy series, funding lines, obligations,
-claim cases, oracle profiles, and claim attestations.
+allocation, redemption, impairment, member-position, and outcome-schema
+registry accounts have been removed from the live program surface. Reserve
+movement now flows through reserve domains, health plans, policy series,
+funding lines, obligations, claim cases, and claim attestations.
 
 Founder reservations are off-chain payment reservations into Squads custody,
 not on-chain protocol accounts. They do not increase claims-paying reserve,

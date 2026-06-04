@@ -436,7 +436,6 @@ pub(crate) fn reserve_obligation<'info>(
         let reserve_domain = claim_case.reserve_domain;
         let health_plan = claim_case.health_plan;
         let policy_series = claim_case.policy_series;
-        let member_position = claim_case.member_position;
         let funding_line = claim_case.funding_line;
         let asset_mint = claim_case.asset_mint;
         let claimant = claim_case.claimant;
@@ -460,7 +459,6 @@ pub(crate) fn reserve_obligation<'info>(
             reserve_domain,
             health_plan,
             policy_series,
-            member_position,
             funding_line,
             asset_mint,
             claimant,
@@ -680,7 +678,6 @@ pub(crate) fn release_reserve<'info>(
         let reserve_domain = claim_case.reserve_domain;
         let health_plan = claim_case.health_plan;
         let policy_series = claim_case.policy_series;
-        let member_position = claim_case.member_position;
         let funding_line = claim_case.funding_line;
         let asset_mint = claim_case.asset_mint;
         let claimant = claim_case.claimant;
@@ -712,7 +709,6 @@ pub(crate) fn release_reserve<'info>(
             reserve_domain,
             health_plan,
             policy_series,
-            member_position,
             funding_line,
             asset_mint,
             claimant,

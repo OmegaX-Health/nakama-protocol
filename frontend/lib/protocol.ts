@@ -2371,11 +2371,11 @@ export function buildUpdateHealthPlanControlsTx(params: {
   sponsorOperator: PublicKeyish;
   claimsOperator: PublicKeyish;
   oracleAuthority: PublicKeyish | null | undefined;
-  membershipMode: number;
-  membershipGateKind: number;
-  membershipGateMint: PublicKeyish | null | undefined;
-  membershipGateMinAmount: bigint;
-  membershipInviteAuthority: PublicKeyish | null | undefined;
+  membershipMode?: number;
+  membershipGateKind?: number;
+  membershipGateMint?: PublicKeyish | null | undefined;
+  membershipGateMinAmount?: bigint;
+  membershipInviteAuthority?: PublicKeyish | null | undefined;
   allowedRailMask: number;
   defaultFundingPriority: number;
   oraclePolicyHashHex?: string | null;
@@ -2394,11 +2394,6 @@ export function buildUpdateHealthPlanControlsTx(params: {
       sponsor_operator: toPublicKey(params.sponsorOperator),
       claims_operator: toPublicKey(params.claimsOperator),
       oracle_authority: toPublicKey(params.oracleAuthority ?? ZERO_PUBKEY_KEY),
-      membership_mode: params.membershipMode,
-      membership_gate_kind: params.membershipGateKind,
-      membership_gate_mint: toPublicKey(params.membershipGateMint ?? ZERO_PUBKEY_KEY),
-      membership_gate_min_amount: params.membershipGateMinAmount,
-      membership_invite_authority: toPublicKey(params.membershipInviteAuthority ?? ZERO_PUBKEY_KEY),
       allowed_rail_mask: params.allowedRailMask,
       default_funding_priority: params.defaultFundingPriority,
       oracle_policy_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.oraclePolicyHashHex), 32)),
@@ -2653,38 +2648,8 @@ export function buildOpenMemberPositionTx(params: {
   inviteExpiresAt: bigint;
   inviteAuthorityAddress?: PublicKeyish | null;
 }): Transaction {
-  const wallet = toPublicKey(params.wallet);
-  const seriesScope = toPublicKey(params.seriesScopeAddress ?? ZERO_PUBKEY_KEY);
-  const memberPosition = deriveMemberPositionPda({
-    healthPlan: params.healthPlanAddress,
-    wallet,
-    seriesScope,
-  });
-
-  return buildProtocolTransactionFromInstruction({
-    feePayer: wallet,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "open_member_position",
-    args: {
-      series_scope: seriesScope,
-      subject_commitment: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.subjectCommitmentHashHex), 32)),
-      eligibility_status: params.eligibilityStatus,
-      delegated_rights: params.delegatedRightsMask,
-      proof_mode: params.proofMode,
-      invite_id_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.inviteIdHashHex), 32)),
-      invite_expires_at: params.inviteExpiresAt,
-    },
-    accounts: [
-      { pubkey: wallet, isSigner: true, isWritable: true },
-      { pubkey: params.healthPlanAddress },
-      optionalNonZeroProtocolAccount(params.seriesScopeAddress),
-      { pubkey: memberPosition, isWritable: true },
-      params.inviteAuthorityAddress
-        ? { pubkey: params.inviteAuthorityAddress, isSigner: true }
-        : optionalProtocolAccount(undefined),
-      { pubkey: SystemProgram.programId },
-    ],
-  });
+  void params;
+  return removedMembershipSurfaceTx("open_member_position");
 }
 
 export function buildUpdateMemberEligibilityTx(params: {
@@ -2697,28 +2662,8 @@ export function buildUpdateMemberEligibilityTx(params: {
   delegatedRightsMask: number;
   active: boolean;
 }): Transaction {
-  const authority = toPublicKey(params.authority);
-  const seriesScope = toPublicKey(params.seriesScopeAddress ?? ZERO_PUBKEY_KEY);
-  const memberPosition = deriveMemberPositionPda({
-    healthPlan: params.healthPlanAddress,
-    wallet: params.walletAddress,
-    seriesScope,
-  });
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "update_member_eligibility",
-    args: {
-      eligibility_status: params.eligibilityStatus,
-      delegated_rights: params.delegatedRightsMask,
-      active: params.active,
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: params.healthPlanAddress },
-      { pubkey: memberPosition, isWritable: true },
-    ],
-  });
+  void params;
+  return removedMembershipSurfaceTx("update_member_eligibility");
 }
 
 export function buildFundSponsorBudgetTx(params: {
@@ -2920,7 +2865,7 @@ export function buildCreateObligationTx(params: {
 export function buildOpenClaimCaseTx(params: {
   authority: PublicKeyish;
   healthPlanAddress: PublicKeyish;
-  memberPositionAddress: PublicKeyish;
+  memberPositionAddress?: PublicKeyish | null;
   fundingLineAddress: PublicKeyish;
   recentBlockhash: string;
   claimId: string;
@@ -2946,7 +2891,6 @@ export function buildOpenClaimCaseTx(params: {
     accounts: [
       { pubkey: authority, isSigner: true, isWritable: true },
       { pubkey: params.healthPlanAddress },
-      { pubkey: params.memberPositionAddress },
       { pubkey: params.fundingLineAddress },
       { pubkey: claimCase, isWritable: true },
       { pubkey: SystemProgram.programId },
@@ -3083,14 +3027,12 @@ function buildObligationFlowTx(params: {
     params.instructionName === "settle_obligation"
       ? includeSettlementOutflow
         ? [
-          optionalProtocolAccount(params.memberPositionAddress),
           { pubkey: params.assetMint },
           { pubkey: params.vaultTokenAccountAddress, isWritable: true },
           { pubkey: params.recipientTokenAccountAddress, isWritable: true },
           { pubkey: classicTokenProgramId(params.tokenProgramId) },
         ]
         : [
-          optionalProtocolAccount(undefined),
           optionalProtocolAccount(undefined),
           optionalProtocolAccount(undefined),
           optionalProtocolAccount(undefined),
@@ -3292,13 +3234,16 @@ export function buildSettleClaimCaseTx(params: {
       optionalSeriesReserveLedgerAccount(params.policySeriesAddress, params.assetMint),
       { pubkey: params.claimCaseAddress, isWritable: true },
       optionalProtocolAccount(params.obligationAddress, true),
-      optionalProtocolAccount(params.memberPositionAddress),
       { pubkey: params.assetMint },
       optionalProtocolAccount(params.vaultTokenAccountAddress, true),
       optionalProtocolAccount(params.recipientTokenAccountAddress, true),
-      { pubkey: params.memberPositionAddress && params.vaultTokenAccountAddress && params.recipientTokenAccountAddress ? tokenProgramId : getProgramId() },
+      { pubkey: params.vaultTokenAccountAddress && params.recipientTokenAccountAddress ? tokenProgramId : getProgramId() },
     ],
   });
+}
+
+function removedMembershipSurfaceTx(name: string): never {
+  throw new Error(`${name} was removed from the claimant-only OmegaX protocol surface`);
 }
 
 function removedCapitalSurfaceTx(name: string): never {

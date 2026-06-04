@@ -1,4 +1,4 @@
-12416a80d8fee3f1615e312b92aac5b6a9351601b05c2c3ac06cd2d73e94f4a9
+45031de5946119d85a5d9c3fd19df15e24696f83010cc4adceef2da96f350354
   Cargo.toml
   programs/omegax_protocol/Cargo.toml
   programs/omegax_protocol/src/args.rs
@@ -18,7 +18,6 @@
   programs/omegax_protocol/src/kernel/auth.rs
   programs/omegax_protocol/src/kernel/bindings.rs
   programs/omegax_protocol/src/kernel/custody.rs
-  programs/omegax_protocol/src/kernel/membership.rs
   programs/omegax_protocol/src/kernel/reserve_accounting.rs
   programs/omegax_protocol/src/lib.rs
   programs/omegax_protocol/src/plans_membership.rs

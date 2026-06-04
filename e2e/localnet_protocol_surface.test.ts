@@ -25,7 +25,6 @@ const {
   CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY,
   CLAIM_INTAKE_APPROVED,
   CLAIM_INTAKE_SETTLED,
-  ELIGIBILITY_ELIGIBLE,
   FUNDING_LINE_TYPE_PREMIUM_INCOME,
   FUNDING_LINE_TYPE_SPONSOR_BUDGET,
   NATIVE_SOL_MINT,
@@ -54,7 +53,6 @@ const {
   buildMarkImpairmentTx,
   buildOpenClaimCaseTx,
   buildOpenFundingLineTx,
-  buildOpenMemberPositionTx,
   buildRegisterOracleTx,
   buildReleaseReserveTx,
   buildReserveObligationTx,
@@ -495,21 +493,9 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       committedAmount: 250_000n,
       capsHashHex: SAMPLE_REASON_HASH_HEX,
     });
-    const openMemberPositionTx = buildOpenMemberPositionTx({
-      wallet: protectionMember.wallet,
-      healthPlanAddress: plan.address,
-      recentBlockhash: STATIC_BLOCKHASH,
-      seriesScopeAddress: protectionSeries.address,
-      eligibilityStatus: ELIGIBILITY_ELIGIBLE,
-      delegatedRightsMask: 0,
-      proofMode: 0,
-      tokenGateAmountSnapshot: 0n,
-      inviteExpiresAt: 0n,
-    });
     const openClaimCaseTx = buildOpenClaimCaseTx({
       authority: protectionClaim.claimant,
       healthPlanAddress: plan.address,
-      memberPositionAddress: protectionMember.address,
       fundingLineAddress: protectionLine.address,
       recentBlockhash: STATIC_BLOCKHASH,
       claimId: protectionClaim.claimId,
@@ -702,8 +688,7 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       policySeries: protectionSeries.address,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(openMemberPositionTx.instructions[0]!.keys[4]!.pubkey.toBase58(), protectionMember.address);
-    assert.equal(openClaimCaseTx.instructions[0]!.keys[5]!.pubkey.toBase58(), protectionClaim.address);
+    assert.equal(openClaimCaseTx.instructions[0]!.keys[3]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(attestClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(
       attestClaimCaseTx.instructions[0]!.keys[13]!.pubkey.toBase58(),
@@ -765,7 +750,6 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       healthPlan: plan.address,
       lineId: protectionLine.lineId,
     }).toBase58());
-    assert.equal(protectionMember.address, protectionClaim.memberPosition);
     assert.equal(linkedObligation.fundingLine, protectionLine.address);
     assert.equal(linkedObligation.allocationPosition, impairedAllocation.address);
     assert.equal(linkedObligation.capitalClass, openClass.address);
@@ -789,10 +773,8 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
   sponsor_funded_plan_lifecycle: () => {
     const seekerPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans.find((plan) => plan.planId === "nexus-seeker-rewards")!;
     const seekerPlanLines = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines.filter((line) => line.healthPlan === seekerPlan.address);
-    const seekerMembers = DEVNET_PROTOCOL_FIXTURE_STATE.memberPositions.filter((position) => position.healthPlan === seekerPlan.address);
     const seekerSponsorModel = consoleState.sponsors.find((model) => model.planId === seekerPlan.planId)!;
 
-    assert(seekerMembers.length > 0);
     assert.equal(seekerPlanLines.length, 1);
     assert.equal(seekerPlanLines[0]!.lineType, FUNDING_LINE_TYPE_SPONSOR_BUDGET);
     assert.equal(

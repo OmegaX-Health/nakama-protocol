@@ -48,15 +48,14 @@ fn require_quasar_claim_operator(
 fn require_quasar_claim_intake_submitter(
     authority: &Pubkey,
     plan: &HealthPlanAccountData<'_>,
-    member_position: &MemberPosition,
     claimant: Pubkey,
 ) -> Result<()> {
-    let claimant_is_member = claimant == member_position.wallet;
-    let member_self_submit = *authority == member_position.wallet && claimant_is_member;
+    let claimant_present = claimant != ZERO_PUBKEY;
+    let claimant_self_submit = *authority == claimant && claimant_present;
     let operator_submit =
-        (*authority == plan.claims_operator || *authority == plan.plan_admin) && claimant_is_member;
+        (*authority == plan.claims_operator || *authority == plan.plan_admin) && claimant_present;
 
-    if member_self_submit || operator_submit {
+    if claimant_self_submit || operator_submit {
         Ok(())
     } else {
         Err(OmegaXProtocolError::Unauthorized.into())
@@ -310,15 +309,13 @@ pub(crate) fn open_claim_case(ctx: Context<OpenClaimCase>, args: OpenClaimCaseAr
     require_claim_intake_submitter(
         &ctx.accounts.authority.key(),
         &ctx.accounts.health_plan,
-        &ctx.accounts.member_position,
-        &args,
+        args.claimant,
     )?;
 
     let claim_case = &mut ctx.accounts.claim_case;
     claim_case.reserve_domain = ctx.accounts.health_plan.reserve_domain;
     claim_case.health_plan = ctx.accounts.health_plan.key();
     claim_case.policy_series = args.policy_series;
-    claim_case.member_position = ctx.accounts.member_position.key();
     claim_case.funding_line = ctx.accounts.funding_line.key();
     claim_case.asset_mint = ctx.accounts.funding_line.asset_mint;
     claim_case.claim_id = args.claim_id;
@@ -366,12 +363,7 @@ pub(crate) fn open_claim_case<'info>(
         OmegaXProtocolError::ClaimIntakePaused
     );
     let authority = *ctx.accounts.authority.address();
-    require_quasar_claim_intake_submitter(
-        &authority,
-        &ctx.accounts.health_plan,
-        &ctx.accounts.member_position,
-        claimant,
-    )?;
+    require_quasar_claim_intake_submitter(&authority, &ctx.accounts.health_plan, claimant)?;
 
     let opened_at = Clock::get()?.unix_timestamp.get();
     let claim_case_bump = ctx.accounts.claim_case.bump;
@@ -379,7 +371,6 @@ pub(crate) fn open_claim_case<'info>(
         ctx.accounts.health_plan.reserve_domain,
         *ctx.accounts.health_plan.address(),
         policy_series,
-        *ctx.accounts.member_position.address(),
         *ctx.accounts.funding_line.address(),
         ctx.accounts.funding_line.asset_mint,
         claimant,
@@ -414,9 +405,8 @@ pub(crate) fn authorize_claim_recipient(
     ctx: Context<AuthorizeClaimRecipient>,
     args: AuthorizeClaimRecipientArgs,
 ) -> Result<()> {
-    // The Anchor context binds member_position.wallet == authority.key()
-    // and claim_case.member_position == member_position.key(), so reaching
-    // this body means the member of record signed.
+    // The account context binds authority to claim_case.claimant, so reaching
+    // this body means the claimant of record signed.
     let claim_case = &mut ctx.accounts.claim_case;
     require!(
         claim_case.intake_status < CLAIM_INTAKE_APPROVED && claim_case.paid_amount == 0,
@@ -442,7 +432,6 @@ pub(crate) fn authorize_claim_recipient<'info>(
     let reserve_domain = claim_case.reserve_domain;
     let health_plan = claim_case.health_plan;
     let policy_series = claim_case.policy_series;
-    let member_position = claim_case.member_position;
     let funding_line = claim_case.funding_line;
     let asset_mint = claim_case.asset_mint;
     let claimant = claim_case.claimant;
@@ -468,7 +457,6 @@ pub(crate) fn authorize_claim_recipient<'info>(
         reserve_domain,
         health_plan,
         policy_series,
-        member_position,
         funding_line,
         asset_mint,
         claimant,
@@ -529,7 +517,6 @@ pub(crate) fn attach_claim_evidence_ref<'info>(
     let reserve_domain = claim_case.reserve_domain;
     let health_plan = claim_case.health_plan;
     let policy_series = claim_case.policy_series;
-    let member_position = claim_case.member_position;
     let funding_line = claim_case.funding_line;
     let asset_mint = claim_case.asset_mint;
     let claimant = claim_case.claimant;
@@ -554,7 +541,6 @@ pub(crate) fn attach_claim_evidence_ref<'info>(
         reserve_domain,
         health_plan,
         policy_series,
-        member_position,
         funding_line,
         asset_mint,
         claimant,
@@ -816,7 +802,6 @@ pub(crate) fn adjudicate_claim_case<'info>(
     let reserve_domain = claim_case.reserve_domain;
     let health_plan = claim_case.health_plan;
     let policy_series = claim_case.policy_series;
-    let member_position = claim_case.member_position;
     let funding_line = claim_case.funding_line;
     let asset_mint = claim_case.asset_mint;
     let claimant = claim_case.claimant;
@@ -835,7 +820,6 @@ pub(crate) fn adjudicate_claim_case<'info>(
         reserve_domain,
         health_plan,
         policy_series,
-        member_position,
         funding_line,
         asset_mint,
         claimant,
@@ -889,8 +873,7 @@ pub(crate) fn settle_claim_case(
 
     // PT-2026-04-27-01/02 fix: resolve the SPL recipient before mutating
     // the claim_case (Pubkey is Copy so we capture by value).
-    let resolved_recipient =
-        resolve_claim_settlement_recipient(&ctx.accounts.claim_case, &ctx.accounts.member_position);
+    let resolved_recipient = resolve_claim_settlement_recipient(&ctx.accounts.claim_case);
     require_keys_eq!(
         ctx.accounts.recipient_token_account.owner,
         resolved_recipient,
@@ -982,7 +965,7 @@ pub(crate) fn settle_claim_case<'info>(
     let resolved_recipient = if ctx.accounts.claim_case.delegate_recipient != ZERO_PUBKEY {
         ctx.accounts.claim_case.delegate_recipient
     } else {
-        ctx.accounts.member_position.wallet
+        ctx.accounts.claim_case.claimant
     };
     require_keys_eq!(
         *ctx.accounts.recipient_token_account.owner(),
@@ -1023,7 +1006,6 @@ pub(crate) fn settle_claim_case<'info>(
     let reserve_domain = claim_case.reserve_domain;
     let health_plan = claim_case.health_plan;
     let policy_series = claim_case.policy_series;
-    let member_position = claim_case.member_position;
     let funding_line = claim_case.funding_line;
     let asset_mint = claim_case.asset_mint;
     let claimant = claim_case.claimant;
@@ -1057,7 +1039,6 @@ pub(crate) fn settle_claim_case<'info>(
         reserve_domain,
         health_plan,
         policy_series,
-        member_position,
         funding_line,
         asset_mint,
         claimant,
@@ -1364,7 +1345,6 @@ pub(crate) fn attest_claim_case<'info>(
     let reserve_domain = claim_case.reserve_domain;
     let health_plan = claim_case.health_plan;
     let policy_series = claim_case.policy_series;
-    let member_position = claim_case.member_position;
     let funding_line = claim_case.funding_line;
     let asset_mint = claim_case.asset_mint;
     let claimant = claim_case.claimant;
@@ -1395,7 +1375,6 @@ pub(crate) fn attest_claim_case<'info>(
         reserve_domain,
         health_plan,
         policy_series,
-        member_position,
         funding_line,
         asset_mint,
         claimant,
@@ -1538,16 +1517,6 @@ pub struct OpenClaimCase<'info> {
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[account(
-        seeds = [SEED_MEMBER_POSITION, health_plan.key().as_ref(), member_position.wallet.as_ref(), member_position.policy_series.as_ref()],
-        bump = member_position.bump,
-        constraint = member_position.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
-        constraint = member_position.policy_series == args.policy_series @ OmegaXProtocolError::PolicySeriesMismatch,
-        constraint = member_position.active @ OmegaXProtocolError::Unauthorized,
-        constraint = member_position.eligibility_status == ELIGIBILITY_ELIGIBLE @ OmegaXProtocolError::Unauthorized,
-    )]
-    #[cfg(not(feature = "quasar"))]
-    pub member_position: Box<Account<'info, MemberPosition>>,
-    #[account(
         seeds = [SEED_FUNDING_LINE, health_plan.key().as_ref(), funding_line.line_id.as_bytes()],
         bump = funding_line.bump,
         constraint = funding_line.health_plan == health_plan.key() @ OmegaXProtocolError::HealthPlanMismatch,
@@ -1556,20 +1525,6 @@ pub struct OpenClaimCase<'info> {
     )]
     #[cfg(not(feature = "quasar"))]
     pub funding_line: Box<Account<'info, FundingLine>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = quasar_pda_matches(
-            member_position.address(),
-            &crate::ID,
-            &[SEED_MEMBER_POSITION, health_plan.address().as_ref(), member_position.wallet.as_ref(), member_position.policy_series.as_ref()],
-            member_position.bump,
-        ) @ OmegaXProtocolError::Unauthorized,
-        constraint = member_position.health_plan == *health_plan.address() @ OmegaXProtocolError::HealthPlanMismatch,
-        constraint = member_position.policy_series == policy_series @ OmegaXProtocolError::PolicySeriesMismatch,
-        constraint = member_position.active.get() @ OmegaXProtocolError::Unauthorized,
-        constraint = member_position.eligibility_status == ELIGIBILITY_ELIGIBLE @ OmegaXProtocolError::Unauthorized,
-    )]
-    pub member_position: &'info Account<MemberPosition>,
     #[cfg(feature = "quasar")]
     #[account(
         constraint = quasar_pda_matches(
@@ -1622,35 +1577,10 @@ pub struct AuthorizeClaimRecipient<'info> {
     #[cfg(feature = "quasar")]
     pub authority: &'info Signer,
     #[account(
-        seeds = [
-            SEED_MEMBER_POSITION,
-            member_position.health_plan.as_ref(),
-            member_position.wallet.as_ref(),
-            member_position.policy_series.as_ref(),
-        ],
-        bump = member_position.bump,
-        constraint = member_position.wallet == authority.key() @ OmegaXProtocolError::Unauthorized,
-        constraint = member_position.active @ OmegaXProtocolError::Unauthorized,
-    )]
-    #[cfg(not(feature = "quasar"))]
-    pub member_position: Box<Account<'info, MemberPosition>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = quasar_pda_matches(
-            member_position.address(),
-            &crate::ID,
-            &[SEED_MEMBER_POSITION, member_position.health_plan.as_ref(), member_position.wallet.as_ref(), member_position.policy_series.as_ref()],
-            member_position.bump,
-        ) @ OmegaXProtocolError::Unauthorized,
-        constraint = member_position.wallet == *authority.address() @ OmegaXProtocolError::Unauthorized,
-        constraint = member_position.active.get() @ OmegaXProtocolError::Unauthorized,
-    )]
-    pub member_position: &'info Account<MemberPosition>,
-    #[account(
         mut,
         seeds = [SEED_CLAIM_CASE, claim_case.health_plan.as_ref(), claim_case.claim_id.as_bytes()],
         bump = claim_case.bump,
-        constraint = claim_case.member_position == member_position.key() @ OmegaXProtocolError::Unauthorized,
+        constraint = claim_case.claimant == authority.key() @ OmegaXProtocolError::Unauthorized,
     )]
     #[cfg(not(feature = "quasar"))]
     pub claim_case: Box<Account<'info, ClaimCase>>,
@@ -1663,7 +1593,7 @@ pub struct AuthorizeClaimRecipient<'info> {
             &[SEED_CLAIM_CASE, claim_case.health_plan.as_ref(), claim_case.claim_id().as_bytes()],
             claim_case.bump,
         ) @ OmegaXProtocolError::ClaimCaseLinkMismatch,
-        constraint = claim_case.member_position == *member_position.address() @ OmegaXProtocolError::Unauthorized,
+        constraint = claim_case.claimant == *authority.address() @ OmegaXProtocolError::Unauthorized,
     )]
     pub claim_case: Account<ClaimCaseAccountData<'info>>,
 }
@@ -1877,21 +1807,10 @@ pub struct SettleClaimCase<'info> {
     pub obligation: Option<Box<Account<'info, Obligation>>>,
     #[cfg(feature = "quasar")]
     pub obligation: Option<Account<ObligationAccountData<'info>>>,
-    // PT-2026-04-27-01/02 fix: outflow CPI accounts. The handler resolves the
-    // settlement recipient as `claim_case.delegate_recipient` if non-zero,
-    // else `member_position.wallet`, and asserts
-    // `recipient_token_account.owner` equals that key before transferring SPL
-    // out of the PDA-owned vault token account.
-    #[account(
-        constraint = member_position.key() == claim_case.member_position @ OmegaXProtocolError::Unauthorized,
-    )]
-    #[cfg(not(feature = "quasar"))]
-    pub member_position: Box<Account<'info, MemberPosition>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = *member_position.address() == claim_case.member_position @ OmegaXProtocolError::Unauthorized,
-    )]
-    pub member_position: &'info Account<MemberPosition>,
+    // The handler resolves the settlement recipient as
+    // `claim_case.delegate_recipient` if non-zero, else `claim_case.claimant`,
+    // and asserts `recipient_token_account.owner` equals that key before
+    // transferring SPL out of the PDA-owned vault token account.
     #[cfg(not(feature = "quasar"))]
     #[account(
         constraint = asset_mint.key() == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,

@@ -22,6 +22,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   const configureReserveAssetRailArgs = idl.types.find((entry) => entry.name === "ConfigureReserveAssetRailArgs");
   const reserveAssetRailAccount = idl.types.find((entry) => entry.name === "ReserveAssetRail");
   const selectedAssetPayoutArgs = idl.types.find((entry) => entry.name === "SettleClaimCaseSelectedAssetArgs");
+  const healthPlanAccount = idl.types.find((entry) => entry.name === "HealthPlan");
   const claimCaseAccount = idl.types.find((entry) => entry.name === "ClaimCase");
   const claimAttestationAccount = idl.types.find((entry) => entry.name === "ClaimAttestation");
 
@@ -35,6 +36,8 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(instructionNames.includes("create_policy_series"));
   assert(instructionNames.includes("initialize_series_reserve_ledger"));
   assert(instructionNames.includes("open_funding_line"));
+  assert(!instructionNames.includes("open_member_position"));
+  assert(!instructionNames.includes("update_member_eligibility"));
   assert(!instructionNames.includes("register_oracle"));
   assert(!instructionNames.includes("claim_oracle"));
   assert(!instructionNames.includes("update_oracle_profile"));
@@ -82,6 +85,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(accountNames.includes("PolicySeries"));
   assert(accountNames.includes("FundingLine"));
   assert(accountNames.includes("Obligation"));
+  assert(!accountNames.includes("MemberPosition"));
   assert(!accountNames.includes("OracleProfile"));
   assert(!accountNames.includes("PoolOracleApproval"));
   assert(!accountNames.includes("PoolOraclePolicy"));
@@ -109,6 +113,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(!serializedAccounts.includes("protocol_fee_vault"));
   assert(!serializedAccounts.includes("pool_treasury_vault"));
   assert(!serializedAccounts.includes("pool_oracle_fee_vault"));
+  assert(!serializedAccounts.includes("member_position"));
   for (const accountName of [
     "oracle",
     "health_plan",
@@ -169,6 +174,16 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(reserveAssetRailAccount?.type.fields?.some((field) => field.name === "max_confidence_bps"));
   assert(!selectedAssetPayoutArgs);
   assert(claimCaseAccount?.type.fields?.some((field) => field.name === "attestation_count"));
+  for (const removedHealthPlanField of [
+    "membership_mode",
+    "membership_gate_kind",
+    "membership_gate_mint",
+    "membership_gate_min_amount",
+    "membership_invite_authority",
+  ]) {
+    assert(!healthPlanAccount?.type.fields?.some((field) => field.name === removedHealthPlanField));
+  }
+  assert(!claimCaseAccount?.type.fields?.some((field) => field.name === "member_position"));
   for (const fieldName of [
     "evidence_ref_hash",
     "decision_support_hash",

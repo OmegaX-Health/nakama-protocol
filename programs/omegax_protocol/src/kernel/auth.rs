@@ -4,7 +4,6 @@
 
 use crate::platform::*;
 
-use crate::args::*;
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
@@ -102,38 +101,27 @@ pub(crate) fn require_obligation_settlement_control(
     }
 }
 
-// Resolve the SPL recipient for a claim settlement. Routing is exclusively
-// controlled by the member-set delegate_recipient field on ClaimCase: if it
-// is the ZERO_PUBKEY, payouts go to member_position.wallet. The `claimant`
-// field on ClaimCase is informational metadata only — it is constrained at
-// intake to equal member_position.wallet (PT-2026-04-27-04 fix).
-pub(crate) fn resolve_claim_settlement_recipient(
-    claim_case: &ClaimCaseAccountData<'_>,
-    member_position: &MemberPosition,
-) -> Pubkey {
+// Resolve the SPL recipient for a claim settlement. The claimant is now the
+// on-chain settlement default; a claimant-authorized delegate may override it.
+pub(crate) fn resolve_claim_settlement_recipient(claim_case: &ClaimCaseAccountData<'_>) -> Pubkey {
     if claim_case.delegate_recipient != ZERO_PUBKEY {
         claim_case.delegate_recipient
     } else {
-        member_position.wallet
+        claim_case.claimant
     }
 }
 
 pub(crate) fn require_claim_intake_submitter(
     authority: &Pubkey,
     plan: &HealthPlanAccountData<'_>,
-    member_position: &MemberPosition,
-    args: &OpenClaimCaseArgs,
+    claimant: Pubkey,
 ) -> Result<()> {
-    // Both branches require args.claimant == member_position.wallet so the
-    // claimant field cannot be used to divert funds when settlement transfers
-    // ship. Recipient routing is handled separately via ClaimCase.delegate_recipient
-    // (set by the member via `authorize_claim_recipient`).
-    let claimant_is_member = args.claimant == member_position.wallet;
-    let member_self_submit = *authority == member_position.wallet && claimant_is_member;
+    let claimant_present = claimant != ZERO_PUBKEY;
+    let claimant_self_submit = *authority == claimant && claimant_present;
     let operator_submit =
-        (*authority == plan.claims_operator || *authority == plan.plan_admin) && claimant_is_member;
+        (*authority == plan.claims_operator || *authority == plan.plan_admin) && claimant_present;
 
-    if member_self_submit || operator_submit {
+    if claimant_self_submit || operator_submit {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)

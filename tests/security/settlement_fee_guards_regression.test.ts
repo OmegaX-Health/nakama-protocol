@@ -32,7 +32,6 @@ test("[CSO-2026-04-29] linked obligation settlement requires SPL outflow account
   const body = extractInstructionBody("settle_obligation");
 
   assert.match(body, /SettlementOutflowAccountsRequired/);
-  assert.match(body, /member_position\.is_some\(\)/);
   assert.match(body, /vault_token_account\.is_some\(\)/);
   assert.match(body, /recipient_token_account\.is_some\(\)/);
   assert.match(body, /token_program\.is_some\(\)/);
@@ -105,7 +104,6 @@ test("[CSO-2026-04-29] settlement builders preserve outflow account slots", () =
     amount: 1n,
     policySeriesAddress: claim.policySeries ?? null,
     obligationAddress: obligation.address,
-    memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
   });
@@ -135,12 +133,11 @@ test("[CSO-2026-04-29] settlement builders preserve outflow account slots", () =
     amount: 1n,
     claimCaseAddress: claim.address,
     policySeriesAddress: obligation.policySeries ?? null,
-    memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
   });
   assertAccountCount("settle_obligation", settleObligation.instructions[0]!.keys.length);
-  assert.equal(settleObligation.instructions[0]!.keys.at(-5)!.pubkey.toBase58(), claim.memberPosition);
+  assert.equal(settleObligation.instructions[0]!.keys.at(-5)!.pubkey.toBase58(), claim.address);
   assert.equal(settleObligation.instructions[0]!.keys.at(-4)!.pubkey.toBase58(), obligation.assetMint);
   assert.equal(settleObligation.instructions[0]!.keys.at(-3)!.pubkey.toBase58(), vaultTokenAccount);
   assert.equal(settleObligation.instructions[0]!.keys.at(-2)!.pubkey.toBase58(), recipientTokenAccount);

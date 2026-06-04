@@ -63,14 +63,6 @@ pub enum OmegaXProtocolError {
     InsufficientFreeReserveCapacity,
     #[msg("Arithmetic overflow or underflow")]
     ArithmeticError,
-    #[msg("Membership gate configuration is invalid")]
-    MembershipGateConfigurationInvalid,
-    #[msg("Membership proof mode does not match the configured plan posture")]
-    MembershipProofModeMismatch,
-    #[msg("Invite authority is missing or invalid for this plan")]
-    MembershipInviteAuthorityInvalid,
-    #[msg("Invite permit is expired")]
-    MembershipInvitePermitExpired,
     #[msg("Bounded string field exceeds the canonical maximum")]
     StringTooLong,
     #[msg("Claim attestation decision is not a recognized value")]
@@ -87,7 +79,7 @@ pub enum OmegaXProtocolError {
     OracleFinalityHeld,
     #[msg("Fee vault initialization requires the matching domain asset vault to exist")]
     DomainAssetVaultRequired,
-    #[msg("Linked claim settlement requires the member, mint, vault token, recipient token, and token program accounts")]
+    #[msg("Linked claim settlement requires the mint, vault token, recipient token, and token program accounts")]
     SettlementOutflowAccountsRequired,
     #[msg("Stable coverage capacity is insufficient")]
     InsufficientStableCoverageCapacity,
@@ -154,10 +146,6 @@ pub enum OmegaXProtocolError {
     LinkedClaimMustSettleThroughObligation,
     InsufficientFreeReserveCapacity,
     ArithmeticError,
-    MembershipGateConfigurationInvalid,
-    MembershipProofModeMismatch,
-    MembershipInviteAuthorityInvalid,
-    MembershipInvitePermitExpired,
     StringTooLong,
     InvalidClaimAttestationDecision,
     ClaimEvidenceRequired,

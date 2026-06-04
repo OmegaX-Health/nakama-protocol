@@ -42,7 +42,7 @@ pub(crate) fn settle_obligation(
 
     if obligation_is_linked {
         require!(
-            ctx.accounts.claim_case.is_some() && ctx.accounts.member_position.is_some(),
+            ctx.accounts.claim_case.is_some(),
             OmegaXProtocolError::SettlementOutflowAccountsRequired
         );
     }
@@ -61,8 +61,7 @@ pub(crate) fn settle_obligation(
                 OmegaXProtocolError::AmountExceedsApprovedClaim
             );
             require!(
-                ctx.accounts.member_position.is_some()
-                    && ctx.accounts.asset_mint.is_some()
+                ctx.accounts.asset_mint.is_some()
                     && ctx.accounts.vault_token_account.is_some()
                     && ctx.accounts.recipient_token_account.is_some()
                     && ctx.accounts.token_program.is_some(),
@@ -143,16 +142,7 @@ pub(crate) fn settle_obligation(
                 return Err(OmegaXProtocolError::SettlementOutflowAccountsRequired.into());
             };
             if let Some(claim_case_ref) = ctx.accounts.claim_case.as_deref() {
-                let Some(member_pos) = ctx.accounts.member_position.as_ref() else {
-                    return Err(OmegaXProtocolError::SettlementOutflowAccountsRequired.into());
-                };
-                require_keys_eq!(
-                    member_pos.key(),
-                    claim_case_ref.member_position,
-                    OmegaXProtocolError::Unauthorized
-                );
-                let resolved_recipient =
-                    resolve_claim_settlement_recipient(claim_case_ref, member_pos);
+                let resolved_recipient = resolve_claim_settlement_recipient(claim_case_ref);
                 require_keys_eq!(
                     recipient_ta.owner,
                     resolved_recipient,
@@ -597,7 +587,7 @@ pub(crate) fn settle_obligation<'info>(
 
     if obligation_is_linked {
         require!(
-            ctx.accounts.claim_case.is_some() && ctx.accounts.member_position.is_some(),
+            ctx.accounts.claim_case.is_some(),
             OmegaXProtocolError::SettlementOutflowAccountsRequired
         );
     }
@@ -617,8 +607,7 @@ pub(crate) fn settle_obligation<'info>(
                 OmegaXProtocolError::AmountExceedsApprovedClaim
             );
             require!(
-                ctx.accounts.member_position.is_some()
-                    && ctx.accounts.asset_mint.is_some()
+                ctx.accounts.asset_mint.is_some()
                     && ctx.accounts.vault_token_account.is_some()
                     && ctx.accounts.recipient_token_account.is_some()
                     && ctx.accounts.token_program.is_some(),
@@ -718,18 +707,10 @@ pub(crate) fn settle_obligation<'info>(
                 return Err(OmegaXProtocolError::SettlementOutflowAccountsRequired.into());
             };
             if let Some(claim_case_ref) = ctx.accounts.claim_case.as_ref() {
-                let Some(member_pos) = ctx.accounts.member_position.as_ref() else {
-                    return Err(OmegaXProtocolError::SettlementOutflowAccountsRequired.into());
-                };
-                require_keys_eq!(
-                    *member_pos.address(),
-                    claim_case_ref.member_position,
-                    OmegaXProtocolError::Unauthorized
-                );
                 let resolved_recipient = if claim_case_ref.delegate_recipient != ZERO_PUBKEY {
                     claim_case_ref.delegate_recipient
                 } else {
-                    member_pos.wallet
+                    claim_case_ref.claimant
                 };
                 require_keys_eq!(
                     *recipient_ta.owner(),
@@ -842,7 +823,6 @@ pub(crate) fn settle_obligation<'info>(
         let reserve_domain = claim_case.reserve_domain;
         let health_plan = claim_case.health_plan;
         let policy_series = claim_case.policy_series;
-        let member_position = claim_case.member_position;
         let funding_line = claim_case.funding_line;
         let asset_mint = claim_case.asset_mint;
         let claimant = claim_case.claimant;
@@ -863,7 +843,6 @@ pub(crate) fn settle_obligation<'info>(
             reserve_domain,
             health_plan,
             policy_series,
-            member_position,
             funding_line,
             asset_mint,
             claimant,
@@ -1167,13 +1146,8 @@ pub struct SettleObligation<'info> {
         ) @ OmegaXProtocolError::ClaimCaseLinkMismatch
     )]
     pub claim_case: Option<Account<ClaimCaseAccountData<'info>>>,
-    // Optional for non-claim obligation transitions, but required when a
-    // linked claim is being marked SETTLED so accounting cannot move without
-    // the matching SPL outflow.
-    #[cfg(not(feature = "quasar"))]
-    pub member_position: Option<Box<Account<'info, MemberPosition>>>,
-    #[cfg(feature = "quasar")]
-    pub member_position: Option<&'info Account<MemberPosition>>,
+    // Optional for non-claim obligation transitions, but the SPL outflow
+    // accounts are required when a linked claim is being marked SETTLED.
     #[cfg(not(feature = "quasar"))]
     pub asset_mint: Option<Account<'info, Mint>>,
     #[cfg(feature = "quasar")]

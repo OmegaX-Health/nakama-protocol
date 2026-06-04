@@ -53,11 +53,14 @@ test("[ALMANAX-675488d9] funding-line scope stays bound without allocation creat
   assert.doesNotMatch(programSource, /create_allocation_position/);
 });
 
-test("[ALMANAX-c46c7b81/5a8f554b] nonzero policy series must be canonical for members and funding lines", () => {
-  assert.match(
-    extractRustFunctionBody("open_member_position"),
-    /validate_optional_policy_series\([\s\S]+args\.series_scope[\s\S]+true/,
-  );
+test("[ALMANAX-c46c7b81/5a8f554b] nonzero policy series must be canonical for claims and funding lines", () => {
+  const openClaimContextIndex = programSource.indexOf("pub struct OpenClaimCase<");
+  assert.notEqual(openClaimContextIndex, -1, "OpenClaimCase context must exist");
+  const openClaimContextEnd = programSource.indexOf("pub struct AuthorizeClaimRecipient<", openClaimContextIndex);
+  assert.notEqual(openClaimContextEnd, -1, "AuthorizeClaimRecipient context must follow OpenClaimCase");
+  const openClaimContext = programSource.slice(openClaimContextIndex, openClaimContextEnd);
+
+  assert.match(openClaimContext, /funding_line\.policy_series\s*==\s*args\.policy_series/);
   assert.match(
     extractRustFunctionBody("open_funding_line"),
     /validate_optional_policy_series\([\s\S]+args\.policy_series[\s\S]+false/,
@@ -77,10 +80,6 @@ test("[ALMANAX-c46c7b81/5a8f554b] nonzero policy series must be canonical for me
 });
 
 test("[QEDGEN-2026-05-07] inactive plans reject fresh intake before exposure", () => {
-  assert.match(
-    extractRustFunctionBody("open_member_position"),
-    /require_health_plan_active\(&ctx\.accounts\.health_plan\)\?/,
-  );
   assert.match(
     extractRustFunctionBody("open_claim_case"),
     /require_health_plan_active\(&ctx\.accounts\.health_plan\)\?/,
@@ -124,7 +123,7 @@ test("[CSO-2026-05-05] linked obligations require linked claim accounts before s
     linkedFlagIndex < settlementMutationIndex,
     "linked obligation detection must run before settlement balance mutation",
   );
-  assert.match(body, /if obligation_is_linked[\s\S]+claim_case\.is_some\(\)[\s\S]+member_position\.is_some\(\)/);
+  assert.match(body, /if obligation_is_linked[\s\S]+claim_case\.is_some\(\)/);
   assert.match(body, /else if obligation_is_linked[\s\S]+SettlementOutflowAccountsRequired/);
 });
 
@@ -135,7 +134,7 @@ test("[CSO-2026-05-04] asset-backed obligation settlement always requires outflo
   assert.match(body, /recipient_ta\.owner,\s*ctx\.accounts\.authority\.key\(\)/);
   assert.match(body, /transfer_from_domain_vault\(/);
   assert.match(frontendProtocolSource, /const includeSettlementOutflow = Boolean\(\s*params\.vaultTokenAccountAddress\s*&&\s*params\.recipientTokenAccountAddress/s);
-  assert.match(frontendProtocolSource, /optionalProtocolAccount\(params\.memberPositionAddress\)/);
+  assert.doesNotMatch(frontendProtocolSource, /optionalProtocolAccount\(params\.memberPositionAddress\)/);
 });
 
 test("[CSO-2026-05-04] broad pool authority helper is removed from mutation paths", () => {

@@ -127,11 +127,6 @@ pub struct HealthPlan {
     pub organization_ref: String,
     #[max_len(MAX_URI_LEN)]
     pub metadata_uri: String,
-    pub membership_mode: u8,
-    pub membership_gate_kind: u8,
-    pub membership_gate_mint: Pubkey,
-    pub membership_gate_min_amount: u64,
-    pub membership_invite_authority: Pubkey,
     pub allowed_rail_mask: u16,
     pub default_funding_priority: u8,
     pub oracle_policy_hash: [u8; 32],
@@ -152,11 +147,6 @@ pub struct HealthPlan<'info> {
     pub sponsor_operator: Pubkey,
     pub claims_operator: Pubkey,
     pub oracle_authority: Pubkey,
-    pub membership_mode: u8,
-    pub membership_gate_kind: u8,
-    pub membership_gate_mint: Pubkey,
-    pub membership_gate_min_amount: u64,
-    pub membership_invite_authority: Pubkey,
     pub allowed_rail_mask: u16,
     pub default_funding_priority: u8,
     pub oracle_policy_hash: [u8; 32],
@@ -232,24 +222,6 @@ pub struct PolicySeries<'info> {
     pub metadata_uri: String<u32, 160>,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [88, 118, 224, 251, 240, 186, 123, 175]))]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct MemberPosition {
-    pub health_plan: Pubkey,
-    pub policy_series: Pubkey,
-    pub wallet: Pubkey,
-    pub subject_commitment: [u8; 32],
-    pub eligibility_status: u8,
-    pub delegated_rights: u32,
-    pub enrollment_proof_mode: u8,
-    pub invite_id_hash: [u8; 32],
-    pub active: bool,
-    pub opened_at: i64,
-    pub updated_at: i64,
-    pub bump: u8,
-}
-
 #[cfg(not(feature = "quasar"))]
 #[account]
 #[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
@@ -301,19 +273,15 @@ pub struct ClaimCase {
     pub reserve_domain: Pubkey,
     pub health_plan: Pubkey,
     pub policy_series: Pubkey,
-    pub member_position: Pubkey,
     pub funding_line: Pubkey,
     pub asset_mint: Pubkey,
     #[max_len(MAX_ID_LEN)]
     pub claim_id: String,
     pub claimant: Pubkey,
     pub adjudicator: Pubkey,
-    // PT-2026-04-27-04 design: when settlement transfers SPL out, the recipient
-    // is `delegate_recipient` if non-zero, else `member_position.wallet`. The
-    // `claimant` field above is informational metadata constrained to equal
-    // `member_position.wallet` at intake (see require_claim_intake_submitter);
-    // routing is exclusively controlled here, set by the member via
-    // `authorize_claim_recipient`. ZERO_PUBKEY means "pay member.wallet".
+    // When settlement transfers SPL out, the recipient is `delegate_recipient`
+    // if non-zero, else `claimant`. Off-chain buyer/oracle systems own member
+    // eligibility; the protocol only stores the payout claimant.
     pub delegate_recipient: Pubkey,
     pub evidence_ref_hash: [u8; 32],
     pub decision_support_hash: [u8; 32],
@@ -339,17 +307,13 @@ pub struct ClaimCase<'info> {
     pub reserve_domain: Pubkey,
     pub health_plan: Pubkey,
     pub policy_series: Pubkey,
-    pub member_position: Pubkey,
     pub funding_line: Pubkey,
     pub asset_mint: Pubkey,
     pub claimant: Pubkey,
     pub adjudicator: Pubkey,
-    // PT-2026-04-27-04 design: when settlement transfers SPL out, the recipient
-    // is `delegate_recipient` if non-zero, else `member_position.wallet`. The
-    // `claimant` field above is informational metadata constrained to equal
-    // `member_position.wallet` at intake (see require_claim_intake_submitter);
-    // routing is exclusively controlled here, set by the member via
-    // `authorize_claim_recipient`. ZERO_PUBKEY means "pay member.wallet".
+    // When settlement transfers SPL out, the recipient is `delegate_recipient`
+    // if non-zero, else `claimant`. Off-chain buyer/oracle systems own member
+    // eligibility; the protocol only stores the payout claimant.
     pub delegate_recipient: Pubkey,
     pub evidence_ref_hash: [u8; 32],
     pub decision_support_hash: [u8; 32],
@@ -593,7 +557,6 @@ macro_rules! impl_quasar_dynamic_init_space {
 #[cfg(feature = "quasar")]
 impl_quasar_fixed_init_space!(
     DomainAssetVault,
-    MemberPosition,
     DomainAssetLedger,
     PlanReserveLedger,
     SeriesReserveLedger,

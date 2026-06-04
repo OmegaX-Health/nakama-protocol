@@ -37,14 +37,12 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
   },
   sponsor_funded_plan_lifecycle: {
     title: "Sponsor-Funded Plan Lifecycle",
-    focus: "Sponsors create plans, version product lanes, enroll members, and fund plan-side lines without minting LP exposure.",
+    focus: "Sponsors create plans, version product lanes, and fund plan-side lines without minting LP exposure.",
     instructions: [
       "create_health_plan",
       "create_policy_series",
       "initialize_series_reserve_ledger",
       "version_policy_series",
-      "open_member_position",
-      "update_member_eligibility",
       "open_funding_line",
       "fund_sponsor_budget",
     ],

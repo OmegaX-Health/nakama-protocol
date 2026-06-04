@@ -16,8 +16,6 @@ const {
   deriveHealthPlanPda,
   deriveLiquidityPoolPda,
   deriveReserveDomainPda,
-  MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
-  ZERO_PUBKEY,
 } = protocolModule as typeof import("../frontend/lib/protocol.ts");
 
 test("fixture addresses stay deterministic under canonical seeds", () => {
@@ -95,25 +93,25 @@ test("claim attestation builder wires plan oracle accounts", () => {
   );
 });
 
-test("member enrollment builder marks invite authority as a signer", () => {
+test("member enrollment builder is removed with the on-chain membership surface", () => {
   const plan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
   const memberWallet = DEVNET_PROTOCOL_FIXTURE_STATE.wallets.find((wallet) => wallet.role === "member")!.address;
   const inviteAuthority = plan.membershipInviteAuthority!;
-  const tx = buildOpenMemberPositionTx({
-    wallet: memberWallet,
-    healthPlanAddress: plan.address,
-    recentBlockhash: "11111111111111111111111111111111",
-    seriesScopeAddress: ZERO_PUBKEY,
-    subjectCommitmentHashHex: "11".repeat(32),
-    eligibilityStatus: 0,
-    delegatedRightsMask: 0,
-    proofMode: MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
-    inviteIdHashHex: "22".repeat(32),
-    inviteExpiresAt: 0n,
-    inviteAuthorityAddress: inviteAuthority,
-  });
-
-  const keys = tx.instructions[0]!.keys;
-  assert.equal(keys.find((key) => key.pubkey.toBase58() === memberWallet)?.isSigner, true);
-  assert.equal(keys.find((key) => key.pubkey.toBase58() === inviteAuthority)?.isSigner, true);
+  assert.throws(
+    () =>
+      buildOpenMemberPositionTx({
+        wallet: memberWallet,
+        healthPlanAddress: plan.address,
+        recentBlockhash: "11111111111111111111111111111111",
+        seriesScopeAddress: null,
+        subjectCommitmentHashHex: "11".repeat(32),
+        eligibilityStatus: 0,
+        delegatedRightsMask: 0,
+        proofMode: 0,
+        inviteIdHashHex: "22".repeat(32),
+        inviteExpiresAt: 0n,
+        inviteAuthorityAddress: inviteAuthority,
+      }),
+    /open_member_position was removed/,
+  );
 });

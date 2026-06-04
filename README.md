@@ -81,7 +81,7 @@ The canonical public model in this repository is:
 
 - `ReserveDomain`: hard custody or legal segregation boundary
 - `DomainAssetVault`: token custody per `[reserve_domain, asset_mint]`
-- `HealthPlan`: sponsor/member/liability root
+- `HealthPlan`: sponsor/liability root
 - `PolicySeries`: versioned product lane
 - `FundingLine`: plan-side funding source
 - `ClaimCase`: explicit adjudication lifecycle for material claims

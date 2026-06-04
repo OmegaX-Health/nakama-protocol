@@ -6,17 +6,17 @@
 // Hypothesis: the internal CSO audit dated 2026-04-27
 // flagged `open_claim_case` as missing on-chain submitter authorization. Code
 // inspection shows the fix is wired in: `require_claim_intake_submitter` is
-// called at lib.rs:1236 and defined at lib.rs:5166. The Anchor context at
-// lib.rs:2769 binds `member_position.health_plan == health_plan.key()` and
-// `funding_line.health_plan == health_plan.key()`, blocking cross-plan
-// substitution.
+// called early. After the membership-account trim, claimant self-submit and
+// plan operators are the only valid intake submitters, and the Anchor context
+// still binds `funding_line.health_plan == health_plan.key()`, blocking
+// cross-plan substitution.
 //
 // This test verifies all three guards remain in place. If any is removed
 // without a replacement, the CSO finding regresses.
 //
 // Related Rust unit tests already exist at lib.rs:6196-7302:
 // - claim_intake_submitter_rejects_unrelated_signers
-// - claim_intake_submitter_rejects_member_claimant_override
+// - claim_intake_submitter_rejects_zero_claimant
 // They run via `npm run rust:test`.
 
 import test from "node:test";
@@ -32,13 +32,14 @@ test("[PT-11] open_claim_case calls require_claim_intake_submitter as the first 
   );
 });
 
-test("[PT-11] require_claim_intake_submitter accepts only member-self-submit and operator branches", () => {
+test("[PT-11] require_claim_intake_submitter accepts only claimant-self-submit and operator branches", () => {
   const body = extractRustFunctionBody("require_claim_intake_submitter");
 
   assert.ok(
-    /member_self_submit/.test(body),
-    "[PT-11 regression] gate must define member_self_submit branch",
+    /claimant_self_submit/.test(body),
+    "[PT-11 regression] gate must define claimant_self_submit branch",
   );
+  assert.ok(/claimant_present/.test(body), "[PT-11 regression] gate must reject zero claimant");
   assert.ok(
     /operator_submit/.test(body),
     "[PT-11 regression] gate must define operator_submit branch",
@@ -49,7 +50,7 @@ test("[PT-11] require_claim_intake_submitter accepts only member-self-submit and
   );
 });
 
-test("[PT-11] OpenClaimCase context binds member_position.health_plan to the supplied health_plan", () => {
+test("[PT-11] OpenClaimCase context binds funding line to the supplied health_plan", () => {
   // The Anchor context constraints that block cross-plan substitution.
   const ctxIdx = programSrc.indexOf("pub struct OpenClaimCase<");
   assert.notEqual(ctxIdx, -1, "OpenClaimCase context must exist");
@@ -58,19 +59,12 @@ test("[PT-11] OpenClaimCase context binds member_position.health_plan to the sup
   const ctx = programSrc.slice(ctxIdx, nextCtxIdx);
 
   assert.ok(
-    /member_position\.health_plan\s*==\s*health_plan\.key\(\)/.test(ctx),
-    "[PT-11 regression] OpenClaimCase must constrain member_position.health_plan == health_plan",
-  );
-  assert.ok(
     /funding_line\.health_plan\s*==\s*health_plan\.key\(\)/.test(ctx),
     "[PT-11 regression] OpenClaimCase must constrain funding_line.health_plan == health_plan",
   );
   assert.ok(
-    /member_position\.policy_series\s*==\s*args\.policy_series/.test(ctx),
-    "[PT-11 regression] OpenClaimCase must constrain member_position.policy_series == args.policy_series",
+    /funding_line\.policy_series\s*==\s*args\.policy_series/.test(ctx),
+    "[PT-11 regression] OpenClaimCase must constrain funding_line.policy_series == args.policy_series",
   );
-  assert.ok(
-    /member_position\.active/.test(ctx),
-    "[PT-11 regression] OpenClaimCase must require member_position.active",
-  );
+  assert.doesNotMatch(ctx, /member_position/, "OpenClaimCase should not depend on removed MemberPosition accounts");
 });

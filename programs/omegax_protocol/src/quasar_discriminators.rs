@@ -21,7 +21,6 @@ pub mod instruction {
         [113, 155, 191, 126, 81, 152, 220, 249];
     pub const IX_OPEN_CLAIM_CASE: [u8; 8] = [151, 125, 231, 211, 63, 132, 248, 184];
     pub const IX_OPEN_FUNDING_LINE: [u8; 8] = [231, 140, 66, 127, 163, 1, 197, 9];
-    pub const IX_OPEN_MEMBER_POSITION: [u8; 8] = [161, 42, 115, 196, 30, 87, 104, 236];
     pub const IX_PUBLISH_RESERVE_ASSET_RAIL_PRICE: [u8; 8] = [132, 35, 143, 147, 59, 80, 162, 117];
     pub const IX_RECORD_PREMIUM_PAYMENT: [u8; 8] = [196, 182, 182, 56, 146, 87, 170, 29];
     pub const IX_RELEASE_RESERVE: [u8; 8] = [170, 102, 52, 144, 33, 176, 41, 60];
@@ -29,10 +28,10 @@ pub mod instruction {
     pub const IX_SETTLE_CLAIM_CASE: [u8; 8] = [178, 123, 229, 204, 50, 204, 91, 71];
     pub const IX_SETTLE_OBLIGATION: [u8; 8] = [209, 166, 218, 35, 147, 139, 238, 208];
     pub const IX_UPDATE_HEALTH_PLAN_CONTROLS: [u8; 8] = [108, 11, 28, 140, 226, 164, 239, 113];
-    pub const IX_UPDATE_MEMBER_ELIGIBILITY: [u8; 8] = [254, 66, 68, 244, 98, 157, 111, 191];
     pub const IX_UPDATE_RESERVE_DOMAIN_CONTROLS: [u8; 8] = [3, 60, 38, 233, 198, 167, 116, 197];
     pub const IX_VERSION_POLICY_SERIES: [u8; 8] = [64, 76, 132, 253, 41, 220, 169, 146];
 }
+
 pub mod account {
     pub const ACCOUNT_CLAIM_ATTESTATION: [u8; 8] = [93, 71, 134, 41, 234, 89, 150, 80];
     pub const ACCOUNT_CLAIM_CASE: [u8; 8] = [7, 178, 225, 1, 54, 47, 117, 180];
@@ -41,7 +40,6 @@ pub mod account {
     pub const ACCOUNT_FUNDING_LINE: [u8; 8] = [112, 72, 52, 244, 254, 229, 217, 235];
     pub const ACCOUNT_FUNDING_LINE_LEDGER: [u8; 8] = [233, 46, 244, 60, 190, 65, 156, 68];
     pub const ACCOUNT_HEALTH_PLAN: [u8; 8] = [66, 134, 136, 77, 63, 55, 103, 191];
-    pub const ACCOUNT_MEMBER_POSITION: [u8; 8] = [88, 118, 224, 251, 240, 186, 123, 175];
     pub const ACCOUNT_OBLIGATION: [u8; 8] = [168, 206, 141, 106, 88, 76, 172, 167];
     pub const ACCOUNT_PLAN_RESERVE_LEDGER: [u8; 8] = [243, 245, 230, 224, 27, 105, 48, 128];
     pub const ACCOUNT_POLICY_SERIES: [u8; 8] = [196, 117, 121, 249, 37, 71, 245, 23];

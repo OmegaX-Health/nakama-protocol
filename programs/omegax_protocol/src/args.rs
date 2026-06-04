@@ -93,11 +93,6 @@ pub struct CreateHealthPlanArgs {
     pub sponsor_operator: Pubkey,
     pub claims_operator: Pubkey,
     pub oracle_authority: Pubkey,
-    pub membership_mode: u8,
-    pub membership_gate_kind: u8,
-    pub membership_gate_mint: Pubkey,
-    pub membership_gate_min_amount: u64,
-    pub membership_invite_authority: Pubkey,
     pub allowed_rail_mask: u16,
     pub default_funding_priority: u8,
     pub oracle_policy_hash: [u8; 32],
@@ -114,11 +109,6 @@ pub struct UpdateHealthPlanControlsArgs {
     pub sponsor_operator: Pubkey,
     pub claims_operator: Pubkey,
     pub oracle_authority: Pubkey,
-    pub membership_mode: u8,
-    pub membership_gate_kind: u8,
-    pub membership_gate_mint: Pubkey,
-    pub membership_gate_min_amount: u64,
-    pub membership_invite_authority: Pubkey,
     pub allowed_rail_mask: u16,
     pub default_funding_priority: u8,
     pub oracle_policy_hash: [u8; 32],
@@ -184,30 +174,6 @@ pub struct VersionPolicySeriesArgs {
     pub comparability_hash: [u8; 32],
     pub policy_overrides_hash: [u8; 32],
     pub cycle_seconds: i64,
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct OpenMemberPositionArgs {
-    pub series_scope: Pubkey,
-    pub subject_commitment: [u8; 32],
-    pub eligibility_status: u8,
-    pub delegated_rights: u32,
-    pub proof_mode: u8,
-    pub invite_id_hash: [u8; 32],
-    pub invite_expires_at: i64,
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct UpdateMemberEligibilityArgs {
-    pub eligibility_status: u8,
-    pub delegated_rights: u32,
-    pub active: bool,
 }
 
 #[cfg_attr(

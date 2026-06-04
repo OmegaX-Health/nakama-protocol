@@ -11,8 +11,6 @@ mod custody;
 #[cfg(feature = "quasar")]
 mod custody;
 #[cfg(not(feature = "quasar"))]
-mod membership;
-#[cfg(not(feature = "quasar"))]
 mod reserve_accounting;
 
 #[cfg(not(feature = "quasar"))]
@@ -23,7 +21,5 @@ pub(crate) use bindings::*;
 pub(crate) use custody::*;
 #[cfg(feature = "quasar")]
 pub(crate) use custody::*;
-#[cfg(not(feature = "quasar"))]
-pub(crate) use membership::*;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use reserve_accounting::*;

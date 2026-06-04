@@ -3,10 +3,9 @@
 // Defense regression tests for PT-2026-04-27-04 and PT-2026-04-27-07.
 //
 // Both findings shipped fixes in the on-chain program:
-//   PT-04 — `require_claim_intake_submitter` (lib.rs:5166-) now requires
-//           `args.claimant == member_position.wallet` in BOTH the member
-//           self-submit and operator-submit branches. Recipient routing is
-//           handled by the new ClaimCase.delegate_recipient field.
+//   PT-04 — after the membership-account trim, `require_claim_intake_submitter`
+//           allows claimant self-submit or plan operators for a nonzero
+//           claimant. Recipient routing is handled by ClaimCase.delegate_recipient.
 //   PT-07 — the standalone OracleProfile registry has been removed. Claim
 //           attestations are authorized directly against HealthPlan.oracle_authority,
 //           so there is no profile metadata surface for an attacker to squat.
@@ -26,16 +25,17 @@ function extractFunctionBody(signaturePrefix: string): string {
   return extractRustFunctionBody(match[1]!);
 }
 
-test("[PT-04 defense] require_claim_intake_submitter operator branch constrains args.claimant", () => {
+test("[PT-04 defense] require_claim_intake_submitter operator branch requires a nonzero claimant", () => {
   const body = extractFunctionBody("fn require_claim_intake_submitter(");
 
-  // Both branches must compare args.claimant to member_position.wallet so
-  // operator-routed claim diversion is impossible by construction.
   assert.ok(
-    /args\.claimant\s*==\s*member_position\.wallet/.test(body),
-    "[PT-04 regression] gate must compare args.claimant to member_position.wallet",
+    /claimant_present\s*=\s*claimant\s*!=\s*ZERO_PUBKEY/.test(body),
+    "[PT-04 regression] gate must reject zero claimant",
   );
-
+  assert.ok(
+    /claimant_self_submit/.test(body),
+    "[PT-04 regression] gate must preserve claimant self-submit",
+  );
   assert.ok(
     /plan\.claims_operator/.test(body) && /plan\.plan_admin/.test(body),
     "[PT-04 regression] operator branch must reference claims_operator and plan_admin",
@@ -52,8 +52,8 @@ test("[PT-04 defense] require_claim_intake_submitter operator branch constrains 
   );
   const operatorExpr = operatorLineMatch[1];
   assert.ok(
-    /claimant/.test(operatorExpr),
-    `[PT-04 regression] operator_submit must reference claimant constraint. Got: ${operatorExpr.trim()}`,
+    /claimant_present/.test(operatorExpr),
+    `[PT-04 regression] operator_submit must require claimant_present. Got: ${operatorExpr.trim()}`,
   );
 });
 

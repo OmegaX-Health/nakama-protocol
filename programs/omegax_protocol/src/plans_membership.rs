@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Health-plan, policy-series, and member-position instruction handlers and account validation contexts.
+//! Health-plan and policy-series instruction handlers and account validation contexts.
 
 use crate::platform::*;
 
@@ -25,7 +25,6 @@ pub(crate) fn create_health_plan(
         OmegaXProtocolError::ReserveDomainInactive
     );
     require_domain_control(&ctx.accounts.plan_admin.key(), &ctx.accounts.reserve_domain)?;
-    validate_membership_gate_config(&args)?;
 
     let plan = &mut ctx.accounts.health_plan;
     plan.reserve_domain = ctx.accounts.reserve_domain.key();
@@ -38,11 +37,6 @@ pub(crate) fn create_health_plan(
     plan.display_name = args.display_name;
     plan.organization_ref = args.organization_ref;
     plan.metadata_uri = args.metadata_uri;
-    plan.membership_mode = args.membership_mode;
-    plan.membership_gate_kind = args.membership_gate_kind;
-    plan.membership_gate_mint = args.membership_gate_mint;
-    plan.membership_gate_min_amount = args.membership_gate_min_amount;
-    plan.membership_invite_authority = args.membership_invite_authority;
     plan.allowed_rail_mask = args.allowed_rail_mask;
     plan.default_funding_priority = args.default_funding_priority;
     plan.oracle_policy_hash = args.oracle_policy_hash;
@@ -68,17 +62,11 @@ pub(crate) fn update_health_plan_controls(
     args: UpdateHealthPlanControlsArgs,
 ) -> Result<()> {
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
-    validate_membership_gate_update_config(&args)?;
 
     let plan = &mut ctx.accounts.health_plan;
     plan.sponsor_operator = args.sponsor_operator;
     plan.claims_operator = args.claims_operator;
     plan.oracle_authority = args.oracle_authority;
-    plan.membership_mode = args.membership_mode;
-    plan.membership_gate_kind = args.membership_gate_kind;
-    plan.membership_gate_mint = args.membership_gate_mint;
-    plan.membership_gate_min_amount = args.membership_gate_min_amount;
-    plan.membership_invite_authority = args.membership_invite_authority;
     plan.allowed_rail_mask = args.allowed_rail_mask;
     plan.default_funding_priority = args.default_funding_priority;
     plan.oracle_policy_hash = args.oracle_policy_hash;
@@ -134,172 +122,11 @@ fn require_quasar_domain_control(
 }
 
 #[cfg(feature = "quasar")]
-#[inline(always)]
-fn validate_quasar_membership_gate_fields(
-    membership_mode: u8,
-    membership_gate_kind: u8,
-    membership_gate_mint: Pubkey,
-    membership_gate_min_amount: u64,
-    membership_invite_authority: Pubkey,
-) -> Result<()> {
-    match membership_mode {
-        MEMBERSHIP_MODE_OPEN => {
-            require!(
-                membership_gate_kind == MEMBERSHIP_GATE_KIND_OPEN
-                    && membership_gate_mint == ZERO_PUBKEY
-                    && membership_gate_min_amount == 0
-                    && membership_invite_authority == ZERO_PUBKEY,
-                OmegaXProtocolError::MembershipGateConfigurationInvalid
-            );
-        }
-        MEMBERSHIP_MODE_INVITE_ONLY => {
-            require!(
-                membership_gate_kind == MEMBERSHIP_GATE_KIND_INVITE_ONLY
-                    && membership_gate_mint == ZERO_PUBKEY
-                    && membership_gate_min_amount == 0
-                    && membership_invite_authority != ZERO_PUBKEY,
-                OmegaXProtocolError::MembershipGateConfigurationInvalid
-            );
-        }
-        _ => return Err(OmegaXProtocolError::MembershipGateConfigurationInvalid.into()),
-    }
-
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-#[inline(always)]
-fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
-    require!(plan.active.get(), OmegaXProtocolError::HealthPlanInactive);
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn validate_quasar_optional_policy_series(
-    policy_series: Option<&Account<PolicySeriesAccountData<'_>>>,
-    expected_policy_series: Pubkey,
-    expected_health_plan: Pubkey,
-    require_active: bool,
-) -> Result<()> {
-    if expected_policy_series == ZERO_PUBKEY {
-        require!(
-            policy_series.is_none(),
-            OmegaXProtocolError::PolicySeriesMismatch
-        );
-        return Ok(());
-    }
-
-    let series = policy_series.ok_or(OmegaXProtocolError::PolicySeriesMissing)?;
-    require_keys_eq!(
-        *series.address(),
-        expected_policy_series,
-        OmegaXProtocolError::PolicySeriesMismatch
-    );
-    require_keys_eq!(
-        series.health_plan,
-        expected_health_plan,
-        OmegaXProtocolError::HealthPlanMismatch
-    );
-    require!(
-        quasar_pda_matches(
-            series.address(),
-            &crate::ID,
-            &[
-                SEED_POLICY_SERIES,
-                expected_health_plan.as_ref(),
-                series.series_id().as_bytes(),
-            ],
-            series.bump,
-        ),
-        OmegaXProtocolError::PolicySeriesMismatch
-    );
-    if require_active {
-        require!(
-            series.status == SERIES_STATUS_ACTIVE,
-            OmegaXProtocolError::PolicySeriesMismatch
-        );
-    }
-
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-struct QuasarMembershipProofValidationInput {
-    membership_mode: u8,
-    membership_invite_authority: Pubkey,
-    proof_mode: u8,
-    invite_expires_at: i64,
-    invite_authority: Option<Pubkey>,
-    now_ts: i64,
-}
-
-#[cfg(feature = "quasar")]
-fn validate_quasar_membership_proof_inputs(
-    input: &QuasarMembershipProofValidationInput,
-) -> Result<()> {
-    match input.membership_mode {
-        MEMBERSHIP_MODE_OPEN => {
-            require!(
-                input.proof_mode == MEMBERSHIP_PROOF_MODE_OPEN,
-                OmegaXProtocolError::MembershipProofModeMismatch
-            );
-        }
-        MEMBERSHIP_MODE_INVITE_ONLY => {
-            require!(
-                input.proof_mode == MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
-                OmegaXProtocolError::MembershipProofModeMismatch
-            );
-            let invite_authority = input
-                .invite_authority
-                .ok_or(OmegaXProtocolError::MembershipInviteAuthorityInvalid)?;
-            require_keys_eq!(
-                invite_authority,
-                input.membership_invite_authority,
-                OmegaXProtocolError::MembershipInviteAuthorityInvalid
-            );
-            require!(
-                input.invite_expires_at == 0 || input.invite_expires_at >= input.now_ts,
-                OmegaXProtocolError::MembershipInvitePermitExpired
-            );
-        }
-        _ => return Err(OmegaXProtocolError::MembershipGateConfigurationInvalid.into()),
-    }
-
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn validate_quasar_membership_proof<'info>(
-    ctx: &Ctx<'info, OpenMemberPosition<'info>>,
-    proof_mode: u8,
-    invite_expires_at: i64,
-    now_ts: i64,
-) -> Result<()> {
-    validate_quasar_membership_proof_inputs(&QuasarMembershipProofValidationInput {
-        membership_mode: ctx.accounts.health_plan.membership_mode,
-        membership_invite_authority: ctx.accounts.health_plan.membership_invite_authority,
-        proof_mode,
-        invite_expires_at,
-        invite_authority: ctx
-            .accounts
-            .invite_authority
-            .as_ref()
-            .map(|authority| *authority.address()),
-        now_ts,
-    })
-}
-
-#[cfg(feature = "quasar")]
 pub(crate) fn update_health_plan_controls<'info>(
     ctx: &mut Ctx<'info, UpdateHealthPlanControls<'info>>,
     sponsor_operator: Pubkey,
     claims_operator: Pubkey,
     oracle_authority: Pubkey,
-    membership_mode: u8,
-    membership_gate_kind: u8,
-    membership_gate_mint: Pubkey,
-    membership_gate_min_amount: u64,
-    membership_invite_authority: Pubkey,
     allowed_rail_mask: u16,
     default_funding_priority: u8,
     oracle_policy_hash: [u8; 32],
@@ -310,13 +137,6 @@ pub(crate) fn update_health_plan_controls<'info>(
 ) -> Result<()> {
     let authority = *ctx.accounts.authority.address();
     require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
-    validate_quasar_membership_gate_fields(
-        membership_mode,
-        membership_gate_kind,
-        membership_gate_mint,
-        membership_gate_min_amount,
-        membership_invite_authority,
-    )?;
 
     let plan = &mut ctx.accounts.health_plan;
     let reserve_domain = plan.reserve_domain;
@@ -336,11 +156,6 @@ pub(crate) fn update_health_plan_controls<'info>(
         sponsor_operator,
         claims_operator,
         oracle_authority,
-        membership_mode,
-        membership_gate_kind,
-        membership_gate_mint,
-        membership_gate_min_amount,
-        membership_invite_authority,
         allowed_rail_mask,
         default_funding_priority,
         oracle_policy_hash,
@@ -368,11 +183,6 @@ pub(crate) fn create_health_plan<'info>(
     sponsor_operator: Pubkey,
     claims_operator: Pubkey,
     oracle_authority: Pubkey,
-    membership_mode: u8,
-    membership_gate_kind: u8,
-    membership_gate_mint: Pubkey,
-    membership_gate_min_amount: u64,
-    membership_invite_authority: Pubkey,
     allowed_rail_mask: u16,
     default_funding_priority: u8,
     oracle_policy_hash: [u8; 32],
@@ -391,13 +201,6 @@ pub(crate) fn create_health_plan<'info>(
     );
     let plan_admin = *ctx.accounts.plan_admin.address();
     require_quasar_domain_control(&plan_admin, &ctx.accounts.reserve_domain)?;
-    validate_quasar_membership_gate_fields(
-        membership_mode,
-        membership_gate_kind,
-        membership_gate_mint,
-        membership_gate_min_amount,
-        membership_invite_authority,
-    )?;
 
     let bump = ctx.accounts.health_plan.bump;
     ctx.accounts.health_plan.set_inner(
@@ -407,11 +210,6 @@ pub(crate) fn create_health_plan<'info>(
         sponsor_operator,
         claims_operator,
         oracle_authority,
-        membership_mode,
-        membership_gate_kind,
-        membership_gate_mint,
-        membership_gate_min_amount,
-        membership_invite_authority,
         allowed_rail_mask,
         default_funding_priority,
         oracle_policy_hash,
@@ -652,55 +450,6 @@ pub(crate) fn version_policy_series<'info>(
     Ok(())
 }
 
-#[cfg(feature = "quasar")]
-pub(crate) fn open_member_position<'info>(
-    ctx: &mut Ctx<'info, OpenMemberPosition<'info>>,
-    series_scope: Pubkey,
-    subject_commitment: [u8; 32],
-    eligibility_status: u8,
-    delegated_rights: u32,
-    proof_mode: u8,
-    invite_id_hash: [u8; 32],
-    invite_expires_at: i64,
-) -> Result<()> {
-    require_quasar_health_plan_active(&ctx.accounts.health_plan)?;
-    require!(
-        ctx.accounts.health_plan.pause_flags.get() & PAUSE_FLAG_PLAN_OPERATIONS == 0,
-        OmegaXProtocolError::HealthPlanPaused
-    );
-
-    let health_plan_key = *ctx.accounts.health_plan.address();
-    validate_quasar_optional_policy_series(
-        ctx.accounts.policy_series.as_ref(),
-        series_scope,
-        health_plan_key,
-        true,
-    )?;
-
-    let now_ts = Clock::get()?.unix_timestamp.get();
-    validate_quasar_membership_proof(ctx, proof_mode, invite_expires_at, now_ts)?;
-
-    let wallet_key = *ctx.accounts.wallet.address();
-
-    let member_position_bump = ctx.accounts.member_position.bump;
-    ctx.accounts.member_position.set_inner(
-        health_plan_key,
-        series_scope,
-        wallet_key,
-        subject_commitment,
-        eligibility_status,
-        delegated_rights,
-        proof_mode,
-        invite_id_hash,
-        true,
-        now_ts,
-        now_ts,
-        member_position_bump,
-    );
-
-    Ok(())
-}
-
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn create_policy_series(
     ctx: Context<CreatePolicySeries>,
@@ -842,109 +591,6 @@ pub(crate) fn version_policy_series(
     Ok(())
 }
 
-#[cfg(not(feature = "quasar"))]
-pub(crate) fn open_member_position(
-    ctx: Context<OpenMemberPosition>,
-    args: OpenMemberPositionArgs,
-) -> Result<()> {
-    require_health_plan_active(&ctx.accounts.health_plan)?;
-    require!(
-        ctx.accounts.health_plan.pause_flags & PAUSE_FLAG_PLAN_OPERATIONS == 0,
-        OmegaXProtocolError::HealthPlanPaused
-    );
-    validate_optional_policy_series(
-        ctx.accounts.policy_series.as_deref(),
-        args.series_scope,
-        ctx.accounts.health_plan.key(),
-        true,
-    )?;
-
-    let now_ts = Clock::get()?.unix_timestamp;
-    validate_membership_proof_inputs(&MembershipProofValidationInput {
-        membership_mode: ctx.accounts.health_plan.membership_mode,
-        membership_invite_authority: ctx.accounts.health_plan.membership_invite_authority,
-        proof_mode: args.proof_mode,
-        invite_expires_at: args.invite_expires_at,
-        invite_authority: ctx
-            .accounts
-            .invite_authority
-            .as_ref()
-            .map(|authority| authority.key()),
-        now_ts,
-    })?;
-
-    let member_position = &mut ctx.accounts.member_position;
-    member_position.health_plan = ctx.accounts.health_plan.key();
-    member_position.policy_series = args.series_scope;
-    member_position.wallet = ctx.accounts.wallet.key();
-    member_position.subject_commitment = args.subject_commitment;
-    member_position.eligibility_status = args.eligibility_status;
-    member_position.delegated_rights = args.delegated_rights;
-    member_position.enrollment_proof_mode = args.proof_mode;
-    member_position.invite_id_hash = args.invite_id_hash;
-    member_position.active = true;
-    member_position.opened_at = now_ts;
-    member_position.updated_at = member_position.opened_at;
-    member_position.bump = ctx.bumps.member_position;
-
-    Ok(())
-}
-
-#[cfg(not(feature = "quasar"))]
-pub(crate) fn update_member_eligibility(
-    ctx: Context<UpdateMemberEligibility>,
-    args: UpdateMemberEligibilityArgs,
-) -> Result<()> {
-    require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
-
-    let member_position = &mut ctx.accounts.member_position;
-    member_position.eligibility_status = args.eligibility_status;
-    member_position.delegated_rights = args.delegated_rights;
-    member_position.active = args.active;
-    member_position.updated_at = Clock::get()?.unix_timestamp;
-
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-pub(crate) fn update_member_eligibility<'info>(
-    ctx: &mut Ctx<'info, UpdateMemberEligibility<'info>>,
-    eligibility_status: u8,
-    delegated_rights: u32,
-    active: bool,
-) -> Result<()> {
-    let authority = *ctx.accounts.authority.address();
-    require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
-
-    let member_position = &mut ctx.accounts.member_position;
-    let health_plan = member_position.health_plan;
-    let policy_series = member_position.policy_series;
-    let wallet = member_position.wallet;
-    let subject_commitment = member_position.subject_commitment;
-    let enrollment_proof_mode = member_position.enrollment_proof_mode;
-    let invite_id_hash = member_position.invite_id_hash;
-    let opened_at = member_position.opened_at.get();
-    let bump = member_position.bump;
-    let now_ts = Clock::get()?.unix_timestamp.get();
-
-    member_position.set_inner(
-        health_plan,
-        policy_series,
-        wallet,
-        subject_commitment,
-        eligibility_status,
-        delegated_rights,
-        enrollment_proof_mode,
-        invite_id_hash,
-        active,
-        opened_at,
-        now_ts,
-        bump,
-    );
-
-    Ok(())
-}
-
 #[derive(Accounts)]
 #[cfg_attr(not(feature = "quasar"), instruction(args: CreateHealthPlanArgs))]
 #[cfg_attr(
@@ -954,11 +600,6 @@ pub(crate) fn update_member_eligibility<'info>(
         _sponsor_operator: Pubkey,
         _claims_operator: Pubkey,
         _oracle_authority: Pubkey,
-        _membership_mode: u8,
-        _membership_gate_kind: u8,
-        _membership_gate_mint: Pubkey,
-        _membership_gate_min_amount: u64,
-        _membership_invite_authority: Pubkey,
         _allowed_rail_mask: u16,
         _default_funding_priority: u8,
         _oracle_policy_hash: [u8; 32],
@@ -1313,112 +954,4 @@ pub struct VersionPolicySeries<'info> {
     pub system_program: Program<'info, System>,
     #[cfg(feature = "quasar")]
     pub system_program: &'info Program<System>,
-}
-
-#[derive(Accounts)]
-#[cfg_attr(not(feature = "quasar"), instruction(args: OpenMemberPositionArgs))]
-#[cfg_attr(
-    feature = "quasar",
-    instruction(
-        series_scope: Pubkey,
-        _subject_commitment: [u8; 32],
-        _eligibility_status: u8,
-        _delegated_rights: u32,
-        _proof_mode: u8,
-        _invite_id_hash: [u8; 32],
-        _invite_expires_at: i64
-    )
-)]
-pub struct OpenMemberPosition<'info> {
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub wallet: Signer<'info>,
-    #[cfg(feature = "quasar")]
-    pub wallet: &'info Signer,
-    #[cfg(not(feature = "quasar"))]
-    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
-    pub health_plan: Account<'info, HealthPlan>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = quasar_pda_matches(
-            health_plan.address(),
-            &crate::ID,
-            &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
-            health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
-    )]
-    pub health_plan: Account<HealthPlanAccountData<'info>>,
-    #[cfg(not(feature = "quasar"))]
-    pub policy_series: Option<Box<Account<'info, PolicySeries>>>,
-    #[cfg(feature = "quasar")]
-    pub policy_series: Option<Account<PolicySeriesAccountData<'info>>>,
-    #[cfg_attr(
-        not(feature = "quasar"),
-        account(
-            init,
-            payer = wallet,
-            space = 8 + MemberPosition::INIT_SPACE,
-            seeds = [SEED_MEMBER_POSITION, health_plan.key().as_ref(), wallet.key().as_ref(), args.series_scope.as_ref()],
-            bump
-        )
-    )]
-    #[cfg(not(feature = "quasar"))]
-    pub member_position: Account<'info, MemberPosition>,
-    #[cfg_attr(
-        feature = "quasar",
-        account(
-            mut,
-            constraint = quasar_pda_matches(
-                member_position.address(),
-                &crate::ID,
-                &[SEED_MEMBER_POSITION, health_plan.address().as_ref(), wallet.address().as_ref(), series_scope.as_ref()],
-                member_position.bump,
-            ) @ OmegaXProtocolError::Unauthorized
-        )
-    )]
-    #[cfg(feature = "quasar")]
-    pub member_position: &'info mut Account<MemberPosition>,
-    #[cfg(not(feature = "quasar"))]
-    pub invite_authority: Option<Signer<'info>>,
-    #[cfg(feature = "quasar")]
-    pub invite_authority: Option<&'info Signer>,
-    #[cfg(not(feature = "quasar"))]
-    pub system_program: Program<'info, System>,
-    #[cfg(feature = "quasar")]
-    pub system_program: &'info Program<System>,
-}
-
-#[derive(Accounts)]
-pub struct UpdateMemberEligibility<'info> {
-    #[cfg(not(feature = "quasar"))]
-    pub authority: Signer<'info>,
-    #[cfg(feature = "quasar")]
-    pub authority: &'info Signer,
-    #[cfg(not(feature = "quasar"))]
-    #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
-    pub health_plan: Account<'info, HealthPlan>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = quasar_pda_matches(
-            health_plan.address(),
-            &crate::ID,
-            &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
-            health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
-    )]
-    pub health_plan: Account<HealthPlanAccountData<'info>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut, seeds = [SEED_MEMBER_POSITION, health_plan.key().as_ref(), member_position.wallet.as_ref(), member_position.policy_series.as_ref()], bump = member_position.bump)]
-    pub member_position: Account<'info, MemberPosition>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        mut,
-        constraint = quasar_pda_matches(
-            member_position.address(),
-            &crate::ID,
-            &[SEED_MEMBER_POSITION, health_plan.address().as_ref(), member_position.wallet.as_ref(), member_position.policy_series.as_ref()],
-            member_position.bump,
-        ) @ OmegaXProtocolError::Unauthorized
-    )]
-    pub member_position: &'info mut Account<MemberPosition>,
 }

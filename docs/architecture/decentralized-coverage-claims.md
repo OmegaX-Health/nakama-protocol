@@ -8,7 +8,7 @@ Protection products now reconcile through the same reserve kernel as rewards, bu
 
 The protocol therefore separates:
 
-- policy and membership state on the `HealthPlan`
+- policy state on the `HealthPlan`
 - product economics on the `PolicySeries`
 - funding responsibility on the `FundingLine`
 - reviewed claim workflow on the `ClaimCase`
@@ -51,8 +51,7 @@ This keeps the economic truth portable without turning the chain into a case-man
 
 ### Member / beneficiary
 
-- holds plan and series participation through `MemberPosition`
-- is the beneficiary named on the resulting `Obligation`
+- is the beneficiary named on the resulting `Obligation` or claim
 - can inspect claim status and payout history through readers
 
 ## Canonical claim lifecycle
@@ -70,9 +69,10 @@ The canonical public flow is:
 The economic consequence is expressed through `Obligation` state transitions:
 
 `open_claim_case` is intentionally authorization-bound at intake. The signer must either be the
-enrolled `MemberPosition.wallet` opening a claim for itself, or the plan's claim/plan operator
-opening the case through an operator workflow. The provided member position and funding line must
-belong to the selected plan and policy series, and the funding line must still be open.
+claimant opening a claim for itself, or the plan's claim/plan operator opening the case through an
+operator workflow for a nonzero claimant. The funding line must belong to the selected plan and
+policy series, and the funding line must still be open. Off-chain buyer, eligibility, and coverage
+activation systems own member eligibility before claims reach the protocol.
 
 Evidence references are mutable only until the first attestation. `attest_claim_case` must reference
 the current `claim_case.evidence_ref_hash`, use a governance-verified schema supported by the oracle
