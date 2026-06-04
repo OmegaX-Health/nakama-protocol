@@ -10,9 +10,9 @@ const {
   DEFAULT_LIQUIDITY_POOL_ADDRESS,
 } = fixturesModule as typeof import("../frontend/lib/devnet-fixtures.ts");
 const {
+  buildAttachClaimEvidenceRefTx,
   buildAttestClaimCaseTx,
   buildOpenMemberPositionTx,
-  deriveClaimAttestationPda,
   deriveHealthPlanPda,
   deriveLiquidityPoolPda,
   deriveReserveDomainPda,
@@ -39,57 +39,36 @@ test("fixture addresses stay deterministic under canonical seeds", () => {
     deriveLiquidityPoolPda({ reserveDomain: pool.reserveDomain, poolId: pool.poolId }).toBase58(),
     DEFAULT_LIQUIDITY_POOL_ADDRESS,
   );
-  assert.match(
-    deriveClaimAttestationPda({
-      claimCase: seekerPlan.address,
-      oracle: DEFAULT_HEALTH_PLAN_ADDRESS,
-    }).toBase58(),
-    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
-  );
 });
 
-test("claim attestation builders reject unsupported decisions before chain submission", () => {
+test("claim evidence and attestation builders are removed with the on-chain attestation surface", () => {
+  assert.throws(
+    () =>
+      buildAttachClaimEvidenceRefTx({
+        authority: DEFAULT_HEALTH_PLAN_ADDRESS,
+        healthPlanAddress: DEFAULT_HEALTH_PLAN_ADDRESS,
+        claimCaseAddress: DEVNET_PROTOCOL_FIXTURE_STATE.claimCases[0]!.address,
+        recentBlockhash: "11111111111111111111111111111111",
+        evidenceRefHashHex: "11".repeat(32),
+        decisionSupportHashHex: "22".repeat(32),
+      }),
+    /attach_claim_evidence_ref was removed/,
+  );
+
   assert.throws(
     () =>
       buildAttestClaimCaseTx({
         oracle: DEFAULT_HEALTH_PLAN_ADDRESS,
+        healthPlanAddress: DEFAULT_HEALTH_PLAN_ADDRESS,
         claimCaseAddress: DEVNET_PROTOCOL_FIXTURE_STATE.claimCases[0]!.address,
+        fundingLineAddress: DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines[0]!.address,
         recentBlockhash: "11111111111111111111111111111111",
-        decision: 99,
+        decision: 0,
         attestationHashHex: "11".repeat(32),
         attestationRefHashHex: "22".repeat(32),
         schemaKeyHashHex: "33".repeat(32),
       }),
-    /claim attestation decision must be one of 0/,
-  );
-});
-
-test("claim attestation builder wires plan oracle accounts", () => {
-  const claim = DEVNET_PROTOCOL_FIXTURE_STATE.claimCases[0]!;
-  const fundingLine = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines.find((row) => row.address === claim.fundingLine)!;
-  const oracle = DEFAULT_HEALTH_PLAN_ADDRESS;
-  const tx = buildAttestClaimCaseTx({
-    oracle,
-    healthPlanAddress: claim.healthPlan,
-    claimCaseAddress: claim.address,
-    fundingLineAddress: fundingLine.address,
-    recentBlockhash: "11111111111111111111111111111111",
-    decision: 0,
-    attestationHashHex: "11".repeat(32),
-    attestationRefHashHex: "22".repeat(32),
-    schemaKeyHashHex: "33".repeat(32),
-  });
-  const keys = tx.instructions[0]!.keys;
-  const keyFor = (address: string) => keys.find((key) => key.pubkey.toBase58() === address);
-
-  assert.equal(keys.length, 6);
-  assert.equal(keyFor(oracle)?.isSigner, true);
-  assert.equal(keyFor(claim.healthPlan)?.isWritable, false);
-  assert.equal(keyFor(claim.address)?.isWritable, true);
-  assert.equal(keyFor(fundingLine.address)?.isWritable, false);
-  assert.equal(
-    keyFor(deriveClaimAttestationPda({ claimCase: claim.address, oracle }).toBase58())?.isWritable,
-    true,
+    /attest_claim_case was removed/,
   );
 });
 

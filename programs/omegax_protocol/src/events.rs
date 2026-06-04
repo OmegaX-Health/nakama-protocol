@@ -192,26 +192,6 @@ pub struct ClaimCaseStateChangedEvent {
 
 #[cfg(not(feature = "quasar"))]
 #[event]
-pub struct ClaimCaseAttestedEvent {
-    pub claim_attestation: Pubkey,
-    pub claim_case: Pubkey,
-    pub oracle: Pubkey,
-    pub decision: u8,
-    pub attestation_hash: [u8; 32],
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [27, 131, 74, 180, 134, 39, 214, 103]))]
-pub struct ClaimCaseAttestedEvent {
-    pub claim_attestation: Address,
-    pub claim_case: Address,
-    pub oracle: Address,
-    pub decision: u8,
-    pub attestation_hash: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
 pub struct ScopedControlChangedEvent {
     pub scope_kind: u8,
     pub scope: Pubkey,

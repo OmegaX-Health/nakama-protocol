@@ -23,10 +23,6 @@ import {
 import {
   ZERO_PUBKEY,
   ZERO_PUBKEY_KEY,
-  CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
-  CLAIM_ATTESTATION_DECISION_SUPPORT_DENY,
-  CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW,
-  CLAIM_ATTESTATION_DECISION_ABSTAIN,
   MEMBERSHIP_GATE_KIND_OPEN,
   MEMBERSHIP_GATE_KIND_INVITE_ONLY,
   MEMBERSHIP_GATE_KIND_NFT_ANCHOR,
@@ -144,7 +140,6 @@ import {
   deriveAllocationLedgerPda,
   deriveAllocationPositionPda,
   deriveCapitalClassPda,
-  deriveClaimAttestationPda,
   deriveClaimCasePda,
   deriveDomainAssetLedgerPda,
   deriveDomainAssetVaultPda,
@@ -194,19 +189,6 @@ export function listProtocolInstructionAccounts(
 
 export function listProtocolAccountNames(): string[] {
   return Object.keys(PROTOCOL_ACCOUNT_DISCRIMINATORS).sort();
-}
-
-function assertValidClaimAttestationDecision(decision: number): void {
-  if (
-    decision !== CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE &&
-    decision !== CLAIM_ATTESTATION_DECISION_SUPPORT_DENY &&
-    decision !== CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW &&
-    decision !== CLAIM_ATTESTATION_DECISION_ABSTAIN
-  ) {
-    throw new Error(
-      "claim attestation decision must be one of 0 (approve), 1 (deny), 2 (review), or 3 (abstain)",
-    );
-  }
 }
 
 export function toBigIntAmount(value: BigNumberish | null | undefined): bigint {
@@ -1302,7 +1284,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           deniedAmount: bigintFromAnchorValue(decodedField(decoded, "deniedAmount")),
           paidAmount: bigintFromAnchorValue(decodedField(decoded, "paidAmount")),
           reservedAmount: bigintFromAnchorValue(decodedField(decoded, "reservedAmount")),
-          attestationCount: Number(decodedField(decoded, "attestationCount", "attestation_count") ?? 0),
           linkedObligation: asOptionalAddress(decodedField(decoded, "linkedObligation")),
         });
         break;
@@ -1491,34 +1472,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           bump: Number(decodedField(decoded, "bump") ?? 0),
         });
         break;
-      case "ClaimAttestation": {
-        const policySeriesValue = decodedField(decoded, "policySeries", "policy_series");
-        const policySeries = policySeriesValue ? asAddress(policySeriesValue) : null;
-        snapshot.claimAttestations.push({
-          address,
-          oracle: asAddress(decodedField(decoded, "oracle")),
-          oracleProfile: asAddress(decodedField(decoded, "oracleProfile", "oracle_profile")),
-          claimCase: asAddress(decodedField(decoded, "claimCase", "claim_case")),
-          healthPlan: asAddress(decodedField(decoded, "healthPlan", "health_plan")),
-          policySeries: policySeries && policySeries !== ZERO_PUBKEY ? policySeries : null,
-          decision: Number(decodedField(decoded, "decision") ?? 0),
-          attestationHashHex: bytesToHex(decodedField(decoded, "attestationHash", "attestation_hash")),
-          attestationRefHashHex: bytesToHex(
-            decodedField(decoded, "attestationRefHash", "attestation_ref_hash"),
-          ),
-          evidenceRefHashHex: bytesToHex(decodedField(decoded, "evidenceRefHash", "evidence_ref_hash")),
-          decisionSupportHashHex: bytesToHex(
-            decodedField(decoded, "decisionSupportHash", "decision_support_hash"),
-          ),
-          schemaKeyHashHex: bytesToHex(decodedField(decoded, "schemaKeyHash", "schema_key_hash")),
-          schemaHashHex: bytesToHex(decodedField(decoded, "schemaHash", "schema_hash")),
-          schemaVersion: Number(decodedField(decoded, "schemaVersion", "schema_version") ?? 0),
-          createdAtTs: numberFromAnchorValue(decodedField(decoded, "createdAtTs", "created_at_ts")),
-          updatedAtTs: numberFromAnchorValue(decodedField(decoded, "updatedAtTs", "updated_at_ts")),
-          bump: Number(decodedField(decoded, "bump") ?? 0),
-        });
-        break;
-      }
       default:
         break;
     }
@@ -2453,7 +2406,6 @@ export function buildVersionPolicySeriesTx(params: {
       pricing_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.pricingHashHex), 32)),
       payout_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.payoutHashHex), 32)),
       reserve_model_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.reserveModelHashHex), 32)),
-      evidence_requirements_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.evidenceRequirementsHashHex), 32)),
       comparability_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.comparabilityHashHex), 32)),
       policy_overrides_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.policyOverridesHashHex), 32)),
       cycle_seconds: params.cycleSeconds,
@@ -2515,9 +2467,6 @@ export function buildCreatePolicySeriesTx(params: {
       pricing_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.pricingHashHex), 32)),
       payout_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.payoutHashHex), 32)),
       reserve_model_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.reserveModelHashHex), 32)),
-      evidence_requirements_hash: Array.from(
-        hexToFixedBytes(normalizeOptionalHex32(params.evidenceRequirementsHashHex), 32),
-      ),
       comparability_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.comparabilityHashHex), 32)),
       policy_overrides_hash: Array.from(
         hexToFixedBytes(normalizeOptionalHex32(params.policyOverridesHashHex), 32),
@@ -2886,7 +2835,6 @@ export function buildOpenClaimCaseTx(params: {
       claim_id: params.claimId,
       policy_series: toPublicKey(params.policySeriesAddress ?? ZERO_PUBKEY_KEY),
       claimant: toPublicKey(params.claimantAddress ?? authority),
-      evidence_ref_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.evidenceRefHashHex), 32)),
     },
     accounts: [
       { pubkey: authority, isSigner: true, isWritable: true },
@@ -2906,21 +2854,8 @@ export function buildAttachClaimEvidenceRefTx(params: {
   evidenceRefHashHex?: string | null;
   decisionSupportHashHex?: string | null;
 }): Transaction {
-  const authority = toPublicKey(params.authority);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "attach_claim_evidence_ref",
-    args: {
-      evidence_ref_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.evidenceRefHashHex), 32)),
-      decision_support_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.decisionSupportHashHex), 32)),
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: params.healthPlanAddress },
-      { pubkey: params.claimCaseAddress, isWritable: true },
-    ],
-  });
+  void params;
+  throw new Error("attach_claim_evidence_ref was removed with the on-chain claim attestation surface");
 }
 
 export function buildAttestClaimCaseTx(params: {
@@ -2934,34 +2869,8 @@ export function buildAttestClaimCaseTx(params: {
   attestationRefHashHex?: string | null;
   schemaKeyHashHex?: string | null;
 }): Transaction {
-  const oracle = toPublicKey(params.oracle);
-  assertValidClaimAttestationDecision(params.decision);
-  const healthPlan = toPublicKey(params.healthPlanAddress);
-  const fundingLine = toPublicKey(params.fundingLineAddress);
-  const claimAttestation = deriveClaimAttestationPda({
-    claimCase: params.claimCaseAddress,
-    oracle,
-  });
-  return buildProtocolTransactionFromInstruction({
-    feePayer: oracle,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "attest_claim_case",
-    args: {
-      decision: params.decision,
-      attestation_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.attestationHashHex), 32)),
-      attestation_ref_hash: Array.from(
-        hexToFixedBytes(normalizeOptionalHex32(params.attestationRefHashHex), 32),
-      ),
-    },
-    accounts: [
-      { pubkey: oracle, isSigner: true, isWritable: true },
-      { pubkey: healthPlan },
-      { pubkey: params.claimCaseAddress, isWritable: true },
-      { pubkey: fundingLine },
-      { pubkey: claimAttestation, isWritable: true },
-      { pubkey: SystemProgram.programId },
-    ],
-  });
+  void params;
+  throw new Error("attest_claim_case was removed with the on-chain claim attestation surface");
 }
 
 export function buildAdjudicateClaimCaseTx(params: {
@@ -2986,7 +2895,6 @@ export function buildAdjudicateClaimCaseTx(params: {
       approved_amount: params.approvedAmount,
       denied_amount: params.deniedAmount,
       reserve_amount: params.reserveAmount,
-      decision_support_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.decisionSupportHashHex), 32)),
     },
     accounts: [
       { pubkey: authority, isSigner: true },

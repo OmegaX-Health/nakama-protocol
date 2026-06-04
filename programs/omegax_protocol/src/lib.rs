@@ -188,13 +188,6 @@ pub mod omegax_protocol {
         crate::claims::authorize_claim_recipient(ctx, args)
     }
 
-    pub fn attach_claim_evidence_ref(
-        ctx: Context<AttachClaimEvidenceRef>,
-        args: AttachClaimEvidenceRefArgs,
-    ) -> Result<()> {
-        crate::claims::attach_claim_evidence_ref(ctx, args)
-    }
-
     pub fn adjudicate_claim_case(
         ctx: Context<AdjudicateClaimCase>,
         args: AdjudicateClaimCaseArgs,
@@ -207,13 +200,6 @@ pub mod omegax_protocol {
         args: SettleClaimCaseArgs,
     ) -> Result<()> {
         crate::claims::settle_claim_case(ctx, args)
-    }
-
-    pub fn attest_claim_case(
-        ctx: Context<AttestClaimCase>,
-        args: AttestClaimCaseArgs,
-    ) -> Result<()> {
-        crate::claims::attest_claim_case(ctx, args)
     }
 }
 
@@ -413,7 +399,6 @@ pub mod omegax_protocol {
         pricing_hash: [u8; 32],
         payout_hash: [u8; 32],
         reserve_model_hash: [u8; 32],
-        evidence_requirements_hash: [u8; 32],
         comparability_hash: [u8; 32],
         policy_overrides_hash: [u8; 32],
         cycle_seconds: i64,
@@ -432,7 +417,6 @@ pub mod omegax_protocol {
             pricing_hash,
             payout_hash,
             reserve_model_hash,
-            evidence_requirements_hash,
             comparability_hash,
             policy_overrides_hash,
             cycle_seconds,
@@ -460,7 +444,6 @@ pub mod omegax_protocol {
         pricing_hash: [u8; 32],
         payout_hash: [u8; 32],
         reserve_model_hash: [u8; 32],
-        evidence_requirements_hash: [u8; 32],
         comparability_hash: [u8; 32],
         policy_overrides_hash: [u8; 32],
         cycle_seconds: i64,
@@ -476,7 +459,6 @@ pub mod omegax_protocol {
             pricing_hash,
             payout_hash,
             reserve_model_hash,
-            evidence_requirements_hash,
             comparability_hash,
             policy_overrides_hash,
             cycle_seconds,
@@ -576,16 +558,9 @@ pub mod omegax_protocol {
         ctx: Ctx<OpenClaimCase>,
         policy_series: Pubkey,
         claimant: Pubkey,
-        evidence_ref_hash: [u8; 32],
         claim_id: String<u32, 32>,
     ) -> Result<()> {
-        crate::claims::open_claim_case(
-            &mut ctx,
-            policy_series,
-            claimant,
-            evidence_ref_hash,
-            claim_id,
-        )
+        crate::claims::open_claim_case(&mut ctx, policy_series, claimant, claim_id)
     }
 
     #[instruction(discriminator = [112, 97, 129, 42, 125, 165, 226, 163])]
@@ -596,15 +571,6 @@ pub mod omegax_protocol {
         crate::claims::authorize_claim_recipient(&mut ctx, delegate_recipient)
     }
 
-    #[instruction(discriminator = [52, 246, 203, 87, 244, 143, 132, 131])]
-    pub fn attach_claim_evidence_ref(
-        ctx: Ctx<AttachClaimEvidenceRef>,
-        evidence_ref_hash: [u8; 32],
-        decision_support_hash: [u8; 32],
-    ) -> Result<()> {
-        crate::claims::attach_claim_evidence_ref(&mut ctx, evidence_ref_hash, decision_support_hash)
-    }
-
     #[instruction(discriminator = [146, 99, 255, 26, 223, 88, 235, 114])]
     pub fn adjudicate_claim_case(
         ctx: Ctx<AdjudicateClaimCase>,
@@ -612,7 +578,6 @@ pub mod omegax_protocol {
         approved_amount: u64,
         denied_amount: u64,
         reserve_amount: u64,
-        decision_support_hash: [u8; 32],
     ) -> Result<()> {
         crate::claims::adjudicate_claim_case(
             &mut ctx,
@@ -620,23 +585,12 @@ pub mod omegax_protocol {
             approved_amount,
             denied_amount,
             reserve_amount,
-            decision_support_hash,
         )
     }
 
     #[instruction(discriminator = [178, 123, 229, 204, 50, 204, 91, 71])]
     pub fn settle_claim_case(ctx: Ctx<SettleClaimCase>, amount: u64) -> Result<()> {
         crate::claims::settle_claim_case(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [111, 40, 46, 51, 76, 157, 214, 136])]
-    pub fn attest_claim_case(
-        ctx: Ctx<AttestClaimCase>,
-        decision: u8,
-        attestation_hash: [u8; 32],
-        attestation_ref_hash: [u8; 32],
-    ) -> Result<()> {
-        crate::claims::attest_claim_case(&mut ctx, decision, attestation_hash, attestation_ref_hash)
     }
 }
 

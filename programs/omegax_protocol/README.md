@@ -54,7 +54,8 @@ The former governance, fee-vault, liquidity-pool, capital-class, LP-position,
 allocation, redemption, impairment, member-position, and outcome-schema
 registry accounts have been removed from the live program surface. Reserve
 movement now flows through reserve domains, health plans, policy series,
-funding lines, obligations, claim cases, and claim attestations.
+funding lines, obligations, and claim cases. Evidence review and oracle
+attestations stay off-chain or in adjunct programs instead of the base protocol.
 
 Founder reservations are off-chain payment reservations into Squads custody,
 not on-chain protocol accounts. They do not increase claims-paying reserve,

@@ -7,8 +7,6 @@
 
 pub mod instruction {
     pub const IX_ADJUDICATE_CLAIM_CASE: [u8; 8] = [146, 99, 255, 26, 223, 88, 235, 114];
-    pub const IX_ATTACH_CLAIM_EVIDENCE_REF: [u8; 8] = [52, 246, 203, 87, 244, 143, 132, 131];
-    pub const IX_ATTEST_CLAIM_CASE: [u8; 8] = [111, 40, 46, 51, 76, 157, 214, 136];
     pub const IX_AUTHORIZE_CLAIM_RECIPIENT: [u8; 8] = [112, 97, 129, 42, 125, 165, 226, 163];
     pub const IX_CONFIGURE_RESERVE_ASSET_RAIL: [u8; 8] = [78, 48, 108, 190, 181, 203, 194, 176];
     pub const IX_CREATE_DOMAIN_ASSET_VAULT: [u8; 8] = [31, 13, 112, 128, 23, 164, 26, 108];
@@ -33,7 +31,6 @@ pub mod instruction {
 }
 
 pub mod account {
-    pub const ACCOUNT_CLAIM_ATTESTATION: [u8; 8] = [93, 71, 134, 41, 234, 89, 150, 80];
     pub const ACCOUNT_CLAIM_CASE: [u8; 8] = [7, 178, 225, 1, 54, 47, 117, 180];
     pub const ACCOUNT_DOMAIN_ASSET_LEDGER: [u8; 8] = [82, 42, 164, 106, 70, 160, 154, 99];
     pub const ACCOUNT_DOMAIN_ASSET_VAULT: [u8; 8] = [105, 110, 75, 179, 247, 58, 135, 229];
@@ -49,7 +46,6 @@ pub mod account {
 }
 
 pub mod event {
-    pub const EVENT_CLAIM_CASE_ATTESTED_EVENT: [u8; 8] = [27, 131, 74, 180, 134, 39, 214, 103];
     pub const EVENT_CLAIM_CASE_STATE_CHANGED_EVENT: [u8; 8] =
         [162, 195, 160, 236, 219, 18, 240, 208];
     pub const EVENT_FUNDING_FLOW_RECORDED_EVENT: [u8; 8] = [207, 159, 154, 43, 193, 239, 239, 163];

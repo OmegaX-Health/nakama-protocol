@@ -6,9 +6,9 @@
 //   PT-04 — after the membership-account trim, `require_claim_intake_submitter`
 //           allows claimant self-submit or plan operators for a nonzero
 //           claimant. Recipient routing is handled by ClaimCase.delegate_recipient.
-//   PT-07 — the standalone OracleProfile registry has been removed. Claim
-//           attestations are authorized directly against HealthPlan.oracle_authority,
-//           so there is no profile metadata surface for an attacker to squat.
+//   PT-07 — the standalone OracleProfile registry has been removed. The base
+//           program no longer stores claim attestations, so there is no profile
+//           metadata or on-chain claim-attestation surface for an attacker to squat.
 //
 // These tests now act as defense regressions: each one PASSES while the
 // defense remains in place and FAILS if the constraint is removed or
@@ -85,10 +85,17 @@ test("[PT-07 defense] oracle profile registry surface stays removed", () => {
   );
 });
 
-test("[PT-07 defense] claim attestations are gated by the plan oracle authority", () => {
-  const body = extractFunctionBody("fn require_claim_attestation_oracle_authority(");
+test("[PT-07 defense] claim attestation surface stays removed from the base program", () => {
   assert.ok(
-    /require_keys_eq!\([\s\S]*?oracle[\s\S]*?health_plan\.oracle_authority/s.test(body),
-    "[PT-07 regression] attestation gate must require oracle == health_plan.oracle_authority",
+    !/\bpub\s+fn\s+attest_claim_case\s*\(/.test(programSrc),
+    "[PT-07 regression] attest_claim_case should not be part of the live base program",
+  );
+  assert.ok(
+    !/\bClaimAttestation\b/.test(programSrc),
+    "[PT-07 regression] ClaimAttestation state should stay removed",
+  );
+  assert.ok(
+    !/\brequire_claim_attestation_oracle_authority\b/.test(programSrc),
+    "[PT-07 regression] attestation-specific oracle gate should stay removed",
   );
 });

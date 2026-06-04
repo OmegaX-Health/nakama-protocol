@@ -182,7 +182,6 @@ pub struct PolicySeries {
     pub pricing_hash: [u8; 32],
     pub payout_hash: [u8; 32],
     pub reserve_model_hash: [u8; 32],
-    pub evidence_requirements_hash: [u8; 32],
     pub comparability_hash: [u8; 32],
     pub policy_overrides_hash: [u8; 32],
     pub cycle_seconds: i64,
@@ -207,7 +206,6 @@ pub struct PolicySeries<'info> {
     pub pricing_hash: [u8; 32],
     pub payout_hash: [u8; 32],
     pub reserve_model_hash: [u8; 32],
-    pub evidence_requirements_hash: [u8; 32],
     pub comparability_hash: [u8; 32],
     pub policy_overrides_hash: [u8; 32],
     pub cycle_seconds: i64,
@@ -283,8 +281,6 @@ pub struct ClaimCase {
     // if non-zero, else `claimant`. Off-chain buyer/oracle systems own member
     // eligibility; the protocol only stores the payout claimant.
     pub delegate_recipient: Pubkey,
-    pub evidence_ref_hash: [u8; 32],
-    pub decision_support_hash: [u8; 32],
     pub intake_status: u8,
     pub review_state: u8,
     pub approved_amount: u64,
@@ -293,7 +289,6 @@ pub struct ClaimCase {
     pub reserved_amount: u64,
     pub recovered_amount: u64,
     pub appeal_count: u16,
-    pub attestation_count: u16,
     pub linked_obligation: Pubkey,
     pub opened_at: i64,
     pub updated_at: i64,
@@ -315,8 +310,6 @@ pub struct ClaimCase<'info> {
     // if non-zero, else `claimant`. Off-chain buyer/oracle systems own member
     // eligibility; the protocol only stores the payout claimant.
     pub delegate_recipient: Pubkey,
-    pub evidence_ref_hash: [u8; 32],
-    pub decision_support_hash: [u8; 32],
     pub intake_status: u8,
     pub review_state: u8,
     pub approved_amount: u64,
@@ -325,7 +318,6 @@ pub struct ClaimCase<'info> {
     pub reserved_amount: u64,
     pub recovered_amount: u64,
     pub appeal_count: u16,
-    pub attestation_count: u16,
     pub linked_obligation: Pubkey,
     pub opened_at: i64,
     pub updated_at: i64,
@@ -465,24 +457,6 @@ pub struct FundingLineLedger {
     pub bump: u8,
 }
 
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [93, 71, 134, 41, 234, 89, 150, 80]))]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct ClaimAttestation {
-    pub oracle: Pubkey,
-    pub claim_case: Pubkey,
-    pub health_plan: Pubkey,
-    pub policy_series: Pubkey,
-    pub decision: u8,
-    pub attestation_hash: [u8; 32],
-    pub attestation_ref_hash: [u8; 32],
-    pub evidence_ref_hash: [u8; 32],
-    pub decision_support_hash: [u8; 32],
-    pub created_at_ts: i64,
-    pub updated_at_ts: i64,
-    pub bump: u8,
-}
-
 pub enum FrameworkAccountData {}
 
 pub trait AccountDataLifetime<'info> {
@@ -561,7 +535,6 @@ impl_quasar_fixed_init_space!(
     PlanReserveLedger,
     SeriesReserveLedger,
     FundingLineLedger,
-    ClaimAttestation,
 );
 
 #[cfg(feature = "quasar")]

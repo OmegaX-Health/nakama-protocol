@@ -138,30 +138,3 @@ pub(crate) fn require_claim_operator(
         err!(OmegaXProtocolError::Unauthorized)
     }
 }
-
-pub(crate) fn require_valid_attestation_decision(decision: u8) -> Result<()> {
-    match decision {
-        CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE
-        | CLAIM_ATTESTATION_DECISION_SUPPORT_DENY
-        | CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW
-        | CLAIM_ATTESTATION_DECISION_ABSTAIN => Ok(()),
-        _ => err!(OmegaXProtocolError::InvalidClaimAttestationDecision),
-    }
-}
-
-pub(crate) fn is_zero_hash(value: &[u8; 32]) -> bool {
-    *value == [0; 32]
-}
-
-pub(crate) fn require_claim_attestation_oracle_authority(
-    health_plan: &HealthPlanAccountData<'_>,
-    _funding_line: &FundingLineAccountData<'_>,
-    oracle: Pubkey,
-) -> Result<()> {
-    require_keys_eq!(
-        oracle,
-        health_plan.oracle_authority,
-        OmegaXProtocolError::Unauthorized
-    );
-    Ok(())
-}

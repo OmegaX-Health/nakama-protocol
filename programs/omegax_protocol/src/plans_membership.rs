@@ -241,7 +241,6 @@ pub(crate) fn create_policy_series<'info>(
     pricing_hash: [u8; 32],
     payout_hash: [u8; 32],
     reserve_model_hash: [u8; 32],
-    evidence_requirements_hash: [u8; 32],
     comparability_hash: [u8; 32],
     policy_overrides_hash: [u8; 32],
     cycle_seconds: i64,
@@ -272,7 +271,6 @@ pub(crate) fn create_policy_series<'info>(
         pricing_hash,
         payout_hash,
         reserve_model_hash,
-        evidence_requirements_hash,
         comparability_hash,
         policy_overrides_hash,
         cycle_seconds,
@@ -333,7 +331,6 @@ pub(crate) fn version_policy_series<'info>(
     pricing_hash: [u8; 32],
     payout_hash: [u8; 32],
     reserve_model_hash: [u8; 32],
-    evidence_requirements_hash: [u8; 32],
     comparability_hash: [u8; 32],
     policy_overrides_hash: [u8; 32],
     cycle_seconds: i64,
@@ -360,10 +357,6 @@ pub(crate) fn version_policy_series<'info>(
     let current_pricing_hash = ctx.accounts.current_policy_series.pricing_hash;
     let current_payout_hash = ctx.accounts.current_policy_series.payout_hash;
     let current_reserve_model_hash = ctx.accounts.current_policy_series.reserve_model_hash;
-    let current_evidence_requirements_hash = ctx
-        .accounts
-        .current_policy_series
-        .evidence_requirements_hash;
     let current_comparability_hash = ctx.accounts.current_policy_series.comparability_hash;
     let current_policy_overrides_hash = ctx.accounts.current_policy_series.policy_overrides_hash;
     let current_cycle_seconds = ctx.accounts.current_policy_series.cycle_seconds.get();
@@ -387,7 +380,6 @@ pub(crate) fn version_policy_series<'info>(
         current_pricing_hash,
         current_payout_hash,
         current_reserve_model_hash,
-        current_evidence_requirements_hash,
         current_comparability_hash,
         current_policy_overrides_hash,
         current_cycle_seconds,
@@ -422,7 +414,6 @@ pub(crate) fn version_policy_series<'info>(
         pricing_hash,
         payout_hash,
         reserve_model_hash,
-        evidence_requirements_hash,
         comparability_hash,
         policy_overrides_hash,
         cycle_seconds,
@@ -472,7 +463,6 @@ pub(crate) fn create_policy_series(
     series.pricing_hash = args.pricing_hash;
     series.payout_hash = args.payout_hash;
     series.reserve_model_hash = args.reserve_model_hash;
-    series.evidence_requirements_hash = args.evidence_requirements_hash;
     series.comparability_hash = args.comparability_hash;
     series.policy_overrides_hash = args.policy_overrides_hash;
     series.cycle_seconds = args.cycle_seconds;
@@ -561,7 +551,6 @@ pub(crate) fn version_policy_series(
     next.pricing_hash = args.pricing_hash;
     next.payout_hash = args.payout_hash;
     next.reserve_model_hash = args.reserve_model_hash;
-    next.evidence_requirements_hash = args.evidence_requirements_hash;
     next.comparability_hash = args.comparability_hash;
     next.policy_overrides_hash = args.policy_overrides_hash;
     next.cycle_seconds = args.cycle_seconds;
@@ -695,7 +684,6 @@ pub struct UpdateHealthPlanControls<'info> {
         _pricing_hash: [u8; 32],
         _payout_hash: [u8; 32],
         _reserve_model_hash: [u8; 32],
-        _evidence_requirements_hash: [u8; 32],
         _comparability_hash: [u8; 32],
         _policy_overrides_hash: [u8; 32],
         _cycle_seconds: i64,
@@ -858,7 +846,6 @@ pub struct InitializeSeriesReserveLedger<'info> {
         _pricing_hash: [u8; 32],
         _payout_hash: [u8; 32],
         _reserve_model_hash: [u8; 32],
-        _evidence_requirements_hash: [u8; 32],
         _comparability_hash: [u8; 32],
         _policy_overrides_hash: [u8; 32],
         _cycle_seconds: i64,

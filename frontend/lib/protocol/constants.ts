@@ -34,7 +34,6 @@ export const SEED_LP_POSITION = "lp_position";
 export const SEED_ALLOCATION_POSITION = "allocation_position";
 export const SEED_ALLOCATION_LEDGER = "allocation_ledger";
 export const SEED_ORACLE_PROFILE = "oracle_profile";
-export const SEED_CLAIM_ATTESTATION = "claim_attestation";
 
 export const CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE = 0;
 export const CLAIM_ATTESTATION_DECISION_SUPPORT_DENY = 1;

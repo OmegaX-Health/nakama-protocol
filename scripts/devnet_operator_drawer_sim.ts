@@ -505,7 +505,6 @@ async function main(): Promise<void> {
             claimId: `sim-${randomBytes(4).toString("hex")}`,
             policySeriesAddress: series?.address ?? firstLine.policySeries ?? null,
             claimantAddress: signer.publicKey,
-            evidenceRefHashHex: hashReason("sim-evidence"),
           }),
           "Open claim case",
           "plan",
@@ -515,28 +514,7 @@ async function main(): Promise<void> {
       results.push(skip("Open claim case", "plan", "no member or funding line"));
     }
 
-    // Attach claim evidence
-    if (claim) {
-      results.push(
-        await simulate(
-          connection,
-          signer,
-          blockhash,
-          protocol.buildAttachClaimEvidenceRefTx({
-            authority: signer.publicKey,
-            healthPlanAddress: plan.address,
-            claimCaseAddress: claim.address,
-            recentBlockhash: blockhash,
-            evidenceRefHashHex: hashReason("sim-evidence"),
-            decisionSupportHashHex: hashReason("sim-decision"),
-          }),
-          "Attach claim evidence",
-          "plan",
-        ),
-      );
-    } else {
-      results.push(skip("Attach claim evidence", "plan", "no claim case fixture"));
-    }
+    results.push(skip("Attach claim evidence", "plan", "removed from the base protocol surface"));
 
     // Adjudicate claim case
     if (claim) {
@@ -554,7 +532,6 @@ async function main(): Promise<void> {
             approvedAmount: 0n,
             deniedAmount: 0n,
             reserveAmount: 0n,
-            decisionSupportHashHex: hashReason("sim-decision"),
             obligationAddress: obligation?.address ?? null,
           }),
           "Adjudicate claim case",

@@ -40,7 +40,6 @@ const {
   SERIES_MODE_PROTECTION,
   SERIES_MODE_REWARD,
   buildAdjudicateClaimCaseTx,
-  buildAttestClaimCaseTx,
   buildConfigureReserveAssetRailTx,
   buildCreateObligationTx,
   buildBackfillSchemaDependencyLedgerTx,
@@ -66,7 +65,6 @@ const {
   buildUpdateOracleProfileTx,
   buildVerifyOutcomeSchemaTx,
   deriveAllocationLedgerPda,
-  deriveClaimAttestationPda,
   deriveDomainAssetLedgerPda,
   deriveDomainAssetVaultPda,
   deriveDomainAssetVaultTokenAccountPda,
@@ -501,21 +499,6 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       claimId: protectionClaim.claimId,
       policySeriesAddress: protectionSeries.address,
       claimantAddress: protectionClaim.claimant,
-      evidenceRefHashHex: SAMPLE_EVIDENCE_HASH_HEX,
-    });
-    const attestClaimCaseTx = buildAttestClaimCaseTx({
-      oracle: oracleWallet.address,
-      healthPlanAddress: plan.address,
-      claimCaseAddress: protectionClaim.address,
-      fundingLineAddress: protectionLine.address,
-      recentBlockhash: STATIC_BLOCKHASH,
-      decision: 0,
-      attestationHashHex: SAMPLE_REASON_HASH_HEX,
-      attestationRefHashHex: SAMPLE_EVIDENCE_HASH_HEX,
-      schemaKeyHashHex: SAMPLE_SCHEMA_KEY_HASH_HEX,
-      liquidityPoolAddress: pool.address,
-      capitalClassAddress: openClass.address,
-      allocationPositionAddress: impairedAllocation.address,
     });
     const createObligationTx = buildCreateObligationTx({
       authority: claimsOperatorWallet.address,
@@ -546,7 +529,6 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       approvedAmount: protectionClaim.approvedAmount,
       deniedAmount: protectionClaim.deniedAmount,
       reserveAmount: linkedObligation.outstandingAmount,
-      decisionSupportHashHex: SAMPLE_REASON_HASH_HEX,
       obligationAddress: linkedObligation.address,
     });
     const reserveObligationTx = buildReserveObligationTx({
@@ -689,14 +671,6 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       assetMint: protectionLine.assetMint,
     }).toBase58());
     assert.equal(openClaimCaseTx.instructions[0]!.keys[3]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(attestClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(
-      attestClaimCaseTx.instructions[0]!.keys[13]!.pubkey.toBase58(),
-      deriveClaimAttestationPda({
-        claimCase: protectionClaim.address,
-        oracle: oracleWallet.address,
-      }).toBase58(),
-    );
     assert.equal(adjudicateClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), linkedObligation.address);
     assert.equal(reserveObligationTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(releaseReserveTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);

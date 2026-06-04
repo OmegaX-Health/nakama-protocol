@@ -71,10 +71,6 @@ const vaultTokenAccount = protocol.deriveDomainAssetVaultTokenAccountPda({ reser
 const attackerAta = getAssociatedTokenAddressSync(assetMint, attacker, true, TOKEN_PROGRAM_ID);
 const memberAta = getAssociatedTokenAddressSync(assetMint, member, true, TOKEN_PROGRAM_ID);
 const sourceAta = getAssociatedTokenAddressSync(assetMint, sponsorOperator, true, TOKEN_PROGRAM_ID);
-const claimAttestation = protocol.deriveClaimAttestationPda({
-  claimCase,
-  oracle: attacker,
-});
 
 type MatrixRow = {
   area: string;
@@ -148,7 +144,6 @@ const fakePda = Keypair.generate().publicKey;
 const fakeMint = Keypair.generate().publicKey;
 const fakeRecipient = getAssociatedTokenAddressSync(assetMint, Keypair.generate().publicKey, true, TOKEN_PROGRAM_ID);
 const fakeLedger = Keypair.generate().publicKey;
-const fakeAttestation = Keypair.generate().publicKey;
 const knownLedgerAccounts = [
   domainAssetLedger,
   fundingLineLedger,
@@ -211,11 +206,6 @@ function runtimeProbes(): RuntimeProbe[] {
     if (ledgerTarget) {
       const tx = cloneTxWithReplacement(row, new Map([[ledgerTarget.toBase58(), fakeLedger]]));
       if (tx) probes.push({ ...row, tx, category: "fake_ledger", attack: `${row.attack} + fake ledger` });
-    }
-
-    if (onlyProgramInstruction(row.tx).keys.some((key) => key.pubkey.equals(claimAttestation))) {
-      const tx = cloneTxWithReplacement(row, new Map([[claimAttestation.toBase58(), fakeAttestation]]));
-      if (tx) probes.push({ ...row, tx, category: "fake_attestation", attack: `${row.attack} + fake claim attestation` });
     }
 
     probes.push({
@@ -373,23 +363,6 @@ const matrixRows: MatrixRow[] = [
     ],
   },
   {
-    area: "claim-attestation",
-    instruction: "attest_claim_case",
-    attack: "unapproved oracle signs a claim attestation",
-    expectedGuard: "oracle must equal the health plan oracle authority",
-    tx: protocol.buildAttestClaimCaseTx({
-      oracle: attacker,
-      healthPlanAddress: healthPlan,
-      claimCaseAddress: claimCase,
-      fundingLineAddress: fundingLine,
-      decision: protocol.CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
-      attestationHashHex: SAMPLE_HASH_HEX,
-      attestationRefHashHex: SAMPLE_HASH_HEX,
-      recentBlockhash: STATIC_BLOCKHASH,
-    }),
-    mustInclude: [healthPlan, claimCase, fundingLine, claimAttestation],
-  },
-  {
     area: "obligation-reserve",
     instruction: "reserve_obligation",
     attack: "wrong operator reserves a linked claim obligation",
@@ -495,22 +468,22 @@ test("adversarial matrix owns all live instructions through the surface manifest
   assert.deepEqual(duplicateOwnedInstructions(), []);
   assert.deepEqual(blankInstructionExceptionReasons(), []);
   assert.deepEqual(missing, []);
-  assert.equal(live.length, 23);
+  assert.equal(live.length, 21);
 });
 
 test("money and control paths include adversarial signer and account-binding probes", () => {
-  assert(matrixRows.length >= 8, "expected broad money/control path coverage");
-  const coveredAreas = new Set(matrixRows.map((row) => row.area));
-  for (const area of [
+  const requiredAreas = [
     "domain-control",
     "plan-control",
     "sponsor-funding",
     "premium-inflow",
-    "claim-attestation",
     "obligation-reserve",
     "claim-settlement",
     "obligation-settlement",
-  ]) {
+  ];
+  assert(matrixRows.length >= requiredAreas.length, "expected broad money/control path coverage");
+  const coveredAreas = new Set(matrixRows.map((row) => row.area));
+  for (const area of requiredAreas) {
     assert(coveredAreas.has(area), `missing adversarial matrix area ${area}`);
   }
 

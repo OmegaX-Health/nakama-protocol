@@ -65,7 +65,6 @@ type CreatePolicySeriesInstructionParams = {
     pricingHashHex: string;
     payoutHashHex: string;
     reserveModelHashHex: string;
-    evidenceRequirementsHashHex: string;
     comparabilityHashHex: string;
     policyOverridesHashHex: string;
     cycleSeconds: bigint;
@@ -226,7 +225,6 @@ export function buildCreatePolicySeriesInstruction(params: CreatePolicySeriesIns
       encodeHex32(params.args.pricingHashHex),
       encodeHex32(params.args.payoutHashHex),
       encodeHex32(params.args.reserveModelHashHex),
-      encodeHex32(params.args.evidenceRequirementsHashHex),
       encodeHex32(params.args.comparabilityHashHex),
       encodeHex32(params.args.policyOverridesHashHex),
       encodeI64(params.args.cycleSeconds),

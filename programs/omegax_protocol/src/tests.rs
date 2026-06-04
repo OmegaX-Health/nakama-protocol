@@ -391,8 +391,6 @@ fn sample_claim_case(
         claimant: Pubkey::new_unique(),
         adjudicator: ZERO_PUBKEY,
         delegate_recipient: ZERO_PUBKEY,
-        evidence_ref_hash: [0u8; 32],
-        decision_support_hash: [0u8; 32],
         intake_status: CLAIM_INTAKE_APPROVED,
         review_state: 0,
         approved_amount: 100,
@@ -401,7 +399,6 @@ fn sample_claim_case(
         reserved_amount: 60,
         recovered_amount: 0,
         appeal_count: 0,
-        attestation_count: 0,
         linked_obligation: ZERO_PUBKEY,
         opened_at: 0,
         updated_at: 0,
@@ -822,7 +819,6 @@ fn sample_open_claim_case_args(claimant: Pubkey, policy_series: Pubkey) -> OpenC
         claim_id: "claim-protect-001".to_string(),
         policy_series,
         claimant,
-        evidence_ref_hash: [1u8; 32],
     }
 }
 
@@ -1078,110 +1074,6 @@ fn unlinked_obligation_reserve_control_preserves_sponsor_operator_path() {
 
     assert!(require_obligation_reserve_control(&sponsor_operator, &plan, &obligation,).is_ok());
     assert!(require_obligation_settlement_control(&sponsor_operator, &plan, &obligation,).is_ok());
-}
-
-#[test]
-fn claim_evidence_locks_after_first_attestation() {
-    let mut claim_case = sample_claim_case(
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-    );
-    assert!(claims::require_claim_evidence_mutable(&claim_case).is_ok());
-
-    claim_case.attestation_count = 1;
-    let error = claims::require_claim_evidence_mutable(&claim_case).unwrap_err();
-    assert!(error
-        .to_string()
-        .contains("Claim evidence cannot be changed after attestations begin"));
-}
-
-#[test]
-fn claim_attestation_common_rejects_pause_evidence_and_unapproved_oracle() {
-    let health_plan_key = Pubkey::new_unique();
-    let funding_line_key = Pubkey::new_unique();
-    let policy_series = Pubkey::new_unique();
-    let asset_mint = Pubkey::new_unique();
-    let mut health_plan = sample_health_plan_roles(
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-    );
-    health_plan.reserve_domain = Pubkey::new_unique();
-    let funding_line = sample_funding_line(
-        health_plan.reserve_domain,
-        health_plan_key,
-        policy_series,
-        asset_mint,
-        FUNDING_LINE_TYPE_PREMIUM_INCOME,
-    );
-    let mut claim_case =
-        sample_claim_case(health_plan_key, policy_series, funding_line_key, asset_mint);
-    claim_case.evidence_ref_hash = [5; 32];
-    let oracle = Pubkey::new_unique();
-    health_plan.oracle_authority = oracle;
-    let args = AttestClaimCaseArgs {
-        decision: CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
-        attestation_hash: [7; 32],
-        attestation_ref_hash: [5; 32],
-    };
-
-    assert!(claims::validate_claim_attestation_common(
-        health_plan_key,
-        &health_plan,
-        funding_line_key,
-        &funding_line,
-        &claim_case,
-        oracle,
-        &args,
-    )
-    .is_ok());
-
-    health_plan.pause_flags = PAUSE_FLAG_ORACLE_FINALITY_HOLD;
-    assert!(claims::validate_claim_attestation_common(
-        health_plan_key,
-        &health_plan,
-        funding_line_key,
-        &funding_line,
-        &claim_case,
-        oracle,
-        &args,
-    )
-    .unwrap_err()
-    .to_string()
-    .contains("paused oracle finality"));
-
-    health_plan.pause_flags = 0;
-    let mut mismatched_args = args.clone();
-    mismatched_args.attestation_ref_hash = [9; 32];
-    assert!(claims::validate_claim_attestation_common(
-        health_plan_key,
-        &health_plan,
-        funding_line_key,
-        &funding_line,
-        &claim_case,
-        oracle,
-        &mismatched_args,
-    )
-    .unwrap_err()
-    .to_string()
-    .contains("evidence reference does not match"));
-
-    let unapproved_oracle = Pubkey::new_unique();
-    assert!(claims::validate_claim_attestation_common(
-        health_plan_key,
-        &health_plan,
-        funding_line_key,
-        &funding_line,
-        &claim_case,
-        unapproved_oracle,
-        &args,
-    )
-    .unwrap_err()
-    .to_string()
-    .contains("Caller is not authorized"));
 }
 
 #[test]

@@ -138,7 +138,6 @@ pub struct CreatePolicySeriesArgs {
     pub pricing_hash: [u8; 32],
     pub payout_hash: [u8; 32],
     pub reserve_model_hash: [u8; 32],
-    pub evidence_requirements_hash: [u8; 32],
     pub comparability_hash: [u8; 32],
     pub policy_overrides_hash: [u8; 32],
     pub cycle_seconds: i64,
@@ -170,7 +169,6 @@ pub struct VersionPolicySeriesArgs {
     pub pricing_hash: [u8; 32],
     pub payout_hash: [u8; 32],
     pub reserve_model_hash: [u8; 32],
-    pub evidence_requirements_hash: [u8; 32],
     pub comparability_hash: [u8; 32],
     pub policy_overrides_hash: [u8; 32],
     pub cycle_seconds: i64,
@@ -267,26 +265,6 @@ pub struct OpenClaimCaseArgs {
     pub claim_id: String,
     pub policy_series: Pubkey,
     pub claimant: Pubkey,
-    pub evidence_ref_hash: [u8; 32],
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct AttachClaimEvidenceRefArgs {
-    pub evidence_ref_hash: [u8; 32],
-    pub decision_support_hash: [u8; 32],
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct AttestClaimCaseArgs {
-    pub decision: u8,
-    pub attestation_hash: [u8; 32],
-    pub attestation_ref_hash: [u8; 32],
 }
 
 #[cfg_attr(
@@ -298,7 +276,6 @@ pub struct AdjudicateClaimCaseArgs {
     pub approved_amount: u64,
     pub denied_amount: u64,
     pub reserve_amount: u64,
-    pub decision_support_hash: [u8; 32],
 }
 
 #[cfg_attr(

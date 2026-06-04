@@ -21,7 +21,6 @@ Raw medical payloads, raw claims packets, and human workflow stay offchain.
 Onchain claim state should hold only:
 
 - claim identity and lifecycle state
-- evidence or decision-support references
 - adjudication consequence
 - reserve booking and release consequence
 - settlement consequence
@@ -39,7 +38,6 @@ This keeps the economic truth portable without turning the chain into a case-man
 ### Claims operator / adjudicator
 
 - opens materially relevant `ClaimCase` records when needed
-- attaches evidence or decision-support references
 - approves or denies claims through explicit adjudication
 - can settle linked claim obligations after reserve is booked
 - does not get arbitrary authority to move unrelated money outside claim-linked liabilities
@@ -59,10 +57,8 @@ This keeps the economic truth portable without turning the chain into a case-man
 The canonical public flow is:
 
 1. `open_claim_case`
-2. optional `attach_claim_evidence_ref`
-3. optional `attest_claim_case`
-4. `adjudicate_claim_case`
-5. either:
+2. `adjudicate_claim_case`
+3. either:
    - `settle_claim_case` for unlinked claims, or
    - `reserve_obligation` -> `settle_obligation` for linked protection liabilities
 
@@ -74,12 +70,9 @@ operator workflow for a nonzero claimant. The funding line must belong to the se
 policy series, and the funding line must still be open. Off-chain buyer, eligibility, and coverage
 activation systems own member eligibility before claims reach the protocol.
 
-Evidence references are mutable only until the first attestation. `attest_claim_case` must reference
-the current `claim_case.evidence_ref_hash`, use a governance-verified schema supported by the oracle
-profile, and run while protocol emergency pause and plan oracle-finality hold are clear. For
-all supported funding lines, the attesting oracle must be the plan's configured
-`HealthPlan.oracle_authority`. LP-allocation-backed claim attestation is not part of the current
-public program surface.
+Evidence review, evidence packet hashes, and oracle attestations are off-chain or adjunct-program
+concerns. The base protocol intentionally stores only the claim case, adjudication amounts, optional
+linked obligation, reserve impact, and settlement state.
 
 - proposed
 - reserved
@@ -126,7 +119,7 @@ For the live program surface, start with:
 The localnet audit covers:
 
 - explicit protection-series premium funding
-- claim-case creation, attestation, and linkage
+- claim-case creation, adjudication, and linkage
 - approved and settled claim states
 - obligation linkage back to plan-side and capital-side funding
 - linked claim cases mirroring reserve and settlement state from the obligation path

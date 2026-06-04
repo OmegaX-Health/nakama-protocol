@@ -828,14 +828,11 @@ pub(crate) fn settle_obligation<'info>(
         let claimant = claim_case.claimant;
         let adjudicator = claim_case.adjudicator;
         let delegate_recipient = claim_case.delegate_recipient;
-        let evidence_ref_hash = claim_case.evidence_ref_hash;
-        let decision_support_hash = claim_case.decision_support_hash;
         let review_state = claim_case.review_state;
         let approved_amount = claim_case.approved_amount.get();
         let denied_amount = claim_case.denied_amount.get();
         let recovered_amount = claim_case.recovered_amount.get();
         let appeal_count = claim_case.appeal_count.get();
-        let attestation_count = claim_case.attestation_count.get();
         let opened_at = claim_case.opened_at.get();
         let bump = claim_case.bump;
         let claim_id = claim_case.claim_id().to_owned();
@@ -848,8 +845,6 @@ pub(crate) fn settle_obligation<'info>(
             claimant,
             adjudicator,
             delegate_recipient,
-            evidence_ref_hash,
-            decision_support_hash,
             intake_status,
             review_state,
             approved_amount,
@@ -858,7 +853,6 @@ pub(crate) fn settle_obligation<'info>(
             reserved_amount,
             recovered_amount,
             appeal_count,
-            attestation_count,
             obligation_key,
             opened_at,
             now_ts,

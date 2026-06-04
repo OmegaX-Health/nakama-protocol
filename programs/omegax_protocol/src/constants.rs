@@ -24,7 +24,6 @@ pub const SEED_FUNDING_LINE: &[u8] = b"funding_line";
 pub const SEED_FUNDING_LINE_LEDGER: &[u8] = b"funding_line_ledger";
 pub const SEED_CLAIM_CASE: &[u8] = b"claim_case";
 pub const SEED_OBLIGATION: &[u8] = b"obligation";
-pub const SEED_CLAIM_ATTESTATION: &[u8] = b"claim_attestation";
 
 pub const SERIES_MODE_REWARD: u8 = 0;
 pub const SERIES_MODE_PROTECTION: u8 = 1;

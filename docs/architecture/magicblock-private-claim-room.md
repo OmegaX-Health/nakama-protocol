@@ -1,6 +1,6 @@
 # MagicBlock Private Claim Room
 
-OmegaX Private Claim Room is a hackathon adjunct for private Genesis Protect Acute claim review. It uses MagicBlock Ephemeral Rollups for delegated review-session state while the main `omegax_protocol` program remains the Solana settlement and claim-attestation kernel.
+OmegaX Private Claim Room is a hackathon adjunct for private Genesis Protect Acute claim review. It uses MagicBlock Ephemeral Rollups for delegated review-session state while the main `omegax_protocol` program remains the Solana claim, reserve, and settlement kernel.
 
 The adjunct program is `omegax_private_claim_review`. It stores only public-safe hashes and session state:
 
@@ -28,7 +28,7 @@ Raw medical evidence, encrypted evidence payloads, OCR text, storage paths, and 
 7. The MagicBlock Private Payments API builds a devnet reimbursement preview; `record_private_payment_ref` stores only its reference hash and is limited to the configured payment attestor.
 8. `commit_and_close_review_session` schedules the MagicBlock commit and undelegates the review session back to Solana. Approved sessions require a private payment reference before commit. This instruction deliberately leaves account data unchanged and only invokes the MagicBlock commit CPI.
 9. After the session PDA is owned by `omegax_private_claim_review` on base Solana again, `finalize_committed_review_session` stamps `committed_at` on the base-layer receipt.
-10. The existing `omegax_protocol::attest_claim_case` consumes the committed review artifact hash through the normal claim attestation path after off-chain consumers refetch and verify the committed adjunct account.
+10. Off-chain consumers or operator tooling refetch and verify the committed adjunct account, then use the review artifact as support for the base program's `adjudicate_claim_case` / reserve / settlement path.
 
 ## Boundaries
 
@@ -36,7 +36,7 @@ Raw medical evidence, encrypted evidence payloads, OCR text, storage paths, and 
 - `ClaimCase`, reserves, vaults, funding lines, obligations, and payout accounts are not delegated.
 - The private reviewer may inspect plaintext inside the TEE path, but public Solana only receives hashes and status.
 - The hackathon reimbursement preview demonstrates MagicBlock private payments; it does not replace the production reserve kernel.
-- The adjunct is not authoritative by itself. Consumers must verify registry binding, reviewer binding, expected hashes, payment reference, and committed ownership before treating it as claim-attestation input.
+- The adjunct is not authoritative by itself. Consumers must verify registry binding, reviewer binding, expected hashes, payment reference, and committed ownership before treating it as claim-decision input.
 - The registry is a singleton PDA, so first initialization is deliberately restricted to the private-review program upgrade authority via the program `ProgramData` account. This prevents public first-writer takeover of the canonical review registry.
 
 ## Devnet Smoke Runner

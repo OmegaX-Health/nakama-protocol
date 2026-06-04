@@ -385,7 +385,6 @@ async function main() {
         pricing_hash: sha256Bytes(`series:${series.seriesId}:pricing`),
         payout_hash: sha256Bytes(`series:${series.seriesId}:payout`),
         reserve_model_hash: sha256Bytes(`series:${series.seriesId}:reserve-model`),
-        evidence_requirements_hash: sha256Bytes(`series:${series.seriesId}:evidence`),
         comparability_hash: sha256Bytes(`series:${series.seriesId}:${series.comparabilityKey}`),
         policy_overrides_hash: sha256Bytes(`series:${series.seriesId}:policy-overrides`),
         cycle_seconds: BigInt(30 * 86_400),

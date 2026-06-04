@@ -90,7 +90,6 @@ const PDA_SEEDS: Record<string, string[]> = {
   claim_case: ['claim_case', '<health_plan>', '<claim_id>'],
   obligation: ['obligation', '<funding_line>', '<obligation_id>'],
   oracle_profile: ['oracle_profile', '<oracle>'],
-  claim_attestation: ['claim_attestation', '<claim_case>', '<oracle>'],
 };
 
 function canonicalDiscriminator(name: string): number[] {

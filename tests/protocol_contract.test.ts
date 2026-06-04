@@ -23,8 +23,8 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   const reserveAssetRailAccount = idl.types.find((entry) => entry.name === "ReserveAssetRail");
   const selectedAssetPayoutArgs = idl.types.find((entry) => entry.name === "SettleClaimCaseSelectedAssetArgs");
   const healthPlanAccount = idl.types.find((entry) => entry.name === "HealthPlan");
+  const policySeriesAccount = idl.types.find((entry) => entry.name === "PolicySeries");
   const claimCaseAccount = idl.types.find((entry) => entry.name === "ClaimCase");
-  const claimAttestationAccount = idl.types.find((entry) => entry.name === "ClaimAttestation");
 
   assert(!instructionNames.includes("initialize_protocol_governance"));
   assert(!instructionNames.includes("set_protocol_emergency_pause"));
@@ -48,7 +48,8 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(!instructionNames.includes("verify_outcome_schema"));
   assert(!instructionNames.includes("backfill_schema_dependency_ledger"));
   assert(!instructionNames.includes("close_outcome_schema"));
-  assert(instructionNames.includes("attest_claim_case"));
+  assert(!instructionNames.includes("attach_claim_evidence_ref"));
+  assert(!instructionNames.includes("attest_claim_case"));
   assert(!instructionNames.includes("settle_claim_case_selected_asset"));
 
   for (const removedInstruction of [
@@ -76,6 +77,8 @@ test("canonical contract exposes the reserve-accounting surface", () => {
     "register_oracle",
     "claim_oracle",
     "update_oracle_profile",
+    "attach_claim_evidence_ref",
+    "attest_claim_case",
   ]) {
     assert(!instructionNames.includes(removedInstruction), `${removedInstruction} should be removed`);
   }
@@ -92,7 +95,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(!accountNames.includes("PoolOraclePermissionSet"));
   assert(!accountNames.includes("OutcomeSchema"));
   assert(!accountNames.includes("SchemaDependencyLedger"));
-  assert(accountNames.includes("ClaimAttestation"));
+  assert(!accountNames.includes("ClaimAttestation"));
 
   for (const removedAccount of [
     "ProtocolGovernance",
@@ -106,6 +109,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
     "AllocationPosition",
     "AllocationLedger",
     "OracleProfile",
+    "ClaimAttestation",
   ]) {
     assert(!accountNames.includes(removedAccount), `${removedAccount} should be removed`);
   }
@@ -114,32 +118,8 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(!serializedAccounts.includes("pool_treasury_vault"));
   assert(!serializedAccounts.includes("pool_oracle_fee_vault"));
   assert(!serializedAccounts.includes("member_position"));
-  for (const accountName of [
-    "oracle",
-    "health_plan",
-    "claim_case",
-    "funding_line",
-    "claim_attestation",
-  ]) {
-    assert(
-      PROTOCOL_INSTRUCTION_ACCOUNTS.attest_claim_case.some((account) => account.name === accountName),
-      `attest_claim_case missing ${accountName}`,
-    );
-  }
-  for (const removedAccount of [
-    "liquidity_pool",
-    "capital_class",
-    "allocation_position",
-    "pool_oracle_approval",
-    "pool_oracle_permission_set",
-    "pool_oracle_policy",
-    "oracle_profile",
-  ]) {
-    assert(
-      !PROTOCOL_INSTRUCTION_ACCOUNTS.attest_claim_case.some((account) => account.name === removedAccount),
-      `attest_claim_case should not carry ${removedAccount}`,
-    );
-  }
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "attach_claim_evidence_ref"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "attest_claim_case"));
 
   assert(!instructionNames.includes("create_pool"));
   assert(!instructionNames.includes("set_pool_status"));
@@ -173,7 +153,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(configureReserveAssetRailArgs?.type.fields?.some((field) => field.name === "max_confidence_bps"));
   assert(reserveAssetRailAccount?.type.fields?.some((field) => field.name === "max_confidence_bps"));
   assert(!selectedAssetPayoutArgs);
-  assert(claimCaseAccount?.type.fields?.some((field) => field.name === "attestation_count"));
+  assert(!policySeriesAccount?.type.fields?.some((field) => field.name === "evidence_requirements_hash"));
   for (const removedHealthPlanField of [
     "membership_mode",
     "membership_gate_kind",
@@ -184,26 +164,11 @@ test("canonical contract exposes the reserve-accounting surface", () => {
     assert(!healthPlanAccount?.type.fields?.some((field) => field.name === removedHealthPlanField));
   }
   assert(!claimCaseAccount?.type.fields?.some((field) => field.name === "member_position"));
-  for (const fieldName of [
+  for (const removedClaimField of [
     "evidence_ref_hash",
     "decision_support_hash",
+    "attestation_count",
   ]) {
-    assert(
-      claimAttestationAccount?.type.fields?.some((field) => field.name === fieldName),
-      `ClaimAttestation missing ${fieldName}`,
-    );
+    assert(!claimCaseAccount?.type.fields?.some((field) => field.name === removedClaimField));
   }
-  for (const removedFieldName of [
-    "oracle_profile",
-    "schema_key_hash",
-    "schema_hash",
-    "schema_version",
-  ]) {
-    assert(
-      !claimAttestationAccount?.type.fields?.some((field) => field.name === removedFieldName),
-      `ClaimAttestation should not carry ${removedFieldName}`,
-    );
-  }
-  assert(!claimAttestationAccount?.type.fields?.some((field) => field.name === "liquidity_pool"));
-  assert(!claimAttestationAccount?.type.fields?.some((field) => field.name === "allocation_position"));
 });

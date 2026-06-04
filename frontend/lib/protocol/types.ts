@@ -157,7 +157,6 @@ export type ClaimCaseSnapshot = {
   deniedAmount?: BigNumberish;
   paidAmount?: BigNumberish;
   reservedAmount?: BigNumberish;
-  attestationCount?: number;
   linkedObligation?: string | null;
 };
 

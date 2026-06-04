@@ -1,11 +1,9 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: af027e1896d988a84f22cf5cbcb155920baf6575f2ebc6206fe568a0e4390381
+// contract_sha256: b35e2a91743ca944bfcc5dde79925852b2efd63c748c708dd1868aea334f58f9
 
 export type ProtocolInstructionName =
   | "adjudicate_claim_case"
-  | "attach_claim_evidence_ref"
-  | "attest_claim_case"
   | "authorize_claim_recipient"
   | "configure_reserve_asset_rail"
   | "create_domain_asset_vault"
@@ -45,8 +43,6 @@ export const PROTOCOL_PROGRAM_ID = "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B
 
 export const PROTOCOL_INSTRUCTION_DISCRIMINATORS: Record<ProtocolInstructionName, Uint8Array> = {
   "adjudicate_claim_case": Uint8Array.from([146, 99, 255, 26, 223, 88, 235, 114]),
-  "attach_claim_evidence_ref": Uint8Array.from([52, 246, 203, 87, 244, 143, 132, 131]),
-  "attest_claim_case": Uint8Array.from([111, 40, 46, 51, 76, 157, 214, 136]),
   "authorize_claim_recipient": Uint8Array.from([112, 97, 129, 42, 125, 165, 226, 163]),
   "configure_reserve_asset_rail": Uint8Array.from([78, 48, 108, 190, 181, 203, 194, 176]),
   "create_domain_asset_vault": Uint8Array.from([31, 13, 112, 128, 23, 164, 26, 108]),
@@ -72,12 +68,6 @@ export const PROTOCOL_INSTRUCTION_DISCRIMINATORS: Record<ProtocolInstructionName
 export const PROTOCOL_INSTRUCTION_ARGS: Record<ProtocolInstructionName, ProtocolInstructionArg[]> = {
   "adjudicate_claim_case": [
       { name: "args", type: {"defined":{"name":"AdjudicateClaimCaseArgs"}} },
-  ],
-  "attach_claim_evidence_ref": [
-      { name: "args", type: {"defined":{"name":"AttachClaimEvidenceRefArgs"}} },
-  ],
-  "attest_claim_case": [
-      { name: "args", type: {"defined":{"name":"AttestClaimCaseArgs"}} },
   ],
   "authorize_claim_recipient": [
       { name: "args", type: {"defined":{"name":"AuthorizeClaimRecipientArgs"}} },
@@ -147,19 +137,6 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
       { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
       { name: "claim_case", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 108, 97, 105, 109, 95, 99, 97, 115, 101] }, { kind: "account", path: "health_plan" }, { kind: "account", path: "claim_case.claim_id" }] },
       { name: "obligation", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
-  ],
-  "attach_claim_evidence_ref": [
-      { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
-      { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
-      { name: "claim_case", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 108, 97, 105, 109, 95, 99, 97, 115, 101] }, { kind: "account", path: "health_plan" }, { kind: "account", path: "claim_case.claim_id" }] },
-  ],
-  "attest_claim_case": [
-      { name: "oracle", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
-      { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
-      { name: "claim_case", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 108, 97, 105, 109, 95, 99, 97, 115, 101] }, { kind: "account", path: "claim_case.health_plan" }, { kind: "account", path: "claim_case.claim_id" }] },
-      { name: "funding_line", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [102, 117, 110, 100, 105, 110, 103, 95, 108, 105, 110, 101] }, { kind: "account", path: "health_plan" }, { kind: "account", path: "funding_line.line_id" }] },
-      { name: "claim_attestation", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 108, 97, 105, 109, 95, 97, 116, 116, 101, 115, 116, 97, 116, 105, 111, 110] }, { kind: "account", path: "claim_case" }, { kind: "account", path: "oracle" }] },
-      { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
   ],
   "authorize_claim_recipient": [
       { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -343,7 +320,6 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
 };
 
 export const PROTOCOL_ACCOUNT_DISCRIMINATORS: Record<string, Uint8Array> = {
-  "ClaimAttestation": Uint8Array.from([93, 71, 134, 41, 234, 89, 150, 80]),
   "ClaimCase": Uint8Array.from([7, 178, 225, 1, 54, 47, 117, 180]),
   "DomainAssetLedger": Uint8Array.from([82, 42, 164, 106, 70, 160, 154, 99]),
   "DomainAssetVault": Uint8Array.from([105, 110, 75, 179, 247, 58, 135, 229]),
@@ -373,5 +349,4 @@ export const PROTOCOL_PDA_SEEDS: Record<string, string[]> = {
   "claim_case": ["claim_case", "<health_plan>", "<claim_id>"],
   "obligation": ["obligation", "<funding_line>", "<obligation_id>"],
   "oracle_profile": ["oracle_profile", "<oracle>"],
-  "claim_attestation": ["claim_attestation", "<claim_case>", "<oracle>"],
 };

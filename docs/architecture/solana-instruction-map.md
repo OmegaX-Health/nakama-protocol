@@ -49,8 +49,6 @@ All current public instructions remain present in [`programs/omegax_protocol/src
 | `settle_obligation` | move an obligation into claimable, payable, settled, or canceled states and mirror linked protection-claim settlement state; token outflow requires the obligation asset's active, payout-enabled, fresh confidence-bounded `ReserveAssetRail` |
 | `release_reserve` | release reserved liability back to free capital and mirror linked protection-claim reserve state |
 | `open_claim_case` | open an explicit claim lifecycle from the enrolled member wallet or a plan claim/operator path |
-| `attach_claim_evidence_ref` | attach evidence and decision-support references |
-| `attest_claim_case` | anchor an oracle attestation against the claim's locked evidence hash and a schema hash advertised by the oracle profile; non-LP claims require the plan oracle authority, while LP-allocation claims require pool oracle approval and `ATTEST_CLAIM` permission |
 | `adjudicate_claim_case` | approve or deny a claim case and optionally bind it to the matching `Obligation` |
 | `settle_claim_case` | settle approved same-asset claim payouts through the reserve kernel only when no linked `Obligation` exists; the claim asset must have an active, payout-enabled, fresh confidence-bounded `ReserveAssetRail` and enough free reserve in that same asset |
 | `mark_impairment` | record impairment against the affected ledgers and optional obligation |

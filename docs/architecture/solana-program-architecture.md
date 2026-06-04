@@ -93,7 +93,7 @@ The canonical public instruction surface is declared in [`programs/omegax_protoc
 - `reserve_custody.rs` for reserve domains and domain asset vaults
 - `plans_membership.rs` for health plans and policy series
 - `funding_obligations/` for funding lines, reserve movements, obligations, and obligation settlement
-- `claims.rs` for claim lifecycle, direct claim settlement, and attestations
+- `claims.rs` for claim lifecycle, direct claim settlement, and linked-obligation claim state
 - `capital/` for liquidity pools, capital classes, LP positions, redemptions, allocations, and impairments
 - `fees.rs` for fee-vault initialization and withdrawals
 - `oracle_schema.rs` for oracle registry, pool oracle permissions/policies, and outcome schemas

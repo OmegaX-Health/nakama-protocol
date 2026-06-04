@@ -6,7 +6,7 @@
 
 ## Why this exists
 
-The on-chain program enforces role checks (`require_governance`, `require_plan_control`, `require_claim_operator`, `require_curator_control`, `require_allocator`) plus pool-scoped oracle approval/permission checks for LP-backed claim attestations. The safety story for any of those checks is **only as strong as the wallet behind the role**. Pre-pen-test, the Genesis live bootstrap defaulted every privileged role to the governance signer if the role-specific environment variable was unset — a single key compromise drained the whole protocol. PT-05 closed the silent collapse via the opt-in `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1` guard. This doc closes the rest of the gap: matrix, multisig requirement, break-glass exception, and rotation/recovery posture.
+The on-chain program enforces role checks for plan control, claim operations, reserve-domain control, and settlement custody. The safety story for any of those checks is **only as strong as the wallet behind the role**. Pre-pen-test, the Genesis live bootstrap defaulted every privileged role to the governance signer if the role-specific environment variable was unset — a single key compromise drained the whole protocol. PT-05 closed the silent collapse via the opt-in `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1` guard. This doc closes the rest of the gap: matrix, multisig requirement, break-glass exception, and rotation/recovery posture.
 
 ## 1. Privileged roles
 
@@ -18,8 +18,8 @@ Every entry below maps to a `require_*` check in the onchain program source (`pr
 | **Reserve domain admin** | `require_governance` (domain ops) | reserve-domain pause flags, vault wiring | Same as governance for v1; can split later | Multisig PDA | `governanceAuthority` |
 | **Plan admin / Sponsor** | `require_plan_control` | `update_health_plan`, sponsor-budget funding, plan pause flags | Sponsor entity | Distinct wallet (multisig recommended for >$10k exposure) | `governanceAuthority` |
 | **Sponsor operator** | `require_plan_control` (sponsor lane) | premium recording, sponsor-budget operations | Operations team | Distinct wallet | `governanceAuthority` |
-| **Claims operator** | `require_claim_operator` | `attach_claim_evidence_ref`, `adjudicate_claim_case`, `settle_claim_case` | Claims operations team | Distinct hot wallet (rotated quarterly), backed by ≥2-of-N multisig for high-value claims | `governanceAuthority` |
-| **Oracle authority** | `OracleProfile` signer + verified-schema gate; claims require the plan's configured oracle authority | `register_oracle`, `claim_oracle`, `attest_claim_case` from oracle profile | Oracle operator (OmegaX Health for v1) | Distinct hot wallet, rotated quarterly | (none — must be set explicitly) |
+| **Claims operator** | `require_claim_operator` | `adjudicate_claim_case`, `settle_claim_case` | Claims operations team | Distinct hot wallet (rotated quarterly), backed by ≥2-of-N multisig for high-value claims | `governanceAuthority` |
+| **Oracle authority** | Off-chain/adjunct review signer for Phase 0 evidence workflows | Evidence review and claim-decision feeds outside the base protocol | Oracle operator (OmegaX Health for v1) | Distinct hot wallet, rotated quarterly | (none — must be set explicitly) |
 | **Pool curator** | `require_curator_control` | `create_capital_class`, capital-class restriction updates, manager credentialing | LP product team | Distinct wallet, multisig for production | `governanceAuthority` |
 | **Pool allocator** | `require_allocator` | `create_allocation_position`, allocation cap & weight updates | Capital management team | Distinct wallet | `governanceAuthority` |
 | **Pool sentinel** | no broad economic mutation helper; sentinel remains a configured emergency role for future narrow pause/throttle surfaces | pool-level pause flags, redemption-queue throttle | On-call sentinel | Distinct hot wallet (low blast radius — short-lived rotation OK) | `governanceAuthority` |

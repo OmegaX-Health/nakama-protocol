@@ -11,7 +11,6 @@ import { WizardDetailSheet } from "@/components/wizard-detail-sheet";
 import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
   buildAdjudicateClaimCaseTx,
-  buildAttachClaimEvidenceRefTx,
   buildCreateObligationTx,
   buildCreatePolicySeriesTx,
   buildFundSponsorBudgetTx,
@@ -810,10 +809,10 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                     </SelectField>
                   </div>
                   <TextField
-                    label="Evidence reference"
+                    label="Review reference"
                     value={evidenceRef}
                     onChange={setEvidenceRef}
-                    placeholder="URI, CID, or digest seed"
+                    placeholder="Manifest URI, CID, or note seed"
                   />
                   <div className="operator-drawer-actions">
                     <button
@@ -841,7 +840,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               selectedFundingLineForClaimResolved!.policySeries ??
                               null,
                             claimantAddress: claimIntakeClaimantAddress,
-                            evidenceRefHashHex: await hashReason(evidenceRef),
                           });
                         })
                       }
@@ -856,7 +854,7 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                 <fieldset className="operator-drawer-fieldset">
                   <legend className="operator-drawer-legend">Adjudicate</legend>
                   <div className="plans-wizard-row">
-                    <TextField label="Evidence reference" value={evidenceRef} onChange={setEvidenceRef} />
+                    <TextField label="Review reference" value={evidenceRef} onChange={setEvidenceRef} />
                     <TextField label="Decision support" value={decisionSupport} onChange={setDecisionSupport} />
                   </div>
                   <div className="plans-wizard-row">
@@ -874,26 +872,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                   <div className="operator-drawer-actions">
                     <button
                       type="button"
-                      className="plans-secondary-cta"
-                      disabled={!canAct || !selectedClaim || busyOn("Attach evidence")}
-                      onClick={() =>
-                        run("Attach evidence", async () => {
-                          const { blockhash } = await connection.getLatestBlockhash("confirmed");
-                          return buildAttachClaimEvidenceRefTx({
-                            authority: publicKey!,
-                            healthPlanAddress: props.plan!.address,
-                            claimCaseAddress: selectedClaim!.address,
-                            recentBlockhash: blockhash,
-                            evidenceRefHashHex: await hashReason(evidenceRef),
-                            decisionSupportHashHex: await hashReason(decisionSupport),
-                          });
-                        })
-                      }
-                    >
-                      Attach evidence
-                    </button>
-                    <button
-                      type="button"
                       className="plans-primary-cta"
                       disabled={!canAct || !selectedClaim || busyOn("Adjudicate claim")}
                       onClick={() =>
@@ -908,7 +886,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                             approvedAmount: parseBigIntInput(approvedAmount),
                             deniedAmount: parseBigIntInput(deniedAmount),
                             reserveAmount: parseBigIntInput(reserveAmount),
-                            decisionSupportHashHex: await hashReason(decisionSupport),
                             obligationAddress: selectedObligation?.address ?? null,
                           });
                         })

@@ -8,7 +8,6 @@ import {
   SEED_ALLOCATION_LEDGER,
   SEED_ALLOCATION_POSITION,
   SEED_CAPITAL_CLASS,
-  SEED_CLAIM_ATTESTATION,
   SEED_CLAIM_CASE,
   SEED_DOMAIN_ASSET_LEDGER,
   SEED_DOMAIN_ASSET_VAULT,
@@ -373,21 +372,6 @@ export function deriveOracleProfilePda(params: {
 }): PublicKey {
   return derivePda(
     [TEXT_ENCODER.encode(SEED_ORACLE_PROFILE), toPublicKey(params.oracle).toBytes()],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveClaimAttestationPda(params: {
-  claimCase: PublicKeyish;
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_CLAIM_ATTESTATION),
-      toPublicKey(params.claimCase).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-    ],
     params.programId ?? getProgramId(),
   );
 }

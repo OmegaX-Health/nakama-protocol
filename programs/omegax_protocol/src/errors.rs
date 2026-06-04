@@ -65,14 +65,6 @@ pub enum OmegaXProtocolError {
     ArithmeticError,
     #[msg("Bounded string field exceeds the canonical maximum")]
     StringTooLong,
-    #[msg("Claim attestation decision is not a recognized value")]
-    InvalidClaimAttestationDecision,
-    #[msg("Claim attestation requires a locked evidence reference")]
-    ClaimEvidenceRequired,
-    #[msg("Claim attestation evidence reference does not match the claim case")]
-    ClaimEvidenceMismatch,
-    #[msg("Claim evidence cannot be changed after attestations begin")]
-    ClaimEvidenceLocked,
     #[msg("Claim settlement recipient is locked after approval or payout")]
     ClaimRecipientLocked,
     #[msg("Health plan has paused oracle finality")]
@@ -147,10 +139,6 @@ pub enum OmegaXProtocolError {
     InsufficientFreeReserveCapacity,
     ArithmeticError,
     StringTooLong,
-    InvalidClaimAttestationDecision,
-    ClaimEvidenceRequired,
-    ClaimEvidenceMismatch,
-    ClaimEvidenceLocked,
     ClaimRecipientLocked,
     OracleFinalityHeld,
     DomainAssetVaultRequired,

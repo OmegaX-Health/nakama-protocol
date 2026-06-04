@@ -441,8 +441,6 @@ pub(crate) fn reserve_obligation<'info>(
         let claimant = claim_case.claimant;
         let adjudicator = claim_case.adjudicator;
         let delegate_recipient = claim_case.delegate_recipient;
-        let evidence_ref_hash = claim_case.evidence_ref_hash;
-        let decision_support_hash = claim_case.decision_support_hash;
         let intake_status = claim_case.intake_status;
         let review_state = claim_case.review_state;
         let approved_amount = claim_case.approved_amount.get();
@@ -450,7 +448,6 @@ pub(crate) fn reserve_obligation<'info>(
         let paid_amount = claim_case.paid_amount.get();
         let recovered_amount = claim_case.recovered_amount.get();
         let appeal_count = claim_case.appeal_count.get();
-        let attestation_count = claim_case.attestation_count.get();
         let opened_at = claim_case.opened_at.get();
         let closed_at = claim_case.closed_at.get();
         let bump = claim_case.bump;
@@ -464,8 +461,6 @@ pub(crate) fn reserve_obligation<'info>(
             claimant,
             adjudicator,
             delegate_recipient,
-            evidence_ref_hash,
-            decision_support_hash,
             intake_status,
             review_state,
             approved_amount,
@@ -474,7 +469,6 @@ pub(crate) fn reserve_obligation<'info>(
             reserve_amount,
             recovered_amount,
             appeal_count,
-            attestation_count,
             obligation_key,
             opened_at,
             now_ts,
@@ -683,8 +677,6 @@ pub(crate) fn release_reserve<'info>(
         let claimant = claim_case.claimant;
         let adjudicator = claim_case.adjudicator;
         let delegate_recipient = claim_case.delegate_recipient;
-        let evidence_ref_hash = claim_case.evidence_ref_hash;
-        let decision_support_hash = claim_case.decision_support_hash;
         let intake_status = if should_close_claim {
             CLAIM_INTAKE_CLOSED
         } else {
@@ -696,7 +688,6 @@ pub(crate) fn release_reserve<'info>(
         let paid_amount = claim_case.paid_amount.get();
         let recovered_amount = claim_case.recovered_amount.get();
         let appeal_count = claim_case.appeal_count.get();
-        let attestation_count = claim_case.attestation_count.get();
         let opened_at = claim_case.opened_at.get();
         let closed_at = if should_close_claim {
             now_ts
@@ -714,8 +705,6 @@ pub(crate) fn release_reserve<'info>(
             claimant,
             adjudicator,
             delegate_recipient,
-            evidence_ref_hash,
-            decision_support_hash,
             intake_status,
             review_state,
             approved_amount,
@@ -724,7 +713,6 @@ pub(crate) fn release_reserve<'info>(
             new_obligation_reserved_amount,
             recovered_amount,
             appeal_count,
-            attestation_count,
             obligation_key,
             opened_at,
             now_ts,
