@@ -154,11 +154,8 @@ test("claim funding readiness shows other priced assets without treating them as
   assert.equal(model.otherReserveAssets.length, 1);
   assert.equal(model.otherReserveAssets[0]!.assetMint, wbtcMint);
   assert.equal(model.otherReserveAssets[0]!.immediatelySettleable, false);
-  assert.equal(model.otherReserveAssets[0]!.selectedForPayout, true);
-  assert.equal(model.selectedPayoutAsset?.assetMint, wbtcMint);
-  assert.equal(model.estimatedSelectedPayoutAmountRaw, 1n);
-  assert(model.warnings.some((warning) => warning.includes("selected-asset payout")));
-  assert(model.warnings.some((warning) => warning.includes("not a swap")));
+  assert(model.warnings.some((warning) => warning.includes("same-asset claim settlement")));
+  assert(model.warnings.some((warning) => warning.includes("conversion or rebalancing")));
 });
 
 test("claim funding readiness refuses to count non-settlement assets without a fresh price", () => {
@@ -205,7 +202,6 @@ test("claim funding readiness rejects zero-staleness fallback prices", () => {
   });
 
   assert.equal(model.readiness, "queue_or_refund");
-  assert.equal(model.selectedPayoutAsset, null);
   assert.equal(model.otherReserveAssets[0]!.priceFresh, false);
 });
 
@@ -235,7 +231,6 @@ test("claim funding readiness rejects unsafe reserve price confidence", () => {
   });
 
   assert.equal(model.readiness, "queue_or_refund");
-  assert.equal(model.selectedPayoutAsset, null);
   assert.equal(model.otherReserveAssets[0]!.priceFresh, false);
 });
 

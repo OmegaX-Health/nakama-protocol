@@ -40,18 +40,16 @@ test("[CSO-2026-04-29] linked obligation settlement requires SPL outflow account
 
 test("[CSO-2026-05-06] claim and obligation settlement require payout-enabled reserve rails", () => {
   const claimBody = extractInstructionBody("settle_claim_case");
-  const selectedClaimBody = extractInstructionBody("settle_claim_case_selected_asset");
   const obligationBody = extractInstructionBody("settle_obligation");
 
   assert.match(claimBody, /require_reserve_asset_rail_payout_enabled/);
-  assert.match(selectedClaimBody, /require_reserve_asset_rail_payout_enabled/);
-  assert.match(selectedClaimBody, /require_selected_asset_payout_value/);
-  assert.match(selectedClaimBody, /book_selected_asset_claim_payout/);
-  assert.match(selectedClaimBody, /SelectedAssetPayoutSameMint/);
   assert.match(obligationBody, /require_reserve_asset_rail_payout_enabled/);
   assert.match(programSource, /pub\(crate\) fn require_reserve_asset_rail_payout_enabled/);
   assert.match(programSource, /ReserveAssetRailPayoutDisabled/);
   assert.match(programSource, /require_fresh_reserve_asset_price/);
+  assert.doesNotMatch(programSource, /settle_claim_case_selected_asset/);
+  assert.doesNotMatch(programSource, /require_selected_asset_payout_value/);
+  assert.doesNotMatch(programSource, /book_selected_asset_claim_payout/);
 });
 
 test("[CSO-2026-05-10] direct claim settlement consumes free reserve, not delivery buckets", () => {

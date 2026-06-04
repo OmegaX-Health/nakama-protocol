@@ -401,22 +401,23 @@ These are operating targets for staffing and queue design. They are not member-f
 
 **Preferred settlement asset**: USDC (SPL token, `hWMfBLfo8EBaRTCcrWV33xaUR8gK2iTtqPoQvEMHmvu` on devnet).
 
-**Multi-asset payout rails (protocol v0.3.2+)**: `settle_claim_case` and `settle_obligation` now
-require a matching `ReserveAssetRail` for the selected payout asset. The off-chain settlement router
-or oracle service selects the asset from the approved waterfall. The Solana program enforces the
-following before any value leaves custody:
+**Same-asset payout rails**: `settle_claim_case` and `settle_obligation`
+require a matching `ReserveAssetRail` for the claim or obligation asset mint.
+The Solana program enforces the following before any value leaves custody:
 
 | Rail check | Requirement | Failure behaviour |
 |---|---|---|
 | Domain and mint binding | Rail must be bound to the same reserve domain and asset mint as the claim | Settlement fails |
 | Rail active | `rail.active == true` | Settlement fails |
 | Payout enabled | `rail.payout_enabled == true` | Settlement fails |
-| Oracle price freshness | Published price must be within the rail's freshness window | Asset counted as zero capacity — cannot be selected |
-| Oracle confidence | Price confidence must be ≤ `rail.max_confidence_bps` | Asset counted as zero capacity — cannot be selected |
+| Oracle price freshness | Published price must be within the rail's freshness window | Asset counted as zero capacity and payout fails |
+| Oracle confidence | Price confidence must be ≤ `rail.max_confidence_bps` | Asset counted as zero capacity and payout fails |
 
-Approved fallback rails (where configured): PUSD, USDT, SOL, WBTC, WETH.
-The program **does not swap assets** and does not treat pending reservation custody as
-claims-paying reserve until activation/posting rules have made that true.
+Approved fallback reserves (where configured): PUSD, USDT, SOL, WBTC, WETH.
+Those assets are reserve inventory and operator-rebalancing inputs, not direct
+cross-asset claim payouts. The program **does not swap assets** and does not
+treat pending reservation custody as claims-paying reserve until
+activation/posting rules have made that true.
 
 Other settlement mechanics:
 - Payout is transferred atomically via `transfer_from_domain_vault` — the only authorized path
@@ -424,8 +425,7 @@ Other settlement mechanics:
 - Default payout wallet: `MemberPosition.wallet`.
 - Delegated payout wallet: `ClaimCase.delegate_recipient` if set via `authorize_claim_recipient`
   before settlement. The delegate can only be set by the member, not by the operator (PT-04).
-- Protocol fee and oracle fee are carved out at settlement according to the fee vault configuration.
-- Net payout = approved amount − protocol fee − oracle fee.
+- The gross approved amount is the same as the token amount debited from the matching reserve asset.
 
 ### 11.3 Partial Settlement and Impairment
 

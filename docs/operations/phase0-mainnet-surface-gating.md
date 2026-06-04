@@ -54,12 +54,11 @@ Mainnet product/admin allowlist variables:
 - redemption posture: public request surface and operator-processed queue;
 - preferred settlement mint, role map, and no-send status.
 
-## Multi-Asset Claim Payouts
+## Same-Asset Claim Payouts
 
-Phase 0 supports automated multi-asset payout selection without silently mixing
-ledger units. A claim or obligation settlement is still denominated in the
-selected payout asset mint. The off-chain settlement router or oracle service
-chooses the asset from the approved waterfall before building the transaction.
+Phase 0 keeps claim and obligation settlement same-asset. A claim or obligation
+settlement is denominated in the asset mint recorded on that liability, and the
+on-chain program does not pay a different fallback token for that liability.
 
 The on-chain program now requires `settle_claim_case` and `settle_obligation`
 to include the matching `ReserveAssetRail` for that asset. Settlement fails
@@ -72,20 +71,17 @@ unless the rail is:
 - backed by a price confidence value at or below the rail's `max_confidence_bps`.
 
 Unsafe oracle quality fails closed: the asset counts as zero claims-paying
-capacity and cannot be selected for payout. Frontend and backend services may
-route candidate assets, but the Solana program enforces freshness and
-confidence before value leaves custody.
+capacity for that mint and cannot leave custody. Frontend and backend services
+may surface other reserve assets for operator rebalancing, but those assets must
+be converted or rebalanced into the settlement mint before same-asset claim
+settlement.
 
-This makes USDC the preferred Genesis settlement rail while still allowing an
-approved fallback rail such as PUSD, USDT, SOL, WBTC, or WETH to pay a claim
-when the router selects it. The program does not swap assets, does not mutate a
-USDC claim ledger while draining a WBTC vault, and does not treat pending
+This makes USDC the preferred Genesis settlement rail while still allowing
+approved fallback reserves such as PUSD, USDT, SOL, WBTC, or WETH to remain
+visible as reserve inventory. The program does not swap assets, does not mutate
+a USDC claim ledger while draining a WBTC vault, and does not treat pending
 off-chain reservations as claims-paying reserve until activation/posting rules
 have made that true.
-
-Selected-asset payouts additionally require both the claim-denomination rail
-and the selected payout rail to pass the same freshness and confidence checks
-before the value-comparison bounds run.
 
 ## Reservation Visibility
 

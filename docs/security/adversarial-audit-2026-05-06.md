@@ -8,7 +8,7 @@ The remaining exploitable edge is operational rather than a newly observed vault
 
 What destroys trust fastest is a public reservation/reserve story that implies pending or haircut-adjusted assets are active claims-paying reserve. The code, docs, and UI copy now describe Founder reservations as off-chain Squads custody only; pending reservations remain separate from active cover and claims-paying reserve.
 
-What is probably fine now because current code and tests prove it: classic-SPL-only custody, fee-recipient binding, claim-recipient binding, selected-asset payout value bounds, direct claim settlement rejecting allocation scope, LP allocation settlement using allocation capacity rather than pretending it is funded custody, two-step governance authority transfer, on-chain FIFO redemption processing, frontend pre-sign review coverage, generated IDL/contract parity, and localnet adversarial money/control probes.
+What is probably fine now because current code and tests prove it: classic-SPL-only custody, claim-recipient binding, same-asset claim payout reserve checks, direct claim settlement rejecting allocation scope, LP allocation settlement using allocation capacity rather than pretending it is funded custody, on-chain FIFO redemption processing, frontend pre-sign review coverage, generated IDL/contract parity, and localnet adversarial money/control probes.
 
 ## 2. Scope And Assumptions
 
@@ -174,8 +174,8 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 18. Fee withdrawals cannot exceed accrued minus withdrawn fees.
 19. Zero-net fee outcomes are rejected.
 20. Token-2022 mints/programs are rejected for v1 custody.
-21. Selected-asset payouts require payout-enabled rails with fresh nonzero-staleness pricing.
-22. Selected-asset payout value cannot exceed configured overpay bounds.
+21. Same-asset claim payouts require payout-enabled rails with fresh nonzero-staleness pricing.
+22. Cross-asset selected payout is not exposed as a claim settlement path.
 23. LP redemption pays only the LP owner.
 24. LP redemption processing must target the current FIFO head sequence.
 25. Partial LP redemption processing cannot advance the FIFO head before the LP position is fully cleared.

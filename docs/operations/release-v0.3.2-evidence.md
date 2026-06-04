@@ -240,18 +240,18 @@ Unsafe config proof:
 | Outstanding high/critical internal findings | none known after the strict devnet run; external review still missing |
 | Independent-review packet | `docs/security/mainnet-money-control-review-packet-v0.3.2.md` |
 
-Public messaging must not claim audited, fully decentralized claims, or uncapped
-solvency. Multi-asset payout support is explicit selected-asset settlement:
-the router/oracle service chooses an approved payout asset before settlement,
-and the on-chain settlement path requires that asset's active, payout-enabled,
-fresh confidence-bounded `ReserveAssetRail`. The program does not silently mutate a USDC
-claim ledger while draining a WBTC/SOL/WETH vault and does not perform DEX
-swaps in this pass.
+Public messaging must not claim audited, fully decentralized claims, uncapped
+solvency, or cross-asset direct claim payouts. Claim and obligation settlement
+is same-asset: the on-chain settlement path requires the liability asset's
+active, payout-enabled, fresh confidence-bounded `ReserveAssetRail`. The program
+does not silently mutate a USDC claim ledger while draining a WBTC/SOL/WETH vault
+and does not perform DEX swaps in this pass.
 
 Volatile ecosystem assets are not the default claims settlement mint. They may
-be configured as last-resort selected payout rails only when explicitly enabled,
-payout-enabled, and fresh confidence-bounded. Founder reservations remain off-chain until later
-activation/posting through ordinary premium and reserve controls.
+be configured as reserve inventory and operator-rebalancing inputs, but they
+must be converted or rebalanced into the settlement mint before same-asset claim
+settlement. Founder reservations remain off-chain until later activation/posting
+through ordinary premium and reserve controls.
 
 ## 11. Liability-State Hardening Addendum
 

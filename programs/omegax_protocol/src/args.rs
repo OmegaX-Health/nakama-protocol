@@ -351,17 +351,6 @@ pub struct SettleClaimCaseArgs {
     not(feature = "quasar"),
     derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
 )]
-pub struct SettleClaimCaseSelectedAssetArgs {
-    pub claim_credit_amount: u64,
-    pub payout_amount: u64,
-    pub max_overpay_bps: u16,
-    pub settlement_reason_hash: [u8; 32],
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
 pub struct CreateLiquidityPoolArgs {
     #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub pool_id: String,

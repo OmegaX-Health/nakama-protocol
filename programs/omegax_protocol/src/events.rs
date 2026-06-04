@@ -268,28 +268,6 @@ pub struct ClaimCaseStateChangedEvent {
 
 #[cfg(not(feature = "quasar"))]
 #[event]
-pub struct ClaimCaseSelectedAssetPayoutEvent {
-    pub claim_case: Pubkey,
-    pub claim_asset_mint: Pubkey,
-    pub payout_asset_mint: Pubkey,
-    pub claim_credit_amount: u64,
-    pub payout_amount: u64,
-    pub settlement_reason_hash: [u8; 32],
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [15, 13, 219, 43, 68, 58, 135, 157]))]
-pub struct ClaimCaseSelectedAssetPayoutEvent {
-    pub claim_case: Address,
-    pub claim_asset_mint: Address,
-    pub payout_asset_mint: Address,
-    pub claim_credit_amount: u64,
-    pub payout_amount: u64,
-    pub settlement_reason_hash: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
 pub struct ClaimCaseAttestedEvent {
     pub claim_attestation: Pubkey,
     pub claim_case: Pubkey,

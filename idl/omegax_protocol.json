@@ -6332,405 +6332,6 @@
       ]
     },
     {
-      "name": "settle_claim_case_selected_asset",
-      "discriminator": [
-        21,
-        218,
-        248,
-        73,
-        41,
-        97,
-        47,
-        212
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "health_plan",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  104,
-                  101,
-                  97,
-                  108,
-                  116,
-                  104,
-                  95,
-                  112,
-                  108,
-                  97,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.health_plan_id",
-                "account": "HealthPlan"
-              }
-            ]
-          }
-        },
-        {
-          "name": "claim_asset_rail",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  114,
-                  97,
-                  105,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "claim_case.asset_mint",
-                "account": "ClaimCase"
-              }
-            ]
-          }
-        },
-        {
-          "name": "payout_asset_rail",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  114,
-                  97,
-                  105,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "payout_funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "payout_domain_asset_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "payout_funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "payout_domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "payout_funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "payout_funding_line",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  117,
-                  110,
-                  100,
-                  105,
-                  110,
-                  103,
-                  95,
-                  108,
-                  105,
-                  110,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "payout_funding_line.line_id",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "payout_funding_line_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  117,
-                  110,
-                  100,
-                  105,
-                  110,
-                  103,
-                  95,
-                  108,
-                  105,
-                  110,
-                  101,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "payout_funding_line"
-              },
-              {
-                "kind": "account",
-                "path": "payout_funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "payout_plan_reserve_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  110,
-                  95,
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "payout_funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "payout_series_reserve_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "claim_case",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  108,
-                  97,
-                  105,
-                  109,
-                  95,
-                  99,
-                  97,
-                  115,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "claim_case.claim_id",
-                "account": "ClaimCase"
-              }
-            ]
-          }
-        },
-        {
-          "name": "member_position"
-        },
-        {
-          "name": "claim_asset_mint"
-        },
-        {
-          "name": "payout_asset_mint"
-        },
-        {
-          "name": "payout_vault_token_account",
-          "writable": true
-        },
-        {
-          "name": "recipient_token_account",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "SettleClaimCaseSelectedAssetArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "settle_obligation",
       "discriminator": [
         209,
@@ -8306,19 +7907,6 @@
       ]
     },
     {
-      "name": "ClaimCaseSelectedAssetPayoutEvent",
-      "discriminator": [
-        15,
-        13,
-        219,
-        43,
-        68,
-        58,
-        135,
-        157
-      ]
-    },
-    {
       "name": "ClaimCaseStateChangedEvent",
       "discriminator": [
         162,
@@ -9038,51 +8626,31 @@
     },
     {
       "code": 6086,
-      "name": "SelectedAssetPayoutSameMint",
-      "msg": "Selected-asset claim payout must use a different mint from the claim denomination"
-    },
-    {
-      "code": 6087,
-      "name": "SelectedAssetPayoutUnderpaid",
-      "msg": "Selected-asset claim payout value is below the credited claim amount"
-    },
-    {
-      "code": 6088,
-      "name": "SelectedAssetPayoutOverpaid",
-      "msg": "Selected-asset claim payout value exceeds the configured overpay tolerance"
-    },
-    {
-      "code": 6089,
-      "name": "SelectedAssetOverpayBpsTooHigh",
-      "msg": "Selected-asset claim payout overpay bps exceeds the protocol maximum"
-    },
-    {
-      "code": 6090,
       "name": "ReserveAssetMintDecimalsUnsupported",
       "msg": "Reserve asset mint decimals are unsupported"
     },
     {
-      "code": 6091,
+      "code": 6087,
       "name": "HealthPlanInactive",
       "msg": "Health plan is inactive"
     },
     {
-      "code": 6092,
+      "code": 6088,
       "name": "CapitalClassInactive",
       "msg": "Capital class is inactive"
     },
     {
-      "code": 6093,
+      "code": 6089,
       "name": "DirectClaimReserveUnsupported",
       "msg": "Direct claim reserves require linked obligation settlement"
     },
     {
-      "code": 6094,
+      "code": 6090,
       "name": "LiquidityPoolInactive",
       "msg": "Liquidity pool is inactive"
     },
     {
-      "code": 6095,
+      "code": 6091,
       "name": "AllocationPositionInactive",
       "msg": "Allocation position is inactive or deallocation-only"
     }
@@ -9743,43 +9311,6 @@
           },
           {
             "name": "attestation_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "ClaimCaseSelectedAssetPayoutEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "claim_case",
-            "type": "pubkey"
-          },
-          {
-            "name": "claim_asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "payout_asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "claim_credit_amount",
-            "type": "u64"
-          },
-          {
-            "name": "payout_amount",
-            "type": "u64"
-          },
-          {
-            "name": "settlement_reason_hash",
             "type": {
               "array": [
                 "u8",
@@ -12604,35 +12135,6 @@
           {
             "name": "amount",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "SettleClaimCaseSelectedAssetArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "claim_credit_amount",
-            "type": "u64"
-          },
-          {
-            "name": "payout_amount",
-            "type": "u64"
-          },
-          {
-            "name": "max_overpay_bps",
-            "type": "u16"
-          },
-          {
-            "name": "settlement_reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }

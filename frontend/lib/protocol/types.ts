@@ -515,7 +515,6 @@ export type ClaimFundingReadinessOtherReserveAsset = {
   haircutBps: number;
   estimatedValueUsd1e8: bigint | null;
   haircutAdjustedValueUsd1e8: bigint | null;
-  selectedForPayout: boolean;
   immediatelySettleable: false;
   warnings: string[];
 };
@@ -532,8 +531,6 @@ export type ClaimFundingReadiness = {
   queuedRedemptionsAmount: bigint;
   availableLpAllocationCapacityAmount: bigint;
   otherReserveAssets: ClaimFundingReadinessOtherReserveAsset[];
-  selectedPayoutAsset: ClaimFundingReadinessOtherReserveAsset | null;
-  estimatedSelectedPayoutAmountRaw: bigint | null;
   readiness: ClaimFundingReadinessState;
   warnings: string[];
 };

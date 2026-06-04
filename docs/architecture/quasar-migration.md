@@ -57,9 +57,9 @@ Completed setup:
   `quasar-spl` token marker.
 - Claim lifecycle account contexts now have the same feature-gated Quasar
   wrapper shape across intake, recipient authorization, evidence attachment,
-  adjudication, direct settlement, selected-asset settlement, and oracle
-  attestation. Existing Anchor claim handler bodies are gated to the Anchor
-  path while the Quasar facade remains fail-closed.
+  adjudication, direct settlement, and oracle attestation. Existing Anchor claim
+  handler bodies are gated to the Anchor path while the Quasar facade remains
+  fail-closed.
 - Fee-vault and funding-obligation account contexts now use the same Quasar
   reference-wrapper shape across protocol/pool/oracle fee rails, funding-line
   opening, sponsor and premium inflows, obligation creation, reserve release,

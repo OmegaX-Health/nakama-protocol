@@ -126,7 +126,7 @@ rejection test.
 | --- | --- |
 | `create_health_plan` did not require reserve-domain control | Fixed; the current public Node suite includes the `[CSO-2026-05-10] health plan creation requires reserve-domain control` regression |
 | `update_member_eligibility` mutated `membership_anchor_seat` without generated writability | Fixed; IDL freshness and protocol contract checks pass |
-| Direct same-asset claim settlement consumed delivery buckets instead of a direct reserve/free-reserve path | Fixed; direct settlement now consumes free reserve and linked/selected-asset paths stay separate |
+| Direct same-asset claim settlement consumed delivery buckets instead of a direct reserve/free-reserve path | Fixed; direct settlement now consumes free reserve and linked obligation settlement remains separate |
 | Private claim-review QEDGen wrapper allowed stale no-property coverage | Improved; wrapper coverage is 100% and handler/effect drift is enforced, with proof completeness still tracked above |
 
 ## Verification

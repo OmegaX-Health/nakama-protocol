@@ -54,7 +54,7 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(!instructionNames.includes("backfill_schema_dependency_ledger"));
   assert(!instructionNames.includes("close_outcome_schema"));
   assert(instructionNames.includes("attest_claim_case"));
-  assert(instructionNames.includes("settle_claim_case_selected_asset"));
+  assert(!instructionNames.includes("settle_claim_case_selected_asset"));
 
   for (const removedInstruction of [
     "init_protocol_fee_vault",
@@ -121,20 +121,7 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "claim_case"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "reserve_asset_rail"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some((account) => account.name === "reserve_asset_rail"));
-  for (const accountName of [
-    "claim_asset_rail",
-    "payout_asset_rail",
-    "payout_domain_asset_vault",
-    "payout_domain_asset_ledger",
-    "payout_funding_line",
-    "payout_vault_token_account",
-    "recipient_token_account",
-  ]) {
-    assert(
-      PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case_selected_asset.some((account) => account.name === accountName),
-      `settle_claim_case_selected_asset missing ${accountName}`,
-    );
-  }
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "settle_claim_case_selected_asset"));
   for (const accountName of [
     "liquidity_pool",
     "capital_class",
@@ -172,10 +159,7 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   );
   assert(configureReserveAssetRailArgs?.type.fields?.some((field) => field.name === "max_confidence_bps"));
   assert(reserveAssetRailAccount?.type.fields?.some((field) => field.name === "max_confidence_bps"));
-  assert.deepEqual(
-    selectedAssetPayoutArgs?.type.fields?.map((field) => field.name),
-    ["claim_credit_amount", "payout_amount", "max_overpay_bps", "settlement_reason_hash"],
-  );
+  assert(!selectedAssetPayoutArgs);
   assert(claimCaseAccount?.type.fields?.some((field) => field.name === "attestation_count"));
   for (const fieldName of [
     "evidence_ref_hash",

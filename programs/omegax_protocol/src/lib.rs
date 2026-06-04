@@ -58,8 +58,6 @@ pub(crate) use capital::{
     __client_accounts_update_lp_position_credentialing,
 };
 #[cfg(not(feature = "quasar"))]
-pub(crate) use claims::__client_accounts_settle_claim_case_selected_asset;
-#[cfg(not(feature = "quasar"))]
 pub(crate) use funding_obligations::{
     __client_accounts_create_obligation, __client_accounts_fund_sponsor_budget,
     __client_accounts_open_funding_line, __client_accounts_record_premium_payment,
@@ -237,13 +235,6 @@ pub mod omegax_protocol {
         args: SettleClaimCaseArgs,
     ) -> Result<()> {
         crate::claims::settle_claim_case(ctx, args)
-    }
-
-    pub fn settle_claim_case_selected_asset(
-        ctx: Context<SettleClaimCaseSelectedAsset>,
-        args: SettleClaimCaseSelectedAssetArgs,
-    ) -> Result<()> {
-        crate::claims::settle_claim_case_selected_asset(ctx, args)
     }
 
     pub fn create_liquidity_pool(
@@ -842,23 +833,6 @@ pub mod omegax_protocol {
     #[instruction(discriminator = [178, 123, 229, 204, 50, 204, 91, 71])]
     pub fn settle_claim_case(ctx: Ctx<SettleClaimCase>, amount: u64) -> Result<()> {
         crate::claims::settle_claim_case(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [21, 218, 248, 73, 41, 97, 47, 212])]
-    pub fn settle_claim_case_selected_asset(
-        ctx: Ctx<SettleClaimCaseSelectedAsset>,
-        claim_credit_amount: u64,
-        payout_amount: u64,
-        max_overpay_bps: u16,
-        settlement_reason_hash: [u8; 32],
-    ) -> Result<()> {
-        crate::claims::settle_claim_case_selected_asset(
-            &mut ctx,
-            claim_credit_amount,
-            payout_amount,
-            max_overpay_bps,
-            settlement_reason_hash,
-        )
     }
 
     #[instruction(discriminator = [175, 75, 181, 165, 224, 254, 6, 131])]

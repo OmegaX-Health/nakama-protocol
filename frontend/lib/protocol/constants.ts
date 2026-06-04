@@ -10,7 +10,6 @@ export const ZERO_PUBKEY = "11111111111111111111111111111111";
 export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
 
 export const MAX_ID_SEED_BYTES = 32;
-export const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS = 50;
 
 export const SEED_PROTOCOL_GOVERNANCE = "protocol_governance";
 export const SEED_RESERVE_DOMAIN = "reserve_domain";

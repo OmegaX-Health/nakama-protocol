@@ -41,7 +41,6 @@ pub mod instruction {
     pub const IX_SET_POOL_ORACLE_PERMISSIONS: [u8; 8] = [168, 14, 22, 106, 118, 145, 105, 44];
     pub const IX_SET_POOL_ORACLE_POLICY: [u8; 8] = [190, 13, 51, 113, 230, 140, 103, 82];
     pub const IX_SETTLE_CLAIM_CASE: [u8; 8] = [178, 123, 229, 204, 50, 204, 91, 71];
-    pub const IX_SETTLE_CLAIM_CASE_SELECTED_ASSET: [u8; 8] = [21, 218, 248, 73, 41, 97, 47, 212];
     pub const IX_SETTLE_OBLIGATION: [u8; 8] = [209, 166, 218, 35, 147, 139, 238, 208];
     pub const IX_UPDATE_ALLOCATION_CAPS: [u8; 8] = [224, 101, 103, 146, 78, 5, 48, 132];
     pub const IX_UPDATE_CAPITAL_CLASS_CONTROLS: [u8; 8] = [34, 4, 113, 70, 79, 197, 244, 109];
@@ -84,8 +83,6 @@ pub mod event {
     pub const EVENT_ALLOCATION_UPDATED_EVENT: [u8; 8] = [158, 67, 83, 155, 181, 84, 246, 37];
     pub const EVENT_CAPITAL_CLASS_DEPOSIT_EVENT: [u8; 8] = [40, 60, 140, 213, 128, 24, 42, 251];
     pub const EVENT_CLAIM_CASE_ATTESTED_EVENT: [u8; 8] = [27, 131, 74, 180, 134, 39, 214, 103];
-    pub const EVENT_CLAIM_CASE_SELECTED_ASSET_PAYOUT_EVENT: [u8; 8] =
-        [15, 13, 219, 43, 68, 58, 135, 157];
     pub const EVENT_CLAIM_CASE_STATE_CHANGED_EVENT: [u8; 8] =
         [162, 195, 160, 236, 219, 18, 240, 208];
     pub const EVENT_FUNDING_FLOW_RECORDED_EVENT: [u8; 8] = [207, 159, 154, 43, 193, 239, 239, 163];

@@ -39,7 +39,6 @@ const oracle = Keypair.generate().publicKey;
 const lpOwner = Keypair.generate().publicKey;
 const member = Keypair.generate().publicKey;
 const assetMint = Keypair.generate().publicKey;
-const fallbackAssetMint = Keypair.generate().publicKey;
 const reserveDomain = protocol.deriveReserveDomainPda({ domainId: "adv-matrix" });
 const healthPlan = protocol.deriveHealthPlanPda({
   reserveDomain,
@@ -81,12 +80,7 @@ const vaultTokenAccount = protocol.deriveDomainAssetVaultTokenAccountPda({
   reserveDomain,
   assetMint,
 });
-const fallbackVaultTokenAccount = protocol.deriveDomainAssetVaultTokenAccountPda({
-  reserveDomain,
-  assetMint: fallbackAssetMint,
-});
 const attackerAta = getAssociatedTokenAddressSync(assetMint, attacker, true, TOKEN_PROGRAM_ID);
-const fallbackAttackerAta = getAssociatedTokenAddressSync(fallbackAssetMint, attacker, true, TOKEN_PROGRAM_ID);
 const memberAta = getAssociatedTokenAddressSync(assetMint, member, true, TOKEN_PROGRAM_ID);
 const sourceAta = getAssociatedTokenAddressSync(assetMint, operator, true, TOKEN_PROGRAM_ID);
 const poolOracleFeeVault = protocol.derivePoolOracleFeeVaultPda({
@@ -386,38 +380,6 @@ const matrixRows: MatrixRow[] = [
       oracleFeeAttestation,
       vaultTokenAccount,
       attackerAta,
-      TOKEN_PROGRAM_ID,
-    ],
-  },
-  {
-    area: "claim-settlement",
-    instruction: "settle_claim_case_selected_asset",
-    attack: "selected fallback payout asset with attacker-owned payout account",
-    expectedGuard: "claim operator role, explicit payout rail, selected mint, fresh price, and member/delegate owner binding",
-    tx: protocol.buildSettleClaimCaseSelectedAssetTx({
-      authority: attacker,
-      healthPlanAddress: healthPlan,
-      reserveDomainAddress: reserveDomain,
-      payoutFundingLineAddress: fundingLine,
-      claimAssetMint: assetMint,
-      payoutAssetMint: fallbackAssetMint,
-      claimCaseAddress: claimCase,
-      memberPositionAddress: protocol.deriveMemberPositionPda({ healthPlan, wallet: member }),
-      payoutVaultTokenAccountAddress: fallbackVaultTokenAccount,
-      recipientTokenAccountAddress: fallbackAttackerAta,
-      tokenProgramId: TOKEN_PROGRAM_ID,
-      claimCreditAmount: 1n,
-      payoutAmount: 1n,
-      policySeriesAddress: policySeries,
-      settlementReasonHashHex: SAMPLE_HASH_HEX,
-      recentBlockhash: STATIC_BLOCKHASH,
-    }),
-    mustInclude: [
-      protocol.deriveReserveAssetRailPda({ reserveDomain, assetMint }),
-      protocol.deriveReserveAssetRailPda({ reserveDomain, assetMint: fallbackAssetMint }),
-      protocol.deriveDomainAssetVaultPda({ reserveDomain, assetMint: fallbackAssetMint }),
-      fallbackVaultTokenAccount,
-      fallbackAttackerAta,
       TOKEN_PROGRAM_ID,
     ],
   },

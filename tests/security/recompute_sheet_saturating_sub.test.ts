@@ -79,15 +79,9 @@ test("[PT-12] money-out paths decrement vault.total_assets via checked_sub, not 
     "PT-12 mitigation: settle_delivery must checked_sub domain_assets",
   );
 
-  const selectedAssetPayout = extractFunctionBody("pub(crate) fn book_selected_asset_claim_payout(");
-  assert.ok(
-    /\*domain_assets\s*=\s*checked_sub\(\*domain_assets,\s*amount\)\?/.test(selectedAssetPayout),
-    "PT-12 mitigation: selected-asset claim payout must checked_sub domain_assets",
-  );
-
   const directClaimPayout = extractFunctionBody("pub(crate) fn book_direct_claim_payout(");
   assert.ok(
-    /book_selected_asset_claim_payout\(/.test(directClaimPayout),
-    "PT-12 mitigation: direct claim payout must route through selected-asset checked_sub helper",
+    /\*domain_assets\s*=\s*checked_sub\(\*domain_assets,\s*amount\)\?/.test(directClaimPayout),
+    "PT-12 mitigation: direct claim payout must checked_sub domain_assets",
   );
 });

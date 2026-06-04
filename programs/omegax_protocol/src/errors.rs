@@ -179,14 +179,6 @@ pub enum OmegaXProtocolError {
     InvalidObligationDeliveryMode,
     #[msg("Claim adjudication is locked after payout or terminal state")]
     ClaimAdjudicationLocked,
-    #[msg("Selected-asset claim payout must use a different mint from the claim denomination")]
-    SelectedAssetPayoutSameMint,
-    #[msg("Selected-asset claim payout value is below the credited claim amount")]
-    SelectedAssetPayoutUnderpaid,
-    #[msg("Selected-asset claim payout value exceeds the configured overpay tolerance")]
-    SelectedAssetPayoutOverpaid,
-    #[msg("Selected-asset claim payout overpay bps exceeds the protocol maximum")]
-    SelectedAssetOverpayBpsTooHigh,
     #[msg("Reserve asset mint decimals are unsupported")]
     ReserveAssetMintDecimalsUnsupported,
     #[msg("Health plan is inactive")]
@@ -290,10 +282,6 @@ pub enum OmegaXProtocolError {
     PartialObligationTransitionUnsupported,
     InvalidObligationDeliveryMode,
     ClaimAdjudicationLocked,
-    SelectedAssetPayoutSameMint,
-    SelectedAssetPayoutUnderpaid,
-    SelectedAssetPayoutOverpaid,
-    SelectedAssetOverpayBpsTooHigh,
     ReserveAssetMintDecimalsUnsupported,
     HealthPlanInactive,
     CapitalClassInactive,

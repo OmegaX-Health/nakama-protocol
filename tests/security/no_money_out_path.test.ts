@@ -59,12 +59,7 @@ test("[PT-02 defense] settle_claim_case + process_redemption_queue + settle_obli
   // pure accounting operation that returns reserved capital to the free pool
   // (status becomes CANCELED if reserved hits zero). It is intentionally
   // excluded from this defense test.
-  const wired = [
-    "settle_claim_case",
-    "settle_claim_case_selected_asset",
-    "process_redemption_queue",
-    "settle_obligation",
-  ];
+  const wired = ["settle_claim_case", "process_redemption_queue", "settle_obligation"];
   for (const handler of wired) {
     const body = extractInstructionBody(handler);
     assert.ok(
