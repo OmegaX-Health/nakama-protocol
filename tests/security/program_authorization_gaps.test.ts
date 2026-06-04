@@ -7,10 +7,9 @@
 //           `args.claimant == member_position.wallet` in BOTH the member
 //           self-submit and operator-submit branches. Recipient routing is
 //           handled by the new ClaimCase.delegate_recipient field.
-//   PT-07 — `register_oracle` (lib.rs:1989-) now requires
-//           `require_keys_eq!(args.oracle, ctx.accounts.admin.key())`, so an
-//           attacker cannot pre-register an oracle profile under a key they
-//           do not control.
+//   PT-07 — the standalone OracleProfile registry has been removed. Claim
+//           attestations are authorized directly against HealthPlan.oracle_authority,
+//           so there is no profile metadata surface for an attacker to squat.
 //
 // These tests now act as defense regressions: each one PASSES while the
 // defense remains in place and FAILS if the constraint is removed or
@@ -71,45 +70,25 @@ test("[PT-04] open_claim_case persists args.claimant verbatim onto claim_case st
   );
 });
 
-test("[PT-07 defense] register_oracle requires the signer to equal args.oracle", () => {
-  const body = extractFunctionBody("pub fn register_oracle(");
-
-  // Sanity: profile.oracle and profile.admin assignments still in place.
+test("[PT-07 defense] oracle profile registry surface stays removed", () => {
   assert.ok(
-    /profile\.oracle\s*=\s*args\.oracle\s*;/.test(body),
-    "[PT-07 regression] register_oracle must assign profile.oracle = args.oracle",
+    !/\bpub\s+fn\s+register_oracle\s*\(/.test(programSrc),
+    "[PT-07 regression] register_oracle should not be part of the live program",
   );
   assert.ok(
-    /profile\.admin\s*=\s*ctx\.accounts\.admin\.key\(\)\s*;/.test(body),
-    "[PT-07 regression] register_oracle must assign profile.admin = signer",
+    !/\bpub\s+fn\s+claim_oracle\s*\(/.test(programSrc),
+    "[PT-07 regression] claim_oracle should not be part of the live program",
   );
-
-  // Defense: there must be a require_keys_eq!/require! that ties admin to
-  // args.oracle. Without this, an attacker could pre-register an oracle
-  // profile under any pubkey and control the metadata until the rightful
-  // oracle ran claim_oracle.
-  const hasSignerEqualityCheck =
-    /require_keys_eq!\([\s\S]*?ctx\.accounts\.admin\.key\(\)[\s\S]*?args\.oracle/s.test(body) ||
-    /require_keys_eq!\([\s\S]*?args\.oracle[\s\S]*?ctx\.accounts\.admin\.key\(\)/s.test(body) ||
-    /require!\([\s\S]*?ctx\.accounts\.admin\.key\(\)\s*==\s*args\.oracle/s.test(body);
   assert.ok(
-    hasSignerEqualityCheck,
-    "[PT-07 regression] register_oracle must require_keys_eq the signer against args.oracle",
+    !/\bOracleProfile\b/.test(programSrc),
+    "[PT-07 regression] OracleProfile state should stay removed",
   );
 });
 
-test("[PT-07] claim_oracle exists as the recovery path for spoofed profiles", () => {
-  // The recovery path that limits PT-07's blast radius: the rightful oracle
-  // calls claim_oracle, which sets admin = oracle. Confirm it's intact.
-  const body = extractFunctionBody("pub fn claim_oracle(");
+test("[PT-07 defense] claim attestations are gated by the plan oracle authority", () => {
+  const body = extractFunctionBody("fn require_claim_attestation_oracle_authority(");
   assert.ok(
-    /require_keys_eq!\(\s*ctx\.accounts\.oracle\.key\(\)\s*,\s*ctx\.accounts\.oracle_profile\.oracle/.test(
-      body,
-    ),
-    "PT-07 mitigation: claim_oracle must require_keys_eq the signer against profile.oracle",
-  );
-  assert.ok(
-    /profile\.admin\s*=\s*ctx\.accounts\.oracle\.key\(\)\s*;/.test(body),
-    "PT-07 mitigation: claim_oracle must reassign profile.admin to the signing oracle",
+    /require_keys_eq!\([\s\S]*?oracle[\s\S]*?health_plan\.oracle_authority/s.test(body),
+    "[PT-07 regression] attestation gate must require oracle == health_plan.oracle_authority",
   );
 });

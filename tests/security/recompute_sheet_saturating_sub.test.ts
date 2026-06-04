@@ -59,18 +59,6 @@ test("[PT-12] book_inflow_sheet uses checked_add on the load-bearing `funded` fi
 });
 
 test("[PT-12] money-out paths decrement vault.total_assets via checked_sub, not saturating_sub", () => {
-  // Spot-check process_redemption_queue and settle_obligation — the two paths
-  // that decrement vault.total_assets. They must use checked_sub so an
-  // overdraft attempt aborts rather than silently wrapping.
-  const redemption = extractFunctionBody("pub fn process_redemption_queue(");
-  assert.ok(
-    /domain_asset_vault\.total_assets\s*=\s*\n?\s*checked_sub\(\s*ctx\.accounts\.domain_asset_vault\.total_assets,/.test(
-      redemption,
-    ) ||
-      /domain_asset_vault\.total_assets[^=]*=[^;]*checked_sub/.test(redemption),
-    "PT-12 mitigation: process_redemption_queue must use checked_sub on vault.total_assets",
-  );
-
   // Settlement and claim payout helpers must still use checked_sub directly
   // on the reserve asset totals after the fee-vault rail cleanup.
   const settleDelivery = extractFunctionBody("pub(crate) fn settle_delivery(");

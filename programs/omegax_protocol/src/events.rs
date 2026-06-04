@@ -158,82 +158,6 @@ pub struct ReserveAssetRailPricePublishedEvent {
 
 #[cfg(not(feature = "quasar"))]
 #[event]
-pub struct LiquidityPoolCreatedEvent {
-    pub reserve_domain: Pubkey,
-    pub liquidity_pool: Pubkey,
-    pub asset_mint: Pubkey,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [176, 183, 7, 238, 193, 97, 177, 135]))]
-pub struct LiquidityPoolCreatedEvent {
-    pub reserve_domain: Address,
-    pub liquidity_pool: Address,
-    pub asset_mint: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct CapitalClassDepositEvent {
-    pub capital_class: Pubkey,
-    pub owner: Pubkey,
-    pub asset_amount: u64,
-    pub shares: u64,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [40, 60, 140, 213, 128, 24, 42, 251]))]
-pub struct CapitalClassDepositEvent {
-    pub capital_class: Address,
-    pub owner: Address,
-    pub asset_amount: u64,
-    pub shares: u64,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct LPPositionCredentialingUpdatedEvent {
-    pub capital_class: Pubkey,
-    pub owner: Pubkey,
-    pub authority: Pubkey,
-    pub credentialed: bool,
-    pub reason_hash: [u8; 32],
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [215, 90, 105, 53, 22, 8, 19, 82]))]
-pub struct LPPositionCredentialingUpdatedEvent {
-    pub capital_class: Address,
-    pub owner: Address,
-    pub authority: Address,
-    pub credentialed: bool,
-    pub reason_hash: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct RedemptionRequestedEvent {
-    pub capital_class: Pubkey,
-    pub owner: Pubkey,
-    pub shares: u64,
-    pub asset_amount: u64,
-    pub redemption_sequence: u64,
-    pub requested_at_ts: i64,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [202, 47, 51, 231, 221, 144, 164, 57]))]
-pub struct RedemptionRequestedEvent {
-    pub capital_class: Address,
-    pub owner: Address,
-    pub shares: u64,
-    pub asset_amount: u64,
-    pub redemption_sequence: u64,
-    pub requested_at_ts: i64,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
 pub struct ObligationStatusChangedEvent {
     pub obligation: Pubkey,
     pub funding_line: Pubkey,
@@ -271,7 +195,6 @@ pub struct ClaimCaseStateChangedEvent {
 pub struct ClaimCaseAttestedEvent {
     pub claim_attestation: Pubkey,
     pub claim_case: Pubkey,
-    pub oracle_profile: Pubkey,
     pub oracle: Pubkey,
     pub decision: u8,
     pub attestation_hash: [u8; 32],
@@ -282,48 +205,9 @@ pub struct ClaimCaseAttestedEvent {
 pub struct ClaimCaseAttestedEvent {
     pub claim_attestation: Address,
     pub claim_case: Address,
-    pub oracle_profile: Address,
     pub oracle: Address,
     pub decision: u8,
     pub attestation_hash: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct AllocationUpdatedEvent {
-    pub allocation_position: Pubkey,
-    pub capital_class: Pubkey,
-    pub funding_line: Pubkey,
-    pub allocated_amount: u64,
-    pub reserved_capacity: u64,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [158, 67, 83, 155, 181, 84, 246, 37]))]
-pub struct AllocationUpdatedEvent {
-    pub allocation_position: Address,
-    pub capital_class: Address,
-    pub funding_line: Address,
-    pub allocated_amount: u64,
-    pub reserved_capacity: u64,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct ImpairmentRecordedEvent {
-    pub funding_line: Pubkey,
-    pub obligation: Pubkey,
-    pub amount: u64,
-    pub reason_hash: [u8; 32],
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [16, 0, 176, 178, 185, 80, 121, 39]))]
-pub struct ImpairmentRecordedEvent {
-    pub funding_line: Address,
-    pub obligation: Address,
-    pub amount: u64,
-    pub reason_hash: Address,
 }
 
 #[cfg(not(feature = "quasar"))]
@@ -362,58 +246,4 @@ pub struct LedgerInitializedEvent {
     pub scope_kind: u8,
     pub scope: Address,
     pub asset_mint: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct OracleProfileRegisteredEvent {
-    pub oracle_profile: Pubkey,
-    pub oracle: Pubkey,
-    pub admin: Pubkey,
-    pub oracle_type: u8,
-    pub claimed: bool,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [114, 97, 218, 155, 43, 175, 101, 227]))]
-pub struct OracleProfileRegisteredEvent {
-    pub oracle_profile: Address,
-    pub oracle: Address,
-    pub admin: Address,
-    pub oracle_type: u8,
-    pub claimed: bool,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct OracleProfileClaimedEvent {
-    pub oracle_profile: Pubkey,
-    pub oracle: Pubkey,
-    pub admin: Pubkey,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [150, 78, 246, 163, 63, 118, 75, 83]))]
-pub struct OracleProfileClaimedEvent {
-    pub oracle_profile: Address,
-    pub oracle: Address,
-    pub admin: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct OracleProfileUpdatedEvent {
-    pub oracle_profile: Pubkey,
-    pub oracle: Pubkey,
-    pub authority: Pubkey,
-    pub oracle_type: u8,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [187, 146, 36, 213, 31, 160, 208, 86]))]
-pub struct OracleProfileUpdatedEvent {
-    pub oracle_profile: Address,
-    pub oracle: Address,
-    pub authority: Address,
-    pub oracle_type: u8,
 }

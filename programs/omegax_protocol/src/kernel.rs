@@ -7,8 +7,6 @@ mod auth;
 #[cfg(not(feature = "quasar"))]
 mod bindings;
 #[cfg(not(feature = "quasar"))]
-mod capital_math;
-#[cfg(not(feature = "quasar"))]
 mod custody;
 #[cfg(feature = "quasar")]
 mod custody;
@@ -21,8 +19,6 @@ mod reserve_accounting;
 pub(crate) use auth::*;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use bindings::*;
-#[cfg(not(feature = "quasar"))]
-pub(crate) use capital_math::*;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use custody::*;
 #[cfg(feature = "quasar")]

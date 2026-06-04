@@ -9,8 +9,6 @@ use crate::platform::*;
 pub enum OmegaXProtocolError {
     #[msg("Caller is not authorized for this scope")]
     Unauthorized,
-    #[msg("Protocol governance is emergency paused")]
-    ProtocolEmergencyPaused,
     #[msg("Reserve domain is inactive")]
     ReserveDomainInactive,
     #[msg("Domain asset vault token account is missing or invalid")]
@@ -19,8 +17,6 @@ pub enum OmegaXProtocolError {
     HealthPlanPaused,
     #[msg("Claim intake is paused")]
     ClaimIntakePaused,
-    #[msg("Capital subscriptions are paused")]
-    CapitalSubscriptionsPaused,
     #[msg("Invalid basis points value")]
     InvalidBps,
     #[msg("Identifier length exceeds the canonical maximum")]
@@ -43,10 +39,6 @@ pub enum OmegaXProtocolError {
     VaultTokenAccountMismatch,
     #[msg("Token-2022 custody rails are not supported by this protocol version")]
     Token2022NotSupported,
-    #[msg("Configured fee recipient is missing or invalid")]
-    FeeRecipientInvalid,
-    #[msg("Fee withdrawal recipient does not match the configured fee recipient")]
-    FeeRecipientMismatch,
     #[msg("Funding line mismatch")]
     FundingLineMismatch,
     #[msg("Funding line type mismatch")]
@@ -67,38 +59,6 @@ pub enum OmegaXProtocolError {
     ClaimCaseLinkMismatch,
     #[msg("Linked claims must settle through the obligation path")]
     LinkedClaimMustSettleThroughObligation,
-    #[msg("Amount exceeds available shares")]
-    AmountExceedsAvailableShares,
-    #[msg("Amount exceeds pending redemption")]
-    AmountExceedsPendingRedemption,
-    #[msg("Redemption amount cannot be derived from the queued share state")]
-    InvalidRedemptionAmount,
-    #[msg("Redemption request is not at the head of the FIFO queue")]
-    RedemptionQueueOutOfOrder,
-    #[msg("Deposit shares cannot be derived from the capital class NAV state")]
-    InvalidCapitalShareState,
-    #[msg("Deposit would mint zero shares")]
-    InvalidDepositShares,
-    #[msg("Computed deposit shares are below the requested minimum")]
-    MinimumSharesOutNotMet,
-    #[msg("Restricted capital class access failed")]
-    RestrictedCapitalClass,
-    #[msg("Capital class ledger mismatch")]
-    CapitalClassMismatch,
-    #[msg("LP position with active capital cannot be decredentialed")]
-    LPPositionHasActiveCapital,
-    #[msg("Capital class lockup is still active")]
-    LockupActive,
-    #[msg("Capital class lockup seconds cannot be negative")]
-    InvalidLockupSeconds,
-    #[msg("Allocation cap exceeded")]
-    AllocationCapExceeded,
-    #[msg("Allocation position mismatch")]
-    AllocationPositionMismatch,
-    #[msg("LP allocation asset mint must match the pool deposit asset mint")]
-    AllocationAssetMismatch,
-    #[msg("Insufficient free allocation capacity")]
-    InsufficientFreeAllocationCapacity,
     #[msg("Insufficient free reserve capacity")]
     InsufficientFreeReserveCapacity,
     #[msg("Arithmetic overflow or underflow")]
@@ -113,18 +73,8 @@ pub enum OmegaXProtocolError {
     MembershipInvitePermitExpired,
     #[msg("Bounded string field exceeds the canonical maximum")]
     StringTooLong,
-    #[msg("Too many supported schema hashes were provided for one oracle profile")]
-    TooManyOracleSupportedSchemas,
-    #[msg("Oracle profile is inactive")]
-    OracleProfileInactive,
-    #[msg("Oracle profile has not been claimed by its signing key")]
-    OracleProfileUnclaimed,
     #[msg("Claim attestation decision is not a recognized value")]
     InvalidClaimAttestationDecision,
-    #[msg("Claim attestation must reference a registered schema key hash")]
-    ClaimAttestationSchemaRequired,
-    #[msg("Oracle profile does not advertise support for the selected claim-attestation schema")]
-    ClaimAttestationSchemaUnsupported,
     #[msg("Claim attestation requires a locked evidence reference")]
     ClaimEvidenceRequired,
     #[msg("Claim attestation evidence reference does not match the claim case")]
@@ -135,14 +85,8 @@ pub enum OmegaXProtocolError {
     ClaimRecipientLocked,
     #[msg("Health plan has paused oracle finality")]
     OracleFinalityHeld,
-    #[msg("Too many schema dependency addresses were provided")]
-    TooManySchemaDependencies,
     #[msg("Fee vault initialization requires the matching domain asset vault to exist")]
     DomainAssetVaultRequired,
-    #[msg("Liquidity pool reference does not match the supplied account")]
-    LiquidityPoolMismatch,
-    #[msg("Oracle profile reference does not match the supplied account")]
-    OracleProfileMismatch,
     #[msg("Linked claim settlement requires the member, mint, vault token, recipient token, and token program accounts")]
     SettlementOutflowAccountsRequired,
     #[msg("Stable coverage capacity is insufficient")]
@@ -173,30 +117,20 @@ pub enum OmegaXProtocolError {
     InvalidObligationDeliveryMode,
     #[msg("Claim adjudication is locked after payout or terminal state")]
     ClaimAdjudicationLocked,
-    #[msg("Reserve asset mint decimals are unsupported")]
-    ReserveAssetMintDecimalsUnsupported,
     #[msg("Health plan is inactive")]
     HealthPlanInactive,
-    #[msg("Capital class is inactive")]
-    CapitalClassInactive,
     #[msg("Direct claim reserves require linked obligation settlement")]
     DirectClaimReserveUnsupported,
-    #[msg("Liquidity pool is inactive")]
-    LiquidityPoolInactive,
-    #[msg("Allocation position is inactive or deallocation-only")]
-    AllocationPositionInactive,
 }
 
 #[cfg(feature = "quasar")]
 #[error_code]
 pub enum OmegaXProtocolError {
     Unauthorized,
-    ProtocolEmergencyPaused,
     ReserveDomainInactive,
     VaultTokenAccountInvalid,
     HealthPlanPaused,
     ClaimIntakePaused,
-    CapitalSubscriptionsPaused,
     InvalidBps,
     IdentifierTooLong,
     HealthPlanMismatch,
@@ -208,8 +142,6 @@ pub enum OmegaXProtocolError {
     TokenAccountSelfTransferInvalid,
     VaultTokenAccountMismatch,
     Token2022NotSupported,
-    FeeRecipientInvalid,
-    FeeRecipientMismatch,
     FundingLineMismatch,
     FundingLineTypeMismatch,
     ObligationMismatch,
@@ -220,22 +152,6 @@ pub enum OmegaXProtocolError {
     AmountMustBePositive,
     ClaimCaseLinkMismatch,
     LinkedClaimMustSettleThroughObligation,
-    AmountExceedsAvailableShares,
-    AmountExceedsPendingRedemption,
-    InvalidRedemptionAmount,
-    RedemptionQueueOutOfOrder,
-    InvalidCapitalShareState,
-    InvalidDepositShares,
-    MinimumSharesOutNotMet,
-    RestrictedCapitalClass,
-    CapitalClassMismatch,
-    LPPositionHasActiveCapital,
-    LockupActive,
-    InvalidLockupSeconds,
-    AllocationCapExceeded,
-    AllocationPositionMismatch,
-    AllocationAssetMismatch,
-    InsufficientFreeAllocationCapacity,
     InsufficientFreeReserveCapacity,
     ArithmeticError,
     MembershipGateConfigurationInvalid,
@@ -243,21 +159,13 @@ pub enum OmegaXProtocolError {
     MembershipInviteAuthorityInvalid,
     MembershipInvitePermitExpired,
     StringTooLong,
-    TooManyOracleSupportedSchemas,
-    OracleProfileInactive,
-    OracleProfileUnclaimed,
     InvalidClaimAttestationDecision,
-    ClaimAttestationSchemaRequired,
-    ClaimAttestationSchemaUnsupported,
     ClaimEvidenceRequired,
     ClaimEvidenceMismatch,
     ClaimEvidenceLocked,
     ClaimRecipientLocked,
     OracleFinalityHeld,
-    TooManySchemaDependencies,
     DomainAssetVaultRequired,
-    LiquidityPoolMismatch,
-    OracleProfileMismatch,
     SettlementOutflowAccountsRequired,
     InsufficientStableCoverageCapacity,
     InvalidReserveAssetRole,
@@ -273,10 +181,6 @@ pub enum OmegaXProtocolError {
     PartialObligationTransitionUnsupported,
     InvalidObligationDeliveryMode,
     ClaimAdjudicationLocked,
-    ReserveAssetMintDecimalsUnsupported,
     HealthPlanInactive,
-    CapitalClassInactive,
     DirectClaimReserveUnsupported,
-    LiquidityPoolInactive,
-    AllocationPositionInactive,
 }

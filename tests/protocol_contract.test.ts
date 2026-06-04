@@ -11,7 +11,7 @@ const {
   PROTOCOL_INSTRUCTION_DISCRIMINATORS,
 } = contractModule as typeof import("../frontend/lib/generated/protocol-contract.ts");
 
-test("canonical contract exposes the health-capital-markets surface", () => {
+test("canonical contract exposes the reserve-accounting surface", () => {
   const instructionNames = Object.keys(PROTOCOL_INSTRUCTION_DISCRIMINATORS);
   const accountNames = Object.keys(PROTOCOL_ACCOUNT_DISCRIMINATORS);
   const serializedAccounts = JSON.stringify(PROTOCOL_INSTRUCTION_ACCOUNTS);
@@ -19,11 +19,6 @@ test("canonical contract exposes the health-capital-markets surface", () => {
     instructions: Array<{ name: string }>;
     types: Array<{ name: string; type: { kind: string; fields?: Array<{ name: string }> } }>;
   };
-  const depositArgs = idl.types.find((entry) => entry.name === "DepositIntoCapitalClassArgs");
-  const requestRedemptionArgs = idl.types.find((entry) => entry.name === "RequestRedemptionArgs");
-  const processRedemptionArgs = idl.types.find((entry) => entry.name === "ProcessRedemptionQueueArgs");
-  const createLiquidityPoolArgs = idl.types.find((entry) => entry.name === "CreateLiquidityPoolArgs");
-  const createCapitalClassArgs = idl.types.find((entry) => entry.name === "CreateCapitalClassArgs");
   const configureReserveAssetRailArgs = idl.types.find((entry) => entry.name === "ConfigureReserveAssetRailArgs");
   const reserveAssetRailAccount = idl.types.find((entry) => entry.name === "ReserveAssetRail");
   const selectedAssetPayoutArgs = idl.types.find((entry) => entry.name === "SettleClaimCaseSelectedAssetArgs");
@@ -40,13 +35,9 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(instructionNames.includes("create_policy_series"));
   assert(instructionNames.includes("initialize_series_reserve_ledger"));
   assert(instructionNames.includes("open_funding_line"));
-  assert(instructionNames.includes("create_liquidity_pool"));
-  assert(instructionNames.includes("create_capital_class"));
-  assert(instructionNames.includes("update_lp_position_credentialing"));
-  assert(instructionNames.includes("create_allocation_position"));
-  assert(instructionNames.includes("mark_impairment"));
-  assert(instructionNames.includes("register_oracle"));
-  assert(instructionNames.includes("claim_oracle"));
+  assert(!instructionNames.includes("register_oracle"));
+  assert(!instructionNames.includes("claim_oracle"));
+  assert(!instructionNames.includes("update_oracle_profile"));
   assert(!instructionNames.includes("set_pool_oracle"));
   assert(!instructionNames.includes("set_pool_oracle_permissions"));
   assert(!instructionNames.includes("set_pool_oracle_policy"));
@@ -67,6 +58,21 @@ test("canonical contract exposes the health-capital-markets surface", () => {
     "withdraw_pool_treasury_spl",
     "withdraw_pool_oracle_fee_sol",
     "withdraw_pool_oracle_fee_spl",
+    "create_liquidity_pool",
+    "create_capital_class",
+    "update_capital_class_controls",
+    "deposit_into_capital_class",
+    "update_lp_position_credentialing",
+    "request_redemption",
+    "process_redemption_queue",
+    "create_allocation_position",
+    "update_allocation_caps",
+    "allocate_capital",
+    "deallocate_capital",
+    "mark_impairment",
+    "register_oracle",
+    "claim_oracle",
+    "update_oracle_profile",
   ]) {
     assert(!instructionNames.includes(removedInstruction), `${removedInstruction} should be removed`);
   }
@@ -75,11 +81,8 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(accountNames.includes("HealthPlan"));
   assert(accountNames.includes("PolicySeries"));
   assert(accountNames.includes("FundingLine"));
-  assert(accountNames.includes("LiquidityPool"));
-  assert(accountNames.includes("CapitalClass"));
-  assert(accountNames.includes("AllocationPosition"));
   assert(accountNames.includes("Obligation"));
-  assert(accountNames.includes("OracleProfile"));
+  assert(!accountNames.includes("OracleProfile"));
   assert(!accountNames.includes("PoolOracleApproval"));
   assert(!accountNames.includes("PoolOraclePolicy"));
   assert(!accountNames.includes("PoolOraclePermissionSet"));
@@ -87,7 +90,19 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(!accountNames.includes("SchemaDependencyLedger"));
   assert(accountNames.includes("ClaimAttestation"));
 
-  for (const removedAccount of ["ProtocolGovernance", "ProtocolFeeVault", "PoolTreasuryVault", "PoolOracleFeeVault"]) {
+  for (const removedAccount of [
+    "ProtocolGovernance",
+    "ProtocolFeeVault",
+    "PoolTreasuryVault",
+    "PoolOracleFeeVault",
+    "LiquidityPool",
+    "CapitalClass",
+    "LPPosition",
+    "PoolClassLedger",
+    "AllocationPosition",
+    "AllocationLedger",
+    "OracleProfile",
+  ]) {
     assert(!accountNames.includes(removedAccount), `${removedAccount} should be removed`);
   }
   assert(!serializedAccounts.includes("protocol_governance"));
@@ -95,8 +110,11 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(!serializedAccounts.includes("pool_treasury_vault"));
   assert(!serializedAccounts.includes("pool_oracle_fee_vault"));
   for (const accountName of [
+    "oracle",
     "health_plan",
+    "claim_case",
     "funding_line",
+    "claim_attestation",
   ]) {
     assert(
       PROTOCOL_INSTRUCTION_ACCOUNTS.attest_claim_case.some((account) => account.name === accountName),
@@ -110,6 +128,7 @@ test("canonical contract exposes the health-capital-markets surface", () => {
     "pool_oracle_approval",
     "pool_oracle_permission_set",
     "pool_oracle_policy",
+    "oracle_profile",
   ]) {
     assert(
       !PROTOCOL_INSTRUCTION_ACCOUNTS.attest_claim_case.some((account) => account.name === removedAccount),
@@ -122,8 +141,6 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(!serializedAccounts.includes("pool_type"));
   assert(!serializedAccounts.includes("membership_anchor_seat"));
   assert(!accountNames.includes("MembershipAnchorSeat"));
-  assert(PROTOCOL_INSTRUCTION_ARGS.deposit_into_capital_class.length === 1);
-  assert(idl.instructions.some((instruction) => instruction.name === "update_lp_position_credentialing"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.reserve_obligation.some((account) => account.name === "claim_case"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.release_reserve.some((account) => account.name === "claim_case"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "claim_case"));
@@ -138,8 +155,8 @@ test("canonical contract exposes the health-capital-markets surface", () => {
     "allocation_ledger",
   ]) {
     assert(
-      PROTOCOL_INSTRUCTION_ACCOUNTS.create_obligation.some((account) => account.name === accountName),
-      `create_obligation missing ${accountName}`,
+      !PROTOCOL_INSTRUCTION_ACCOUNTS.create_obligation.some((account) => account.name === accountName),
+      `create_obligation should not carry ${accountName}`,
     );
   }
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.reserve_obligation.find((account) => account.name === "claim_case")?.pdaSeeds);
@@ -148,22 +165,6 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "source_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "vault_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.record_premium_payment.some((account) => account.name === "token_program"));
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.deposit_into_capital_class.some((account) => account.name === "source_token_account"));
-  assert.equal(depositArgs?.type.kind, "struct");
-  assert.deepEqual(
-    depositArgs?.type.fields?.map((field) => field.name),
-    ["amount", "shares"],
-  );
-  assert(!createLiquidityPoolArgs?.type.fields?.some((field) => field.name === "fee_bps"));
-  assert(!createCapitalClassArgs?.type.fields?.some((field) => field.name === "fee_bps"));
-  assert.deepEqual(
-    requestRedemptionArgs?.type.fields?.map((field) => field.name),
-    ["shares"],
-  );
-  assert.deepEqual(
-    processRedemptionArgs?.type.fields?.map((field) => field.name),
-    ["shares"],
-  );
   assert(configureReserveAssetRailArgs?.type.fields?.some((field) => field.name === "max_confidence_bps"));
   assert(reserveAssetRailAccount?.type.fields?.some((field) => field.name === "max_confidence_bps"));
   assert(!selectedAssetPayoutArgs);
@@ -171,12 +172,21 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   for (const fieldName of [
     "evidence_ref_hash",
     "decision_support_hash",
-    "schema_hash",
-    "schema_version",
   ]) {
     assert(
       claimAttestationAccount?.type.fields?.some((field) => field.name === fieldName),
       `ClaimAttestation missing ${fieldName}`,
+    );
+  }
+  for (const removedFieldName of [
+    "oracle_profile",
+    "schema_key_hash",
+    "schema_hash",
+    "schema_version",
+  ]) {
+    assert(
+      !claimAttestationAccount?.type.fields?.some((field) => field.name === removedFieldName),
+      `ClaimAttestation should not carry ${removedFieldName}`,
     );
   }
   assert(!claimAttestationAccount?.type.fields?.some((field) => field.name === "liquidity_pool"));

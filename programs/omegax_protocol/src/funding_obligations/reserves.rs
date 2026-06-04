@@ -32,21 +32,11 @@ pub(crate) fn reserve_obligation(
     );
     validate_treasury_mutation_bindings(
         ctx.accounts.series_reserve_ledger.as_deref(),
-        ctx.accounts.pool_class_ledger.as_deref(),
-        ctx.accounts.allocation_position.as_deref(),
-        ctx.accounts.allocation_ledger.as_deref(),
         obligation,
         ctx.accounts.funding_line.key(),
         ctx.accounts.funding_line.asset_mint,
     )?;
-    require_obligation_reserve_capacity(
-        &ctx.accounts.funding_line_ledger.sheet,
-        ctx.accounts
-            .allocation_position
-            .as_deref()
-            .map(|account| &**account),
-        reserve_amount,
-    )?;
+    require_obligation_reserve_capacity(&ctx.accounts.funding_line_ledger.sheet, reserve_amount)?;
 
     obligation.status = OBLIGATION_STATUS_RESERVED;
     obligation.reserved_amount = reserve_amount;
@@ -60,21 +50,6 @@ pub(crate) fn reserve_obligation(
 
     if let Some(series_ledger) = ctx.accounts.series_reserve_ledger.as_deref_mut() {
         book_reserve(&mut series_ledger.sheet, reserve_amount)?;
-    }
-
-    if let Some(pool_class_ledger) = ctx.accounts.pool_class_ledger.as_deref_mut() {
-        book_reserve(&mut pool_class_ledger.sheet, reserve_amount)?;
-    }
-
-    if let Some(allocation_position) = ctx.accounts.allocation_position.as_deref_mut() {
-        allocation_position.reserved_capacity =
-            checked_add(allocation_position.reserved_capacity, reserve_amount)?;
-        allocation_position.utilized_amount =
-            checked_add(allocation_position.utilized_amount, reserve_amount)?;
-    }
-
-    if let Some(allocation_ledger) = ctx.accounts.allocation_ledger.as_deref_mut() {
-        book_reserve(&mut allocation_ledger.sheet, reserve_amount)?;
     }
 
     if let Some(claim_case) = ctx.accounts.claim_case.as_deref_mut() {
@@ -153,21 +128,8 @@ fn quasar_release_reserved_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -
 #[cfg(feature = "quasar")]
 fn require_quasar_obligation_reserve_capacity(
     line_sheet: &ReserveBalanceSheet,
-    allocation_position: Option<&Account<AllocationPosition>>,
     amount: u64,
 ) -> Result<()> {
-    if let Some(position) = allocation_position {
-        let free_allocated = position
-            .allocated_amount
-            .get()
-            .saturating_sub(position.reserved_capacity.get());
-        require!(
-            free_allocated >= amount,
-            OmegaXProtocolError::InsufficientFreeAllocationCapacity
-        );
-        return Ok(());
-    }
-
     require!(
         line_sheet.free >= amount,
         OmegaXProtocolError::InsufficientFreeReserveCapacity
@@ -271,125 +233,8 @@ fn validate_quasar_optional_series_ledger(
 }
 
 #[cfg(feature = "quasar")]
-fn validate_quasar_optional_pool_class_ledger(
-    pool_class_ledger: Option<&Account<PoolClassLedger>>,
-    expected_capital_class: Pubkey,
-    expected_asset_mint: Pubkey,
-) -> Result<()> {
-    if let Some(ledger) = pool_class_ledger {
-        require!(
-            expected_capital_class != ZERO_PUBKEY,
-            OmegaXProtocolError::CapitalClassMismatch
-        );
-        require_keys_eq!(
-            ledger.capital_class,
-            expected_capital_class,
-            OmegaXProtocolError::CapitalClassMismatch
-        );
-        require_keys_eq!(
-            ledger.asset_mint,
-            expected_asset_mint,
-            OmegaXProtocolError::AssetMintMismatch
-        );
-        require!(
-            quasar_pda_matches(
-                ledger.address(),
-                &crate::ID,
-                &[
-                    SEED_POOL_CLASS_LEDGER,
-                    expected_capital_class.as_ref(),
-                    expected_asset_mint.as_ref(),
-                ],
-                ledger.bump,
-            ),
-            OmegaXProtocolError::CapitalClassMismatch
-        );
-    }
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn validate_quasar_optional_allocation_position(
-    allocation_position: Option<&Account<AllocationPosition>>,
-    expected_allocation_position: Pubkey,
-    expected_funding_line: Pubkey,
-) -> Result<()> {
-    if let Some(position) = allocation_position {
-        require!(
-            expected_allocation_position != ZERO_PUBKEY,
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-        require_keys_eq!(
-            *position.address(),
-            expected_allocation_position,
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-        require_keys_eq!(
-            position.funding_line,
-            expected_funding_line,
-            OmegaXProtocolError::FundingLineMismatch
-        );
-        require!(
-            quasar_pda_matches(
-                position.address(),
-                &crate::ID,
-                &[
-                    SEED_ALLOCATION_POSITION,
-                    position.capital_class.as_ref(),
-                    expected_funding_line.as_ref(),
-                ],
-                position.bump,
-            ),
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-    }
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn validate_quasar_optional_allocation_ledger(
-    allocation_ledger: Option<&Account<AllocationLedger>>,
-    expected_allocation_position: Pubkey,
-    expected_asset_mint: Pubkey,
-) -> Result<()> {
-    if let Some(ledger) = allocation_ledger {
-        require!(
-            expected_allocation_position != ZERO_PUBKEY,
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-        require_keys_eq!(
-            ledger.allocation_position,
-            expected_allocation_position,
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-        require_keys_eq!(
-            ledger.asset_mint,
-            expected_asset_mint,
-            OmegaXProtocolError::AssetMintMismatch
-        );
-        require!(
-            quasar_pda_matches(
-                ledger.address(),
-                &crate::ID,
-                &[
-                    SEED_ALLOCATION_LEDGER,
-                    expected_allocation_position.as_ref(),
-                    expected_asset_mint.as_ref(),
-                ],
-                ledger.bump,
-            ),
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-    }
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
 fn validate_quasar_treasury_mutation_bindings(
     series_ledger: Option<&Account<SeriesReserveLedger>>,
-    pool_class_ledger: Option<&Account<PoolClassLedger>>,
-    allocation_position: Option<&Account<AllocationPosition>>,
-    allocation_ledger: Option<&Account<AllocationLedger>>,
     obligation: &ObligationAccountData<'_>,
     funding_line_key: Pubkey,
     funding_line_asset_mint: Pubkey,
@@ -404,62 +249,9 @@ fn validate_quasar_treasury_mutation_bindings(
         funding_line_asset_mint,
         OmegaXProtocolError::AssetMintMismatch
     );
-
-    let allocation_scoped = obligation.liquidity_pool != ZERO_PUBKEY
-        || obligation.capital_class != ZERO_PUBKEY
-        || obligation.allocation_position != ZERO_PUBKEY;
-    if allocation_scoped {
-        require!(
-            obligation.liquidity_pool != ZERO_PUBKEY
-                && obligation.capital_class != ZERO_PUBKEY
-                && obligation.allocation_position != ZERO_PUBKEY,
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-        require!(
-            pool_class_ledger.is_some(),
-            OmegaXProtocolError::CapitalClassMismatch
-        );
-        require!(
-            allocation_position.is_some() && allocation_ledger.is_some(),
-            OmegaXProtocolError::AllocationPositionMismatch
-        );
-    }
-
     validate_quasar_optional_series_ledger(
         series_ledger,
         obligation.policy_series,
-        obligation.asset_mint,
-    )?;
-    validate_quasar_optional_pool_class_ledger(
-        pool_class_ledger,
-        obligation.capital_class,
-        obligation.asset_mint,
-    )?;
-    validate_quasar_optional_allocation_position(
-        allocation_position,
-        obligation.allocation_position,
-        obligation.funding_line,
-    )?;
-    if let Some(position) = allocation_position {
-        require_keys_eq!(
-            position.liquidity_pool,
-            obligation.liquidity_pool,
-            OmegaXProtocolError::LiquidityPoolMismatch
-        );
-        require_keys_eq!(
-            position.capital_class,
-            obligation.capital_class,
-            OmegaXProtocolError::CapitalClassMismatch
-        );
-        require_keys_eq!(
-            position.health_plan,
-            obligation.health_plan,
-            OmegaXProtocolError::HealthPlanMismatch
-        );
-    }
-    validate_quasar_optional_allocation_ledger(
-        allocation_ledger,
-        obligation.allocation_position,
         obligation.asset_mint,
     )
 }
@@ -492,33 +284,14 @@ pub(crate) fn reserve_obligation<'info>(
         .series_reserve_ledger
         .as_ref()
         .map(|ledger| &**ledger);
-    let pool_class_ledger = ctx
-        .accounts
-        .pool_class_ledger
-        .as_ref()
-        .map(|ledger| &**ledger);
-    let allocation_position = ctx
-        .accounts
-        .allocation_position
-        .as_ref()
-        .map(|position| &**position);
-    let allocation_ledger = ctx
-        .accounts
-        .allocation_ledger
-        .as_ref()
-        .map(|ledger| &**ledger);
     validate_quasar_treasury_mutation_bindings(
         series_ledger,
-        pool_class_ledger,
-        allocation_position,
-        allocation_ledger,
         &ctx.accounts.obligation,
         *ctx.accounts.funding_line.address(),
         ctx.accounts.funding_line.asset_mint,
     )?;
     require_quasar_obligation_reserve_capacity(
         &ctx.accounts.funding_line_ledger.sheet,
-        allocation_position,
         reserve_amount,
     )?;
 
@@ -571,80 +344,6 @@ pub(crate) fn reserve_obligation<'info>(
         series_ledger.set_inner(policy_series, asset_mint, sheet, bump);
     }
 
-    if let Some(pool_class_ledger) = ctx.accounts.pool_class_ledger.as_mut() {
-        let pool_class_ledger = &mut **pool_class_ledger;
-        let mut sheet = pool_class_ledger.sheet;
-        quasar_book_reserve(&mut sheet, reserve_amount)?;
-        let capital_class = pool_class_ledger.capital_class;
-        let asset_mint = pool_class_ledger.asset_mint;
-        let total_shares = pool_class_ledger.total_shares.get();
-        let realized_yield_amount = pool_class_ledger.realized_yield_amount.get();
-        let realized_loss_amount = pool_class_ledger.realized_loss_amount.get();
-        let bump = pool_class_ledger.bump;
-        pool_class_ledger.set_inner(
-            capital_class,
-            asset_mint,
-            sheet,
-            total_shares,
-            realized_yield_amount,
-            realized_loss_amount,
-            bump,
-        );
-    }
-
-    if let Some(allocation_position) = ctx.accounts.allocation_position.as_mut() {
-        let allocation_position = &mut **allocation_position;
-        let reserve_domain = allocation_position.reserve_domain;
-        let liquidity_pool = allocation_position.liquidity_pool;
-        let capital_class = allocation_position.capital_class;
-        let health_plan = allocation_position.health_plan;
-        let policy_series = allocation_position.policy_series;
-        let funding_line = allocation_position.funding_line;
-        let cap_amount = allocation_position.cap_amount.get();
-        let weight_bps = allocation_position.weight_bps.get();
-        let allocation_mode = allocation_position.allocation_mode;
-        let allocated_amount = allocation_position.allocated_amount.get();
-        let utilized_amount =
-            quasar_checked_add(allocation_position.utilized_amount.get(), reserve_amount)?;
-        let reserved_capacity =
-            quasar_checked_add(allocation_position.reserved_capacity.get(), reserve_amount)?;
-        let realized_pnl = allocation_position.realized_pnl.get();
-        let impaired_amount = allocation_position.impaired_amount.get();
-        let deallocation_only = allocation_position.deallocation_only.get();
-        let active = allocation_position.active.get();
-        let bump = allocation_position.bump;
-        allocation_position.set_inner(
-            reserve_domain,
-            liquidity_pool,
-            capital_class,
-            health_plan,
-            policy_series,
-            funding_line,
-            cap_amount,
-            weight_bps,
-            allocation_mode,
-            allocated_amount,
-            utilized_amount,
-            reserved_capacity,
-            realized_pnl,
-            impaired_amount,
-            deallocation_only,
-            active,
-            bump,
-        );
-    }
-
-    if let Some(allocation_ledger) = ctx.accounts.allocation_ledger.as_mut() {
-        let allocation_ledger = &mut **allocation_ledger;
-        let mut sheet = allocation_ledger.sheet;
-        quasar_book_reserve(&mut sheet, reserve_amount)?;
-        let allocation_position = allocation_ledger.allocation_position;
-        let asset_mint = allocation_ledger.asset_mint;
-        let realized_pnl = allocation_ledger.realized_pnl.get();
-        let bump = allocation_ledger.bump;
-        allocation_ledger.set_inner(allocation_position, asset_mint, sheet, realized_pnl, bump);
-    }
-
     let obligation = &mut ctx.accounts.obligation;
     let reserve_domain = obligation.reserve_domain;
     let asset_mint = obligation.asset_mint;
@@ -653,9 +352,6 @@ pub(crate) fn reserve_obligation<'info>(
     let member_wallet = obligation.member_wallet;
     let beneficiary = obligation.beneficiary;
     let funding_line = obligation.funding_line;
-    let liquidity_pool = obligation.liquidity_pool;
-    let capital_class = obligation.capital_class;
-    let allocation_position = obligation.allocation_position;
     let creation_reason_hash = obligation.creation_reason_hash;
     let settlement_reason_hash = obligation.settlement_reason_hash;
     let delivery_mode = obligation.delivery_mode;
@@ -678,9 +374,6 @@ pub(crate) fn reserve_obligation<'info>(
         beneficiary,
         funding_line,
         linked_claim_case,
-        liquidity_pool,
-        capital_class,
-        allocation_position,
         creation_reason_hash,
         settlement_reason_hash,
         OBLIGATION_STATUS_RESERVED,
@@ -826,26 +519,8 @@ pub(crate) fn release_reserve<'info>(
         .series_reserve_ledger
         .as_ref()
         .map(|ledger| &**ledger);
-    let pool_class_ledger = ctx
-        .accounts
-        .pool_class_ledger
-        .as_ref()
-        .map(|ledger| &**ledger);
-    let allocation_position = ctx
-        .accounts
-        .allocation_position
-        .as_ref()
-        .map(|position| &**position);
-    let allocation_ledger = ctx
-        .accounts
-        .allocation_ledger
-        .as_ref()
-        .map(|ledger| &**ledger);
     validate_quasar_treasury_mutation_bindings(
         series_ledger,
-        pool_class_ledger,
-        allocation_position,
-        allocation_ledger,
         &ctx.accounts.obligation,
         *ctx.accounts.funding_line.address(),
         ctx.accounts.funding_line.asset_mint,
@@ -914,80 +589,6 @@ pub(crate) fn release_reserve<'info>(
         series_ledger.set_inner(policy_series, asset_mint, sheet, bump);
     }
 
-    if let Some(pool_class_ledger) = ctx.accounts.pool_class_ledger.as_mut() {
-        let pool_class_ledger = &mut **pool_class_ledger;
-        let mut sheet = pool_class_ledger.sheet;
-        quasar_release_reserved_sheet(&mut sheet, amount)?;
-        let capital_class = pool_class_ledger.capital_class;
-        let asset_mint = pool_class_ledger.asset_mint;
-        let total_shares = pool_class_ledger.total_shares.get();
-        let realized_yield_amount = pool_class_ledger.realized_yield_amount.get();
-        let realized_loss_amount = pool_class_ledger.realized_loss_amount.get();
-        let bump = pool_class_ledger.bump;
-        pool_class_ledger.set_inner(
-            capital_class,
-            asset_mint,
-            sheet,
-            total_shares,
-            realized_yield_amount,
-            realized_loss_amount,
-            bump,
-        );
-    }
-
-    if let Some(allocation_position) = ctx.accounts.allocation_position.as_mut() {
-        let allocation_position = &mut **allocation_position;
-        let reserve_domain = allocation_position.reserve_domain;
-        let liquidity_pool = allocation_position.liquidity_pool;
-        let capital_class = allocation_position.capital_class;
-        let health_plan = allocation_position.health_plan;
-        let policy_series = allocation_position.policy_series;
-        let funding_line = allocation_position.funding_line;
-        let cap_amount = allocation_position.cap_amount.get();
-        let weight_bps = allocation_position.weight_bps.get();
-        let allocation_mode = allocation_position.allocation_mode;
-        let allocated_amount = allocation_position.allocated_amount.get();
-        let utilized_amount =
-            quasar_checked_sub(allocation_position.utilized_amount.get(), amount)?;
-        let reserved_capacity =
-            quasar_checked_sub(allocation_position.reserved_capacity.get(), amount)?;
-        let realized_pnl = allocation_position.realized_pnl.get();
-        let impaired_amount = allocation_position.impaired_amount.get();
-        let deallocation_only = allocation_position.deallocation_only.get();
-        let active = allocation_position.active.get();
-        let bump = allocation_position.bump;
-        allocation_position.set_inner(
-            reserve_domain,
-            liquidity_pool,
-            capital_class,
-            health_plan,
-            policy_series,
-            funding_line,
-            cap_amount,
-            weight_bps,
-            allocation_mode,
-            allocated_amount,
-            utilized_amount,
-            reserved_capacity,
-            realized_pnl,
-            impaired_amount,
-            deallocation_only,
-            active,
-            bump,
-        );
-    }
-
-    if let Some(allocation_ledger) = ctx.accounts.allocation_ledger.as_mut() {
-        let allocation_ledger = &mut **allocation_ledger;
-        let mut sheet = allocation_ledger.sheet;
-        quasar_release_reserved_sheet(&mut sheet, amount)?;
-        let allocation_position = allocation_ledger.allocation_position;
-        let asset_mint = allocation_ledger.asset_mint;
-        let realized_pnl = allocation_ledger.realized_pnl.get();
-        let bump = allocation_ledger.bump;
-        allocation_ledger.set_inner(allocation_position, asset_mint, sheet, realized_pnl, bump);
-    }
-
     let obligation = &mut ctx.accounts.obligation;
     let reserve_domain = obligation.reserve_domain;
     let asset_mint = obligation.asset_mint;
@@ -996,9 +597,6 @@ pub(crate) fn release_reserve<'info>(
     let member_wallet = obligation.member_wallet;
     let beneficiary = obligation.beneficiary;
     let funding_line = obligation.funding_line;
-    let liquidity_pool = obligation.liquidity_pool;
-    let capital_class = obligation.capital_class;
-    let allocation_position = obligation.allocation_position;
     let creation_reason_hash = obligation.creation_reason_hash;
     let settlement_reason_hash = obligation.settlement_reason_hash;
     let delivery_mode = obligation.delivery_mode;
@@ -1020,9 +618,6 @@ pub(crate) fn release_reserve<'info>(
         beneficiary,
         funding_line,
         linked_claim_case,
-        liquidity_pool,
-        capital_class,
-        allocation_position,
         creation_reason_hash,
         settlement_reason_hash,
         next_obligation_status,
@@ -1173,9 +768,6 @@ pub(crate) fn release_reserve(
     );
     validate_treasury_mutation_bindings(
         ctx.accounts.series_reserve_ledger.as_deref(),
-        ctx.accounts.pool_class_ledger.as_deref(),
-        ctx.accounts.allocation_position.as_deref(),
-        ctx.accounts.allocation_ledger.as_deref(),
         obligation,
         ctx.accounts.funding_line.key(),
         ctx.accounts.funding_line.asset_mint,
@@ -1200,9 +792,6 @@ pub(crate) fn release_reserve(
         &mut ctx.accounts.plan_reserve_ledger.sheet,
         &mut ctx.accounts.funding_line_ledger.sheet,
         ctx.accounts.series_reserve_ledger.as_deref_mut(),
-        ctx.accounts.pool_class_ledger.as_deref_mut(),
-        ctx.accounts.allocation_position.as_deref_mut(),
-        ctx.accounts.allocation_ledger.as_deref_mut(),
         amount,
     )?;
 
@@ -1301,21 +890,6 @@ pub struct ReserveObligation<'info> {
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
     #[cfg(feature = "quasar")]
     pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
-    #[cfg(feature = "quasar")]
-    pub pool_class_ledger: Option<&'info mut Account<PoolClassLedger>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
-    #[cfg(feature = "quasar")]
-    pub allocation_position: Option<&'info mut Account<AllocationPosition>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
-    #[cfg(feature = "quasar")]
-    pub allocation_ledger: Option<&'info mut Account<AllocationLedger>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_OBLIGATION, funding_line.key().as_ref(), obligation.obligation_id.as_bytes()], bump = obligation.bump)]
     pub obligation: Box<Account<'info, Obligation>>,
@@ -1425,21 +999,6 @@ pub struct ReleaseReserve<'info> {
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
     #[cfg(feature = "quasar")]
     pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
-    #[cfg(feature = "quasar")]
-    pub pool_class_ledger: Option<&'info mut Account<PoolClassLedger>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
-    #[cfg(feature = "quasar")]
-    pub allocation_position: Option<&'info mut Account<AllocationPosition>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
-    #[cfg(feature = "quasar")]
-    pub allocation_ledger: Option<&'info mut Account<AllocationLedger>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_OBLIGATION, funding_line.key().as_ref(), obligation.obligation_id.as_bytes()], bump = obligation.bump)]
     pub obligation: Box<Account<'info, Obligation>>,

@@ -4,7 +4,7 @@
     "name": "omegax_protocol",
     "version": "0.3.1",
     "spec": "0.1.0",
-    "description": "OmegaX health capital markets protocol with reserve domains, health plans, funding lines, and capital classes"
+    "description": "OmegaX health reserve protocol with reserve domains, health plans, funding lines, obligations, and claims"
   },
   "instructions": [
     {
@@ -101,259 +101,6 @@
           "type": {
             "defined": {
               "name": "AdjudicateClaimCaseArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "allocate_capital",
-      "discriminator": [
-        146,
-        129,
-        60,
-        205,
-        88,
-        225,
-        60,
-        183
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "funding_line",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  117,
-                  110,
-                  100,
-                  105,
-                  110,
-                  103,
-                  95,
-                  108,
-                  105,
-                  110,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "allocation_position.health_plan",
-                "account": "AllocationPosition"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.line_id",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  108,
-                  108,
-                  111,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line"
-              }
-            ]
-          }
-        },
-        {
-          "name": "allocation_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  108,
-                  108,
-                  111,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "allocation_position"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "AllocateCapitalArgs"
             }
           }
         }
@@ -500,37 +247,6 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
-              }
-            ]
-          }
-        },
-        {
-          "name": "oracle_profile",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "oracle_profile.oracle",
-                "account": "OracleProfile"
               }
             ]
           }
@@ -760,58 +476,6 @@
       ]
     },
     {
-      "name": "claim_oracle",
-      "discriminator": [
-        1,
-        252,
-        166,
-        132,
-        45,
-        24,
-        23,
-        233
-      ],
-      "accounts": [
-        {
-          "name": "oracle",
-          "signer": true
-        },
-        {
-          "name": "oracle_profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "oracle_profile.oracle",
-                "account": "OracleProfile"
-              }
-            ]
-          }
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "configure_reserve_asset_rail",
       "discriminator": [
         78,
@@ -910,398 +574,6 @@
           "type": {
             "defined": {
               "name": "ConfigureReserveAssetRailArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "create_allocation_position",
-      "discriminator": [
-        165,
-        80,
-        76,
-        13,
-        12,
-        202,
-        112,
-        31
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        },
-        {
-          "name": "health_plan",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  104,
-                  101,
-                  97,
-                  108,
-                  116,
-                  104,
-                  95,
-                  112,
-                  108,
-                  97,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.health_plan_id",
-                "account": "HealthPlan"
-              }
-            ]
-          }
-        },
-        {
-          "name": "funding_line",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  117,
-                  110,
-                  100,
-                  105,
-                  110,
-                  103,
-                  95,
-                  108,
-                  105,
-                  110,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.line_id",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  108,
-                  108,
-                  111,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line"
-              }
-            ]
-          }
-        },
-        {
-          "name": "allocation_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  108,
-                  108,
-                  111,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "allocation_position"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "CreateAllocationPositionArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "create_capital_class",
-      "discriminator": [
-        0,
-        161,
-        244,
-        112,
-        151,
-        137,
-        35,
-        221
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "arg",
-                "path": "args.class_id"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "CreateCapitalClassArgs"
             }
           }
         }
@@ -1602,144 +874,6 @@
       ]
     },
     {
-      "name": "create_liquidity_pool",
-      "discriminator": [
-        175,
-        75,
-        181,
-        165,
-        224,
-        254,
-        6,
-        131
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "reserve_domain",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain.domain_id",
-                "account": "ReserveDomain"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_vault",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "arg",
-                "path": "args.deposit_asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "arg",
-                "path": "args.pool_id"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "CreateLiquidityPoolArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "create_obligation",
       "discriminator": [
         216,
@@ -1948,28 +1082,6 @@
         },
         {
           "name": "series_reserve_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "liquidity_pool",
-          "optional": true
-        },
-        {
-          "name": "capital_class",
-          "optional": true
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_position",
-          "optional": true
-        },
-        {
-          "name": "allocation_ledger",
           "writable": true,
           "optional": true
         },
@@ -2223,534 +1335,6 @@
           "type": {
             "defined": {
               "name": "CreateReserveDomainArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "deallocate_capital",
-      "discriminator": [
-        10,
-        97,
-        97,
-        189,
-        60,
-        170,
-        102,
-        29
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "funding_line",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  117,
-                  110,
-                  100,
-                  105,
-                  110,
-                  103,
-                  95,
-                  108,
-                  105,
-                  110,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "allocation_position.health_plan",
-                "account": "AllocationPosition"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.line_id",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  108,
-                  108,
-                  111,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line"
-              }
-            ]
-          }
-        },
-        {
-          "name": "allocation_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  108,
-                  108,
-                  111,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "allocation_position"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "DeallocateCapitalArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "deposit_into_capital_class",
-      "discriminator": [
-        40,
-        215,
-        33,
-        115,
-        185,
-        101,
-        196,
-        167
-      ],
-      "accounts": [
-        {
-          "name": "owner",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "domain_asset_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lp_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  112,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "owner"
-              }
-            ]
-          }
-        },
-        {
-          "name": "source_token_account",
-          "writable": true
-        },
-        {
-          "name": "asset_mint"
-        },
-        {
-          "name": "vault_token_account",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "DepositIntoCapitalClassArgs"
             }
           }
         }
@@ -3175,251 +1759,6 @@
           "type": {
             "defined": {
               "name": "InitializeSeriesReserveLedgerArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "mark_impairment",
-      "discriminator": [
-        58,
-        97,
-        30,
-        157,
-        211,
-        45,
-        174,
-        238
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "health_plan",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  104,
-                  101,
-                  97,
-                  108,
-                  116,
-                  104,
-                  95,
-                  112,
-                  108,
-                  97,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.health_plan_id",
-                "account": "HealthPlan"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "funding_line",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  117,
-                  110,
-                  100,
-                  105,
-                  110,
-                  103,
-                  95,
-                  108,
-                  105,
-                  110,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.line_id",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "funding_line_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  102,
-                  117,
-                  110,
-                  100,
-                  105,
-                  110,
-                  103,
-                  95,
-                  108,
-                  105,
-                  110,
-                  101,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "funding_line"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "plan_reserve_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  108,
-                  97,
-                  110,
-                  95,
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "series_reserve_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "obligation",
-          "writable": true,
-          "optional": true
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "MarkImpairmentArgs"
             }
           }
         }
@@ -3983,277 +2322,6 @@
       ]
     },
     {
-      "name": "process_redemption_queue",
-      "discriminator": [
-        244,
-        120,
-        208,
-        73,
-        216,
-        200,
-        158,
-        93
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "domain_asset_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lp_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  112,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "lp_position.owner",
-                "account": "LPPosition"
-              }
-            ]
-          }
-        },
-        {
-          "name": "asset_mint"
-        },
-        {
-          "name": "vault_token_account",
-          "writable": true
-        },
-        {
-          "name": "recipient_token_account",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "ProcessRedemptionQueueArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "publish_reserve_asset_rail_price",
       "discriminator": [
         132,
@@ -4605,71 +2673,6 @@
       ]
     },
     {
-      "name": "register_oracle",
-      "discriminator": [
-        176,
-        200,
-        234,
-        37,
-        199,
-        129,
-        164,
-        111
-      ],
-      "accounts": [
-        {
-          "name": "admin",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "oracle_profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "args.oracle"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "RegisterOracleArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "release_reserve",
       "discriminator": [
         170,
@@ -4883,21 +2886,6 @@
           "optional": true
         },
         {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
           "name": "obligation",
           "writable": true,
           "pda": {
@@ -4969,220 +2957,6 @@
           "type": {
             "defined": {
               "name": "ReleaseReserveArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "request_redemption",
-      "discriminator": [
-        14,
-        62,
-        182,
-        237,
-        59,
-        79,
-        149,
-        22
-      ],
-      "accounts": [
-        {
-          "name": "owner",
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lp_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  112,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "account",
-                "path": "owner"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "RequestRedemptionArgs"
             }
           }
         }
@@ -5398,21 +3172,6 @@
         },
         {
           "name": "series_reserve_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_ledger",
           "writable": true,
           "optional": true
         },
@@ -5788,21 +3547,6 @@
           "optional": true
         },
         {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
           "name": "claim_case",
           "writable": true,
           "pda": {
@@ -6164,21 +3908,6 @@
           "optional": true
         },
         {
-          "name": "pool_class_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "allocation_ledger",
-          "writable": true,
-          "optional": true
-        },
-        {
           "name": "obligation",
           "writable": true,
           "pda": {
@@ -6279,213 +4008,6 @@
       ]
     },
     {
-      "name": "update_allocation_caps",
-      "discriminator": [
-        224,
-        101,
-        103,
-        146,
-        78,
-        5,
-        48,
-        132
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "allocation_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  97,
-                  108,
-                  108,
-                  111,
-                  99,
-                  97,
-                  116,
-                  105,
-                  111,
-                  110,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "allocation_position.capital_class",
-                "account": "AllocationPosition"
-              },
-              {
-                "kind": "account",
-                "path": "allocation_position.funding_line",
-                "account": "AllocationPosition"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "UpdateAllocationCapsArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "update_capital_class_controls",
-      "discriminator": [
-        34,
-        4,
-        113,
-        70,
-        79,
-        197,
-        244,
-        109
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "UpdateCapitalClassControlsArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "update_health_plan_controls",
       "discriminator": [
         108,
@@ -6543,142 +4065,6 @@
           "type": {
             "defined": {
               "name": "UpdateHealthPlanControlsArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "update_lp_position_credentialing",
-      "discriminator": [
-        54,
-        194,
-        211,
-        94,
-        197,
-        61,
-        228,
-        202
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "capital_class",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  99,
-                  97,
-                  112,
-                  105,
-                  116,
-                  97,
-                  108,
-                  95,
-                  99,
-                  108,
-                  97,
-                  115,
-                  115
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "capital_class.class_id",
-                "account": "CapitalClass"
-              }
-            ]
-          }
-        },
-        {
-          "name": "lp_position",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  112,
-                  95,
-                  112,
-                  111,
-                  115,
-                  105,
-                  116,
-                  105,
-                  111,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "capital_class"
-              },
-              {
-                "kind": "arg",
-                "path": "args.owner"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "UpdateLpPositionCredentialingArgs"
             }
           }
         }
@@ -6783,67 +4169,6 @@
           "type": {
             "defined": {
               "name": "UpdateMemberEligibilityArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "update_oracle_profile",
-      "discriminator": [
-        175,
-        66,
-        157,
-        51,
-        96,
-        190,
-        163,
-        98
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "oracle_profile",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "oracle_profile.oracle",
-                "account": "OracleProfile"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "UpdateOracleProfileArgs"
             }
           }
         }
@@ -7092,45 +4417,6 @@
   ],
   "accounts": [
     {
-      "name": "AllocationLedger",
-      "discriminator": [
-        53,
-        81,
-        62,
-        163,
-        68,
-        200,
-        187,
-        50
-      ]
-    },
-    {
-      "name": "AllocationPosition",
-      "discriminator": [
-        243,
-        106,
-        252,
-        36,
-        249,
-        56,
-        227,
-        55
-      ]
-    },
-    {
-      "name": "CapitalClass",
-      "discriminator": [
-        161,
-        52,
-        78,
-        54,
-        200,
-        103,
-        206,
-        252
-      ]
-    },
-    {
       "name": "ClaimAttestation",
       "discriminator": [
         93,
@@ -7222,32 +4508,6 @@
       ]
     },
     {
-      "name": "LPPosition",
-      "discriminator": [
-        196,
-        56,
-        115,
-        198,
-        14,
-        117,
-        32,
-        224
-      ]
-    },
-    {
-      "name": "LiquidityPool",
-      "discriminator": [
-        66,
-        38,
-        17,
-        64,
-        188,
-        80,
-        68,
-        129
-      ]
-    },
-    {
       "name": "MemberPosition",
       "discriminator": [
         88,
@@ -7274,19 +4534,6 @@
       ]
     },
     {
-      "name": "OracleProfile",
-      "discriminator": [
-        232,
-        217,
-        185,
-        162,
-        237,
-        208,
-        114,
-        142
-      ]
-    },
-    {
       "name": "PlanReserveLedger",
       "discriminator": [
         243,
@@ -7310,19 +4557,6 @@
         71,
         245,
         23
-      ]
-    },
-    {
-      "name": "PoolClassLedger",
-      "discriminator": [
-        147,
-        125,
-        17,
-        88,
-        188,
-        78,
-        109,
-        204
       ]
     },
     {
@@ -7366,32 +4600,6 @@
     }
   ],
   "events": [
-    {
-      "name": "AllocationUpdatedEvent",
-      "discriminator": [
-        158,
-        67,
-        83,
-        155,
-        181,
-        84,
-        246,
-        37
-      ]
-    },
-    {
-      "name": "CapitalClassDepositEvent",
-      "discriminator": [
-        40,
-        60,
-        140,
-        213,
-        128,
-        24,
-        42,
-        251
-      ]
-    },
     {
       "name": "ClaimCaseAttestedEvent",
       "discriminator": [
@@ -7458,32 +4666,6 @@
       ]
     },
     {
-      "name": "ImpairmentRecordedEvent",
-      "discriminator": [
-        16,
-        0,
-        176,
-        178,
-        185,
-        80,
-        121,
-        39
-      ]
-    },
-    {
-      "name": "LPPositionCredentialingUpdatedEvent",
-      "discriminator": [
-        215,
-        90,
-        105,
-        53,
-        22,
-        8,
-        19,
-        82
-      ]
-    },
-    {
       "name": "LedgerInitializedEvent",
       "discriminator": [
         155,
@@ -7497,19 +4679,6 @@
       ]
     },
     {
-      "name": "LiquidityPoolCreatedEvent",
-      "discriminator": [
-        176,
-        183,
-        7,
-        238,
-        193,
-        97,
-        177,
-        135
-      ]
-    },
-    {
       "name": "ObligationStatusChangedEvent",
       "discriminator": [
         173,
@@ -7520,45 +4689,6 @@
         109,
         198,
         74
-      ]
-    },
-    {
-      "name": "OracleProfileClaimedEvent",
-      "discriminator": [
-        150,
-        78,
-        246,
-        163,
-        63,
-        118,
-        75,
-        83
-      ]
-    },
-    {
-      "name": "OracleProfileRegisteredEvent",
-      "discriminator": [
-        114,
-        97,
-        218,
-        155,
-        43,
-        175,
-        101,
-        227
-      ]
-    },
-    {
-      "name": "OracleProfileUpdatedEvent",
-      "discriminator": [
-        187,
-        146,
-        36,
-        213,
-        31,
-        160,
-        208,
-        86
       ]
     },
     {
@@ -7585,19 +4715,6 @@
         91,
         162,
         255
-      ]
-    },
-    {
-      "name": "RedemptionRequestedEvent",
-      "discriminator": [
-        202,
-        47,
-        51,
-        231,
-        221,
-        144,
-        164,
-        57
       ]
     },
     {
@@ -7661,443 +4778,283 @@
     },
     {
       "code": 6001,
-      "name": "ProtocolEmergencyPaused",
-      "msg": "Protocol governance is emergency paused"
-    },
-    {
-      "code": 6002,
       "name": "ReserveDomainInactive",
       "msg": "Reserve domain is inactive"
     },
     {
-      "code": 6003,
+      "code": 6002,
       "name": "VaultTokenAccountInvalid",
       "msg": "Domain asset vault token account is missing or invalid"
     },
     {
-      "code": 6004,
+      "code": 6003,
       "name": "HealthPlanPaused",
       "msg": "Health plan is paused"
     },
     {
-      "code": 6005,
+      "code": 6004,
       "name": "ClaimIntakePaused",
       "msg": "Claim intake is paused"
     },
     {
-      "code": 6006,
-      "name": "CapitalSubscriptionsPaused",
-      "msg": "Capital subscriptions are paused"
-    },
-    {
-      "code": 6007,
+      "code": 6005,
       "name": "InvalidBps",
       "msg": "Invalid basis points value"
     },
     {
-      "code": 6008,
+      "code": 6006,
       "name": "IdentifierTooLong",
       "msg": "Identifier length exceeds the canonical maximum"
     },
     {
-      "code": 6009,
+      "code": 6007,
       "name": "HealthPlanMismatch",
       "msg": "Health plan mismatch"
     },
     {
-      "code": 6010,
+      "code": 6008,
       "name": "PolicySeriesMismatch",
       "msg": "Policy series mismatch"
     },
     {
-      "code": 6011,
+      "code": 6009,
       "name": "PolicySeriesMissing",
       "msg": "Policy series is missing where one is required"
     },
     {
-      "code": 6012,
+      "code": 6010,
       "name": "SeriesLedgerUnexpected",
       "msg": "Unexpected series ledger was provided"
     },
     {
-      "code": 6013,
+      "code": 6011,
       "name": "AssetMintMismatch",
       "msg": "Asset mint mismatch"
     },
     {
-      "code": 6014,
+      "code": 6012,
       "name": "TokenAccountOwnerMismatch",
       "msg": "Source token account owner does not match the signer"
     },
     {
-      "code": 6015,
+      "code": 6013,
       "name": "TokenAccountSelfTransferInvalid",
       "msg": "Source and vault token accounts must be different accounts"
     },
     {
-      "code": 6016,
+      "code": 6014,
       "name": "VaultTokenAccountMismatch",
       "msg": "Vault token account does not match the domain asset vault"
     },
     {
-      "code": 6017,
+      "code": 6015,
       "name": "Token2022NotSupported",
       "msg": "Token-2022 custody rails are not supported by this protocol version"
     },
     {
-      "code": 6018,
-      "name": "FeeRecipientInvalid",
-      "msg": "Configured fee recipient is missing or invalid"
-    },
-    {
-      "code": 6019,
-      "name": "FeeRecipientMismatch",
-      "msg": "Fee withdrawal recipient does not match the configured fee recipient"
-    },
-    {
-      "code": 6020,
+      "code": 6016,
       "name": "FundingLineMismatch",
       "msg": "Funding line mismatch"
     },
     {
-      "code": 6021,
+      "code": 6017,
       "name": "FundingLineTypeMismatch",
       "msg": "Funding line type mismatch"
     },
     {
-      "code": 6022,
+      "code": 6018,
       "name": "ObligationMismatch",
       "msg": "Obligation account mismatch"
     },
     {
-      "code": 6023,
+      "code": 6019,
       "name": "InvalidObligationStateTransition",
       "msg": "Invalid obligation state transition"
     },
     {
-      "code": 6024,
+      "code": 6020,
       "name": "AmountExceedsOutstandingObligation",
       "msg": "Amount exceeds outstanding obligation"
     },
     {
-      "code": 6025,
+      "code": 6021,
       "name": "AmountExceedsReservedBalance",
       "msg": "Amount exceeds reserved balance"
     },
     {
-      "code": 6026,
+      "code": 6022,
       "name": "AmountExceedsApprovedClaim",
       "msg": "Amount exceeds approved claim"
     },
     {
-      "code": 6027,
+      "code": 6023,
       "name": "AmountMustBePositive",
       "msg": "Amount must be greater than zero"
     },
     {
-      "code": 6028,
+      "code": 6024,
       "name": "ClaimCaseLinkMismatch",
       "msg": "Claim case linkage mismatch"
     },
     {
-      "code": 6029,
+      "code": 6025,
       "name": "LinkedClaimMustSettleThroughObligation",
       "msg": "Linked claims must settle through the obligation path"
     },
     {
-      "code": 6030,
-      "name": "AmountExceedsAvailableShares",
-      "msg": "Amount exceeds available shares"
-    },
-    {
-      "code": 6031,
-      "name": "AmountExceedsPendingRedemption",
-      "msg": "Amount exceeds pending redemption"
-    },
-    {
-      "code": 6032,
-      "name": "InvalidRedemptionAmount",
-      "msg": "Redemption amount cannot be derived from the queued share state"
-    },
-    {
-      "code": 6033,
-      "name": "RedemptionQueueOutOfOrder",
-      "msg": "Redemption request is not at the head of the FIFO queue"
-    },
-    {
-      "code": 6034,
-      "name": "InvalidCapitalShareState",
-      "msg": "Deposit shares cannot be derived from the capital class NAV state"
-    },
-    {
-      "code": 6035,
-      "name": "InvalidDepositShares",
-      "msg": "Deposit would mint zero shares"
-    },
-    {
-      "code": 6036,
-      "name": "MinimumSharesOutNotMet",
-      "msg": "Computed deposit shares are below the requested minimum"
-    },
-    {
-      "code": 6037,
-      "name": "RestrictedCapitalClass",
-      "msg": "Restricted capital class access failed"
-    },
-    {
-      "code": 6038,
-      "name": "CapitalClassMismatch",
-      "msg": "Capital class ledger mismatch"
-    },
-    {
-      "code": 6039,
-      "name": "LPPositionHasActiveCapital",
-      "msg": "LP position with active capital cannot be decredentialed"
-    },
-    {
-      "code": 6040,
-      "name": "LockupActive",
-      "msg": "Capital class lockup is still active"
-    },
-    {
-      "code": 6041,
-      "name": "InvalidLockupSeconds",
-      "msg": "Capital class lockup seconds cannot be negative"
-    },
-    {
-      "code": 6042,
-      "name": "AllocationCapExceeded",
-      "msg": "Allocation cap exceeded"
-    },
-    {
-      "code": 6043,
-      "name": "AllocationPositionMismatch",
-      "msg": "Allocation position mismatch"
-    },
-    {
-      "code": 6044,
-      "name": "AllocationAssetMismatch",
-      "msg": "LP allocation asset mint must match the pool deposit asset mint"
-    },
-    {
-      "code": 6045,
-      "name": "InsufficientFreeAllocationCapacity",
-      "msg": "Insufficient free allocation capacity"
-    },
-    {
-      "code": 6046,
+      "code": 6026,
       "name": "InsufficientFreeReserveCapacity",
       "msg": "Insufficient free reserve capacity"
     },
     {
-      "code": 6047,
+      "code": 6027,
       "name": "ArithmeticError",
       "msg": "Arithmetic overflow or underflow"
     },
     {
-      "code": 6048,
+      "code": 6028,
       "name": "MembershipGateConfigurationInvalid",
       "msg": "Membership gate configuration is invalid"
     },
     {
-      "code": 6049,
+      "code": 6029,
       "name": "MembershipProofModeMismatch",
       "msg": "Membership proof mode does not match the configured plan posture"
     },
     {
-      "code": 6050,
+      "code": 6030,
       "name": "MembershipInviteAuthorityInvalid",
       "msg": "Invite authority is missing or invalid for this plan"
     },
     {
-      "code": 6051,
+      "code": 6031,
       "name": "MembershipInvitePermitExpired",
       "msg": "Invite permit is expired"
     },
     {
-      "code": 6052,
+      "code": 6032,
       "name": "StringTooLong",
       "msg": "Bounded string field exceeds the canonical maximum"
     },
     {
-      "code": 6053,
-      "name": "TooManyOracleSupportedSchemas",
-      "msg": "Too many supported schema hashes were provided for one oracle profile"
-    },
-    {
-      "code": 6054,
-      "name": "OracleProfileInactive",
-      "msg": "Oracle profile is inactive"
-    },
-    {
-      "code": 6055,
-      "name": "OracleProfileUnclaimed",
-      "msg": "Oracle profile has not been claimed by its signing key"
-    },
-    {
-      "code": 6056,
+      "code": 6033,
       "name": "InvalidClaimAttestationDecision",
       "msg": "Claim attestation decision is not a recognized value"
     },
     {
-      "code": 6057,
-      "name": "ClaimAttestationSchemaRequired",
-      "msg": "Claim attestation must reference a registered schema key hash"
-    },
-    {
-      "code": 6058,
-      "name": "ClaimAttestationSchemaUnsupported",
-      "msg": "Oracle profile does not advertise support for the selected claim-attestation schema"
-    },
-    {
-      "code": 6059,
+      "code": 6034,
       "name": "ClaimEvidenceRequired",
       "msg": "Claim attestation requires a locked evidence reference"
     },
     {
-      "code": 6060,
+      "code": 6035,
       "name": "ClaimEvidenceMismatch",
       "msg": "Claim attestation evidence reference does not match the claim case"
     },
     {
-      "code": 6061,
+      "code": 6036,
       "name": "ClaimEvidenceLocked",
       "msg": "Claim evidence cannot be changed after attestations begin"
     },
     {
-      "code": 6062,
+      "code": 6037,
       "name": "ClaimRecipientLocked",
       "msg": "Claim settlement recipient is locked after approval or payout"
     },
     {
-      "code": 6063,
+      "code": 6038,
       "name": "OracleFinalityHeld",
       "msg": "Health plan has paused oracle finality"
     },
     {
-      "code": 6064,
-      "name": "TooManySchemaDependencies",
-      "msg": "Too many schema dependency addresses were provided"
-    },
-    {
-      "code": 6065,
+      "code": 6039,
       "name": "DomainAssetVaultRequired",
       "msg": "Fee vault initialization requires the matching domain asset vault to exist"
     },
     {
-      "code": 6066,
-      "name": "LiquidityPoolMismatch",
-      "msg": "Liquidity pool reference does not match the supplied account"
-    },
-    {
-      "code": 6067,
-      "name": "OracleProfileMismatch",
-      "msg": "Oracle profile reference does not match the supplied account"
-    },
-    {
-      "code": 6068,
+      "code": 6040,
       "name": "SettlementOutflowAccountsRequired",
       "msg": "Linked claim settlement requires the member, mint, vault token, recipient token, and token program accounts"
     },
     {
-      "code": 6069,
+      "code": 6041,
       "name": "InsufficientStableCoverageCapacity",
       "msg": "Stable coverage capacity is insufficient"
     },
     {
-      "code": 6070,
+      "code": 6042,
       "name": "InvalidReserveAssetRole",
       "msg": "Reserve asset role is invalid"
     },
     {
-      "code": 6071,
+      "code": 6043,
       "name": "InvalidReserveOracleSource",
       "msg": "Reserve asset oracle source is invalid"
     },
     {
-      "code": 6072,
+      "code": 6044,
       "name": "ReserveAssetRailMismatch",
       "msg": "Reserve asset rail mismatch"
     },
     {
-      "code": 6073,
+      "code": 6045,
       "name": "ReserveDomainMismatch",
       "msg": "Reserve domain mismatch"
     },
     {
-      "code": 6074,
+      "code": 6046,
       "name": "ReserveAssetRailInactive",
       "msg": "Reserve asset rail is inactive"
     },
     {
-      "code": 6075,
+      "code": 6047,
       "name": "ReserveAssetRailPayoutDisabled",
       "msg": "Reserve asset rail does not allow claims payout"
     },
     {
-      "code": 6076,
+      "code": 6048,
       "name": "ReserveAssetRailCapacityDisabled",
       "msg": "Reserve asset rail cannot count toward claims capacity"
     },
     {
-      "code": 6077,
+      "code": 6049,
       "name": "ReserveAssetPriceStale",
       "msg": "Reserve asset oracle price is stale or missing"
     },
     {
-      "code": 6078,
+      "code": 6050,
       "name": "ReserveAssetPriceInvalid",
       "msg": "Reserve asset oracle price is invalid"
     },
     {
-      "code": 6079,
+      "code": 6051,
       "name": "ReserveAssetPriceConfidenceTooWide",
       "msg": "Reserve asset oracle price confidence exceeds rail threshold"
     },
     {
-      "code": 6080,
+      "code": 6052,
       "name": "PartialObligationTransitionUnsupported",
       "msg": "Partial obligation lifecycle transitions are not supported"
     },
     {
-      "code": 6081,
+      "code": 6053,
       "name": "InvalidObligationDeliveryMode",
       "msg": "Invalid obligation delivery mode"
     },
     {
-      "code": 6082,
+      "code": 6054,
       "name": "ClaimAdjudicationLocked",
       "msg": "Claim adjudication is locked after payout or terminal state"
     },
     {
-      "code": 6083,
-      "name": "ReserveAssetMintDecimalsUnsupported",
-      "msg": "Reserve asset mint decimals are unsupported"
-    },
-    {
-      "code": 6084,
+      "code": 6055,
       "name": "HealthPlanInactive",
       "msg": "Health plan is inactive"
     },
     {
-      "code": 6085,
-      "name": "CapitalClassInactive",
-      "msg": "Capital class is inactive"
-    },
-    {
-      "code": 6086,
+      "code": 6056,
       "name": "DirectClaimReserveUnsupported",
       "msg": "Direct claim reserves require linked obligation settlement"
-    },
-    {
-      "code": 6087,
-      "name": "LiquidityPoolInactive",
-      "msg": "Liquidity pool is inactive"
-    },
-    {
-      "code": 6088,
-      "name": "AllocationPositionInactive",
-      "msg": "Allocation position is inactive or deallocation-only"
     }
   ],
   "types": [
@@ -8130,154 +5087,6 @@
                 32
               ]
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "AllocateCapitalArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "AllocationLedger",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "allocation_position",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "sheet",
-            "type": {
-              "defined": {
-                "name": "ReserveBalanceSheet"
-              }
-            }
-          },
-          {
-            "name": "realized_pnl",
-            "type": "i64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "AllocationPosition",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_domain",
-            "type": "pubkey"
-          },
-          {
-            "name": "liquidity_pool",
-            "type": "pubkey"
-          },
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "health_plan",
-            "type": "pubkey"
-          },
-          {
-            "name": "policy_series",
-            "type": "pubkey"
-          },
-          {
-            "name": "funding_line",
-            "type": "pubkey"
-          },
-          {
-            "name": "cap_amount",
-            "type": "u64"
-          },
-          {
-            "name": "weight_bps",
-            "type": "u16"
-          },
-          {
-            "name": "allocation_mode",
-            "type": "u8"
-          },
-          {
-            "name": "allocated_amount",
-            "type": "u64"
-          },
-          {
-            "name": "utilized_amount",
-            "type": "u64"
-          },
-          {
-            "name": "reserved_capacity",
-            "type": "u64"
-          },
-          {
-            "name": "realized_pnl",
-            "type": "i64"
-          },
-          {
-            "name": "impaired_amount",
-            "type": "u64"
-          },
-          {
-            "name": "deallocation_only",
-            "type": "bool"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "AllocationUpdatedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "allocation_position",
-            "type": "pubkey"
-          },
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "funding_line",
-            "type": "pubkey"
-          },
-          {
-            "name": "allocated_amount",
-            "type": "u64"
-          },
-          {
-            "name": "reserved_capacity",
-            "type": "u64"
           }
         ]
       }
@@ -8334,15 +5143,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "schema_key_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -8360,154 +5160,12 @@
       }
     },
     {
-      "name": "CapitalClass",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_domain",
-            "type": "pubkey"
-          },
-          {
-            "name": "liquidity_pool",
-            "type": "pubkey"
-          },
-          {
-            "name": "share_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "class_id",
-            "type": "string"
-          },
-          {
-            "name": "display_name",
-            "type": "string"
-          },
-          {
-            "name": "priority",
-            "type": "u8"
-          },
-          {
-            "name": "impairment_rank",
-            "type": "u8"
-          },
-          {
-            "name": "restriction_mode",
-            "type": "u8"
-          },
-          {
-            "name": "redemption_terms_mode",
-            "type": "u8"
-          },
-          {
-            "name": "wrapper_metadata_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "permissioning_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "min_lockup_seconds",
-            "type": "i64"
-          },
-          {
-            "name": "pause_flags",
-            "type": "u32"
-          },
-          {
-            "name": "queue_only_redemptions",
-            "type": "bool"
-          },
-          {
-            "name": "total_shares",
-            "type": "u64"
-          },
-          {
-            "name": "nav_assets",
-            "type": "u64"
-          },
-          {
-            "name": "allocated_assets",
-            "type": "u64"
-          },
-          {
-            "name": "reserved_assets",
-            "type": "u64"
-          },
-          {
-            "name": "impaired_assets",
-            "type": "u64"
-          },
-          {
-            "name": "pending_redemptions",
-            "type": "u64"
-          },
-          {
-            "name": "next_redemption_sequence",
-            "type": "u64"
-          },
-          {
-            "name": "next_redemption_to_process",
-            "type": "u64"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "CapitalClassDepositEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_amount",
-            "type": "u64"
-          },
-          {
-            "name": "shares",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
       "name": "ClaimAttestation",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_profile",
             "type": "pubkey"
           },
           {
@@ -8561,28 +5219,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "schema_key_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "schema_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "schema_version",
-            "type": "u16"
           },
           {
             "name": "created_at_ts",
@@ -8735,10 +5371,6 @@
             "type": "pubkey"
           },
           {
-            "name": "oracle_profile",
-            "type": "pubkey"
-          },
-          {
             "name": "oracle",
             "type": "pubkey"
           },
@@ -8861,96 +5493,6 @@
       }
     },
     {
-      "name": "CreateAllocationPositionArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "policy_series",
-            "type": "pubkey"
-          },
-          {
-            "name": "cap_amount",
-            "type": "u64"
-          },
-          {
-            "name": "weight_bps",
-            "type": "u16"
-          },
-          {
-            "name": "allocation_mode",
-            "type": "u8"
-          },
-          {
-            "name": "deallocation_only",
-            "type": "bool"
-          }
-        ]
-      }
-    },
-    {
-      "name": "CreateCapitalClassArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "class_id",
-            "type": "string"
-          },
-          {
-            "name": "display_name",
-            "type": "string"
-          },
-          {
-            "name": "share_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "priority",
-            "type": "u8"
-          },
-          {
-            "name": "impairment_rank",
-            "type": "u8"
-          },
-          {
-            "name": "restriction_mode",
-            "type": "u8"
-          },
-          {
-            "name": "redemption_terms_mode",
-            "type": "u8"
-          },
-          {
-            "name": "wrapper_metadata_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "permissioning_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "min_lockup_seconds",
-            "type": "i64"
-          },
-          {
-            "name": "pause_flags",
-            "type": "u32"
-          }
-        ]
-      }
-    },
-    {
       "name": "CreateDomainAssetVaultArgs",
       "type": {
         "kind": "struct",
@@ -9062,73 +5604,6 @@
       }
     },
     {
-      "name": "CreateLiquidityPoolArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pool_id",
-            "type": "string"
-          },
-          {
-            "name": "display_name",
-            "type": "string"
-          },
-          {
-            "name": "curator",
-            "type": "pubkey"
-          },
-          {
-            "name": "allocator",
-            "type": "pubkey"
-          },
-          {
-            "name": "sentinel",
-            "type": "pubkey"
-          },
-          {
-            "name": "deposit_asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "allowed_exposure_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "external_yield_adapter_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "redemption_policy",
-            "type": "u8"
-          },
-          {
-            "name": "pause_flags",
-            "type": "u32"
-          }
-        ]
-      }
-    },
-    {
       "name": "CreateObligationArgs",
       "type": {
         "kind": "struct",
@@ -9155,18 +5630,6 @@
           },
           {
             "name": "claim_case",
-            "type": "pubkey"
-          },
-          {
-            "name": "liquidity_pool",
-            "type": "pubkey"
-          },
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "allocation_position",
             "type": "pubkey"
           },
           {
@@ -9342,38 +5805,6 @@
           {
             "name": "pause_flags",
             "type": "u32"
-          }
-        ]
-      }
-    },
-    {
-      "name": "DeallocateCapitalArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "DepositIntoCapitalClassArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "shares",
-            "docs": [
-              "Minimum accepted shares out; zero means accept the program-derived",
-              "NAV share price with no minimum."
-            ],
-            "type": "u64"
           }
         ]
       }
@@ -9735,35 +6166,6 @@
       }
     },
     {
-      "name": "ImpairmentRecordedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "funding_line",
-            "type": "pubkey"
-          },
-          {
-            "name": "obligation",
-            "type": "pubkey"
-          },
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "InitializeSeriesReserveLedgerArgs",
       "type": {
         "kind": "struct",
@@ -9771,103 +6173,6 @@
           {
             "name": "asset_mint",
             "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "LPPosition",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "shares",
-            "type": "u64"
-          },
-          {
-            "name": "subscription_basis",
-            "type": "u64"
-          },
-          {
-            "name": "pending_redemption_shares",
-            "type": "u64"
-          },
-          {
-            "name": "pending_redemption_assets",
-            "type": "u64"
-          },
-          {
-            "name": "realized_distributions",
-            "type": "u64"
-          },
-          {
-            "name": "impaired_principal",
-            "type": "u64"
-          },
-          {
-            "name": "lockup_ends_at",
-            "type": "i64"
-          },
-          {
-            "name": "credentialed",
-            "type": "bool"
-          },
-          {
-            "name": "queue_status",
-            "type": "u8"
-          },
-          {
-            "name": "redemption_sequence",
-            "type": "u64"
-          },
-          {
-            "name": "redemption_requested_at",
-            "type": "i64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "LPPositionCredentialingUpdatedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "credentialed",
-            "type": "bool"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -9888,150 +6193,6 @@
           {
             "name": "asset_mint",
             "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "LiquidityPool",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_domain",
-            "type": "pubkey"
-          },
-          {
-            "name": "curator",
-            "type": "pubkey"
-          },
-          {
-            "name": "allocator",
-            "type": "pubkey"
-          },
-          {
-            "name": "sentinel",
-            "type": "pubkey"
-          },
-          {
-            "name": "pool_id",
-            "type": "string"
-          },
-          {
-            "name": "display_name",
-            "type": "string"
-          },
-          {
-            "name": "deposit_asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "strategy_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "allowed_exposure_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "external_yield_adapter_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "redemption_policy",
-            "type": "u8"
-          },
-          {
-            "name": "pause_flags",
-            "type": "u32"
-          },
-          {
-            "name": "total_value_locked",
-            "type": "u64"
-          },
-          {
-            "name": "total_allocated",
-            "type": "u64"
-          },
-          {
-            "name": "total_reserved",
-            "type": "u64"
-          },
-          {
-            "name": "total_impaired",
-            "type": "u64"
-          },
-          {
-            "name": "total_pending_redemptions",
-            "type": "u64"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "audit_nonce",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "LiquidityPoolCreatedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_domain",
-            "type": "pubkey"
-          },
-          {
-            "name": "liquidity_pool",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "MarkImpairmentArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -10137,18 +6298,6 @@
           },
           {
             "name": "claim_case",
-            "type": "pubkey"
-          },
-          {
-            "name": "liquidity_pool",
-            "type": "pubkey"
-          },
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "allocation_position",
             "type": "pubkey"
           },
           {
@@ -10369,160 +6518,6 @@
       }
     },
     {
-      "name": "OracleProfile",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "admin",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_type",
-            "type": "u8"
-          },
-          {
-            "name": "display_name",
-            "type": "string"
-          },
-          {
-            "name": "legal_name",
-            "type": "string"
-          },
-          {
-            "name": "website_url",
-            "type": "string"
-          },
-          {
-            "name": "app_url",
-            "type": "string"
-          },
-          {
-            "name": "logo_uri",
-            "type": "string"
-          },
-          {
-            "name": "webhook_url",
-            "type": "string"
-          },
-          {
-            "name": "supported_schema_count",
-            "type": "u8"
-          },
-          {
-            "name": "supported_schema_key_hashes",
-            "type": {
-              "array": [
-                {
-                  "array": [
-                    "u8",
-                    32
-                  ]
-                },
-                16
-              ]
-            }
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "claimed",
-            "type": "bool"
-          },
-          {
-            "name": "created_at_ts",
-            "type": "i64"
-          },
-          {
-            "name": "updated_at_ts",
-            "type": "i64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "OracleProfileClaimedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracle_profile",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "admin",
-            "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "OracleProfileRegisteredEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracle_profile",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "admin",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_type",
-            "type": "u8"
-          },
-          {
-            "name": "claimed",
-            "type": "bool"
-          }
-        ]
-      }
-    },
-    {
-      "name": "OracleProfileUpdatedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracle_profile",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_type",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
       "name": "PlanReserveLedger",
       "type": {
         "kind": "struct",
@@ -10734,58 +6729,6 @@
       }
     },
     {
-      "name": "PoolClassLedger",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "sheet",
-            "type": {
-              "defined": {
-                "name": "ReserveBalanceSheet"
-              }
-            }
-          },
-          {
-            "name": "total_shares",
-            "type": "u64"
-          },
-          {
-            "name": "realized_yield_amount",
-            "type": "u64"
-          },
-          {
-            "name": "realized_loss_amount",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ProcessRedemptionQueueArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "shares",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
       "name": "PublishReserveAssetRailPriceArgs",
       "type": {
         "kind": "struct",
@@ -10827,107 +6770,12 @@
       }
     },
     {
-      "name": "RedemptionRequestedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "capital_class",
-            "type": "pubkey"
-          },
-          {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "shares",
-            "type": "u64"
-          },
-          {
-            "name": "asset_amount",
-            "type": "u64"
-          },
-          {
-            "name": "redemption_sequence",
-            "type": "u64"
-          },
-          {
-            "name": "requested_at_ts",
-            "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "RegisterOracleArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_type",
-            "type": "u8"
-          },
-          {
-            "name": "display_name",
-            "type": "string"
-          },
-          {
-            "name": "legal_name",
-            "type": "string"
-          },
-          {
-            "name": "website_url",
-            "type": "string"
-          },
-          {
-            "name": "app_url",
-            "type": "string"
-          },
-          {
-            "name": "logo_uri",
-            "type": "string"
-          },
-          {
-            "name": "webhook_url",
-            "type": "string"
-          },
-          {
-            "name": "supported_schema_key_hashes",
-            "type": {
-              "vec": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "ReleaseReserveArgs",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "amount",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "RequestRedemptionArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "shares",
             "type": "u64"
           }
         ]
@@ -11382,68 +7230,6 @@
       }
     },
     {
-      "name": "UpdateAllocationCapsArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "cap_amount",
-            "type": "u64"
-          },
-          {
-            "name": "weight_bps",
-            "type": "u16"
-          },
-          {
-            "name": "deallocation_only",
-            "type": "bool"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "UpdateCapitalClassControlsArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "pause_flags",
-            "type": "u32"
-          },
-          {
-            "name": "queue_only_redemptions",
-            "type": "bool"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "UpdateHealthPlanControlsArgs",
       "type": {
         "kind": "struct",
@@ -11536,31 +7322,6 @@
       }
     },
     {
-      "name": "UpdateLpPositionCredentialingArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "owner",
-            "type": "pubkey"
-          },
-          {
-            "name": "credentialed",
-            "type": "bool"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "UpdateMemberEligibilityArgs",
       "type": {
         "kind": "struct",
@@ -11576,53 +7337,6 @@
           {
             "name": "active",
             "type": "bool"
-          }
-        ]
-      }
-    },
-    {
-      "name": "UpdateOracleProfileArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracle_type",
-            "type": "u8"
-          },
-          {
-            "name": "display_name",
-            "type": "string"
-          },
-          {
-            "name": "legal_name",
-            "type": "string"
-          },
-          {
-            "name": "website_url",
-            "type": "string"
-          },
-          {
-            "name": "app_url",
-            "type": "string"
-          },
-          {
-            "name": "logo_uri",
-            "type": "string"
-          },
-          {
-            "name": "webhook_url",
-            "type": "string"
-          },
-          {
-            "name": "supported_schema_key_hashes",
-            "type": {
-              "vec": {
-                "array": [
-                  "u8",
-                  32
-                ]
-              }
-            }
           }
         ]
       }

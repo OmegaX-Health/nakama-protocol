@@ -8,7 +8,15 @@ use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
 
-use super::{checked_add, checked_sub};
+pub(crate) fn checked_add(lhs: u64, rhs: u64) -> Result<u64> {
+    lhs.checked_add(rhs)
+        .ok_or_else(|| OmegaXProtocolError::ArithmeticError.into())
+}
+
+pub(crate) fn checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
+    lhs.checked_sub(rhs)
+        .ok_or_else(|| OmegaXProtocolError::ArithmeticError.into())
+}
 
 pub(crate) fn recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
     let encumbered = sheet
@@ -63,33 +71,10 @@ pub(crate) fn require_free_reserve_capacity(
     Ok(())
 }
 
-pub(crate) fn require_allocatable_reserve_capacity(
-    sheet: &ReserveBalanceSheet,
-    amount: u64,
-) -> Result<()> {
-    require!(
-        sheet.redeemable >= amount,
-        OmegaXProtocolError::InsufficientFreeReserveCapacity
-    );
-    Ok(())
-}
-
 pub(crate) fn require_obligation_reserve_capacity(
     line_sheet: &ReserveBalanceSheet,
-    allocation_position: Option<&AllocationPosition>,
     amount: u64,
 ) -> Result<()> {
-    if let Some(position) = allocation_position {
-        let free_allocated = position
-            .allocated_amount
-            .saturating_sub(position.reserved_capacity);
-        require!(
-            free_allocated >= amount,
-            OmegaXProtocolError::InsufficientFreeAllocationCapacity
-        );
-        return Ok(());
-    }
-
     require_free_reserve_capacity(line_sheet, amount)
 }
 
@@ -370,87 +355,11 @@ pub(crate) fn settle_from_sheet(
     recompute_sheet(sheet)
 }
 
-pub(crate) fn settle_from_allocation_sheet(
-    sheet: &mut ReserveBalanceSheet,
-    delivery_mode: u8,
-    amount: u64,
-) -> Result<()> {
-    match delivery_mode {
-        OBLIGATION_DELIVERY_MODE_CLAIMABLE => {
-            if sheet.claimable >= amount {
-                sheet.claimable = checked_sub(sheet.claimable, amount)?;
-            } else if sheet.reserved >= amount {
-                sheet.reserved = checked_sub(sheet.reserved, amount)?;
-            } else {
-                return err!(OmegaXProtocolError::AmountExceedsReservedBalance);
-            }
-        }
-        OBLIGATION_DELIVERY_MODE_PAYABLE => {
-            if sheet.payable >= amount {
-                sheet.payable = checked_sub(sheet.payable, amount)?;
-            } else if sheet.reserved >= amount {
-                sheet.reserved = checked_sub(sheet.reserved, amount)?;
-            } else {
-                return err!(OmegaXProtocolError::AmountExceedsReservedBalance);
-            }
-        }
-        _ => return err!(OmegaXProtocolError::InvalidObligationStateTransition),
-    }
-    sheet.owed = sheet.owed.saturating_sub(amount);
-    sheet.settled = checked_add(sheet.settled, amount)?;
-    recompute_sheet(sheet)
-}
-
-pub(crate) fn book_pending_redemption(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
-    sheet.pending_redemption = checked_add(sheet.pending_redemption, amount)?;
-    recompute_sheet(sheet)
-}
-
-pub(crate) fn settle_pending_redemption(
-    ledger: &mut PoolClassLedger,
-    asset_amount: u64,
-    shares: u64,
-) -> Result<()> {
-    ledger.sheet.pending_redemption = checked_sub(ledger.sheet.pending_redemption, asset_amount)?;
-    ledger.sheet.funded = checked_sub(ledger.sheet.funded, asset_amount)?;
-    ledger.sheet.settled = checked_add(ledger.sheet.settled, asset_amount)?;
-    ledger.total_shares = checked_sub(ledger.total_shares, shares)?;
-    recompute_sheet(&mut ledger.sheet)
-}
-
-pub(crate) fn settle_pending_redemption_domain(
-    sheet: &mut ReserveBalanceSheet,
-    asset_amount: u64,
-) -> Result<()> {
-    sheet.pending_redemption = checked_sub(sheet.pending_redemption, asset_amount)?;
-    sheet.funded = checked_sub(sheet.funded, asset_amount)?;
-    sheet.settled = checked_add(sheet.settled, asset_amount)?;
-    recompute_sheet(sheet)
-}
-
-pub(crate) fn book_allocation(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
-    sheet.allocated = checked_add(sheet.allocated, amount)?;
-    recompute_sheet(sheet)
-}
-
-pub(crate) fn release_allocation(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
-    sheet.allocated = checked_sub(sheet.allocated, amount)?;
-    recompute_sheet(sheet)
-}
-
-pub(crate) fn book_impairment(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
-    sheet.impaired = checked_add(sheet.impaired, amount)?;
-    recompute_sheet(sheet)
-}
-
 pub(crate) fn release_reserved_scoped(
     domain_sheet: &mut ReserveBalanceSheet,
     plan_sheet: &mut ReserveBalanceSheet,
     line_sheet: &mut ReserveBalanceSheet,
     series_sheet: Option<&mut Account<SeriesReserveLedger>>,
-    class_sheet: Option<&mut Account<PoolClassLedger>>,
-    allocation_position: Option<&mut Account<AllocationPosition>>,
-    allocation_sheet: Option<&mut Account<AllocationLedger>>,
     amount: u64,
 ) -> Result<()> {
     release_reserved_sheet(domain_sheet, amount)?;
@@ -458,16 +367,6 @@ pub(crate) fn release_reserved_scoped(
     release_reserved_sheet(line_sheet, amount)?;
     if let Some(series) = series_sheet {
         release_reserved_sheet(&mut series.sheet, amount)?;
-    }
-    if let Some(class_ledger) = class_sheet {
-        release_reserved_sheet(&mut class_ledger.sheet, amount)?;
-    }
-    if let Some(position) = allocation_position {
-        position.reserved_capacity = checked_sub(position.reserved_capacity, amount)?;
-        position.utilized_amount = checked_sub(position.utilized_amount, amount)?;
-    }
-    if let Some(ledger) = allocation_sheet {
-        release_reserved_sheet(&mut ledger.sheet, amount)?;
     }
     Ok(())
 }
@@ -477,8 +376,6 @@ pub(crate) fn release_reserved_to_delivery(
     plan_sheet: &mut ReserveBalanceSheet,
     line_sheet: &mut ReserveBalanceSheet,
     series_sheet: Option<&mut Account<SeriesReserveLedger>>,
-    class_sheet: Option<&mut Account<PoolClassLedger>>,
-    allocation_sheet: Option<&mut Account<AllocationLedger>>,
     delivery_mode: u8,
     amount: u64,
 ) -> Result<()> {
@@ -487,12 +384,6 @@ pub(crate) fn release_reserved_to_delivery(
     release_to_claimable_or_payable(line_sheet, delivery_mode, amount)?;
     if let Some(series) = series_sheet {
         release_to_claimable_or_payable(&mut series.sheet, delivery_mode, amount)?;
-    }
-    if let Some(class_ledger) = class_sheet {
-        release_to_claimable_or_payable(&mut class_ledger.sheet, delivery_mode, amount)?;
-    }
-    if let Some(allocation_ledger) = allocation_sheet {
-        release_to_claimable_or_payable(&mut allocation_ledger.sheet, delivery_mode, amount)?;
     }
     Ok(())
 }
@@ -503,37 +394,15 @@ pub(crate) fn settle_delivery(
     plan_sheet: &mut ReserveBalanceSheet,
     line_sheet: &mut ReserveBalanceSheet,
     series_sheet: Option<&mut Account<SeriesReserveLedger>>,
-    class_sheet: Option<&mut Account<PoolClassLedger>>,
-    allocation_position: Option<&mut Account<AllocationPosition>>,
-    allocation_sheet: Option<&mut Account<AllocationLedger>>,
     funding_line: &mut FundingLineAccountData<'_>,
     amount: u64,
     obligation: &mut ObligationAccountData<'_>,
 ) -> Result<()> {
-    let allocation_scoped = allocation_position.is_some() || allocation_sheet.is_some();
     settle_from_sheet(domain_sheet, obligation.delivery_mode, amount)?;
-    if allocation_scoped {
-        settle_from_allocation_sheet(plan_sheet, obligation.delivery_mode, amount)?;
-        settle_from_allocation_sheet(line_sheet, obligation.delivery_mode, amount)?;
-    } else {
-        settle_from_sheet(plan_sheet, obligation.delivery_mode, amount)?;
-        settle_from_sheet(line_sheet, obligation.delivery_mode, amount)?;
-    }
+    settle_from_sheet(plan_sheet, obligation.delivery_mode, amount)?;
+    settle_from_sheet(line_sheet, obligation.delivery_mode, amount)?;
     if let Some(series) = series_sheet {
-        if allocation_scoped {
-            settle_from_allocation_sheet(&mut series.sheet, obligation.delivery_mode, amount)?;
-        } else {
-            settle_from_sheet(&mut series.sheet, obligation.delivery_mode, amount)?;
-        }
-    }
-    if let Some(class_ledger) = class_sheet {
-        settle_from_sheet(&mut class_ledger.sheet, obligation.delivery_mode, amount)?;
-    }
-    if let Some(position) = allocation_position {
-        position.reserved_capacity = position.reserved_capacity.saturating_sub(amount);
-    }
-    if let Some(ledger) = allocation_sheet {
-        settle_from_allocation_sheet(&mut ledger.sheet, obligation.delivery_mode, amount)?;
+        settle_from_sheet(&mut series.sheet, obligation.delivery_mode, amount)?;
     }
     *domain_assets = checked_sub(*domain_assets, amount)?;
     funding_line.reserved_amount = funding_line.reserved_amount.saturating_sub(amount);
@@ -551,9 +420,6 @@ pub(crate) fn cancel_outstanding(
     plan_sheet: &mut ReserveBalanceSheet,
     line_sheet: &mut ReserveBalanceSheet,
     series_sheet: Option<&mut Account<SeriesReserveLedger>>,
-    class_sheet: Option<&mut Account<PoolClassLedger>>,
-    allocation_position: Option<&mut Account<AllocationPosition>>,
-    allocation_sheet: Option<&mut Account<AllocationLedger>>,
     funding_line: &mut FundingLineAccountData<'_>,
     amount: u64,
     obligation: &mut ObligationAccountData<'_>,
@@ -564,16 +430,6 @@ pub(crate) fn cancel_outstanding(
         release_reserved_sheet(line_sheet, amount)?;
         if let Some(series) = series_sheet {
             release_reserved_sheet(&mut series.sheet, amount)?;
-        }
-        if let Some(class_ledger) = class_sheet {
-            release_reserved_sheet(&mut class_ledger.sheet, amount)?;
-        }
-        if let Some(position) = allocation_position {
-            position.reserved_capacity = position.reserved_capacity.saturating_sub(amount);
-            position.utilized_amount = position.utilized_amount.saturating_sub(amount);
-        }
-        if let Some(ledger) = allocation_sheet {
-            release_reserved_sheet(&mut ledger.sheet, amount)?;
         }
         funding_line.reserved_amount = funding_line.reserved_amount.saturating_sub(amount);
         funding_line.released_amount = checked_add(funding_line.released_amount, amount)?;
@@ -587,14 +443,6 @@ pub(crate) fn cancel_outstanding(
                 series.sheet.claimable = series.sheet.claimable.saturating_sub(amount);
                 recompute_sheet(&mut series.sheet)?;
             }
-            if let Some(class_ledger) = class_sheet {
-                class_ledger.sheet.claimable = class_ledger.sheet.claimable.saturating_sub(amount);
-                recompute_sheet(&mut class_ledger.sheet)?;
-            }
-            if let Some(ledger) = allocation_sheet {
-                ledger.sheet.claimable = ledger.sheet.claimable.saturating_sub(amount);
-                recompute_sheet(&mut ledger.sheet)?;
-            }
             obligation.claimable_amount = obligation.claimable_amount.saturating_sub(amount);
         } else {
             domain_sheet.payable = domain_sheet.payable.saturating_sub(amount);
@@ -603,14 +451,6 @@ pub(crate) fn cancel_outstanding(
             if let Some(series) = series_sheet {
                 series.sheet.payable = series.sheet.payable.saturating_sub(amount);
                 recompute_sheet(&mut series.sheet)?;
-            }
-            if let Some(class_ledger) = class_sheet {
-                class_ledger.sheet.payable = class_ledger.sheet.payable.saturating_sub(amount);
-                recompute_sheet(&mut class_ledger.sheet)?;
-            }
-            if let Some(ledger) = allocation_sheet {
-                ledger.sheet.payable = ledger.sheet.payable.saturating_sub(amount);
-                recompute_sheet(&mut ledger.sheet)?;
             }
             obligation.payable_amount = obligation.payable_amount.saturating_sub(amount);
         }

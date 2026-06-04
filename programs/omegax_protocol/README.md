@@ -21,13 +21,10 @@ migration checklist is
 Instruction implementation now sits next to its account validation context in
 audit-domain modules:
 
-- [`src/governance.rs`](./src/governance.rs)
 - [`src/reserve_custody.rs`](./src/reserve_custody.rs)
 - [`src/plans_membership.rs`](./src/plans_membership.rs)
 - [`src/funding_obligations/`](./src/funding_obligations/)
 - [`src/claims.rs`](./src/claims.rs)
-- [`src/capital/`](./src/capital/)
-- [`src/fees.rs`](./src/fees.rs)
 - [`src/oracle_schema.rs`](./src/oracle_schema.rs)
 - [`src/kernel.rs`](./src/kernel.rs) and [`src/kernel/`](./src/kernel/) for shared authorization, math, transfer, and reserve-accounting helpers
 
@@ -41,7 +38,6 @@ Shared public surface types live in explicit modules:
 
 The active public object model is:
 
-- `ProtocolGovernance`
 - `ReserveDomain`
 - `DomainAssetVault`
 - `DomainAssetLedger`
@@ -54,14 +50,12 @@ The active public object model is:
 - `FundingLineLedger`
 - `ClaimCase`
 - `Obligation`
-- `LiquidityPool`
-- `CapitalClass`
-- `PoolClassLedger`
-- `LPPosition`
-- `AllocationPosition`
-- `AllocationLedger`
 
-Restricted and wrapper-only capital classes now rely on managed `LPPosition` credentialing. Direct deposits do not carry a caller-supplied credential flag; access is granted on-chain through the canonical LP position for that class and owner.
+The former governance, fee-vault, liquidity-pool, capital-class, LP-position,
+allocation, redemption, impairment, and outcome-schema registry accounts have
+been removed from the live program surface. Reserve movement now flows through
+reserve domains, health plans, policy series, funding lines, obligations,
+claim cases, oracle profiles, and claim attestations.
 
 Founder reservations are off-chain payment reservations into Squads custody,
 not on-chain protocol accounts. They do not increase claims-paying reserve,
@@ -70,9 +64,7 @@ books reserve through the existing reserve, premium, and claim controls.
 `ReserveAssetRail` remains the on-chain enforcement layer for live reserve
 capacity and payout eligibility: role, payout priority, oracle source, price
 freshness, price-confidence threshold, haircut, and exposure cap. Stable rails
-pay first, volatile rails are discounted, and OMEGAX remains disabled for
-capacity/payout by default unless governance explicitly enables it with
-conservative limits.
+pay first and volatile rails are discounted.
 
 ## Important reviewer rule
 

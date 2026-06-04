@@ -30,7 +30,7 @@ const mono = Fira_Code({
 export const metadata: Metadata = {
   title: "OmegaX Protocol",
   description:
-    "Canonical OmegaX protocol console for health plans, obligations, reserve domains, and capital classes.",
+    "Canonical OmegaX protocol console for health plans, obligations, reserve domains, and claims.",
   icons: {
     icon: [
       { url: "/brand/favicon.ico", sizes: "any" },

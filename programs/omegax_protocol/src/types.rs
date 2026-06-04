@@ -8,9 +8,6 @@ pub enum ScopeKind {
     HealthPlan = 2,
     PolicySeries = 3,
     FundingLine = 4,
-    LiquidityPool = 5,
-    CapitalClass = 6,
-    AllocationPosition = 7,
 }
 
 #[derive(Clone, Copy)]

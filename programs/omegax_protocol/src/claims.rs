@@ -228,9 +228,6 @@ fn validate_quasar_optional_series_ledger(
 #[cfg(feature = "quasar")]
 fn validate_quasar_direct_claim_settlement_bindings(
     series_ledger: Option<&Account<SeriesReserveLedger>>,
-    pool_class_ledger: Option<&Account<PoolClassLedger>>,
-    allocation_position: Option<&Account<AllocationPosition>>,
-    allocation_ledger: Option<&Account<AllocationLedger>>,
     claim_case: &ClaimCaseAccountData<'_>,
     funding_line_key: Pubkey,
     funding_line_asset_mint: Pubkey,
@@ -249,11 +246,7 @@ fn validate_quasar_direct_claim_settlement_bindings(
         series_ledger,
         claim_case.policy_series,
         claim_case.asset_mint,
-    )?;
-    if pool_class_ledger.is_some() || allocation_position.is_some() || allocation_ledger.is_some() {
-        return err!(OmegaXProtocolError::AllocationPositionMismatch);
-    }
-    Ok(())
+    )
 }
 
 #[cfg(feature = "quasar")]
@@ -760,9 +753,6 @@ pub(crate) fn adjudicate_claim_case<'info>(
             let member_wallet = obligation.member_wallet;
             let beneficiary = obligation.beneficiary;
             let funding_line = obligation.funding_line;
-            let liquidity_pool = obligation.liquidity_pool;
-            let capital_class = obligation.capital_class;
-            let allocation_position = obligation.allocation_position;
             let creation_reason_hash = obligation.creation_reason_hash;
             let settlement_reason_hash = obligation.settlement_reason_hash;
             let status = obligation.status;
@@ -789,9 +779,6 @@ pub(crate) fn adjudicate_claim_case<'info>(
                 beneficiary,
                 funding_line,
                 claim_case_key,
-                liquidity_pool,
-                capital_class,
-                allocation_position,
                 creation_reason_hash,
                 settlement_reason_hash,
                 status,
@@ -895,9 +882,6 @@ pub(crate) fn settle_claim_case(
     require_positive_amount(args.amount)?;
     validate_direct_claim_settlement_bindings(
         ctx.accounts.series_reserve_ledger.as_deref(),
-        ctx.accounts.pool_class_ledger.as_deref(),
-        ctx.accounts.allocation_position.as_deref(),
-        ctx.accounts.allocation_ledger.as_deref(),
         &ctx.accounts.claim_case,
         ctx.accounts.funding_line.key(),
         ctx.accounts.funding_line.asset_mint,
@@ -988,26 +972,8 @@ pub(crate) fn settle_claim_case<'info>(
         .series_reserve_ledger
         .as_ref()
         .map(|ledger| &**ledger);
-    let pool_class_ledger = ctx
-        .accounts
-        .pool_class_ledger
-        .as_ref()
-        .map(|ledger| &**ledger);
-    let allocation_position = ctx
-        .accounts
-        .allocation_position
-        .as_ref()
-        .map(|position| &**position);
-    let allocation_ledger = ctx
-        .accounts
-        .allocation_ledger
-        .as_ref()
-        .map(|ledger| &**ledger);
     validate_quasar_direct_claim_settlement_bindings(
         series_ledger,
-        pool_class_ledger,
-        allocation_position,
-        allocation_ledger,
         &ctx.accounts.claim_case,
         funding_line_key,
         ctx.accounts.funding_line.asset_mint,
@@ -1206,13 +1172,9 @@ pub(crate) fn attest_claim_case(
     args: AttestClaimCaseArgs,
 ) -> Result<()> {
     require_valid_attestation_decision(args.decision)?;
-    require!(
-        !is_zero_hash(&args.schema_key_hash),
-        OmegaXProtocolError::ClaimAttestationSchemaRequired
-    );
 
     let now_ts = Clock::get()?.unix_timestamp;
-    let oracle_profile = &ctx.accounts.oracle_profile;
+    let oracle = ctx.accounts.oracle.key();
     let claim_case_key = ctx.accounts.claim_case.key();
 
     validate_claim_attestation_common(
@@ -1221,13 +1183,12 @@ pub(crate) fn attest_claim_case(
         ctx.accounts.funding_line.key(),
         &ctx.accounts.funding_line,
         &ctx.accounts.claim_case,
-        oracle_profile,
+        oracle,
         &args,
     )?;
 
     let attestation = &mut ctx.accounts.claim_attestation;
-    attestation.oracle = oracle_profile.oracle;
-    attestation.oracle_profile = oracle_profile.key();
+    attestation.oracle = oracle;
     attestation.claim_case = claim_case_key;
     attestation.health_plan = ctx.accounts.claim_case.health_plan;
     attestation.policy_series = ctx.accounts.claim_case.policy_series;
@@ -1236,9 +1197,6 @@ pub(crate) fn attest_claim_case(
     attestation.attestation_ref_hash = args.attestation_ref_hash;
     attestation.evidence_ref_hash = ctx.accounts.claim_case.evidence_ref_hash;
     attestation.decision_support_hash = ctx.accounts.claim_case.decision_support_hash;
-    attestation.schema_key_hash = args.schema_key_hash;
-    attestation.schema_hash = [0; 32];
-    attestation.schema_version = 0;
     attestation.created_at_ts = now_ts;
     attestation.updated_at_ts = now_ts;
     attestation.bump = ctx.bumps.claim_attestation;
@@ -1253,8 +1211,7 @@ pub(crate) fn attest_claim_case(
     emit!(ClaimCaseAttestedEvent {
         claim_attestation: attestation.key(),
         claim_case: claim_case_key,
-        oracle_profile: oracle_profile.key(),
-        oracle: oracle_profile.oracle,
+        oracle,
         decision: attestation.decision,
         attestation_hash: attestation.attestation_hash,
     });
@@ -1280,35 +1237,13 @@ fn quasar_hash_is_zero(value: &[u8; 32]) -> bool {
 }
 
 #[cfg(feature = "quasar")]
-fn quasar_oracle_profile_supports_schema(
-    oracle_profile: &OracleProfileAccountData<'_>,
-    schema_key_hash: [u8; 32],
-) -> bool {
-    if quasar_hash_is_zero(&schema_key_hash) {
-        return false;
-    }
-
-    let supported_count =
-        usize::from(oracle_profile.supported_schema_count).min(MAX_ORACLE_SUPPORTED_SCHEMAS);
-    if supported_count == 0 {
-        return false;
-    }
-
-    oracle_profile
-        .supported_schema_key_hashes
-        .iter()
-        .take(supported_count)
-        .any(|supported_hash| *supported_hash == schema_key_hash)
-}
-
-#[cfg(feature = "quasar")]
 fn require_quasar_claim_attestation_oracle_authority(
     health_plan: &HealthPlanAccountData<'_>,
-    funding_line: &FundingLineAccountData<'_>,
-    oracle_profile: &OracleProfileAccountData<'_>,
+    _funding_line: &FundingLineAccountData<'_>,
+    oracle: Pubkey,
 ) -> Result<()> {
     require_keys_eq!(
-        oracle_profile.oracle,
+        oracle,
         health_plan.oracle_authority,
         OmegaXProtocolError::Unauthorized
     );
@@ -1322,8 +1257,7 @@ fn validate_quasar_claim_attestation_common(
     funding_line_key: Pubkey,
     funding_line: &FundingLineAccountData<'_>,
     claim_case: &ClaimCaseAccountData<'_>,
-    oracle_profile: &OracleProfileAccountData<'_>,
-    schema_key_hash: [u8; 32],
+    oracle: Pubkey,
     attestation_ref_hash: [u8; 32],
 ) -> Result<()> {
     require!(
@@ -1337,10 +1271,6 @@ fn validate_quasar_claim_attestation_common(
     require!(
         attestation_ref_hash == claim_case.evidence_ref_hash,
         OmegaXProtocolError::ClaimEvidenceMismatch
-    );
-    require!(
-        quasar_oracle_profile_supports_schema(oracle_profile, schema_key_hash),
-        OmegaXProtocolError::ClaimAttestationSchemaUnsupported
     );
     require_keys_eq!(
         claim_case.health_plan,
@@ -1377,10 +1307,10 @@ fn validate_quasar_claim_attestation_common(
         OmegaXProtocolError::FundingLineMismatch
     );
     require!(
-        funding_line.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+        is_supported_funding_line_type(funding_line.line_type),
         OmegaXProtocolError::FundingLineTypeMismatch
     );
-    require_quasar_claim_attestation_oracle_authority(health_plan, funding_line, oracle_profile)?;
+    require_quasar_claim_attestation_oracle_authority(health_plan, funding_line, oracle)?;
     Ok(())
 }
 
@@ -1390,17 +1320,12 @@ pub(crate) fn attest_claim_case<'info>(
     decision: u8,
     attestation_hash: [u8; 32],
     attestation_ref_hash: [u8; 32],
-    schema_key_hash: [u8; 32],
 ) -> Result<()> {
     require_quasar_valid_attestation_decision(decision)?;
-    require!(
-        !quasar_hash_is_zero(&schema_key_hash),
-        OmegaXProtocolError::ClaimAttestationSchemaRequired
-    );
 
     let now_ts = Clock::get()?.unix_timestamp.get();
     let claim_case_key = *ctx.accounts.claim_case.address();
-    let oracle_profile_key = *ctx.accounts.oracle_profile.address();
+    let oracle = *ctx.accounts.oracle.address();
     let health_plan_key = *ctx.accounts.health_plan.address();
     let funding_line_key = *ctx.accounts.funding_line.address();
 
@@ -1410,12 +1335,10 @@ pub(crate) fn attest_claim_case<'info>(
         funding_line_key,
         &ctx.accounts.funding_line,
         &ctx.accounts.claim_case,
-        &ctx.accounts.oracle_profile,
-        schema_key_hash,
+        oracle,
         attestation_ref_hash,
     )?;
 
-    let oracle = ctx.accounts.oracle_profile.oracle;
     let health_plan = ctx.accounts.claim_case.health_plan;
     let policy_series = ctx.accounts.claim_case.policy_series;
     let evidence_ref_hash = ctx.accounts.claim_case.evidence_ref_hash;
@@ -1424,7 +1347,6 @@ pub(crate) fn attest_claim_case<'info>(
 
     ctx.accounts.claim_attestation.set_inner(
         oracle,
-        oracle_profile_key,
         claim_case_key,
         health_plan,
         policy_series,
@@ -1433,9 +1355,6 @@ pub(crate) fn attest_claim_case<'info>(
         attestation_ref_hash,
         evidence_ref_hash,
         decision_support_hash,
-        schema_key_hash,
-        [0; 32],
-        0,
         now_ts,
         now_ts,
         claim_attestation_bump,
@@ -1531,7 +1450,7 @@ pub(crate) fn validate_claim_attestation_common(
     funding_line_key: Pubkey,
     funding_line: &FundingLineAccountData<'_>,
     claim_case: &ClaimCaseAccountData<'_>,
-    oracle_profile: &OracleProfileAccountData<'_>,
+    oracle: Pubkey,
     args: &AttestClaimCaseArgs,
 ) -> Result<()> {
     require!(
@@ -1545,10 +1464,6 @@ pub(crate) fn validate_claim_attestation_common(
     require!(
         args.attestation_ref_hash == claim_case.evidence_ref_hash,
         OmegaXProtocolError::ClaimEvidenceMismatch
-    );
-    require!(
-        oracle_profile_supports_schema(oracle_profile, args.schema_key_hash),
-        OmegaXProtocolError::ClaimAttestationSchemaUnsupported
     );
     require_keys_eq!(
         claim_case.health_plan,
@@ -1585,10 +1500,10 @@ pub(crate) fn validate_claim_attestation_common(
         OmegaXProtocolError::FundingLineMismatch
     );
     require!(
-        funding_line.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+        is_supported_funding_line_type(funding_line.line_type),
         OmegaXProtocolError::FundingLineTypeMismatch
     );
-    require_claim_attestation_oracle_authority(health_plan, funding_line, oracle_profile)?;
+    require_claim_attestation_oracle_authority(health_plan, funding_line, oracle)?;
     Ok(())
 }
 
@@ -1944,21 +1859,6 @@ pub struct SettleClaimCase<'info> {
     #[cfg(feature = "quasar")]
     pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
     #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub pool_class_ledger: Option<Box<Account<'info, PoolClassLedger>>>,
-    #[cfg(feature = "quasar")]
-    pub pool_class_ledger: Option<&'info mut Account<PoolClassLedger>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub allocation_position: Option<Box<Account<'info, AllocationPosition>>>,
-    #[cfg(feature = "quasar")]
-    pub allocation_position: Option<&'info mut Account<AllocationPosition>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
-    #[cfg(feature = "quasar")]
-    pub allocation_ledger: Option<&'info mut Account<AllocationLedger>>,
-    #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Box<Account<'info, ClaimCase>>,
     #[cfg(feature = "quasar")]
@@ -2036,6 +1936,7 @@ pub struct AttestClaimCase<'info> {
         seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()],
         bump = health_plan.bump,
         constraint = health_plan.active @ OmegaXProtocolError::HealthPlanPaused,
+        constraint = health_plan.oracle_authority == oracle.key() @ OmegaXProtocolError::Unauthorized,
     )]
     pub health_plan: Box<Account<'info, HealthPlan>>,
     #[cfg(feature = "quasar")]
@@ -2047,30 +1948,9 @@ pub struct AttestClaimCase<'info> {
             health_plan.bump,
         ) @ OmegaXProtocolError::HealthPlanMismatch,
         constraint = health_plan.active.get() @ OmegaXProtocolError::HealthPlanPaused,
+        constraint = health_plan.oracle_authority == *oracle.address() @ OmegaXProtocolError::Unauthorized,
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(
-        seeds = [SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
-        bump = oracle_profile.bump,
-        constraint = oracle_profile.oracle == oracle.key() @ OmegaXProtocolError::Unauthorized,
-        constraint = oracle_profile.active @ OmegaXProtocolError::OracleProfileInactive,
-        constraint = oracle_profile.claimed @ OmegaXProtocolError::OracleProfileUnclaimed,
-    )]
-    pub oracle_profile: Box<Account<'info, OracleProfile>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = quasar_pda_matches(
-            oracle_profile.address(),
-            &crate::ID,
-            &[SEED_ORACLE_PROFILE, oracle_profile.oracle.as_ref()],
-            oracle_profile.bump,
-        ) @ OmegaXProtocolError::OracleProfileMismatch,
-        constraint = oracle_profile.oracle == *oracle.address() @ OmegaXProtocolError::Unauthorized,
-        constraint = oracle_profile.active.get() @ OmegaXProtocolError::OracleProfileInactive,
-        constraint = oracle_profile.claimed.get() @ OmegaXProtocolError::OracleProfileUnclaimed,
-    )]
-    pub oracle_profile: Account<OracleProfileAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(
         mut,

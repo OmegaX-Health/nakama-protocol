@@ -15,7 +15,6 @@ const {
   deriveClaimAttestationPda,
   deriveHealthPlanPda,
   deriveLiquidityPoolPda,
-  deriveOracleProfilePda,
   deriveReserveDomainPda,
   MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
   ZERO_PUBKEY,
@@ -25,7 +24,6 @@ test("fixture addresses stay deterministic under canonical seeds", () => {
   const [openDomain, wrapperDomain] = DEVNET_PROTOCOL_FIXTURE_STATE.reserveDomains;
   const seekerPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
   const pool = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools[0]!;
-  const oracleAddress = DEFAULT_HEALTH_PLAN_ADDRESS;
 
   assert.equal(
     deriveReserveDomainPda({ domainId: openDomain.domainId }).toBase58(),
@@ -44,13 +42,9 @@ test("fixture addresses stay deterministic under canonical seeds", () => {
     DEFAULT_LIQUIDITY_POOL_ADDRESS,
   );
   assert.match(
-    deriveOracleProfilePda({ oracle: oracleAddress }).toBase58(),
-    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
-  );
-  assert.match(
     deriveClaimAttestationPda({
       claimCase: seekerPlan.address,
-      oracle: oracleAddress,
+      oracle: DEFAULT_HEALTH_PLAN_ADDRESS,
     }).toBase58(),
     /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
   );
@@ -90,6 +84,7 @@ test("claim attestation builder wires plan oracle accounts", () => {
   const keys = tx.instructions[0]!.keys;
   const keyFor = (address: string) => keys.find((key) => key.pubkey.toBase58() === address);
 
+  assert.equal(keys.length, 6);
   assert.equal(keyFor(oracle)?.isSigner, true);
   assert.equal(keyFor(claim.healthPlan)?.isWritable, false);
   assert.equal(keyFor(claim.address)?.isWritable, true);

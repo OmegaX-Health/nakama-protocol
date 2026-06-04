@@ -17,38 +17,8 @@ pub(crate) fn require_id(value: &str) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn require_bounded_string(value: &str, max_len: usize) -> Result<()> {
-    require!(value.len() <= max_len, OmegaXProtocolError::StringTooLong);
-    Ok(())
-}
-
 pub(crate) fn require_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
     require!(plan.active, OmegaXProtocolError::HealthPlanInactive);
-    Ok(())
-}
-
-pub(crate) fn require_capital_class_active(
-    capital_class: &CapitalClassAccountData<'_>,
-) -> Result<()> {
-    require!(
-        capital_class.active,
-        OmegaXProtocolError::CapitalClassInactive
-    );
-    Ok(())
-}
-
-pub(crate) fn require_liquidity_pool_active(pool: &LiquidityPoolAccountData<'_>) -> Result<()> {
-    require!(pool.active, OmegaXProtocolError::LiquidityPoolInactive);
-    Ok(())
-}
-
-pub(crate) fn require_allocation_position_allocatable(
-    allocation_position: &AllocationPosition,
-) -> Result<()> {
-    require!(
-        allocation_position.active && !allocation_position.deallocation_only,
-        OmegaXProtocolError::AllocationPositionInactive
-    );
     Ok(())
 }
 
@@ -65,73 +35,6 @@ pub(crate) fn require_domain_control(
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)
-    }
-}
-
-pub(crate) fn require_oracle_profile_control(
-    authority: &Pubkey,
-    oracle_profile: &OracleProfileAccountData<'_>,
-) -> Result<()> {
-    if *authority == oracle_profile.admin || *authority == oracle_profile.oracle {
-        Ok(())
-    } else {
-        err!(OmegaXProtocolError::Unauthorized)
-    }
-}
-
-pub(crate) fn validate_oracle_profile_fields(args: &RegisterOracleArgs) -> Result<()> {
-    validate_oracle_profile_strings(
-        &args.display_name,
-        &args.legal_name,
-        &args.website_url,
-        &args.app_url,
-        &args.logo_uri,
-        &args.webhook_url,
-        &args.supported_schema_key_hashes,
-    )
-}
-
-pub(crate) fn validate_oracle_profile_strings(
-    display_name: &str,
-    legal_name: &str,
-    website_url: &str,
-    app_url: &str,
-    logo_uri: &str,
-    webhook_url: &str,
-    supported_schema_key_hashes: &[[u8; 32]],
-) -> Result<()> {
-    require_bounded_string(display_name, MAX_NAME_LEN)?;
-    require_bounded_string(legal_name, MAX_LONG_NAME_LEN)?;
-    require_bounded_string(website_url, MAX_URI_LEN)?;
-    require_bounded_string(app_url, MAX_URI_LEN)?;
-    require_bounded_string(logo_uri, MAX_URI_LEN)?;
-    require_bounded_string(webhook_url, MAX_URI_LEN)?;
-    require!(
-        supported_schema_key_hashes.len() <= MAX_ORACLE_SUPPORTED_SCHEMAS,
-        OmegaXProtocolError::TooManyOracleSupportedSchemas
-    );
-    Ok(())
-}
-
-pub(crate) fn validate_oracle_profile_fields_update(args: &UpdateOracleProfileArgs) -> Result<()> {
-    validate_oracle_profile_strings(
-        &args.display_name,
-        &args.legal_name,
-        &args.website_url,
-        &args.app_url,
-        &args.logo_uri,
-        &args.webhook_url,
-        &args.supported_schema_key_hashes,
-    )
-}
-
-pub(crate) fn write_supported_schema_hashes(
-    destination: &mut [[u8; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS],
-    values: &[[u8; 32]],
-) {
-    *destination = [[0u8; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS];
-    for (index, value) in values.iter().enumerate() {
-        destination[index] = *value;
     }
 }
 
@@ -262,62 +165,15 @@ pub(crate) fn is_zero_hash(value: &[u8; 32]) -> bool {
     *value == [0; 32]
 }
 
-pub(crate) fn oracle_profile_supports_schema(
-    oracle_profile: &OracleProfileAccountData<'_>,
-    schema_key_hash: [u8; 32],
-) -> bool {
-    if is_zero_hash(&schema_key_hash) {
-        return false;
-    }
-
-    let supported_count =
-        usize::from(oracle_profile.supported_schema_count).min(MAX_ORACLE_SUPPORTED_SCHEMAS);
-    if supported_count == 0 {
-        return false;
-    }
-
-    oracle_profile
-        .supported_schema_key_hashes
-        .iter()
-        .take(supported_count)
-        .any(|supported_hash| *supported_hash == schema_key_hash)
-}
-
 pub(crate) fn require_claim_attestation_oracle_authority(
     health_plan: &HealthPlanAccountData<'_>,
-    funding_line: &FundingLineAccountData<'_>,
-    oracle_profile: &OracleProfileAccountData<'_>,
+    _funding_line: &FundingLineAccountData<'_>,
+    oracle: Pubkey,
 ) -> Result<()> {
-    if funding_line.line_type == FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION {
-        return Ok(());
-    }
-
     require_keys_eq!(
-        oracle_profile.oracle,
+        oracle,
         health_plan.oracle_authority,
         OmegaXProtocolError::Unauthorized
     );
     Ok(())
-}
-
-pub(crate) fn require_curator_control(
-    authority: &Pubkey,
-    pool: &LiquidityPoolAccountData<'_>,
-) -> Result<()> {
-    if *authority == pool.curator {
-        Ok(())
-    } else {
-        err!(OmegaXProtocolError::Unauthorized)
-    }
-}
-
-pub(crate) fn require_allocator(
-    authority: &Pubkey,
-    pool: &LiquidityPoolAccountData<'_>,
-) -> Result<()> {
-    if *authority == pool.allocator || *authority == pool.curator {
-        Ok(())
-    } else {
-        err!(OmegaXProtocolError::Unauthorized)
-    }
 }

@@ -3,28 +3,6 @@
 use crate::*;
 
 #[test]
-fn class_access_requires_credential_for_restricted_modes() {
-    assert!(require_class_access_mode(CAPITAL_CLASS_RESTRICTION_OPEN, false).is_ok());
-    assert!(require_class_access_mode(CAPITAL_CLASS_RESTRICTION_RESTRICTED, false).is_err());
-    assert!(require_class_access_mode(CAPITAL_CLASS_RESTRICTION_RESTRICTED, true).is_ok());
-    assert!(require_class_access_mode(CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY, false).is_err());
-    assert!(require_class_access_mode(CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY, true).is_ok());
-}
-
-#[test]
-fn queue_only_redemptions_are_floored_by_pool_policy_or_pause_flag() {
-    assert!(!derive_queue_only_redemptions(0, REDEMPTION_POLICY_OPEN));
-    assert!(derive_queue_only_redemptions(
-        0,
-        REDEMPTION_POLICY_QUEUE_ONLY
-    ));
-    assert!(derive_queue_only_redemptions(
-        PAUSE_FLAG_REDEMPTION_QUEUE_ONLY,
-        REDEMPTION_POLICY_OPEN
-    ));
-}
-
-#[test]
 fn inactive_health_plan_guard_blocks_fresh_intake() {
     let plan_admin = Pubkey::new_unique();
     let mut plan = sample_health_plan_roles(
@@ -40,341 +18,6 @@ fn inactive_health_plan_guard_blocks_fresh_intake() {
         require_health_plan_active(&plan).unwrap_err(),
         OmegaXProtocolError::HealthPlanInactive.into()
     );
-}
-
-#[test]
-fn inactive_capital_class_guard_blocks_fresh_deposits() {
-    let mut capital_class = sample_capital_class(Pubkey::new_unique(), Pubkey::new_unique());
-    assert!(require_capital_class_active(&capital_class).is_ok());
-
-    capital_class.active = false;
-    assert_eq!(
-        require_capital_class_active(&capital_class).unwrap_err(),
-        OmegaXProtocolError::CapitalClassInactive.into()
-    );
-}
-
-#[test]
-fn inactive_liquidity_pool_guard_blocks_fresh_allocations() {
-    let mut pool = sample_liquidity_pool(Pubkey::new_unique(), Pubkey::new_unique());
-    assert!(require_liquidity_pool_active(&pool).is_ok());
-
-    pool.active = false;
-    assert_eq!(
-        require_liquidity_pool_active(&pool).unwrap_err(),
-        OmegaXProtocolError::LiquidityPoolInactive.into()
-    );
-}
-
-#[test]
-fn allocation_position_guard_blocks_inactive_or_deallocation_only_allocations() {
-    let mut allocation = sample_allocation_position(
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-        Pubkey::new_unique(),
-    );
-    assert!(require_allocation_position_allocatable(&allocation).is_ok());
-
-    allocation.active = false;
-    assert_eq!(
-        require_allocation_position_allocatable(&allocation).unwrap_err(),
-        OmegaXProtocolError::AllocationPositionInactive.into()
-    );
-
-    allocation.active = true;
-    allocation.deallocation_only = true;
-    assert_eq!(
-        require_allocation_position_allocatable(&allocation).unwrap_err(),
-        OmegaXProtocolError::AllocationPositionInactive.into()
-    );
-}
-
-#[test]
-fn realized_pnl_loss_debit_uses_checked_signed_math() {
-    assert_eq!(debit_realized_pnl_for_loss(100, 40).unwrap(), 60);
-    assert_eq!(debit_realized_pnl_for_loss(-10, 5).unwrap(), -15);
-    assert!(debit_realized_pnl_for_loss(0, i64::MAX as u64 + 1).is_err());
-    assert!(debit_realized_pnl_for_loss(i64::MIN, 1).is_err());
-}
-
-#[test]
-fn lp_credentialing_cannot_revoke_active_position() {
-    let mut lp_position = LPPosition {
-        capital_class: Pubkey::new_unique(),
-        owner: Pubkey::new_unique(),
-        shares: 10,
-        subscription_basis: 10,
-        pending_redemption_shares: 1,
-        pending_redemption_assets: 1,
-        realized_distributions: 0,
-        impaired_principal: 0,
-        lockup_ends_at: 0,
-        credentialed: true,
-        queue_status: LP_QUEUE_STATUS_PENDING,
-        redemption_sequence: 0,
-        redemption_requested_at: 0,
-        bump: 7,
-    };
-
-    assert!(update_lp_position_credentialing_state(&mut lp_position, false).is_err());
-    assert!(lp_position.credentialed);
-}
-
-#[test]
-fn lp_position_binding_initializes_fresh_position() {
-    let mut lp_position = LPPosition {
-        capital_class: ZERO_PUBKEY,
-        owner: ZERO_PUBKEY,
-        shares: 0,
-        subscription_basis: 0,
-        pending_redemption_shares: 0,
-        pending_redemption_assets: 0,
-        realized_distributions: 0,
-        impaired_principal: 0,
-        lockup_ends_at: 0,
-        credentialed: false,
-        queue_status: 0,
-        redemption_sequence: 0,
-        redemption_requested_at: 0,
-        bump: 0,
-    };
-    let capital_class = Pubkey::new_unique();
-    let owner = Pubkey::new_unique();
-
-    ensure_lp_position_binding(&mut lp_position, capital_class, owner, 9).unwrap();
-
-    assert_eq!(lp_position.capital_class, capital_class);
-    assert_eq!(lp_position.owner, owner);
-    assert_eq!(lp_position.queue_status, LP_QUEUE_STATUS_NONE);
-    assert_eq!(lp_position.pending_redemption_assets, 0);
-    assert_eq!(lp_position.bump, 9);
-    assert!(!lp_position.credentialed);
-}
-
-#[test]
-fn lp_deposit_top_up_preserves_existing_state() {
-    let mut lp_position = LPPosition {
-        capital_class: Pubkey::new_unique(),
-        owner: Pubkey::new_unique(),
-        shares: 100,
-        subscription_basis: 90,
-        pending_redemption_shares: 12,
-        pending_redemption_assets: 18,
-        realized_distributions: 7,
-        impaired_principal: 3,
-        lockup_ends_at: 50,
-        credentialed: true,
-        queue_status: LP_QUEUE_STATUS_PENDING,
-        redemption_sequence: 3,
-        redemption_requested_at: 40,
-        bump: 4,
-    };
-
-    apply_lp_position_deposit(&mut lp_position, 25, 30, 120, 1_000).unwrap();
-
-    assert_eq!(lp_position.shares, 130);
-    assert_eq!(lp_position.subscription_basis, 115);
-    assert_eq!(lp_position.pending_redemption_shares, 12);
-    assert_eq!(lp_position.pending_redemption_assets, 18);
-    assert_eq!(lp_position.realized_distributions, 7);
-    assert_eq!(lp_position.impaired_principal, 3);
-    assert_eq!(lp_position.queue_status, LP_QUEUE_STATUS_PENDING);
-    assert_eq!(lp_position.redemption_sequence, 3);
-    assert_eq!(lp_position.redemption_requested_at, 40);
-    assert!(lp_position.credentialed);
-    assert_eq!(lp_position.lockup_ends_at, 1_120);
-}
-
-#[test]
-fn lp_deposit_accepts_zero_lockup() {
-    let mut lp_position = LPPosition {
-        capital_class: Pubkey::new_unique(),
-        owner: Pubkey::new_unique(),
-        shares: 0,
-        subscription_basis: 0,
-        pending_redemption_shares: 0,
-        pending_redemption_assets: 0,
-        realized_distributions: 0,
-        impaired_principal: 0,
-        lockup_ends_at: 0,
-        credentialed: true,
-        queue_status: LP_QUEUE_STATUS_NONE,
-        redemption_sequence: 0,
-        redemption_requested_at: 0,
-        bump: 4,
-    };
-
-    apply_lp_position_deposit(&mut lp_position, 25, 30, 0, 1_000).unwrap();
-
-    assert_eq!(lp_position.shares, 30);
-    assert_eq!(lp_position.subscription_basis, 25);
-    assert_eq!(lp_position.lockup_ends_at, 1_000);
-}
-
-#[test]
-fn lp_deposit_rejects_negative_lockup_without_mutation() {
-    let mut lp_position = LPPosition {
-        capital_class: Pubkey::new_unique(),
-        owner: Pubkey::new_unique(),
-        shares: 100,
-        subscription_basis: 90,
-        pending_redemption_shares: 12,
-        pending_redemption_assets: 18,
-        realized_distributions: 7,
-        impaired_principal: 3,
-        lockup_ends_at: 50,
-        credentialed: true,
-        queue_status: LP_QUEUE_STATUS_PENDING,
-        redemption_sequence: 3,
-        redemption_requested_at: 40,
-        bump: 4,
-    };
-
-    let original_shares = lp_position.shares;
-    let original_subscription_basis = lp_position.subscription_basis;
-    let original_lockup_ends_at = lp_position.lockup_ends_at;
-    let error = apply_lp_position_deposit(&mut lp_position, 25, 30, -1, 1_000).unwrap_err();
-
-    assert!(error
-        .to_string()
-        .contains("Capital class lockup seconds cannot be negative"));
-    assert_eq!(lp_position.shares, original_shares);
-    assert_eq!(lp_position.subscription_basis, original_subscription_basis);
-    assert_eq!(lp_position.lockup_ends_at, original_lockup_ends_at);
-}
-
-#[test]
-fn redemption_assets_are_derived_from_nav() {
-    assert_eq!(redeemable_assets_for_shares(25, 100, 1_000).unwrap(), 250);
-    assert_eq!(redeemable_assets_for_shares(3, 7, 700).unwrap(), 300);
-    assert!(redeemable_assets_for_shares(1, 0, 100).is_err());
-    assert!(redeemable_assets_for_shares(1, 100, 0).is_err());
-}
-
-#[test]
-fn deposit_shares_bootstrap_one_to_one_only_from_empty_nav() {
-    assert_eq!(deposit_shares_for_nav(250, 0, 0, 0).unwrap(), 250);
-    assert!(deposit_shares_for_nav(250, 0, 1, 0).is_err());
-    assert!(deposit_shares_for_nav(250, 1, 0, 0).is_err());
-}
-
-#[test]
-fn deposit_shares_are_priced_from_current_nav() {
-    assert_eq!(deposit_shares_for_nav(50, 1_000, 500, 0).unwrap(), 100);
-    assert_eq!(
-        deposit_shares_for_nav(1, 1_000_000, 1_000_000, 0).unwrap(),
-        1
-    );
-}
-
-#[test]
-fn deposit_shares_reject_zero_out_and_minimum_miss() {
-    assert!(deposit_shares_for_nav(1, 1, 1_000_000, 0).is_err());
-    assert!(deposit_shares_for_nav(100, 1_000, 1_000, 101).is_err());
-    assert_eq!(deposit_shares_for_nav(100, 1_000, 1_000, 100).unwrap(), 100);
-}
-
-#[test]
-fn redemption_processing_uses_queued_assets() {
-    assert_eq!(redemption_assets_to_process(4, 10, 250).unwrap(), 100);
-    assert_eq!(redemption_assets_to_process(6, 6, 149).unwrap(), 149);
-    assert!(redemption_assets_to_process(1, 10, 0).is_err());
-    assert!(redemption_assets_to_process(11, 10, 250).is_err());
-}
-
-#[test]
-fn redemption_fifo_assigns_sequence_and_keeps_top_up_sequence() {
-    let reserve_domain = Pubkey::new_unique();
-    let liquidity_pool = Pubkey::new_unique();
-    let capital_class_key = Pubkey::new_unique();
-    let mut capital_class = sample_capital_class(reserve_domain, liquidity_pool);
-    let mut lp_position =
-        sample_lp_position_for_fifo(capital_class_key, Pubkey::new_unique(), 0, 0);
-
-    let first_sequence =
-        assign_redemption_queue_ticket(&mut capital_class, &mut lp_position, 10_000).unwrap();
-
-    assert_eq!(first_sequence, 0);
-    assert_eq!(lp_position.redemption_sequence, 0);
-    assert_eq!(lp_position.redemption_requested_at, 10_000);
-    assert_eq!(capital_class.next_redemption_sequence, 1);
-
-    lp_position.pending_redemption_shares = 20;
-    lp_position.queue_status = LP_QUEUE_STATUS_PENDING;
-    let top_up_sequence =
-        assign_redemption_queue_ticket(&mut capital_class, &mut lp_position, 10_100).unwrap();
-
-    assert_eq!(top_up_sequence, first_sequence);
-    assert_eq!(lp_position.redemption_sequence, first_sequence);
-    assert_eq!(lp_position.redemption_requested_at, 10_000);
-    assert_eq!(capital_class.next_redemption_sequence, 1);
-}
-
-#[test]
-fn redemption_fifo_blocks_out_of_order_and_advances_only_when_clear() {
-    let reserve_domain = Pubkey::new_unique();
-    let liquidity_pool = Pubkey::new_unique();
-    let capital_class_key = Pubkey::new_unique();
-    let mut capital_class = sample_capital_class(reserve_domain, liquidity_pool);
-    capital_class.next_redemption_sequence = 2;
-    capital_class.next_redemption_to_process = 0;
-
-    let mut first_lp = sample_lp_position_for_fifo(capital_class_key, Pubkey::new_unique(), 0, 100);
-    let second_lp = sample_lp_position_for_fifo(capital_class_key, Pubkey::new_unique(), 1, 100);
-
-    assert!(require_redemption_queue_head(&capital_class, &second_lp).is_err());
-    require_redemption_queue_head(&capital_class, &first_lp).unwrap();
-
-    first_lp.pending_redemption_shares = 50;
-    resolve_redemption_queue_status_after_process(&mut capital_class, &mut first_lp).unwrap();
-    assert_eq!(first_lp.queue_status, LP_QUEUE_STATUS_PENDING);
-    assert_eq!(capital_class.next_redemption_to_process, 0);
-    assert!(require_redemption_queue_head(&capital_class, &second_lp).is_err());
-
-    first_lp.pending_redemption_shares = 0;
-    resolve_redemption_queue_status_after_process(&mut capital_class, &mut first_lp).unwrap();
-    assert_eq!(first_lp.queue_status, LP_QUEUE_STATUS_PROCESSED);
-    assert_eq!(capital_class.next_redemption_to_process, 1);
-    require_redemption_queue_head(&capital_class, &second_lp).unwrap();
-}
-
-#[test]
-fn sentinel_is_not_curator_control() {
-    let curator = Pubkey::new_unique();
-    let sentinel = Pubkey::new_unique();
-    let outsider = Pubkey::new_unique();
-    let pool = LiquidityPool {
-        reserve_domain: Pubkey::new_unique(),
-        curator,
-        allocator: Pubkey::new_unique(),
-        sentinel,
-        pool_id: "pool-001".to_string(),
-        display_name: "Protect Pool".to_string(),
-        deposit_asset_mint: Pubkey::new_unique(),
-        strategy_hash: [0u8; 32],
-        allowed_exposure_hash: [0u8; 32],
-        external_yield_adapter_hash: [0u8; 32],
-        redemption_policy: 0,
-        pause_flags: 0,
-        total_value_locked: 0,
-        total_allocated: 0,
-        total_reserved: 0,
-        total_impaired: 0,
-        total_pending_redemptions: 0,
-        active: true,
-        audit_nonce: 0,
-        bump: 1,
-    };
-
-    assert!(require_curator_control(&curator, &pool).is_ok());
-    assert!(require_curator_control(&outsider, &pool).is_err());
-    assert!(require_curator_control(&sentinel, &pool).is_err());
-    assert!(require_allocator(&pool.allocator, &pool).is_ok());
-    assert!(require_allocator(&curator, &pool).is_ok());
-    assert!(require_allocator(&sentinel, &pool).is_err());
 }
 
 #[test]
@@ -526,9 +169,6 @@ fn full_settlement_and_cancellation_amounts_remain_supported() {
         &mut plan_sheet,
         &mut line_sheet,
         None,
-        None,
-        None,
-        None,
         &mut settlement_line,
         60,
         &mut settlement_obligation,
@@ -572,9 +212,6 @@ fn full_settlement_and_cancellation_amounts_remain_supported() {
         &mut cancel_plan_sheet,
         &mut cancel_line_sheet,
         None,
-        None,
-        None,
-        None,
         &mut cancellation_line,
         60,
         &mut cancellation_obligation,
@@ -610,52 +247,8 @@ fn invalid_obligation_delivery_mode_rejects() {
 fn reserve_capacity_rejects_unfunded_non_allocation_obligations() {
     let mut sheet = ReserveBalanceSheet::default();
     book_inflow_sheet(&mut sheet, 100).unwrap();
-    assert!(require_obligation_reserve_capacity(&sheet, None, 100).is_ok());
-    assert!(require_obligation_reserve_capacity(&sheet, None, 101).is_err());
-}
-
-#[test]
-fn reserve_capacity_uses_free_lp_allocation_capacity() {
-    let allocation = AllocationPosition {
-        reserve_domain: Pubkey::new_unique(),
-        liquidity_pool: Pubkey::new_unique(),
-        capital_class: Pubkey::new_unique(),
-        health_plan: Pubkey::new_unique(),
-        policy_series: Pubkey::new_unique(),
-        funding_line: Pubkey::new_unique(),
-        cap_amount: 1_000,
-        weight_bps: 10_000,
-        allocation_mode: 0,
-        allocated_amount: 250,
-        utilized_amount: 0,
-        reserved_capacity: 200,
-        realized_pnl: 0,
-        impaired_amount: 0,
-        deallocation_only: false,
-        active: true,
-        bump: 1,
-    };
-    assert!(require_obligation_reserve_capacity(
-        &ReserveBalanceSheet::default(),
-        Some(&allocation),
-        50
-    )
-    .is_ok());
-    assert!(require_obligation_reserve_capacity(
-        &ReserveBalanceSheet::default(),
-        Some(&allocation),
-        51
-    )
-    .is_err());
-}
-
-#[test]
-fn allocation_capacity_uses_redeemable_pool_class_capacity() {
-    let mut sheet = ReserveBalanceSheet::default();
-    book_inflow_sheet(&mut sheet, 500).unwrap();
-    book_allocation(&mut sheet, 400).unwrap();
-    assert!(require_allocatable_reserve_capacity(&sheet, 100).is_ok());
-    assert!(require_allocatable_reserve_capacity(&sheet, 101).is_err());
+    assert!(require_obligation_reserve_capacity(&sheet, 100).is_ok());
+    assert!(require_obligation_reserve_capacity(&sheet, 101).is_err());
 }
 
 #[test]
@@ -782,17 +375,6 @@ fn reserve_asset_price_zero_staleness_is_invalid_for_payout() {
     assert!(reserve_waterfall::require_fresh_reserve_asset_price_at(&rail, 1_100).is_err());
 }
 
-#[test]
-fn allocation_and_impairment_reduce_redeemable_before_free_hits_zero() {
-    let mut sheet = ReserveBalanceSheet::default();
-    book_inflow_sheet(&mut sheet, 1_000).unwrap();
-    book_allocation(&mut sheet, 400).unwrap();
-    book_reserve(&mut sheet, 150).unwrap();
-    book_impairment(&mut sheet, 100).unwrap();
-    assert_eq!(sheet.free, 750);
-    assert_eq!(sheet.redeemable, 350);
-}
-
 fn sample_claim_case(
     health_plan: Pubkey,
     policy_series: Pubkey,
@@ -844,9 +426,6 @@ fn sample_obligation(
         beneficiary: Pubkey::new_unique(),
         funding_line,
         claim_case: ZERO_PUBKEY,
-        liquidity_pool: ZERO_PUBKEY,
-        capital_class: ZERO_PUBKEY,
-        allocation_position: ZERO_PUBKEY,
         obligation_id: "protection-obligation-001".to_string(),
         creation_reason_hash: [0u8; 32],
         settlement_reason_hash: [0u8; 32],
@@ -1309,125 +888,6 @@ fn sample_funding_line(
     }
 }
 
-#[allow(dead_code)]
-fn sample_liquidity_pool(reserve_domain: Pubkey, asset_mint: Pubkey) -> LiquidityPool {
-    LiquidityPool {
-        reserve_domain,
-        curator: Pubkey::new_unique(),
-        allocator: Pubkey::new_unique(),
-        sentinel: Pubkey::new_unique(),
-        pool_id: "pool-001".to_string(),
-        display_name: "Protection pool".to_string(),
-        deposit_asset_mint: asset_mint,
-        strategy_hash: [0; 32],
-        allowed_exposure_hash: [0; 32],
-        external_yield_adapter_hash: [0; 32],
-        redemption_policy: REDEMPTION_POLICY_OPEN,
-        pause_flags: 0,
-        total_value_locked: 0,
-        total_allocated: 0,
-        total_reserved: 0,
-        total_impaired: 0,
-        total_pending_redemptions: 0,
-        active: true,
-        audit_nonce: 0,
-        bump: 1,
-    }
-}
-
-#[allow(dead_code)]
-fn sample_capital_class(reserve_domain: Pubkey, liquidity_pool: Pubkey) -> CapitalClass {
-    CapitalClass {
-        reserve_domain,
-        liquidity_pool,
-        share_mint: Pubkey::new_unique(),
-        class_id: "open-class".to_string(),
-        display_name: "Open class".to_string(),
-        priority: 0,
-        impairment_rank: 0,
-        restriction_mode: CAPITAL_CLASS_RESTRICTION_OPEN,
-        redemption_terms_mode: REDEMPTION_POLICY_OPEN,
-        wrapper_metadata_hash: [0; 32],
-        permissioning_hash: [0; 32],
-        min_lockup_seconds: 0,
-        pause_flags: 0,
-        queue_only_redemptions: false,
-        total_shares: 0,
-        nav_assets: 0,
-        allocated_assets: 0,
-        reserved_assets: 0,
-        impaired_assets: 0,
-        pending_redemptions: 0,
-        next_redemption_sequence: 0,
-        next_redemption_to_process: 0,
-        active: true,
-        bump: 1,
-    }
-}
-
-#[allow(dead_code)]
-fn sample_lp_position_for_fifo(
-    capital_class: Pubkey,
-    owner: Pubkey,
-    redemption_sequence: u64,
-    pending_redemption_shares: u64,
-) -> LPPosition {
-    LPPosition {
-        capital_class,
-        owner,
-        shares: 1_000,
-        subscription_basis: 1_000,
-        pending_redemption_shares,
-        pending_redemption_assets: pending_redemption_shares,
-        realized_distributions: 0,
-        impaired_principal: 0,
-        lockup_ends_at: 0,
-        credentialed: true,
-        queue_status: if pending_redemption_shares > 0 {
-            LP_QUEUE_STATUS_PENDING
-        } else {
-            LP_QUEUE_STATUS_NONE
-        },
-        redemption_sequence,
-        redemption_requested_at: if pending_redemption_shares > 0 {
-            10_000
-        } else {
-            0
-        },
-        bump: 1,
-    }
-}
-
-#[allow(dead_code)]
-fn sample_allocation_position(
-    reserve_domain: Pubkey,
-    liquidity_pool: Pubkey,
-    capital_class: Pubkey,
-    health_plan: Pubkey,
-    policy_series: Pubkey,
-    funding_line: Pubkey,
-) -> AllocationPosition {
-    AllocationPosition {
-        reserve_domain,
-        liquidity_pool,
-        capital_class,
-        health_plan,
-        policy_series,
-        funding_line,
-        cap_amount: 100,
-        weight_bps: 10_000,
-        allocation_mode: 0,
-        allocated_amount: 100,
-        utilized_amount: 0,
-        reserved_capacity: 0,
-        realized_pnl: 0,
-        impaired_amount: 0,
-        deallocation_only: false,
-        active: true,
-        bump: 1,
-    }
-}
-
 #[test]
 fn claim_intake_submitter_allows_member_self_submission() {
     let member_wallet = Pubkey::new_unique();
@@ -1712,70 +1172,6 @@ fn membership_proof_validation_rejects_legacy_token_gate_mode() {
     .is_err());
 }
 
-fn oracle_profile_with_supported_schemas(
-    supported_schema_key_hashes: &[[u8; 32]],
-) -> OracleProfile {
-    let mut advertised = [[0; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS];
-    for (index, schema_key_hash) in supported_schema_key_hashes.iter().enumerate() {
-        advertised[index] = *schema_key_hash;
-    }
-
-    OracleProfile {
-        oracle: Pubkey::new_unique(),
-        admin: Pubkey::new_unique(),
-        oracle_type: ORACLE_TYPE_LAB,
-        display_name: String::new(),
-        legal_name: String::new(),
-        website_url: String::new(),
-        app_url: String::new(),
-        logo_uri: String::new(),
-        webhook_url: String::new(),
-        supported_schema_count: supported_schema_key_hashes.len() as u8,
-        supported_schema_key_hashes: advertised,
-        active: true,
-        claimed: true,
-        created_at_ts: 0,
-        updated_at_ts: 0,
-        bump: 1,
-    }
-}
-
-#[test]
-fn oracle_profile_schema_support_rejects_empty_schema_set() {
-    let schema_key_hash = [7; 32];
-    let oracle_profile = oracle_profile_with_supported_schemas(&[]);
-
-    assert!(!oracle_profile_supports_schema(
-        &oracle_profile,
-        schema_key_hash
-    ));
-}
-
-#[test]
-fn oracle_profile_schema_support_rejects_unlisted_schema_hashes() {
-    let supported_schema_key_hash = [8; 32];
-    let unsupported_schema_key_hash = [9; 32];
-    let oracle_profile = oracle_profile_with_supported_schemas(&[supported_schema_key_hash]);
-
-    assert!(oracle_profile_supports_schema(
-        &oracle_profile,
-        supported_schema_key_hash
-    ));
-    assert!(!oracle_profile_supports_schema(
-        &oracle_profile,
-        unsupported_schema_key_hash
-    ));
-}
-
-#[test]
-fn zero_claim_attestation_schema_hash_is_rejected() {
-    assert!(is_zero_hash(&[0; 32]));
-    assert!(!oracle_profile_supports_schema(
-        &oracle_profile_with_supported_schemas(&[]),
-        [0; 32]
-    ));
-}
-
 #[test]
 fn claim_evidence_locks_after_first_attestation() {
     let mut claim_case = sample_claim_case(
@@ -1794,7 +1190,7 @@ fn claim_evidence_locks_after_first_attestation() {
 }
 
 #[test]
-fn claim_attestation_common_rejects_pause_evidence_and_unsupported_schema_gaps() {
+fn claim_attestation_common_rejects_pause_evidence_and_unapproved_oracle() {
     let health_plan_key = Pubkey::new_unique();
     let funding_line_key = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
@@ -1816,14 +1212,12 @@ fn claim_attestation_common_rejects_pause_evidence_and_unsupported_schema_gaps()
     let mut claim_case =
         sample_claim_case(health_plan_key, policy_series, funding_line_key, asset_mint);
     claim_case.evidence_ref_hash = [5; 32];
-    let schema_key_hash = [6; 32];
-    let oracle_profile = oracle_profile_with_supported_schemas(&[schema_key_hash]);
-    health_plan.oracle_authority = oracle_profile.oracle;
+    let oracle = Pubkey::new_unique();
+    health_plan.oracle_authority = oracle;
     let args = AttestClaimCaseArgs {
         decision: CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
         attestation_hash: [7; 32],
         attestation_ref_hash: [5; 32],
-        schema_key_hash,
     };
 
     assert!(claims::validate_claim_attestation_common(
@@ -1832,7 +1226,7 @@ fn claim_attestation_common_rejects_pause_evidence_and_unsupported_schema_gaps()
         funding_line_key,
         &funding_line,
         &claim_case,
-        &oracle_profile,
+        oracle,
         &args,
     )
     .is_ok());
@@ -1844,7 +1238,7 @@ fn claim_attestation_common_rejects_pause_evidence_and_unsupported_schema_gaps()
         funding_line_key,
         &funding_line,
         &claim_case,
-        &oracle_profile,
+        oracle,
         &args,
     )
     .unwrap_err()
@@ -1860,35 +1254,21 @@ fn claim_attestation_common_rejects_pause_evidence_and_unsupported_schema_gaps()
         funding_line_key,
         &funding_line,
         &claim_case,
-        &oracle_profile,
+        oracle,
         &mismatched_args,
     )
     .unwrap_err()
     .to_string()
     .contains("evidence reference does not match"));
 
-    let unsupported_oracle_profile = oracle_profile_with_supported_schemas(&[[9; 32]]);
+    let unapproved_oracle = Pubkey::new_unique();
     assert!(claims::validate_claim_attestation_common(
         health_plan_key,
         &health_plan,
         funding_line_key,
         &funding_line,
         &claim_case,
-        &unsupported_oracle_profile,
-        &args,
-    )
-    .unwrap_err()
-    .to_string()
-    .contains("does not advertise support"));
-
-    let unapproved_oracle_profile = oracle_profile_with_supported_schemas(&[schema_key_hash]);
-    assert!(claims::validate_claim_attestation_common(
-        health_plan_key,
-        &health_plan,
-        funding_line_key,
-        &funding_line,
-        &claim_case,
-        &unapproved_oracle_profile,
+        unapproved_oracle,
         &args,
     )
     .unwrap_err()
@@ -1962,26 +1342,6 @@ fn direct_claim_payout_debits_free_reserve_without_delivery_buckets() {
         50,
     )
     .is_err());
-}
-
-#[test]
-fn allocation_ledger_settlement_does_not_require_funded_balance() {
-    let mut sheet = ReserveBalanceSheet {
-        allocated: 1_000,
-        reserved: 500,
-        owed: 500,
-        free: 0,
-        redeemable: 0,
-        ..ReserveBalanceSheet::default()
-    };
-
-    settle_from_allocation_sheet(&mut sheet, OBLIGATION_DELIVERY_MODE_PAYABLE, 500).unwrap();
-
-    assert_eq!(sheet.funded, 0);
-    assert_eq!(sheet.allocated, 1_000);
-    assert_eq!(sheet.reserved, 0);
-    assert_eq!(sheet.owed, 0);
-    assert_eq!(sheet.settled, 500);
 }
 
 #[test]

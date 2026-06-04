@@ -9,7 +9,6 @@ use crate::platform::*;
 declare_id!("Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B");
 
 pub mod args;
-pub mod capital;
 #[cfg(feature = "certora")]
 pub mod certora;
 pub mod claims;
@@ -20,7 +19,6 @@ pub mod errors;
 pub mod events;
 pub mod funding_obligations;
 pub mod kernel;
-pub mod oracle_schema;
 pub mod plans_membership;
 pub mod quasar_discriminators;
 pub mod reserve_custody;
@@ -29,7 +27,6 @@ pub mod state;
 pub mod types;
 
 pub use args::*;
-pub use capital::*;
 pub use claims::*;
 pub use constants::*;
 pub use errors::*;
@@ -37,7 +34,6 @@ pub use events::*;
 pub use funding_obligations::*;
 #[cfg(test)]
 pub(crate) use kernel::*;
-pub use oracle_schema::*;
 pub use plans_membership::*;
 pub use reserve_custody::*;
 pub use reserve_waterfall::*;
@@ -47,16 +43,6 @@ pub use types::*;
 // Anchor derives these hidden client-account modules next to each `Accounts`
 // context. Re-export them at crate root so Anchor `#[program]` sees the same
 // names after moving the contexts into child modules.
-#[cfg(not(feature = "quasar"))]
-pub(crate) use capital::{
-    __client_accounts_allocate_capital, __client_accounts_create_allocation_position,
-    __client_accounts_create_capital_class, __client_accounts_create_liquidity_pool,
-    __client_accounts_deallocate_capital, __client_accounts_deposit_into_capital_class,
-    __client_accounts_mark_impairment, __client_accounts_process_redemption_queue,
-    __client_accounts_request_redemption, __client_accounts_update_allocation_caps,
-    __client_accounts_update_capital_class_controls,
-    __client_accounts_update_lp_position_credentialing,
-};
 #[cfg(not(feature = "quasar"))]
 pub(crate) use funding_obligations::{
     __client_accounts_create_obligation, __client_accounts_fund_sponsor_budget,
@@ -235,102 +221,6 @@ pub mod omegax_protocol {
         args: SettleClaimCaseArgs,
     ) -> Result<()> {
         crate::claims::settle_claim_case(ctx, args)
-    }
-
-    pub fn create_liquidity_pool(
-        ctx: Context<CreateLiquidityPool>,
-        args: CreateLiquidityPoolArgs,
-    ) -> Result<()> {
-        crate::capital::create_liquidity_pool(ctx, args)
-    }
-
-    pub fn create_capital_class(
-        ctx: Context<CreateCapitalClass>,
-        args: CreateCapitalClassArgs,
-    ) -> Result<()> {
-        crate::capital::create_capital_class(ctx, args)
-    }
-
-    pub fn update_capital_class_controls(
-        ctx: Context<UpdateCapitalClassControls>,
-        args: UpdateCapitalClassControlsArgs,
-    ) -> Result<()> {
-        crate::capital::update_capital_class_controls(ctx, args)
-    }
-
-    pub fn update_lp_position_credentialing(
-        ctx: Context<UpdateLpPositionCredentialing>,
-        args: UpdateLpPositionCredentialingArgs,
-    ) -> Result<()> {
-        crate::capital::update_lp_position_credentialing(ctx, args)
-    }
-
-    pub fn deposit_into_capital_class(
-        ctx: Context<DepositIntoCapitalClass>,
-        args: DepositIntoCapitalClassArgs,
-    ) -> Result<()> {
-        crate::capital::deposit_into_capital_class(ctx, args)
-    }
-
-    pub fn request_redemption(
-        ctx: Context<RequestRedemption>,
-        args: RequestRedemptionArgs,
-    ) -> Result<()> {
-        crate::capital::request_redemption(ctx, args)
-    }
-
-    pub fn process_redemption_queue(
-        ctx: Context<ProcessRedemptionQueue>,
-        args: ProcessRedemptionQueueArgs,
-    ) -> Result<()> {
-        crate::capital::process_redemption_queue(ctx, args)
-    }
-
-    pub fn create_allocation_position(
-        ctx: Context<CreateAllocationPosition>,
-        args: CreateAllocationPositionArgs,
-    ) -> Result<()> {
-        crate::capital::create_allocation_position(ctx, args)
-    }
-
-    pub fn update_allocation_caps(
-        ctx: Context<UpdateAllocationCaps>,
-        args: UpdateAllocationCapsArgs,
-    ) -> Result<()> {
-        crate::capital::update_allocation_caps(ctx, args)
-    }
-
-    pub fn allocate_capital(
-        ctx: Context<AllocateCapital>,
-        args: AllocateCapitalArgs,
-    ) -> Result<()> {
-        crate::capital::allocate_capital(ctx, args)
-    }
-
-    pub fn deallocate_capital(
-        ctx: Context<DeallocateCapital>,
-        args: DeallocateCapitalArgs,
-    ) -> Result<()> {
-        crate::capital::deallocate_capital(ctx, args)
-    }
-
-    pub fn mark_impairment(ctx: Context<MarkImpairment>, args: MarkImpairmentArgs) -> Result<()> {
-        crate::capital::mark_impairment(ctx, args)
-    }
-
-    pub fn register_oracle(ctx: Context<RegisterOracle>, args: RegisterOracleArgs) -> Result<()> {
-        crate::oracle_schema::register_oracle(ctx, args)
-    }
-
-    pub fn claim_oracle(ctx: Context<ClaimOracle>) -> Result<()> {
-        crate::oracle_schema::claim_oracle(ctx)
-    }
-
-    pub fn update_oracle_profile(
-        ctx: Context<UpdateOracleProfile>,
-        args: UpdateOracleProfileArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::update_oracle_profile(ctx, args)
     }
 
     pub fn attest_claim_case(
@@ -709,9 +599,6 @@ pub mod omegax_protocol {
         member_wallet: Pubkey,
         beneficiary: Pubkey,
         claim_case: Pubkey,
-        liquidity_pool_arg: Pubkey,
-        capital_class_arg: Pubkey,
-        allocation_position_arg: Pubkey,
         delivery_mode: u8,
         amount: u64,
         creation_reason_hash: [u8; 32],
@@ -724,9 +611,6 @@ pub mod omegax_protocol {
             member_wallet,
             beneficiary,
             claim_case,
-            liquidity_pool_arg,
-            capital_class_arg,
-            allocation_position_arg,
             delivery_mode,
             amount,
             creation_reason_hash,
@@ -817,239 +701,14 @@ pub mod omegax_protocol {
         crate::claims::settle_claim_case(&mut ctx, amount)
     }
 
-    #[instruction(discriminator = [175, 75, 181, 165, 224, 254, 6, 131])]
-    pub fn create_liquidity_pool(
-        ctx: Ctx<CreateLiquidityPool>,
-        curator: Pubkey,
-        allocator: Pubkey,
-        sentinel: Pubkey,
-        deposit_asset_mint: Pubkey,
-        strategy_hash: [u8; 32],
-        allowed_exposure_hash: [u8; 32],
-        external_yield_adapter_hash: [u8; 32],
-        redemption_policy: u8,
-        pause_flags: u32,
-        pool_id: String<u32, 32>,
-        display_name: String<u32, 64>,
-    ) -> Result<()> {
-        crate::capital::create_liquidity_pool(
-            &mut ctx,
-            curator,
-            allocator,
-            sentinel,
-            deposit_asset_mint,
-            strategy_hash,
-            allowed_exposure_hash,
-            external_yield_adapter_hash,
-            redemption_policy,
-            pause_flags,
-            &pool_id,
-            &display_name,
-        )
-    }
-
-    #[instruction(discriminator = [0, 161, 244, 112, 151, 137, 35, 221])]
-    pub fn create_capital_class(
-        ctx: Ctx<CreateCapitalClass>,
-        share_mint: Pubkey,
-        priority: u8,
-        impairment_rank: u8,
-        restriction_mode: u8,
-        redemption_terms_mode: u8,
-        wrapper_metadata_hash: [u8; 32],
-        permissioning_hash: [u8; 32],
-        min_lockup_seconds: i64,
-        pause_flags: u32,
-        class_id: String<u32, 32>,
-        display_name: String<u32, 64>,
-    ) -> Result<()> {
-        crate::capital::create_capital_class(
-            &mut ctx,
-            share_mint,
-            priority,
-            impairment_rank,
-            restriction_mode,
-            redemption_terms_mode,
-            wrapper_metadata_hash,
-            permissioning_hash,
-            min_lockup_seconds,
-            pause_flags,
-            &class_id,
-            &display_name,
-        )
-    }
-
-    #[instruction(discriminator = [34, 4, 113, 70, 79, 197, 244, 109])]
-    pub fn update_capital_class_controls(
-        ctx: Ctx<UpdateCapitalClassControls>,
-        pause_flags: u32,
-        queue_only_redemptions: bool,
-        active: bool,
-        reason_hash: [u8; 32],
-    ) -> Result<()> {
-        let _ = (&queue_only_redemptions, &reason_hash);
-        crate::capital::update_capital_class_controls(&mut ctx, pause_flags, active)
-    }
-
-    #[instruction(discriminator = [54, 194, 211, 94, 197, 61, 228, 202])]
-    pub fn update_lp_position_credentialing(
-        ctx: Ctx<UpdateLpPositionCredentialing>,
-        owner: Pubkey,
-        credentialed: bool,
-        reason_hash: [u8; 32],
-    ) -> Result<()> {
-        let _ = &reason_hash;
-        crate::capital::update_lp_position_credentialing(&mut ctx, owner, credentialed)
-    }
-
-    #[instruction(discriminator = [40, 215, 33, 115, 185, 101, 196, 167])]
-    pub fn deposit_into_capital_class(
-        ctx: Ctx<DepositIntoCapitalClass>,
-        amount: u64,
-        shares: u64,
-    ) -> Result<()> {
-        crate::capital::deposit_into_capital_class(&mut ctx, amount, shares)
-    }
-
-    #[instruction(discriminator = [14, 62, 182, 237, 59, 79, 149, 22])]
-    pub fn request_redemption(ctx: Ctx<RequestRedemption>, shares: u64) -> Result<()> {
-        crate::capital::request_redemption(&mut ctx, shares)
-    }
-
-    #[instruction(discriminator = [244, 120, 208, 73, 216, 200, 158, 93])]
-    pub fn process_redemption_queue(ctx: Ctx<ProcessRedemptionQueue>, shares: u64) -> Result<()> {
-        crate::capital::process_redemption_queue(&mut ctx, shares)
-    }
-
-    #[instruction(discriminator = [165, 80, 76, 13, 12, 202, 112, 31])]
-    pub fn create_allocation_position(
-        ctx: Ctx<CreateAllocationPosition>,
-        policy_series: Pubkey,
-        cap_amount: u64,
-        weight_bps: u16,
-        allocation_mode: u8,
-        deallocation_only: bool,
-    ) -> Result<()> {
-        crate::capital::create_allocation_position(
-            &mut ctx,
-            policy_series,
-            cap_amount,
-            weight_bps,
-            allocation_mode,
-            deallocation_only,
-        )
-    }
-
-    #[instruction(discriminator = [224, 101, 103, 146, 78, 5, 48, 132])]
-    pub fn update_allocation_caps(
-        ctx: Ctx<UpdateAllocationCaps>,
-        cap_amount: u64,
-        weight_bps: u16,
-        deallocation_only: bool,
-        active: bool,
-        reason_hash: [u8; 32],
-    ) -> Result<()> {
-        let _ = &reason_hash;
-        crate::capital::update_allocation_caps(
-            &mut ctx,
-            cap_amount,
-            weight_bps,
-            deallocation_only,
-            active,
-        )
-    }
-
-    #[instruction(discriminator = [146, 129, 60, 205, 88, 225, 60, 183])]
-    pub fn allocate_capital(ctx: Ctx<AllocateCapital>, amount: u64) -> Result<()> {
-        crate::capital::allocate_capital(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [10, 97, 97, 189, 60, 170, 102, 29])]
-    pub fn deallocate_capital(ctx: Ctx<DeallocateCapital>, amount: u64) -> Result<()> {
-        crate::capital::deallocate_capital(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [58, 97, 30, 157, 211, 45, 174, 238])]
-    pub fn mark_impairment(
-        ctx: Ctx<MarkImpairment>,
-        amount: u64,
-        reason_hash: [u8; 32],
-    ) -> Result<()> {
-        crate::capital::mark_impairment(&mut ctx, amount, reason_hash)
-    }
-
-    #[instruction(discriminator = [176, 200, 234, 37, 199, 129, 164, 111])]
-    pub fn register_oracle(
-        ctx: Ctx<RegisterOracle>,
-        oracle: Pubkey,
-        oracle_type: u8,
-        display_name: String<u32, 64>,
-        legal_name: String<u32, 96>,
-        website_url: String<u32, 160>,
-        app_url: String<u32, 160>,
-        logo_uri: String<u32, 160>,
-        webhook_url: String<u32, 160>,
-        supported_schema_key_hashes: Vec<[u8; 32], u32, 16>,
-    ) -> Result<()> {
-        crate::oracle_schema::register_oracle(
-            &mut ctx,
-            oracle,
-            oracle_type,
-            display_name,
-            legal_name,
-            website_url,
-            app_url,
-            logo_uri,
-            webhook_url,
-            supported_schema_key_hashes,
-        )
-    }
-
-    #[instruction(discriminator = [1, 252, 166, 132, 45, 24, 23, 233])]
-    pub fn claim_oracle(ctx: Ctx<ClaimOracle>) -> Result<()> {
-        crate::oracle_schema::claim_oracle(&mut ctx)
-    }
-
-    #[instruction(discriminator = [175, 66, 157, 51, 96, 190, 163, 98])]
-    pub fn update_oracle_profile(
-        ctx: Ctx<UpdateOracleProfile>,
-        oracle_type: u8,
-        display_name: String<u32, 64>,
-        legal_name: String<u32, 96>,
-        website_url: String<u32, 160>,
-        app_url: String<u32, 160>,
-        logo_uri: String<u32, 160>,
-        webhook_url: String<u32, 160>,
-        supported_schema_key_hashes: Vec<[u8; 32], u32, 16>,
-    ) -> Result<()> {
-        crate::oracle_schema::update_oracle_profile(
-            &mut ctx,
-            oracle_type,
-            display_name,
-            legal_name,
-            website_url,
-            app_url,
-            logo_uri,
-            webhook_url,
-            supported_schema_key_hashes,
-        )
-    }
-
     #[instruction(discriminator = [111, 40, 46, 51, 76, 157, 214, 136])]
     pub fn attest_claim_case(
         ctx: Ctx<AttestClaimCase>,
         decision: u8,
         attestation_hash: [u8; 32],
         attestation_ref_hash: [u8; 32],
-        schema_key_hash: [u8; 32],
     ) -> Result<()> {
-        crate::claims::attest_claim_case(
-            &mut ctx,
-            decision,
-            attestation_hash,
-            attestation_ref_hash,
-            schema_key_hash,
-        )
+        crate::claims::attest_claim_case(&mut ctx, decision, attestation_hash, attestation_ref_hash)
     }
 }
 

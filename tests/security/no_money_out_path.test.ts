@@ -10,8 +10,8 @@
 //
 // Current role of this file: pin the remediation. It now asserts that real
 // money-out handlers call `transfer_from_domain_vault`. Fee-vault init/withdraw
-// rails were later removed from the live protocol surface; claim, redemption,
-// and linked-obligation payouts are the supported money-out paths.
+// rails and LP redemptions were later removed from the live protocol surface;
+// claim and linked-obligation payouts are the supported money-out paths.
 //
 // `release_reserve` remains accounting-only by design: it releases reserved
 // capacity back to free reserve and does not move SPL tokens.
@@ -49,8 +49,8 @@ test("[PT-01 defense regression] IDL does not expose removed fee-vault rails", (
   }
 });
 
-test("[PT-02 defense] settle_claim_case + process_redemption_queue + settle_obligation call transfer_from_domain_vault", () => {
-  // All three money-out instruction handlers are wired. settle_obligation
+test("[PT-02 defense] settle_claim_case + settle_obligation call transfer_from_domain_vault", () => {
+  // Both remaining money-out instruction handlers are wired. settle_obligation
   // does the CPI conditionally (only when claim_case is linked AND outflow
   // accounts are supplied) — the body still contains the helper call site,
   // so the source-pattern test is satisfied either way.
@@ -59,7 +59,7 @@ test("[PT-02 defense] settle_claim_case + process_redemption_queue + settle_obli
   // pure accounting operation that returns reserved capital to the free pool
   // (status becomes CANCELED if reserved hits zero). It is intentionally
   // excluded from this defense test.
-  const wired = ["settle_claim_case", "process_redemption_queue", "settle_obligation"];
+  const wired = ["settle_claim_case", "settle_obligation"];
   for (const handler of wired) {
     const body = extractInstructionBody(handler);
     assert.ok(
@@ -89,7 +89,6 @@ test("[PT-02] The only token CPI lives in transfer_to_domain_vault and is inflow
   const expectedInflowHandlers = new Set([
     "fund_sponsor_budget",
     "record_premium_payment",
-    "deposit_into_capital_class",
   ]);
   const lines = programSource.split("\n");
   const violations: Array<{ lineno: number; handler: string }> = [];

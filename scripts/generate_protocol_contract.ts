@@ -90,12 +90,6 @@ const PDA_SEEDS: Record<string, string[]> = {
   funding_line_ledger: ['funding_line_ledger', '<funding_line>', '<asset_mint>'],
   claim_case: ['claim_case', '<health_plan>', '<claim_id>'],
   obligation: ['obligation', '<funding_line>', '<obligation_id>'],
-  liquidity_pool: ['liquidity_pool', '<reserve_domain>', '<pool_id>'],
-  capital_class: ['capital_class', '<liquidity_pool>', '<class_id>'],
-  pool_class_ledger: ['pool_class_ledger', '<capital_class>', '<asset_mint>'],
-  lp_position: ['lp_position', '<capital_class>', '<owner>'],
-  allocation_position: ['allocation_position', '<capital_class>', '<funding_line>'],
-  allocation_ledger: ['allocation_ledger', '<allocation_position>', '<asset_mint>'],
   oracle_profile: ['oracle_profile', '<oracle>'],
   claim_attestation: ['claim_attestation', '<claim_case>', '<oracle>'],
 };

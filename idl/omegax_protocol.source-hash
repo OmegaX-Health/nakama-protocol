@@ -1,14 +1,7 @@
-8e80ccbadddf41021e7912fdfe4b4fc3b744f560e426fde1551ad2398a9f1abe
+12416a80d8fee3f1615e312b92aac5b6a9351601b05c2c3ac06cd2d73e94f4a9
   Cargo.toml
   programs/omegax_protocol/Cargo.toml
   programs/omegax_protocol/src/args.rs
-  programs/omegax_protocol/src/capital/allocations.rs
-  programs/omegax_protocol/src/capital/classes.rs
-  programs/omegax_protocol/src/capital/impairments.rs
-  programs/omegax_protocol/src/capital/liquidity_pool.rs
-  programs/omegax_protocol/src/capital/lp_positions.rs
-  programs/omegax_protocol/src/capital/mod.rs
-  programs/omegax_protocol/src/capital/redemptions.rs
   programs/omegax_protocol/src/certora.rs
   programs/omegax_protocol/src/claims.rs
   programs/omegax_protocol/src/classic_token.rs
@@ -24,12 +17,10 @@
   programs/omegax_protocol/src/kernel.rs
   programs/omegax_protocol/src/kernel/auth.rs
   programs/omegax_protocol/src/kernel/bindings.rs
-  programs/omegax_protocol/src/kernel/capital_math.rs
   programs/omegax_protocol/src/kernel/custody.rs
   programs/omegax_protocol/src/kernel/membership.rs
   programs/omegax_protocol/src/kernel/reserve_accounting.rs
   programs/omegax_protocol/src/lib.rs
-  programs/omegax_protocol/src/oracle_schema.rs
   programs/omegax_protocol/src/plans_membership.rs
   programs/omegax_protocol/src/platform.rs
   programs/omegax_protocol/src/quasar_discriminators.rs

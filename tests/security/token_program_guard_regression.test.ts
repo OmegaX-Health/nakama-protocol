@@ -16,23 +16,21 @@ const { DEVNET_PROTOCOL_FIXTURE_STATE } =
 
 const {
   buildCreateDomainAssetVaultTx,
-  buildDepositIntoCapitalClassTx,
+  buildFundSponsorBudgetTx,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
 
 const recentBlockhash = "11111111111111111111111111111111";
 const wallet = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[0]!.address;
 const recipient = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[1]!.address;
 const reserveDomain = DEVNET_PROTOCOL_FIXTURE_STATE.reserveDomains[0]!.address;
-const pool = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools[0]!;
-const capitalClass = DEVNET_PROTOCOL_FIXTURE_STATE.capitalClasses.find((row) => row.liquidityPool === pool.address)
-  ?? DEVNET_PROTOCOL_FIXTURE_STATE.capitalClasses[0]!;
+const fundingLine = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines[0]!;
 
 test("[CSO-2026-04-29] custody builders reject non-classic token program ids", () => {
   assert.throws(
     () => buildCreateDomainAssetVaultTx({
       authority: wallet,
       reserveDomainAddress: reserveDomain,
-      assetMint: pool.depositAssetMint,
+      assetMint: fundingLine.assetMint,
       recentBlockhash,
       tokenProgramId: SystemProgram.programId,
     }),
@@ -40,17 +38,16 @@ test("[CSO-2026-04-29] custody builders reject non-classic token program ids", (
   );
 
   assert.throws(
-    () => buildDepositIntoCapitalClassTx({
-      owner: wallet,
-      reserveDomainAddress: pool.reserveDomain,
-      poolAddress: pool.address,
-      poolDepositAssetMint: pool.depositAssetMint,
-      capitalClassAddress: capitalClass.address,
+    () => buildFundSponsorBudgetTx({
+      authority: wallet,
+      healthPlanAddress: fundingLine.healthPlan,
+      reserveDomainAddress: fundingLine.reserveDomain,
+      fundingLineAddress: fundingLine.address,
+      assetMint: fundingLine.assetMint,
       sourceTokenAccountAddress: wallet,
       vaultTokenAccountAddress: recipient,
       recentBlockhash,
       amount: 1n,
-      shares: 0n,
       tokenProgramId: SystemProgram.programId,
     }),
     /classic SPL Token program/,

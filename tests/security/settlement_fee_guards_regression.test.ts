@@ -64,9 +64,8 @@ test("[CSO-2026-05-10] direct claim settlement consumes free reserve, not delive
 test("[CSO-2026-06-04] settlement fee-vault surface is removed", () => {
   const claimBody = extractInstructionBody("settle_claim_case");
   const obligationBody = extractInstructionBody("settle_obligation");
-  const redemptionBody = extractInstructionBody("process_redemption_queue");
 
-  for (const source of [claimBody, obligationBody, redemptionBody, programSource]) {
+  for (const source of [claimBody, obligationBody, programSource]) {
     assert.doesNotMatch(source, /protocol_fee_bps/);
     assert.doesNotMatch(source, /oracle_fee_bps/);
     assert.doesNotMatch(source, /pool_oracle_fee_vault/);
@@ -106,9 +105,6 @@ test("[CSO-2026-04-29] settlement builders preserve outflow account slots", () =
     amount: 1n,
     policySeriesAddress: claim.policySeries ?? null,
     obligationAddress: obligation.address,
-    capitalClassAddress: obligation.capitalClass ?? null,
-    allocationPositionAddress: obligation.allocationPosition ?? null,
-    poolAssetMint: fundingLine.assetMint,
     memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
@@ -139,9 +135,6 @@ test("[CSO-2026-04-29] settlement builders preserve outflow account slots", () =
     amount: 1n,
     claimCaseAddress: claim.address,
     policySeriesAddress: obligation.policySeries ?? null,
-    capitalClassAddress: obligation.capitalClass ?? null,
-    allocationPositionAddress: obligation.allocationPosition ?? null,
-    poolAssetMint: obligation.assetMint,
     memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
