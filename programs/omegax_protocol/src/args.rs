@@ -45,41 +45,6 @@ pub struct CreateDomainAssetVaultArgs {
     not(feature = "quasar"),
     derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
 )]
-pub struct ConfigureReserveAssetRailArgs {
-    pub asset_mint: Pubkey,
-    pub oracle_authority: Pubkey,
-    #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
-    pub asset_symbol: String,
-    pub role: u8,
-    pub payout_priority: u8,
-    pub oracle_source: u8,
-    pub oracle_feed_id: [u8; 32],
-    pub max_staleness_seconds: i64,
-    pub max_confidence_bps: u16,
-    pub haircut_bps: u16,
-    pub max_exposure_bps: u16,
-    pub deposit_enabled: bool,
-    pub payout_enabled: bool,
-    pub capacity_enabled: bool,
-    pub active: bool,
-    pub reason_hash: [u8; 32],
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct PublishReserveAssetRailPriceArgs {
-    pub price_usd_1e8: u64,
-    pub confidence_bps: u16,
-    pub published_at_ts: i64,
-    pub proof_hash: [u8; 32],
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
 pub struct CreateHealthPlanArgs {
     #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub plan_id: String,

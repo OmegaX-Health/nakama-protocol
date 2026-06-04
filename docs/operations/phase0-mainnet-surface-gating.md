@@ -61,18 +61,14 @@ settlement is denominated in the asset mint recorded on that liability, and the
 on-chain program does not pay a different fallback token for that liability.
 
 The on-chain program now requires `settle_claim_case` and `settle_obligation`
-to include the matching `ReserveAssetRail` for that asset. Settlement fails
-unless the rail is:
+to include the matching domain vault, domain asset ledger, funding line,
+funding-line ledger, plan ledger, optional series ledger, and SPL outflow
+accounts for that asset. Settlement fails unless the liability mint, funding
+line mint, reserve-domain vault, and reserve ledgers all bind to the same asset.
 
-- bound to the same reserve domain and asset mint as the claim or obligation;
-- active;
-- payout-enabled;
-- backed by a non-zero fresh published price under the rail's freshness window;
-- backed by a price confidence value at or below the rail's `max_confidence_bps`.
-
-Unsafe oracle quality fails closed: the asset counts as zero claims-paying
-capacity for that mint and cannot leave custody. Frontend and backend services
-may surface other reserve assets for operator rebalancing, but those assets must
+Mismatched custody or ledger inputs fail closed and cannot leave custody.
+Frontend and backend services may surface other reserve assets for operator
+rebalancing, but those assets must
 be converted or rebalanced into the settlement mint before same-asset claim
 settlement.
 

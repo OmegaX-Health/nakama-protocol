@@ -61,10 +61,9 @@ Founder reservations are off-chain payment reservations into Squads custody,
 not on-chain protocol accounts. They do not increase claims-paying reserve,
 create active cover, or change policy state until an activation/posting flow
 books reserve through the existing reserve, premium, and claim controls.
-`ReserveAssetRail` remains the on-chain enforcement layer for live reserve
-capacity and payout eligibility: role, payout priority, oracle source, price
-freshness, price-confidence threshold, haircut, and exposure cap. Stable rails
-pay first and volatile rails are discounted.
+The base program now enforces same-asset settlement through domain asset vaults,
+domain/funding/plan/series ledgers, funding-line asset binding, and SPL outflow
+accounts instead of a separate reserve-asset rail and price feed layer.
 
 ## Important reviewer rule
 

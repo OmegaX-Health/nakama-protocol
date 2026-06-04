@@ -32,15 +32,9 @@ const {
   OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
   OBLIGATION_STATUS_RESERVED,
   OBLIGATION_STATUS_SETTLED,
-  RESERVE_ASSET_ROLE_PRIMARY_STABLE,
-  RESERVE_ASSET_ROLE_SECONDARY_STABLE,
-  RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT,
-  RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL,
-  RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
   SERIES_MODE_PROTECTION,
   SERIES_MODE_REWARD,
   buildAdjudicateClaimCaseTx,
-  buildConfigureReserveAssetRailTx,
   buildCreateObligationTx,
   buildBackfillSchemaDependencyLedgerTx,
   buildClaimOracleTx,
@@ -56,7 +50,6 @@ const {
   buildReleaseReserveTx,
   buildReserveObligationTx,
   buildRegisterOutcomeSchemaTx,
-  buildPublishReserveAssetRailPriceTx,
   buildSetPoolOraclePermissionsTx,
   buildSetPoolOraclePolicyTx,
   buildSetPoolOracleTx,
@@ -81,7 +74,6 @@ const {
   derivePoolOracleApprovalPda,
   derivePoolOraclePermissionSetPda,
   derivePoolOraclePolicyPda,
-  deriveReserveAssetRailPda,
   deriveReserveDomainPda,
   deriveSchemaDependencyLedgerPda,
   deriveSeriesReserveLedgerPda,
@@ -674,12 +666,12 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     assert.equal(adjudicateClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), linkedObligation.address);
     assert.equal(reserveObligationTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(releaseReserveTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[3]!.pubkey.toBase58(), deriveReserveAssetRailPda({
+    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[2]!.pubkey.toBase58(), deriveDomainAssetVaultPda({
       reserveDomain: plan.reserveDomain,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(settleObligationFinalTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
+    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[13]!.pubkey.toBase58(), protectionClaim.address);
+    assert.equal(settleObligationFinalTx.instructions[0]!.keys[13]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(createObligationTx.instructions[0]!.keys[8]!.pubkey.toBase58(), pool.address);
     assert.equal(createObligationTx.instructions[0]!.keys[9]!.pubkey.toBase58(), openClass.address);
     assert.equal(createObligationTx.instructions[0]!.keys[10]!.pubkey.toBase58(), derivePoolClassLedgerPda({

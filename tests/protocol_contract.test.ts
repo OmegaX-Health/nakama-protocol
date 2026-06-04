@@ -19,8 +19,6 @@ test("canonical contract exposes the reserve-accounting surface", () => {
     instructions: Array<{ name: string }>;
     types: Array<{ name: string; type: { kind: string; fields?: Array<{ name: string }> } }>;
   };
-  const configureReserveAssetRailArgs = idl.types.find((entry) => entry.name === "ConfigureReserveAssetRailArgs");
-  const reserveAssetRailAccount = idl.types.find((entry) => entry.name === "ReserveAssetRail");
   const selectedAssetPayoutArgs = idl.types.find((entry) => entry.name === "SettleClaimCaseSelectedAssetArgs");
   const healthPlanAccount = idl.types.find((entry) => entry.name === "HealthPlan");
   const policySeriesAccount = idl.types.find((entry) => entry.name === "PolicySeries");
@@ -77,6 +75,8 @@ test("canonical contract exposes the reserve-accounting surface", () => {
     "register_oracle",
     "claim_oracle",
     "update_oracle_profile",
+    "configure_reserve_asset_rail",
+    "publish_reserve_asset_rail_price",
     "attach_claim_evidence_ref",
     "attest_claim_case",
   ]) {
@@ -110,6 +110,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
     "AllocationLedger",
     "OracleProfile",
     "ClaimAttestation",
+    "ReserveAssetRail",
   ]) {
     assert(!accountNames.includes(removedAccount), `${removedAccount} should be removed`);
   }
@@ -118,8 +119,11 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(!serializedAccounts.includes("pool_treasury_vault"));
   assert(!serializedAccounts.includes("pool_oracle_fee_vault"));
   assert(!serializedAccounts.includes("member_position"));
+  assert(!serializedAccounts.includes("reserve_asset_rail"));
   assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "attach_claim_evidence_ref"));
   assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "attest_claim_case"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "configure_reserve_asset_rail"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "publish_reserve_asset_rail_price"));
 
   assert(!instructionNames.includes("create_pool"));
   assert(!instructionNames.includes("set_pool_status"));
@@ -129,8 +133,8 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.reserve_obligation.some((account) => account.name === "claim_case"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.release_reserve.some((account) => account.name === "claim_case"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "claim_case"));
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "reserve_asset_rail"));
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some((account) => account.name === "reserve_asset_rail"));
+  assert(!PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "reserve_asset_rail"));
+  assert(!PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some((account) => account.name === "reserve_asset_rail"));
   assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "settle_claim_case_selected_asset"));
   for (const accountName of [
     "liquidity_pool",
@@ -150,8 +154,9 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "source_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "vault_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.record_premium_payment.some((account) => account.name === "token_program"));
-  assert(configureReserveAssetRailArgs?.type.fields?.some((field) => field.name === "max_confidence_bps"));
-  assert(reserveAssetRailAccount?.type.fields?.some((field) => field.name === "max_confidence_bps"));
+  assert(!idl.types.some((entry) => entry.name === "ConfigureReserveAssetRailArgs"));
+  assert(!idl.types.some((entry) => entry.name === "PublishReserveAssetRailPriceArgs"));
+  assert(!idl.types.some((entry) => entry.name === "ReserveAssetRail"));
   assert(!selectedAssetPayoutArgs);
   assert(!policySeriesAccount?.type.fields?.some((field) => field.name === "evidence_requirements_hash"));
   for (const removedHealthPlanField of [

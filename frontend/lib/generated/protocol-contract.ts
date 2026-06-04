@@ -1,11 +1,10 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: b35e2a91743ca944bfcc5dde79925852b2efd63c748c708dd1868aea334f58f9
+// contract_sha256: ad241b82211972b5c7701db8fe05d27a15e32bbeacb29776f9b0b8c2aa66bda7
 
 export type ProtocolInstructionName =
   | "adjudicate_claim_case"
   | "authorize_claim_recipient"
-  | "configure_reserve_asset_rail"
   | "create_domain_asset_vault"
   | "create_health_plan"
   | "create_obligation"
@@ -15,7 +14,6 @@ export type ProtocolInstructionName =
   | "initialize_series_reserve_ledger"
   | "open_claim_case"
   | "open_funding_line"
-  | "publish_reserve_asset_rail_price"
   | "record_premium_payment"
   | "release_reserve"
   | "reserve_obligation"
@@ -44,7 +42,6 @@ export const PROTOCOL_PROGRAM_ID = "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B
 export const PROTOCOL_INSTRUCTION_DISCRIMINATORS: Record<ProtocolInstructionName, Uint8Array> = {
   "adjudicate_claim_case": Uint8Array.from([146, 99, 255, 26, 223, 88, 235, 114]),
   "authorize_claim_recipient": Uint8Array.from([112, 97, 129, 42, 125, 165, 226, 163]),
-  "configure_reserve_asset_rail": Uint8Array.from([78, 48, 108, 190, 181, 203, 194, 176]),
   "create_domain_asset_vault": Uint8Array.from([31, 13, 112, 128, 23, 164, 26, 108]),
   "create_health_plan": Uint8Array.from([136, 7, 197, 134, 241, 206, 83, 171]),
   "create_obligation": Uint8Array.from([216, 144, 172, 223, 19, 106, 220, 54]),
@@ -54,7 +51,6 @@ export const PROTOCOL_INSTRUCTION_DISCRIMINATORS: Record<ProtocolInstructionName
   "initialize_series_reserve_ledger": Uint8Array.from([113, 155, 191, 126, 81, 152, 220, 249]),
   "open_claim_case": Uint8Array.from([151, 125, 231, 211, 63, 132, 248, 184]),
   "open_funding_line": Uint8Array.from([231, 140, 66, 127, 163, 1, 197, 9]),
-  "publish_reserve_asset_rail_price": Uint8Array.from([132, 35, 143, 147, 59, 80, 162, 117]),
   "record_premium_payment": Uint8Array.from([196, 182, 182, 56, 146, 87, 170, 29]),
   "release_reserve": Uint8Array.from([170, 102, 52, 144, 33, 176, 41, 60]),
   "reserve_obligation": Uint8Array.from([48, 113, 133, 225, 40, 36, 197, 86]),
@@ -71,9 +67,6 @@ export const PROTOCOL_INSTRUCTION_ARGS: Record<ProtocolInstructionName, Protocol
   ],
   "authorize_claim_recipient": [
       { name: "args", type: {"defined":{"name":"AuthorizeClaimRecipientArgs"}} },
-  ],
-  "configure_reserve_asset_rail": [
-      { name: "args", type: {"defined":{"name":"ConfigureReserveAssetRailArgs"}} },
   ],
   "create_domain_asset_vault": [
       { name: "args", type: {"defined":{"name":"CreateDomainAssetVaultArgs"}} },
@@ -101,9 +94,6 @@ export const PROTOCOL_INSTRUCTION_ARGS: Record<ProtocolInstructionName, Protocol
   ],
   "open_funding_line": [
       { name: "args", type: {"defined":{"name":"OpenFundingLineArgs"}} },
-  ],
-  "publish_reserve_asset_rail_price": [
-      { name: "args", type: {"defined":{"name":"PublishReserveAssetRailPriceArgs"}} },
   ],
   "record_premium_payment": [
       { name: "args", type: {"defined":{"name":"RecordPremiumPaymentArgs"}} },
@@ -141,12 +131,6 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
   "authorize_claim_recipient": [
       { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "claim_case", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [99, 108, 97, 105, 109, 95, 99, 97, 115, 101] }, { kind: "account", path: "claim_case.health_plan" }, { kind: "account", path: "claim_case.claim_id" }] },
-  ],
-  "configure_reserve_asset_rail": [
-      { name: "authority", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
-      { name: "reserve_domain", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [114, 101, 115, 101, 114, 118, 101, 95, 100, 111, 109, 97, 105, 110] }, { kind: "account", path: "reserve_domain.domain_id" }] },
-      { name: "reserve_asset_rail", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [114, 101, 115, 101, 114, 118, 101, 95, 97, 115, 115, 101, 116, 95, 114, 97, 105, 108] }, { kind: "account", path: "reserve_domain" }, { kind: "arg", path: "args.asset_mint" }] },
-      { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
   ],
   "create_domain_asset_vault": [
       { name: "authority", writable: true, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
@@ -227,10 +211,6 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
       { name: "series_reserve_ledger", writable: true, signer: false, optional: true, address: undefined, pdaSeeds: undefined },
       { name: "system_program", writable: false, signer: false, optional: false, address: "11111111111111111111111111111111", pdaSeeds: undefined },
   ],
-  "publish_reserve_asset_rail_price": [
-      { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
-      { name: "reserve_asset_rail", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [114, 101, 115, 101, 114, 118, 101, 95, 97, 115, 115, 101, 116, 95, 114, 97, 105, 108] }, { kind: "account", path: "reserve_asset_rail.reserve_domain" }, { kind: "account", path: "reserve_asset_rail.asset_mint" }] },
-  ],
   "record_premium_payment": [
       { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
@@ -270,7 +250,6 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
   "settle_claim_case": [
       { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
-      { name: "reserve_asset_rail", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [114, 101, 115, 101, 114, 118, 101, 95, 97, 115, 115, 101, 116, 95, 114, 97, 105, 108] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "funding_line.asset_mint" }] },
       { name: "domain_asset_vault", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 118, 97, 117, 108, 116] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "funding_line.asset_mint" }] },
       { name: "domain_asset_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "funding_line.asset_mint" }] },
       { name: "funding_line", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [102, 117, 110, 100, 105, 110, 103, 95, 108, 105, 110, 101] }, { kind: "account", path: "health_plan" }, { kind: "account", path: "funding_line.line_id" }] },
@@ -287,7 +266,6 @@ export const PROTOCOL_INSTRUCTION_ACCOUNTS: Record<ProtocolInstructionName, Prot
   "settle_obligation": [
       { name: "authority", writable: false, signer: true, optional: false, address: undefined, pdaSeeds: undefined },
       { name: "health_plan", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [104, 101, 97, 108, 116, 104, 95, 112, 108, 97, 110] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "health_plan.health_plan_id" }] },
-      { name: "reserve_asset_rail", writable: false, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [114, 101, 115, 101, 114, 118, 101, 95, 97, 115, 115, 101, 116, 95, 114, 97, 105, 108] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "obligation.asset_mint" }] },
       { name: "domain_asset_vault", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 118, 97, 117, 108, 116] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "obligation.asset_mint" }] },
       { name: "domain_asset_ledger", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [100, 111, 109, 97, 105, 110, 95, 97, 115, 115, 101, 116, 95, 108, 101, 100, 103, 101, 114] }, { kind: "account", path: "health_plan.reserve_domain" }, { kind: "account", path: "obligation.asset_mint" }] },
       { name: "funding_line", writable: true, signer: false, optional: false, address: undefined, pdaSeeds: [{ kind: "const", value: [102, 117, 110, 100, 105, 110, 103, 95, 108, 105, 110, 101] }, { kind: "account", path: "health_plan" }, { kind: "account", path: "funding_line.line_id" }] },
@@ -329,7 +307,6 @@ export const PROTOCOL_ACCOUNT_DISCRIMINATORS: Record<string, Uint8Array> = {
   "Obligation": Uint8Array.from([168, 206, 141, 106, 88, 76, 172, 167]),
   "PlanReserveLedger": Uint8Array.from([243, 245, 230, 224, 27, 105, 48, 128]),
   "PolicySeries": Uint8Array.from([196, 117, 121, 249, 37, 71, 245, 23]),
-  "ReserveAssetRail": Uint8Array.from([48, 92, 233, 170, 158, 126, 122, 67]),
   "ReserveDomain": Uint8Array.from([119, 76, 223, 192, 177, 116, 88, 178]),
   "SeriesReserveLedger": Uint8Array.from([0, 109, 195, 30, 140, 79, 210, 234]),
 };
@@ -339,7 +316,6 @@ export const PROTOCOL_PDA_SEEDS: Record<string, string[]> = {
   "domain_asset_vault": ["domain_asset_vault", "<reserve_domain>", "<asset_mint>"],
   "domain_asset_vault_token": ["domain_asset_vault_token", "<reserve_domain>", "<asset_mint>"],
   "domain_asset_ledger": ["domain_asset_ledger", "<reserve_domain>", "<asset_mint>"],
-  "reserve_asset_rail": ["reserve_asset_rail", "<reserve_domain>", "<asset_mint>"],
   "health_plan": ["health_plan", "<reserve_domain>", "<plan_id>"],
   "plan_reserve_ledger": ["plan_reserve_ledger", "<health_plan>", "<asset_mint>"],
   "policy_series": ["policy_series", "<health_plan>", "<series_id>"],

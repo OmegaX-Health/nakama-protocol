@@ -33,7 +33,7 @@ Start with:
 
 ### Reserve and backstop integrators
 
-Connect reserve rails, sponsor budgets, premiums, backstops, and reserve-domain accounting to the same Travel 30 / Event 7 launch truth.
+Connect domain vaults, sponsor budgets, premiums, backstops, and reserve-domain accounting to the same Travel 30 / Event 7 launch truth.
 
 Start with:
 
@@ -63,7 +63,7 @@ Start with:
 
 ## What Exists Today on Devnet Beta
 
-- reserve domains and domain asset vaults define settlement boundaries and payment rails
+- reserve domains and domain asset vaults define settlement boundaries and payment custody
 - health plans, policy series, and funding lines define sponsor and member-side products
 - operator-mediated member enrollment, claim intake, obligations, settlement, and payout checks are mounted in the canonical console
 
@@ -102,14 +102,14 @@ This patch hardens the first publishable canonical OmegaX reserve, obligation, a
 
 - reserve inflows now require checked SPL token transfers into the configured domain vault token account before ledgers increase
 - emergency pause now covers reserve-moving exits and settlement paths; Founder reservations remain off-chain Squads custody until activation/posting
-- settlement payouts must leave a positive net recipient payout and remain bound to payout-enabled reserve rails
+- settlement payouts must leave a positive net recipient payout and remain bound to the matching domain vault, funding line, and reserve ledgers
 - optional mutable reserve ledgers are bound to the expected series, funding line, domain, and mint before mutation
 - it is a hard-break devnet migration from the retired pool-first model
 - reserve domains define hard custody and legal settlement boundaries
 - health plans define sponsor, member, liability, and claims administration roots
 - funding lines separate sponsor budgets, premiums, backstops, and subsidies
 - the canonical console now mounts `/plans`, `/claims`, `/members`, `/oracles`, and `/schemas` against live snapshot-backed protocol reads
-- `/plans/new` now launches from live reserve-domain, vault-rail, oracle, and schema registry data rather than fixture-only defaults
+- `/plans/new` now launches from live reserve-domain, vault, oracle, and schema registry data rather than fixture-only defaults
 - `/plans/new?template=genesis-protect-acute` now bootstraps the canonical Genesis Protect Acute shell in place using the frozen Event 7 and Travel 30 launch truth
 - `/plans?...&setup=genesis-protect-acute` now exposes the Genesis setup checklist, issuance posture, and reserve-warning view inside the mounted sponsor/operator workspace
 - the mounted Genesis claims tab now behaves as an operator claim queue with summary cards, queue filters, selected-case detail, and contextual handoff into adjudication, reserve, and oracle follow-through

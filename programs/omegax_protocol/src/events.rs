@@ -108,56 +108,6 @@ pub struct FundingFlowRecordedEvent {
 
 #[cfg(not(feature = "quasar"))]
 #[event]
-pub struct ReserveAssetRailConfiguredEvent {
-    pub reserve_domain: Pubkey,
-    pub reserve_asset_rail: Pubkey,
-    pub asset_mint: Pubkey,
-    pub role: u8,
-    pub payout_priority: u8,
-    pub oracle_source: u8,
-    pub active: bool,
-    pub reason_hash: [u8; 32],
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [33, 112, 220, 210, 144, 2, 40, 234]))]
-pub struct ReserveAssetRailConfiguredEvent {
-    pub reserve_domain: Address,
-    pub reserve_asset_rail: Address,
-    pub asset_mint: Address,
-    pub role: u8,
-    pub payout_priority: u8,
-    pub oracle_source: u8,
-    pub active: bool,
-    pub reason_hash: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct ReserveAssetRailPricePublishedEvent {
-    pub reserve_asset_rail: Pubkey,
-    pub asset_mint: Pubkey,
-    pub oracle_authority: Pubkey,
-    pub price_usd_1e8: u64,
-    pub confidence_bps: u16,
-    pub published_at_ts: i64,
-    pub proof_hash: [u8; 32],
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [161, 207, 64, 197, 138, 47, 213, 44]))]
-pub struct ReserveAssetRailPricePublishedEvent {
-    pub reserve_asset_rail: Address,
-    pub asset_mint: Address,
-    pub oracle_authority: Address,
-    pub price_usd_1e8: u64,
-    pub confidence_bps: u16,
-    pub published_at_ts: i64,
-    pub proof_hash: Address,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
 pub struct ObligationStatusChangedEvent {
     pub obligation: Pubkey,
     pub funding_line: Pubkey,

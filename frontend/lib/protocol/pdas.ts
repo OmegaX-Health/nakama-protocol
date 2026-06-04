@@ -25,7 +25,6 @@ import {
   SEED_POLICY_SERIES,
   SEED_POOL_CLASS_LEDGER,
   SEED_PROTOCOL_GOVERNANCE,
-  SEED_RESERVE_ASSET_RAIL,
   SEED_RESERVE_DOMAIN,
   SEED_SERIES_RESERVE_LEDGER,
   ZERO_PUBKEY_KEY,
@@ -102,21 +101,6 @@ export function deriveDomainAssetLedgerPda(params: {
   return derivePda(
     [
       TEXT_ENCODER.encode(SEED_DOMAIN_ASSET_LEDGER),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveReserveAssetRailPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_RESERVE_ASSET_RAIL),
       toPublicKey(params.reserveDomain).toBytes(),
       toPublicKey(params.assetMint).toBytes(),
     ],

@@ -243,7 +243,7 @@ Unsafe config proof:
 Public messaging must not claim audited, fully decentralized claims, uncapped
 solvency, or cross-asset direct claim payouts. Claim and obligation settlement
 is same-asset: the on-chain settlement path requires the liability asset's
-active, payout-enabled, fresh confidence-bounded `ReserveAssetRail`. The program
+matching domain vault, reserve ledgers, funding line, and SPL outflow accounts. The program
 does not silently mutate a USDC claim ledger while draining a WBTC/SOL/WETH vault
 and does not perform DEX swaps in this pass.
 

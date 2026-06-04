@@ -75,26 +75,8 @@ pub enum OmegaXProtocolError {
     SettlementOutflowAccountsRequired,
     #[msg("Stable coverage capacity is insufficient")]
     InsufficientStableCoverageCapacity,
-    #[msg("Reserve asset role is invalid")]
-    InvalidReserveAssetRole,
-    #[msg("Reserve asset oracle source is invalid")]
-    InvalidReserveOracleSource,
-    #[msg("Reserve asset rail mismatch")]
-    ReserveAssetRailMismatch,
     #[msg("Reserve domain mismatch")]
     ReserveDomainMismatch,
-    #[msg("Reserve asset rail is inactive")]
-    ReserveAssetRailInactive,
-    #[msg("Reserve asset rail does not allow claims payout")]
-    ReserveAssetRailPayoutDisabled,
-    #[msg("Reserve asset rail cannot count toward claims capacity")]
-    ReserveAssetRailCapacityDisabled,
-    #[msg("Reserve asset oracle price is stale or missing")]
-    ReserveAssetPriceStale,
-    #[msg("Reserve asset oracle price is invalid")]
-    ReserveAssetPriceInvalid,
-    #[msg("Reserve asset oracle price confidence exceeds rail threshold")]
-    ReserveAssetPriceConfidenceTooWide,
     #[msg("Partial obligation lifecycle transitions are not supported")]
     PartialObligationTransitionUnsupported,
     #[msg("Invalid obligation delivery mode")]
@@ -144,16 +126,7 @@ pub enum OmegaXProtocolError {
     DomainAssetVaultRequired,
     SettlementOutflowAccountsRequired,
     InsufficientStableCoverageCapacity,
-    InvalidReserveAssetRole,
-    InvalidReserveOracleSource,
-    ReserveAssetRailMismatch,
     ReserveDomainMismatch,
-    ReserveAssetRailInactive,
-    ReserveAssetRailPayoutDisabled,
-    ReserveAssetRailCapacityDisabled,
-    ReserveAssetPriceStale,
-    ReserveAssetPriceInvalid,
-    ReserveAssetPriceConfidenceTooWide,
     PartialObligationTransitionUnsupported,
     InvalidObligationDeliveryMode,
     ClaimAdjudicationLocked,

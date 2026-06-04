@@ -80,7 +80,6 @@ const PDA_SEEDS: Record<string, string[]> = {
   domain_asset_vault: ['domain_asset_vault', '<reserve_domain>', '<asset_mint>'],
   domain_asset_vault_token: ['domain_asset_vault_token', '<reserve_domain>', '<asset_mint>'],
   domain_asset_ledger: ['domain_asset_ledger', '<reserve_domain>', '<asset_mint>'],
-  reserve_asset_rail: ['reserve_asset_rail', '<reserve_domain>', '<asset_mint>'],
   health_plan: ['health_plan', '<reserve_domain>', '<plan_id>'],
   plan_reserve_ledger: ['plan_reserve_ledger', '<health_plan>', '<asset_mint>'],
   policy_series: ['policy_series', '<health_plan>', '<series_id>'],

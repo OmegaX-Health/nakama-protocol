@@ -22,7 +22,6 @@ pub mod kernel;
 pub mod plans_membership;
 pub mod quasar_discriminators;
 pub mod reserve_custody;
-pub mod reserve_waterfall;
 pub mod state;
 pub mod types;
 
@@ -36,7 +35,6 @@ pub use funding_obligations::*;
 pub(crate) use kernel::*;
 pub use plans_membership::*;
 pub use reserve_custody::*;
-pub use reserve_waterfall::*;
 pub use state::*;
 pub use types::*;
 
@@ -50,12 +48,6 @@ pub(crate) use funding_obligations::{
     __client_accounts_release_reserve, __client_accounts_reserve_obligation,
     __client_accounts_settle_obligation,
 };
-#[cfg(not(feature = "quasar"))]
-pub(crate) use reserve_waterfall::{
-    __client_accounts_configure_reserve_asset_rail,
-    __client_accounts_publish_reserve_asset_rail_price,
-};
-
 #[cfg(not(feature = "quasar"))]
 #[program]
 pub mod omegax_protocol {
@@ -80,20 +72,6 @@ pub mod omegax_protocol {
         args: CreateDomainAssetVaultArgs,
     ) -> Result<()> {
         crate::reserve_custody::create_domain_asset_vault(ctx, args)
-    }
-
-    pub fn configure_reserve_asset_rail(
-        ctx: Context<ConfigureReserveAssetRail>,
-        args: ConfigureReserveAssetRailArgs,
-    ) -> Result<()> {
-        crate::reserve_waterfall::configure_reserve_asset_rail(ctx, args)
-    }
-
-    pub fn publish_reserve_asset_rail_price(
-        ctx: Context<PublishReserveAssetRailPrice>,
-        args: PublishReserveAssetRailPriceArgs,
-    ) -> Result<()> {
-        crate::reserve_waterfall::publish_reserve_asset_rail_price(ctx, args)
     }
 
     pub fn create_health_plan(
@@ -260,64 +238,6 @@ pub mod omegax_protocol {
         asset_mint_key: Pubkey,
     ) -> Result<()> {
         crate::reserve_custody::create_domain_asset_vault(&mut ctx, asset_mint_key)
-    }
-
-    #[instruction(discriminator = [78, 48, 108, 190, 181, 203, 194, 176])]
-    pub fn configure_reserve_asset_rail(
-        ctx: Ctx<ConfigureReserveAssetRail>,
-        asset_mint: Pubkey,
-        oracle_authority: Pubkey,
-        role: u8,
-        payout_priority: u8,
-        oracle_source: u8,
-        oracle_feed_id: [u8; 32],
-        max_staleness_seconds: i64,
-        max_confidence_bps: u16,
-        haircut_bps: u16,
-        max_exposure_bps: u16,
-        deposit_enabled: bool,
-        payout_enabled: bool,
-        capacity_enabled: bool,
-        active: bool,
-        reason_hash: [u8; 32],
-        asset_symbol: String<u32, 32>,
-    ) -> Result<()> {
-        let _ = &reason_hash;
-        crate::reserve_waterfall::configure_reserve_asset_rail(
-            &mut ctx,
-            asset_mint,
-            oracle_authority,
-            role,
-            payout_priority,
-            oracle_source,
-            oracle_feed_id,
-            max_staleness_seconds,
-            max_confidence_bps,
-            haircut_bps,
-            max_exposure_bps,
-            deposit_enabled,
-            payout_enabled,
-            capacity_enabled,
-            active,
-            asset_symbol,
-        )
-    }
-
-    #[instruction(discriminator = [132, 35, 143, 147, 59, 80, 162, 117])]
-    pub fn publish_reserve_asset_rail_price(
-        ctx: Ctx<PublishReserveAssetRailPrice>,
-        price_usd_1e8: u64,
-        confidence_bps: u16,
-        published_at_ts: i64,
-        proof_hash: [u8; 32],
-    ) -> Result<()> {
-        crate::reserve_waterfall::publish_reserve_asset_rail_price(
-            &mut ctx,
-            price_usd_1e8,
-            confidence_bps,
-            published_at_ts,
-            proof_hash,
-        )
     }
 
     #[instruction(discriminator = [136, 7, 197, 134, 241, 206, 83, 171])]

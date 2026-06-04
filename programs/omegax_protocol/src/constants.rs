@@ -15,7 +15,6 @@ pub const SEED_RESERVE_DOMAIN: &[u8] = b"reserve_domain";
 pub const SEED_DOMAIN_ASSET_VAULT: &[u8] = b"domain_asset_vault";
 pub const SEED_DOMAIN_ASSET_VAULT_TOKEN: &[u8] = b"domain_asset_vault_token";
 pub const SEED_DOMAIN_ASSET_LEDGER: &[u8] = b"domain_asset_ledger";
-pub const SEED_RESERVE_ASSET_RAIL: &[u8] = b"reserve_asset_rail";
 pub const SEED_HEALTH_PLAN: &[u8] = b"health_plan";
 pub const SEED_PLAN_RESERVE_LEDGER: &[u8] = b"plan_reserve_ledger";
 pub const SEED_POLICY_SERIES: &[u8] = b"policy_series";
@@ -54,16 +53,6 @@ pub(crate) fn is_supported_funding_line_type(line_type: u8) -> bool {
 pub const FUNDING_LINE_STATUS_OPEN: u8 = 0;
 pub const FUNDING_LINE_STATUS_PAUSED: u8 = 1;
 pub const FUNDING_LINE_STATUS_CLOSED: u8 = 2;
-
-pub const RESERVE_ASSET_ROLE_PRIMARY_STABLE: u8 = 0;
-pub const RESERVE_ASSET_ROLE_SECONDARY_STABLE: u8 = 1;
-pub const RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL: u8 = 2;
-pub const RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT: u8 = 3;
-
-pub const RESERVE_ORACLE_SOURCE_NONE: u8 = 0;
-pub const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM: u8 = 1;
-pub const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_FEED: u8 = 2;
-pub const RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED: u8 = 3;
 
 pub const CLAIM_INTAKE_OPEN: u8 = 0;
 pub const CLAIM_INTAKE_UNDER_REVIEW: u8 = 1;

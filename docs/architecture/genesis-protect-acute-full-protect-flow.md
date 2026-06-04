@@ -355,21 +355,19 @@ public protocol console moves up. No USDC has moved yet.
 
 ### 10.2 Payout settlement (`settle_claim_case` / `settle_obligation`)
 
-The settlement router selects the payout asset from the approved waterfall:
+The settlement path pays the approved liability in the same configured asset:
 
 ```
 Preferred: USDC
-Fallback (if USDC rail fails freshness/confidence check): PUSD → USDT → SOL → WBTC → WETH
+Fallback assets: operator rebalancing only; not direct cross-asset payout
 ```
 
-For each candidate asset, the Solana program checks (in order):
-1. `ReserveAssetRail` bound to same domain + asset mint ✓
-2. Rail active + payout enabled ✓
-3. Oracle price fresh (within freshness window) ✓
-4. Oracle confidence ≤ `max_confidence_bps` ✓
+For each settlement, the Solana program checks the domain vault, domain asset
+ledger, funding line, funding-line ledger, plan ledger, optional series ledger,
+and SPL outflow accounts all bind to the same reserve domain and asset mint.
 
-The first asset that passes all checks is used. If no asset passes, settlement is deferred and
-the Plan Admin is notified immediately.
+If the matching same-asset settlement path is unavailable, settlement is
+deferred and the Plan Admin is notified immediately.
 
 Settlement transfers atomically via `transfer_from_domain_vault`:
 - Net payout to member wallet (or `delegate_recipient` if set)

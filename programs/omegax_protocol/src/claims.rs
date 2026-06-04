@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Claim lifecycle and claim-attestation instruction handlers and account validation contexts.
+//! Claim lifecycle instruction handlers and account validation contexts.
 
 #[cfg(not(feature = "quasar"))]
 use crate::classic_token::{Mint, TokenAccount, TokenInterface};
@@ -77,13 +77,6 @@ fn checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
 }
 
 #[cfg(feature = "quasar")]
-#[inline(always)]
-fn quasar_checked_sub_i64(lhs: i64, rhs: i64) -> Result<i64> {
-    lhs.checked_sub(rhs)
-        .ok_or(OmegaXProtocolError::ArithmeticError.into())
-}
-
-#[cfg(feature = "quasar")]
 fn recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
     let encumbered = sheet
         .reserved
@@ -125,63 +118,6 @@ fn require_quasar_direct_claim_case_settlement(
     require!(
         claim_case.linked_obligation == ZERO_PUBKEY,
         OmegaXProtocolError::LinkedClaimMustSettleThroughObligation
-    );
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn require_quasar_reserve_asset_rail_payout_enabled(
-    rail: &ReserveAssetRailAccountData<'_>,
-    now_ts: i64,
-) -> Result<()> {
-    require_quasar_reserve_asset_rail_active(rail)?;
-    require!(
-        rail.payout_enabled.get(),
-        OmegaXProtocolError::ReserveAssetRailPayoutDisabled
-    );
-    require_quasar_fresh_reserve_asset_price_at(rail, now_ts)
-}
-
-#[cfg(feature = "quasar")]
-#[inline(always)]
-fn require_quasar_reserve_asset_rail_active(rail: &ReserveAssetRailAccountData<'_>) -> Result<()> {
-    require!(
-        rail.active.get(),
-        OmegaXProtocolError::ReserveAssetRailInactive
-    );
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn require_quasar_fresh_reserve_asset_price_at(
-    rail: &ReserveAssetRailAccountData<'_>,
-    now_ts: i64,
-) -> Result<()> {
-    require!(
-        rail.last_price_usd_1e8.get() > 0,
-        OmegaXProtocolError::ReserveAssetPriceInvalid
-    );
-    require!(
-        rail.max_staleness_seconds.get() > 0,
-        OmegaXProtocolError::ReserveAssetPriceInvalid
-    );
-    require!(
-        rail.max_confidence_bps.get() > 0,
-        OmegaXProtocolError::ReserveAssetPriceInvalid
-    );
-    require!(
-        rail.last_price_confidence_bps.get() <= rail.max_confidence_bps.get(),
-        OmegaXProtocolError::ReserveAssetPriceConfidenceTooWide
-    );
-    require!(
-        rail.last_price_published_at_ts.get() > 0
-            && rail.last_price_published_at_ts.get() <= now_ts,
-        OmegaXProtocolError::ReserveAssetPriceStale
-    );
-    let age = quasar_checked_sub_i64(now_ts, rail.last_price_published_at_ts.get())?;
-    require!(
-        age <= rail.max_staleness_seconds.get(),
-        OmegaXProtocolError::ReserveAssetPriceStale
     );
     Ok(())
 }
@@ -752,9 +688,6 @@ pub(crate) fn settle_claim_case(
 ) -> Result<()> {
     require_claim_operator(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
     require_direct_claim_case_settlement(&ctx.accounts.claim_case)?;
-    crate::reserve_waterfall::require_reserve_asset_rail_payout_enabled(
-        &ctx.accounts.reserve_asset_rail,
-    )?;
     require!(
         args.amount <= remaining_claim_amount(&ctx.accounts.claim_case),
         OmegaXProtocolError::AmountExceedsApprovedClaim
@@ -839,7 +772,6 @@ pub(crate) fn settle_claim_case<'info>(
     require_quasar_claim_operator(&authority, &ctx.accounts.health_plan)?;
     require_quasar_direct_claim_case_settlement(&ctx.accounts.claim_case)?;
     let now_ts = Clock::get()?.unix_timestamp.get();
-    require_quasar_reserve_asset_rail_payout_enabled(&ctx.accounts.reserve_asset_rail, now_ts)?;
     require!(
         amount <= quasar_remaining_claim_amount(&ctx.accounts.claim_case),
         OmegaXProtocolError::AmountExceedsApprovedClaim
@@ -1208,26 +1140,6 @@ pub struct SettleClaimCase<'info> {
         ) @ OmegaXProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(
-        seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
-        bump = reserve_asset_rail.bump,
-        constraint = reserve_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
-        constraint = reserve_asset_rail.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
-    )]
-    pub reserve_asset_rail: Box<Account<'info, ReserveAssetRail>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = quasar_pda_matches(
-            reserve_asset_rail.address(),
-            &crate::ID,
-            &[SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
-            reserve_asset_rail.bump,
-        ) @ OmegaXProtocolError::ReserveAssetRailMismatch,
-        constraint = reserve_asset_rail.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::ReserveAssetRailMismatch,
-        constraint = reserve_asset_rail.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::ReserveAssetRailMismatch,
-    )]
-    pub reserve_asset_rail: Account<ReserveAssetRailAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,

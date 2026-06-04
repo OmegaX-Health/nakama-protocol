@@ -27,12 +27,10 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
   },
   reserve_domain_and_vault_setup: {
     title: "Reserve Domain and Vault Setup",
-    focus: "Settlement segregation, custody mapping, and domain ledgers remain explicit per [reserve_domain, asset_mint].",
+    focus: "Settlement segregation, custody mapping, and domain ledgers remain explicit per [reserve_domain, asset_mint] without a separate reserve-asset rail account.",
     instructions: [
       "create_reserve_domain",
       "create_domain_asset_vault",
-      "configure_reserve_asset_rail",
-      "publish_reserve_asset_rail_price",
     ],
   },
   sponsor_funded_plan_lifecycle: {

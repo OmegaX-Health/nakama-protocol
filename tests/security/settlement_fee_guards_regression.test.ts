@@ -14,7 +14,6 @@ const {
   OBLIGATION_STATUS_SETTLED,
   buildSettleClaimCaseTx,
   buildSettleObligationTx,
-  deriveReserveAssetRailPda,
   listProtocolInstructionAccounts,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
 
@@ -37,15 +36,18 @@ test("[CSO-2026-04-29] linked obligation settlement requires SPL outflow account
   assert.match(body, /token_program\.is_some\(\)/);
 });
 
-test("[CSO-2026-05-06] claim and obligation settlement require payout-enabled reserve rails", () => {
+test("[CSO-2026-05-06] claim and obligation settlement use vault-ledger settlement without reserve rails", () => {
   const claimBody = extractInstructionBody("settle_claim_case");
   const obligationBody = extractInstructionBody("settle_obligation");
 
-  assert.match(claimBody, /require_reserve_asset_rail_payout_enabled/);
-  assert.match(obligationBody, /require_reserve_asset_rail_payout_enabled/);
-  assert.match(programSource, /pub\(crate\) fn require_reserve_asset_rail_payout_enabled/);
-  assert.match(programSource, /ReserveAssetRailPayoutDisabled/);
-  assert.match(programSource, /require_fresh_reserve_asset_price/);
+  assert.match(claimBody, /recipient_token_account\.owner/);
+  assert.match(claimBody, /transfer_from_domain_vault/);
+  assert.match(obligationBody, /SettlementOutflowAccountsRequired/);
+  assert.match(obligationBody, /settle_delivery/);
+  assert.match(obligationBody, /transfer_from_domain_vault/);
+  assert.doesNotMatch(programSource, /require_reserve_asset_rail_payout_enabled/);
+  assert.doesNotMatch(programSource, /ReserveAssetRailPayoutDisabled/);
+  assert.doesNotMatch(programSource, /require_fresh_reserve_asset_price/);
   assert.doesNotMatch(programSource, /settle_claim_case_selected_asset/);
   assert.doesNotMatch(programSource, /require_selected_asset_payout_value/);
   assert.doesNotMatch(programSource, /book_selected_asset_claim_payout/);
@@ -108,14 +110,9 @@ test("[CSO-2026-04-29] settlement builders preserve outflow account slots", () =
     recipientTokenAccountAddress: recipientTokenAccount,
   });
   assertAccountCount("settle_claim_case", settleClaim.instructions[0]!.keys.length);
-  const reserveAssetRailIndex = listProtocolInstructionAccounts("settle_claim_case")
-    .findIndex((account) => account.name === "reserve_asset_rail");
   assert.equal(
-    settleClaim.instructions[0]!.keys[reserveAssetRailIndex]!.pubkey.toBase58(),
-    deriveReserveAssetRailPda({
-      reserveDomain: claim.reserveDomain,
-      assetMint: fundingLine.assetMint,
-    }).toBase58(),
+    listProtocolInstructionAccounts("settle_claim_case").some((account) => account.name === "reserve_asset_rail"),
+    false,
   );
   assert.equal(settleClaim.instructions[0]!.keys.at(-4)!.pubkey.toBase58(), fundingLine.assetMint);
   assert.equal(settleClaim.instructions[0]!.keys.at(-3)!.pubkey.toBase58(), vaultTokenAccount);

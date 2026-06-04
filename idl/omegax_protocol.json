@@ -169,110 +169,6 @@
       ]
     },
     {
-      "name": "configure_reserve_asset_rail",
-      "discriminator": [
-        78,
-        48,
-        108,
-        190,
-        181,
-        203,
-        194,
-        176
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "reserve_domain",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain.domain_id",
-                "account": "ReserveDomain"
-              }
-            ]
-          }
-        },
-        {
-          "name": "reserve_asset_rail",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  114,
-                  97,
-                  105,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "arg",
-                "path": "args.asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "ConfigureReserveAssetRailArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "create_domain_asset_vault",
       "discriminator": [
         31,
@@ -1858,76 +1754,6 @@
       ]
     },
     {
-      "name": "publish_reserve_asset_rail_price",
-      "discriminator": [
-        132,
-        35,
-        143,
-        147,
-        59,
-        80,
-        162,
-        117
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "reserve_asset_rail",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  114,
-                  97,
-                  105,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_asset_rail.reserve_domain",
-                "account": "ReserveAssetRail"
-              },
-              {
-                "kind": "account",
-                "path": "reserve_asset_rail.asset_mint",
-                "account": "ReserveAssetRail"
-              }
-            ]
-          }
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "PublishReserveAssetRailPriceArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "record_premium_payment",
       "discriminator": [
         196,
@@ -2839,46 +2665,6 @@
           }
         },
         {
-          "name": "reserve_asset_rail",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  114,
-                  97,
-                  105,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
           "name": "domain_asset_vault",
           "writable": true,
           "pda": {
@@ -3192,46 +2978,6 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
-              }
-            ]
-          }
-        },
-        {
-          "name": "reserve_asset_rail",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  114,
-                  97,
-                  105,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "obligation.asset_mint",
-                "account": "Obligation"
               }
             ]
           }
@@ -3959,19 +3705,6 @@
       ]
     },
     {
-      "name": "ReserveAssetRail",
-      "discriminator": [
-        48,
-        92,
-        233,
-        170,
-        158,
-        126,
-        122,
-        67
-      ]
-    },
-    {
       "name": "ReserveDomain",
       "discriminator": [
         119,
@@ -4101,32 +3834,6 @@
         91,
         162,
         255
-      ]
-    },
-    {
-      "name": "ReserveAssetRailConfiguredEvent",
-      "discriminator": [
-        33,
-        112,
-        220,
-        210,
-        144,
-        2,
-        40,
-        234
-      ]
-    },
-    {
-      "name": "ReserveAssetRailPricePublishedEvent",
-      "discriminator": [
-        161,
-        207,
-        64,
-        197,
-        138,
-        47,
-        213,
-        44
       ]
     },
     {
@@ -4329,76 +4036,31 @@
     },
     {
       "code": 6034,
-      "name": "InvalidReserveAssetRole",
-      "msg": "Reserve asset role is invalid"
-    },
-    {
-      "code": 6035,
-      "name": "InvalidReserveOracleSource",
-      "msg": "Reserve asset oracle source is invalid"
-    },
-    {
-      "code": 6036,
-      "name": "ReserveAssetRailMismatch",
-      "msg": "Reserve asset rail mismatch"
-    },
-    {
-      "code": 6037,
       "name": "ReserveDomainMismatch",
       "msg": "Reserve domain mismatch"
     },
     {
-      "code": 6038,
-      "name": "ReserveAssetRailInactive",
-      "msg": "Reserve asset rail is inactive"
-    },
-    {
-      "code": 6039,
-      "name": "ReserveAssetRailPayoutDisabled",
-      "msg": "Reserve asset rail does not allow claims payout"
-    },
-    {
-      "code": 6040,
-      "name": "ReserveAssetRailCapacityDisabled",
-      "msg": "Reserve asset rail cannot count toward claims capacity"
-    },
-    {
-      "code": 6041,
-      "name": "ReserveAssetPriceStale",
-      "msg": "Reserve asset oracle price is stale or missing"
-    },
-    {
-      "code": 6042,
-      "name": "ReserveAssetPriceInvalid",
-      "msg": "Reserve asset oracle price is invalid"
-    },
-    {
-      "code": 6043,
-      "name": "ReserveAssetPriceConfidenceTooWide",
-      "msg": "Reserve asset oracle price confidence exceeds rail threshold"
-    },
-    {
-      "code": 6044,
+      "code": 6035,
       "name": "PartialObligationTransitionUnsupported",
       "msg": "Partial obligation lifecycle transitions are not supported"
     },
     {
-      "code": 6045,
+      "code": 6036,
       "name": "InvalidObligationDeliveryMode",
       "msg": "Invalid obligation delivery mode"
     },
     {
-      "code": 6046,
+      "code": 6037,
       "name": "ClaimAdjudicationLocked",
       "msg": "Claim adjudication is locked after payout or terminal state"
     },
     {
-      "code": 6047,
+      "code": 6038,
       "name": "HealthPlanInactive",
       "msg": "Health plan is inactive"
     },
     {
-      "code": 6048,
+      "code": 6039,
       "name": "DirectClaimReserveUnsupported",
       "msg": "Direct claim reserves require linked obligation settlement"
     }
@@ -4552,88 +4214,6 @@
           {
             "name": "approved_amount",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ConfigureReserveAssetRailArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_symbol",
-            "type": "string"
-          },
-          {
-            "name": "role",
-            "type": "u8"
-          },
-          {
-            "name": "payout_priority",
-            "type": "u8"
-          },
-          {
-            "name": "oracle_source",
-            "type": "u8"
-          },
-          {
-            "name": "oracle_feed_id",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "max_staleness_seconds",
-            "type": "i64"
-          },
-          {
-            "name": "max_confidence_bps",
-            "type": "u16"
-          },
-          {
-            "name": "haircut_bps",
-            "type": "u16"
-          },
-          {
-            "name": "max_exposure_bps",
-            "type": "u16"
-          },
-          {
-            "name": "deposit_enabled",
-            "type": "bool"
-          },
-          {
-            "name": "payout_enabled",
-            "type": "bool"
-          },
-          {
-            "name": "capacity_enabled",
-            "type": "bool"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -5696,35 +5276,6 @@
       }
     },
     {
-      "name": "PublishReserveAssetRailPriceArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "price_usd_1e8",
-            "type": "u64"
-          },
-          {
-            "name": "confidence_bps",
-            "type": "u16"
-          },
-          {
-            "name": "published_at_ts",
-            "type": "i64"
-          },
-          {
-            "name": "proof_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "RecordPremiumPaymentArgs",
       "type": {
         "kind": "struct",
@@ -5744,202 +5295,6 @@
           {
             "name": "amount",
             "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ReserveAssetRail",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_domain",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_symbol",
-            "type": "string"
-          },
-          {
-            "name": "role",
-            "type": "u8"
-          },
-          {
-            "name": "payout_priority",
-            "type": "u8"
-          },
-          {
-            "name": "oracle_source",
-            "type": "u8"
-          },
-          {
-            "name": "oracle_feed_id",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "max_staleness_seconds",
-            "type": "i64"
-          },
-          {
-            "name": "max_confidence_bps",
-            "type": "u16"
-          },
-          {
-            "name": "haircut_bps",
-            "type": "u16"
-          },
-          {
-            "name": "max_exposure_bps",
-            "type": "u16"
-          },
-          {
-            "name": "deposit_enabled",
-            "type": "bool"
-          },
-          {
-            "name": "payout_enabled",
-            "type": "bool"
-          },
-          {
-            "name": "capacity_enabled",
-            "type": "bool"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "last_price_usd_1e8",
-            "type": "u64"
-          },
-          {
-            "name": "last_price_confidence_bps",
-            "type": "u16"
-          },
-          {
-            "name": "last_price_published_at_ts",
-            "type": "i64"
-          },
-          {
-            "name": "last_price_slot",
-            "type": "u64"
-          },
-          {
-            "name": "last_price_proof_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "audit_nonce",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ReserveAssetRailConfiguredEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_domain",
-            "type": "pubkey"
-          },
-          {
-            "name": "reserve_asset_rail",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "role",
-            "type": "u8"
-          },
-          {
-            "name": "payout_priority",
-            "type": "u8"
-          },
-          {
-            "name": "oracle_source",
-            "type": "u8"
-          },
-          {
-            "name": "active",
-            "type": "bool"
-          },
-          {
-            "name": "reason_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "ReserveAssetRailPricePublishedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_asset_rail",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle_authority",
-            "type": "pubkey"
-          },
-          {
-            "name": "price_usd_1e8",
-            "type": "u64"
-          },
-          {
-            "name": "confidence_bps",
-            "type": "u16"
-          },
-          {
-            "name": "published_at_ts",
-            "type": "i64"
-          },
-          {
-            "name": "proof_hash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }

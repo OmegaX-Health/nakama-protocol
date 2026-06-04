@@ -16,7 +16,6 @@ export const SEED_RESERVE_DOMAIN = "reserve_domain";
 export const SEED_DOMAIN_ASSET_VAULT = "domain_asset_vault";
 export const SEED_DOMAIN_ASSET_VAULT_TOKEN = "domain_asset_vault_token";
 export const SEED_DOMAIN_ASSET_LEDGER = "domain_asset_ledger";
-export const SEED_RESERVE_ASSET_RAIL = "reserve_asset_rail";
 export const SEED_HEALTH_PLAN = "health_plan";
 export const SEED_PLAN_RESERVE_LEDGER = "plan_reserve_ledger";
 export const SEED_POLICY_SERIES = "policy_series";
@@ -53,16 +52,6 @@ export const MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT = 4;
 export const MEMBERSHIP_PROOF_MODE_OPEN = 0;
 export const MEMBERSHIP_PROOF_MODE_TOKEN_GATE = 1;
 export const MEMBERSHIP_PROOF_MODE_INVITE_PERMIT = 2;
-
-export const RESERVE_ASSET_ROLE_PRIMARY_STABLE = 0;
-export const RESERVE_ASSET_ROLE_SECONDARY_STABLE = 1;
-export const RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL = 2;
-export const RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT = 3;
-
-export const RESERVE_ORACLE_SOURCE_NONE = 0;
-export const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM = 1;
-export const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_FEED = 2;
-export const RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED = 3;
 
 export const SERIES_MODE_REWARD = 0;
 export const SERIES_MODE_PROTECTION = 1;

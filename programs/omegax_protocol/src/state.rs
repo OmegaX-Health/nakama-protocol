@@ -54,64 +54,6 @@ pub struct DomainAssetVault {
 #[cfg(not(feature = "quasar"))]
 #[account]
 #[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct ReserveAssetRail {
-    pub reserve_domain: Pubkey,
-    pub asset_mint: Pubkey,
-    pub oracle_authority: Pubkey,
-    #[max_len(MAX_ID_LEN)]
-    pub asset_symbol: String,
-    pub role: u8,
-    pub payout_priority: u8,
-    pub oracle_source: u8,
-    pub oracle_feed_id: [u8; 32],
-    pub max_staleness_seconds: i64,
-    pub max_confidence_bps: u16,
-    pub haircut_bps: u16,
-    pub max_exposure_bps: u16,
-    pub deposit_enabled: bool,
-    pub payout_enabled: bool,
-    pub capacity_enabled: bool,
-    pub active: bool,
-    pub last_price_usd_1e8: u64,
-    pub last_price_confidence_bps: u16,
-    pub last_price_published_at_ts: i64,
-    pub last_price_slot: u64,
-    pub last_price_proof_hash: [u8; 32],
-    pub audit_nonce: u64,
-    pub bump: u8,
-}
-
-#[cfg(feature = "quasar")]
-#[account(discriminator = [48, 92, 233, 170, 158, 126, 122, 67])]
-pub struct ReserveAssetRail<'info> {
-    pub reserve_domain: Pubkey,
-    pub asset_mint: Pubkey,
-    pub oracle_authority: Pubkey,
-    pub role: u8,
-    pub payout_priority: u8,
-    pub oracle_source: u8,
-    pub oracle_feed_id: [u8; 32],
-    pub max_staleness_seconds: i64,
-    pub max_confidence_bps: u16,
-    pub haircut_bps: u16,
-    pub max_exposure_bps: u16,
-    pub deposit_enabled: bool,
-    pub payout_enabled: bool,
-    pub capacity_enabled: bool,
-    pub active: bool,
-    pub last_price_usd_1e8: u64,
-    pub last_price_confidence_bps: u16,
-    pub last_price_published_at_ts: i64,
-    pub last_price_slot: u64,
-    pub last_price_proof_hash: [u8; 32],
-    pub audit_nonce: u64,
-    pub bump: u8,
-    pub asset_symbol: String<u32, 32>,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[account]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct HealthPlan {
     pub reserve_domain: Pubkey,
     pub sponsor: Pubkey,
@@ -461,7 +403,6 @@ pub enum FrameworkAccountData {}
 
 pub trait AccountDataLifetime<'info> {
     type ReserveDomain;
-    type ReserveAssetRail;
     type HealthPlan;
     type PolicySeries;
     type FundingLine;
@@ -472,7 +413,6 @@ pub trait AccountDataLifetime<'info> {
 #[cfg(not(feature = "quasar"))]
 impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
     type ReserveDomain = ReserveDomain;
-    type ReserveAssetRail = ReserveAssetRail;
     type HealthPlan = HealthPlan;
     type PolicySeries = PolicySeries;
     type FundingLine = FundingLine;
@@ -483,7 +423,6 @@ impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
 #[cfg(feature = "quasar")]
 impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
     type ReserveDomain = ReserveDomain<'info>;
-    type ReserveAssetRail = ReserveAssetRail<'info>;
     type HealthPlan = HealthPlan<'info>;
     type PolicySeries = PolicySeries<'info>;
     type FundingLine = FundingLine<'info>;
@@ -493,8 +432,6 @@ impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
 
 pub type ReserveDomainAccountData<'info> =
     <FrameworkAccountData as AccountDataLifetime<'info>>::ReserveDomain;
-pub type ReserveAssetRailAccountData<'info> =
-    <FrameworkAccountData as AccountDataLifetime<'info>>::ReserveAssetRail;
 pub type HealthPlanAccountData<'info> =
     <FrameworkAccountData as AccountDataLifetime<'info>>::HealthPlan;
 pub type PolicySeriesAccountData<'info> =
@@ -540,7 +477,6 @@ impl_quasar_fixed_init_space!(
 #[cfg(feature = "quasar")]
 impl_quasar_dynamic_init_space!(
     ReserveDomain,
-    ReserveAssetRail,
     HealthPlan,
     PolicySeries,
     FundingLine,

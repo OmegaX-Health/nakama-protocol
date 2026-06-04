@@ -42,15 +42,13 @@ All current public instructions remain present in [`programs/omegax_protocol/src
 | `open_funding_line` | create a sponsor, premium, LP, backstop, or subsidy funding line |
 | `fund_sponsor_budget` | transfer sponsor budget tokens into the configured domain vault and record reserve funding |
 | `record_premium_payment` | transfer premium tokens into the configured domain vault and record premium income in the reserve kernel |
-| `configure_reserve_asset_rail` | create or update an accepted reserve asset rail with role, waterfall priority, oracle source, freshness, confidence, haircut, and exposure controls |
-| `publish_reserve_asset_rail_price` | publish governance/oracle-approved reserve asset pricing used by mixed-reserve capacity and operator rebalancing checks; confidence must fit the rail threshold |
 | `create_obligation` | create a canonical liability unit |
 | `reserve_obligation` | reserve liability against plan-side capital and optionally mirror a linked `ClaimCase` reserve balance |
-| `settle_obligation` | move an obligation into claimable, payable, settled, or canceled states and mirror linked protection-claim settlement state; token outflow requires the obligation asset's active, payout-enabled, fresh confidence-bounded `ReserveAssetRail` |
+| `settle_obligation` | move an obligation into claimable, payable, settled, or canceled states and mirror linked protection-claim settlement state; token outflow requires the matching domain vault, reserve ledgers, funding line, and SPL outflow accounts |
 | `release_reserve` | release reserved liability back to free capital and mirror linked protection-claim reserve state |
 | `open_claim_case` | open an explicit claim lifecycle from the enrolled member wallet or a plan claim/operator path |
 | `adjudicate_claim_case` | approve or deny a claim case and optionally bind it to the matching `Obligation` |
-| `settle_claim_case` | settle approved same-asset claim payouts through the reserve kernel only when no linked `Obligation` exists; the claim asset must have an active, payout-enabled, fresh confidence-bounded `ReserveAssetRail` and enough free reserve in that same asset |
+| `settle_claim_case` | settle approved same-asset claim payouts through the reserve kernel only when no linked `Obligation` exists; the claim asset must match the domain vault and funding line asset with enough free reserve in that same asset |
 | `mark_impairment` | record impairment against the affected ledgers and optional obligation |
 
 ## Capital Surface

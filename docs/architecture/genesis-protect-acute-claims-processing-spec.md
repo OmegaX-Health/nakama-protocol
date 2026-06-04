@@ -400,17 +400,16 @@ These are operating targets for staffing and queue design. They are not member-f
 
 **Preferred settlement asset**: USDC (SPL token, `hWMfBLfo8EBaRTCcrWV33xaUR8gK2iTtqPoQvEMHmvu` on devnet).
 
-**Same-asset payout rails**: `settle_claim_case` and `settle_obligation`
-require a matching `ReserveAssetRail` for the claim or obligation asset mint.
-The Solana program enforces the following before any value leaves custody:
+**Same-asset payout path**: `settle_claim_case` and `settle_obligation`
+require matching domain vault, funding line, reserve ledgers, and SPL outflow
+accounts for the claim or obligation asset mint. The Solana program enforces the
+following before any value leaves custody:
 
-| Rail check | Requirement | Failure behaviour |
+| Settlement check | Requirement | Failure behaviour |
 |---|---|---|
-| Domain and mint binding | Rail must be bound to the same reserve domain and asset mint as the claim | Settlement fails |
-| Rail active | `rail.active == true` | Settlement fails |
-| Payout enabled | `rail.payout_enabled == true` | Settlement fails |
-| Oracle price freshness | Published price must be within the rail's freshness window | Asset counted as zero capacity and payout fails |
-| Oracle confidence | Price confidence must be ≤ `rail.max_confidence_bps` | Asset counted as zero capacity and payout fails |
+| Domain and mint binding | Vault, ledgers, funding line, and liability must use the same reserve domain and asset mint | Settlement fails |
+| Free reserve | Same-asset free reserve must cover the payout | Settlement fails |
+| SPL outflow accounts | Vault token account, recipient token account, and token program must be present for token outflow | Settlement fails |
 
 Approved fallback reserves (where configured): PUSD, USDT, SOL, WBTC, WETH.
 Those assets are reserve inventory and operator-rebalancing inputs, not direct

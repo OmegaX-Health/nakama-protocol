@@ -155,7 +155,6 @@ import {
   derivePlanReserveLedgerPda,
   derivePolicySeriesPda,
   derivePoolClassLedgerPda,
-  deriveReserveAssetRailPda,
   deriveReserveDomainPda,
   deriveSeriesReserveLedgerPda,
 } from "./protocol/pdas";
@@ -1151,34 +1150,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           assetMint: asAddress(decodedField(decoded, "assetMint")),
           vaultTokenAccount: asAddress(decodedField(decoded, "vaultTokenAccount")),
           totalAssets: bigintFromAnchorValue(decodedField(decoded, "totalAssets")),
-          bump: Number(decodedField(decoded, "bump") ?? 0),
-        });
-        break;
-      case "ReserveAssetRail":
-        snapshot.reserveAssetRails.push({
-          address,
-          reserveDomain: asAddress(decodedField(decoded, "reserveDomain", "reserve_domain")),
-          assetMint: asAddress(decodedField(decoded, "assetMint", "asset_mint")),
-          oracleAuthority: asAddress(decodedField(decoded, "oracleAuthority", "oracle_authority")),
-          assetSymbol: stringFromAnchorValue(decodedField(decoded, "assetSymbol", "asset_symbol")),
-          role: Number(decodedField(decoded, "role") ?? 0),
-          payoutPriority: Number(decodedField(decoded, "payoutPriority", "payout_priority") ?? 0),
-          oracleSource: Number(decodedField(decoded, "oracleSource", "oracle_source") ?? 0),
-          oracleFeedIdHex: bytesToHex(decodedField(decoded, "oracleFeedId", "oracle_feed_id")),
-          maxStalenessSeconds: numberFromAnchorValue(decodedField(decoded, "maxStalenessSeconds", "max_staleness_seconds")),
-          maxConfidenceBps: Number(decodedField(decoded, "maxConfidenceBps", "max_confidence_bps") ?? 0),
-          haircutBps: Number(decodedField(decoded, "haircutBps", "haircut_bps") ?? 0),
-          maxExposureBps: Number(decodedField(decoded, "maxExposureBps", "max_exposure_bps") ?? 0),
-          depositEnabled: Boolean(decodedField(decoded, "depositEnabled", "deposit_enabled")),
-          payoutEnabled: Boolean(decodedField(decoded, "payoutEnabled", "payout_enabled")),
-          capacityEnabled: Boolean(decodedField(decoded, "capacityEnabled", "capacity_enabled")),
-          active: Boolean(decodedField(decoded, "active")),
-          lastPriceUsd1e8: bigintFromAnchorValue(decodedField(decoded, "lastPriceUsd1e8", "last_price_usd_1e8")),
-          lastPriceConfidenceBps: Number(decodedField(decoded, "lastPriceConfidenceBps", "last_price_confidence_bps") ?? 0),
-          lastPricePublishedAtTs: numberFromAnchorValue(decodedField(decoded, "lastPricePublishedAtTs", "last_price_published_at_ts")),
-          lastPriceSlot: bigintFromAnchorValue(decodedField(decoded, "lastPriceSlot", "last_price_slot")),
-          lastPriceProofHashHex: bytesToHex(decodedField(decoded, "lastPriceProofHash", "last_price_proof_hash")),
-          auditNonce: bigintFromAnchorValue(decodedField(decoded, "auditNonce", "audit_nonce")),
           bump: Number(decodedField(decoded, "bump") ?? 0),
         });
         break;
@@ -2222,40 +2193,8 @@ export function buildConfigureReserveAssetRailTx(params: {
   reasonHashHex?: string | null;
   recentBlockhash: string;
 }): Transaction {
-  const authority = toPublicKey(params.authority);
-  const assetMint = toPublicKey(params.assetMint);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "configure_reserve_asset_rail",
-    args: {
-      asset_mint: assetMint,
-      oracle_authority: toPublicKey(params.oracleAuthority ?? authority),
-      asset_symbol: params.assetSymbol,
-      role: params.role,
-      payout_priority: params.payoutPriority,
-      oracle_source: params.oracleSource,
-      oracle_feed_id: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.oracleFeedIdHex), 32)),
-      max_staleness_seconds: params.maxStalenessSeconds,
-      max_confidence_bps: params.maxConfidenceBps,
-      haircut_bps: params.haircutBps,
-      max_exposure_bps: params.maxExposureBps,
-      deposit_enabled: params.depositEnabled,
-      payout_enabled: params.payoutEnabled,
-      capacity_enabled: params.capacityEnabled,
-      active: params.active,
-      reason_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.reasonHashHex), 32)),
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true, isWritable: true },
-      { pubkey: params.reserveDomainAddress },
-      {
-        pubkey: deriveReserveAssetRailPda({ reserveDomain: params.reserveDomainAddress, assetMint }),
-        isWritable: true,
-      },
-      { pubkey: SystemProgram.programId },
-    ],
-  });
+  void params;
+  throw new Error("configure_reserve_asset_rail was removed from the base OmegaX protocol surface");
 }
 
 export function buildPublishReserveAssetRailPriceTx(params: {
@@ -2268,26 +2207,8 @@ export function buildPublishReserveAssetRailPriceTx(params: {
   proofHashHex?: string | null;
   recentBlockhash: string;
 }): Transaction {
-  const authority = toPublicKey(params.authority);
-  const assetMint = toPublicKey(params.assetMint);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "publish_reserve_asset_rail_price",
-    args: {
-      price_usd_1e8: params.priceUsd1e8,
-      confidence_bps: params.confidenceBps,
-      published_at_ts: params.publishedAtTs,
-      proof_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.proofHashHex), 32)),
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      {
-        pubkey: deriveReserveAssetRailPda({ reserveDomain: params.reserveDomainAddress, assetMint }),
-        isWritable: true,
-      },
-    ],
-  });
+  void params;
+  throw new Error("publish_reserve_asset_rail_price was removed from the base OmegaX protocol surface");
 }
 
 export function buildUpdateReserveDomainControlsTx(params: {
@@ -2955,12 +2876,6 @@ function buildObligationFlowTx(params: {
     accounts: [
       { pubkey: authority, isSigner: true },
       { pubkey: params.healthPlanAddress },
-      ...(params.instructionName === "settle_obligation" ? [{
-        pubkey: deriveReserveAssetRailPda({
-          reserveDomain: params.reserveDomainAddress,
-          assetMint: params.assetMint,
-        }),
-      }] : []),
       ...(params.includeVault ? [{
         pubkey: deriveDomainAssetVaultPda({
           reserveDomain: params.reserveDomainAddress,
@@ -3104,12 +3019,6 @@ export function buildSettleClaimCaseTx(params: {
     accounts: [
       { pubkey: authority, isSigner: true },
       { pubkey: params.healthPlanAddress },
-      {
-        pubkey: deriveReserveAssetRailPda({
-          reserveDomain: params.reserveDomainAddress,
-          assetMint: params.assetMint,
-        }),
-      },
       {
         pubkey: deriveDomainAssetVaultPda({
           reserveDomain: params.reserveDomainAddress,

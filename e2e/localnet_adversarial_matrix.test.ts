@@ -61,7 +61,6 @@ const obligation = protocol.deriveObligationPda({
   fundingLine,
   obligationId: "adv-obligation",
 });
-const reserveAssetRail = protocol.deriveReserveAssetRailPda({ reserveDomain, assetMint });
 const domainAssetVault = protocol.deriveDomainAssetVaultPda({ reserveDomain, assetMint });
 const domainAssetLedger = protocol.deriveDomainAssetLedgerPda({ reserveDomain, assetMint });
 const fundingLineLedger = protocol.deriveFundingLineLedgerPda({ fundingLine, assetMint });
@@ -392,7 +391,7 @@ const matrixRows: MatrixRow[] = [
     area: "claim-settlement",
     instruction: "settle_claim_case",
     attack: "claim operator confusion with attacker recipient",
-    expectedGuard: "claim operator role, claimant/delegate recipient, reserve rail, and vault binding",
+    expectedGuard: "claim operator role, claimant/delegate recipient, vault outflow, and ledger binding",
     tx: protocol.buildSettleClaimCaseTx({
       authority: attacker,
       healthPlanAddress: healthPlan,
@@ -409,7 +408,6 @@ const matrixRows: MatrixRow[] = [
       recentBlockhash: STATIC_BLOCKHASH,
     }),
     mustInclude: [
-      reserveAssetRail,
       domainAssetVault,
       domainAssetLedger,
       fundingLineLedger,
@@ -425,7 +423,7 @@ const matrixRows: MatrixRow[] = [
     area: "obligation-settlement",
     instruction: "settle_obligation",
     attack: "linked obligation payout to attacker recipient",
-    expectedGuard: "settlement authority, linked claim, claimant recipient, reserve rail, and ledger PDA binding",
+    expectedGuard: "settlement authority, linked claim, claimant recipient, vault outflow, and ledger PDA binding",
     tx: protocol.buildSettleObligationTx({
       authority: attacker,
       healthPlanAddress: healthPlan,
@@ -444,7 +442,6 @@ const matrixRows: MatrixRow[] = [
       recentBlockhash: STATIC_BLOCKHASH,
     }),
     mustInclude: [
-      reserveAssetRail,
       domainAssetVault,
       domainAssetLedger,
       fundingLineLedger,
@@ -468,7 +465,7 @@ test("adversarial matrix owns all live instructions through the surface manifest
   assert.deepEqual(duplicateOwnedInstructions(), []);
   assert.deepEqual(blankInstructionExceptionReasons(), []);
   assert.deepEqual(missing, []);
-  assert.equal(live.length, 21);
+  assert.equal(live.length, 19);
 });
 
 test("money and control paths include adversarial signer and account-binding probes", () => {
