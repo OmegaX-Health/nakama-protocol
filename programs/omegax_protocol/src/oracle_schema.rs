@@ -450,17 +450,11 @@ pub(crate) fn set_pool_oracle_policy(
         args.quorum_m > 0 && args.quorum_n > 0 && args.quorum_m <= args.quorum_n,
         OmegaXProtocolError::InvalidOracleQuorum
     );
-    require!(
-        args.oracle_fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
-
     let policy = &mut ctx.accounts.pool_oracle_policy;
     policy.liquidity_pool = ctx.accounts.liquidity_pool.key();
     policy.quorum_m = args.quorum_m;
     policy.quorum_n = args.quorum_n;
     policy.require_verified_schema = args.require_verified_schema;
-    policy.oracle_fee_bps = args.oracle_fee_bps;
     policy.allow_delegate_claim = args.allow_delegate_claim;
     policy.challenge_window_secs = args.challenge_window_secs;
     policy.updated_at_ts = Clock::get()?.unix_timestamp;
@@ -471,7 +465,6 @@ pub(crate) fn set_pool_oracle_policy(
         authority: ctx.accounts.authority.key(),
         quorum_m: policy.quorum_m,
         quorum_n: policy.quorum_n,
-        oracle_fee_bps: policy.oracle_fee_bps,
     });
 
     Ok(())
@@ -549,7 +542,6 @@ pub(crate) fn set_pool_oracle_policy<'info>(
     quorum_m: u8,
     quorum_n: u8,
     require_verified_schema: bool,
-    oracle_fee_bps: u16,
     allow_delegate_claim: bool,
     challenge_window_secs: u32,
 ) -> Result<()> {
@@ -563,11 +555,6 @@ pub(crate) fn set_pool_oracle_policy<'info>(
         quorum_m > 0 && quorum_n > 0 && quorum_m <= quorum_n,
         OmegaXProtocolError::InvalidOracleQuorum
     );
-    require!(
-        oracle_fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
-
     let liquidity_pool = *ctx.accounts.liquidity_pool.address();
     let updated_at_ts = Clock::get()?.unix_timestamp.get();
     let bump = ctx.accounts.pool_oracle_policy.bump;
@@ -577,7 +564,6 @@ pub(crate) fn set_pool_oracle_policy<'info>(
         quorum_m,
         quorum_n,
         require_verified_schema,
-        oracle_fee_bps,
         allow_delegate_claim,
         challenge_window_secs,
         updated_at_ts,

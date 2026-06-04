@@ -300,10 +300,6 @@ pub(crate) fn create_domain_asset_vault<'info>(
     Ok(())
 }
 
-/// Phase 1.6 — Initialize the protocol-fee vault for a (reserve_domain, asset_mint)
-/// rail. Governance-only; binds the rail to the asset mint at the program edge.
-/// Withdrawal authority is governance (PR2). Accrual is wired in PR1 hooks.
-
 #[derive(Accounts)]
 #[cfg_attr(not(feature = "quasar"), instruction(args: CreateReserveDomainArgs))]
 #[cfg_attr(

@@ -1,4 +1,4 @@
-33c049ec049b2ec12e5279bcf21f8b188f656be74dc99ae02a58b67b3c57fbce
+19555d74bfbb87d850915349519366d0abdc549c2ddd38c271459d51cbbbbf64
   Cargo.toml
   programs/omegax_protocol/Cargo.toml
   programs/omegax_protocol/src/args.rs
@@ -15,7 +15,6 @@
   programs/omegax_protocol/src/constants.rs
   programs/omegax_protocol/src/errors.rs
   programs/omegax_protocol/src/events.rs
-  programs/omegax_protocol/src/fees.rs
   programs/omegax_protocol/src/funding_obligations/funding_lines.rs
   programs/omegax_protocol/src/funding_obligations/inflows.rs
   programs/omegax_protocol/src/funding_obligations/mod.rs
@@ -28,7 +27,6 @@
   programs/omegax_protocol/src/kernel/bindings.rs
   programs/omegax_protocol/src/kernel/capital_math.rs
   programs/omegax_protocol/src/kernel/custody.rs
-  programs/omegax_protocol/src/kernel/fees.rs
   programs/omegax_protocol/src/kernel/membership.rs
   programs/omegax_protocol/src/kernel/reserve_accounting.rs
   programs/omegax_protocol/src/lib.rs

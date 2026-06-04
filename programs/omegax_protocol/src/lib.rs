@@ -18,7 +18,6 @@ pub mod classic_token;
 pub mod constants;
 pub mod errors;
 pub mod events;
-pub mod fees;
 pub mod funding_obligations;
 pub mod governance;
 pub mod kernel;
@@ -36,7 +35,6 @@ pub use claims::*;
 pub use constants::*;
 pub use errors::*;
 pub use events::*;
-pub use fees::*;
 pub use funding_obligations::*;
 pub use governance::*;
 #[cfg(test)]
@@ -128,35 +126,6 @@ pub mod omegax_protocol {
         args: PublishReserveAssetRailPriceArgs,
     ) -> Result<()> {
         crate::reserve_waterfall::publish_reserve_asset_rail_price(ctx, args)
-    }
-
-    /// Phase 1.6 — Initialize the protocol-fee vault for a (reserve_domain, asset_mint)
-    /// rail. Governance-only; binds the rail to the asset mint at the program edge.
-    /// Withdrawal authority is governance (PR2). Accrual is wired in PR1 hooks.
-    pub fn init_protocol_fee_vault(
-        ctx: Context<InitProtocolFeeVault>,
-        args: InitProtocolFeeVaultArgs,
-    ) -> Result<()> {
-        crate::fees::init_protocol_fee_vault(ctx, args)
-    }
-
-    /// Phase 1.6 — Initialize the pool-treasury vault for a (liquidity_pool, asset_mint)
-    /// rail. Governance-only init; pool-admin signs withdrawals (PR2).
-    pub fn init_pool_treasury_vault(
-        ctx: Context<InitPoolTreasuryVault>,
-        args: InitPoolTreasuryVaultArgs,
-    ) -> Result<()> {
-        crate::fees::init_pool_treasury_vault(ctx, args)
-    }
-
-    /// Phase 1.6 — Initialize the pool-oracle fee vault for a (liquidity_pool,
-    /// oracle, asset_mint) rail. Governance-only init; the registered oracle
-    /// wallet (or oracle profile admin) signs withdrawals (PR2).
-    pub fn init_pool_oracle_fee_vault(
-        ctx: Context<InitPoolOracleFeeVault>,
-        args: InitPoolOracleFeeVaultArgs,
-    ) -> Result<()> {
-        crate::fees::init_pool_oracle_fee_vault(ctx, args)
     }
 
     pub fn create_health_plan(
@@ -342,63 +311,6 @@ pub mod omegax_protocol {
         crate::capital::process_redemption_queue(ctx, args)
     }
 
-    /// Sweep accrued protocol fees (SPL rail) to a recipient ATA.
-    /// Authority: governance only. Fees physically reside in the matching
-    /// DomainAssetVault.vault_token_account; the CPI is PDA-signed via
-    /// transfer_from_domain_vault.
-    pub fn withdraw_protocol_fee_spl(
-        ctx: Context<WithdrawProtocolFeeSpl>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        crate::fees::withdraw_protocol_fee_spl(ctx, args)
-    }
-
-    /// Sweep accrued protocol fees (SOL rail) to a recipient system account.
-    /// Authority: governance only. Lamports come straight off the fee-vault
-    /// PDA; rent-exempt minimum is preserved.
-    pub fn withdraw_protocol_fee_sol(
-        ctx: Context<WithdrawProtocolFeeSol>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        crate::fees::withdraw_protocol_fee_sol(ctx, args)
-    }
-
-    /// Sweep accrued pool-treasury fees (SPL rail).
-    /// Authority: pool curator OR governance.
-    pub fn withdraw_pool_treasury_spl(
-        ctx: Context<WithdrawPoolTreasurySpl>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_treasury_spl(ctx, args)
-    }
-
-    /// Sweep accrued pool-treasury fees (SOL rail).
-    /// Authority: pool curator OR governance.
-    pub fn withdraw_pool_treasury_sol(
-        ctx: Context<WithdrawPoolTreasurySol>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_treasury_sol(ctx, args)
-    }
-
-    /// Sweep accrued pool-oracle fees (SPL rail) to a recipient ATA.
-    /// Authority: registered oracle wallet OR oracle profile admin OR governance.
-    pub fn withdraw_pool_oracle_fee_spl(
-        ctx: Context<WithdrawPoolOracleFeeSpl>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_oracle_fee_spl(ctx, args)
-    }
-
-    /// Sweep accrued pool-oracle fees (SOL rail) to a recipient system account.
-    /// Authority: registered oracle wallet OR oracle profile admin OR governance.
-    pub fn withdraw_pool_oracle_fee_sol(
-        ctx: Context<WithdrawPoolOracleFeeSol>,
-        args: WithdrawArgs,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_oracle_fee_sol(ctx, args)
-    }
-
     pub fn create_allocation_position(
         ctx: Context<CreateAllocationPosition>,
         args: CreateAllocationPositionArgs,
@@ -509,14 +421,9 @@ pub mod omegax_protocol {
     #[instruction(discriminator = [220, 188, 231, 198, 20, 71, 42, 123])]
     pub fn initialize_protocol_governance(
         ctx: Ctx<InitializeProtocolGovernance>,
-        protocol_fee_bps: u16,
         emergency_pause: bool,
     ) -> Result<()> {
-        crate::governance::initialize_protocol_governance(
-            &mut ctx,
-            protocol_fee_bps,
-            emergency_pause,
-        )
+        crate::governance::initialize_protocol_governance(&mut ctx, emergency_pause)
     }
 
     #[instruction(discriminator = [180, 209, 92, 144, 227, 14, 97, 94])]
@@ -635,34 +542,6 @@ pub mod omegax_protocol {
             published_at_ts,
             proof_hash,
         )
-    }
-
-    #[instruction(discriminator = [212, 235, 61, 42, 96, 183, 225, 57])]
-    pub fn init_protocol_fee_vault(
-        ctx: Ctx<InitProtocolFeeVault>,
-        asset_mint: Pubkey,
-        fee_recipient: Pubkey,
-    ) -> Result<()> {
-        crate::fees::init_protocol_fee_vault(&mut ctx, asset_mint, fee_recipient)
-    }
-
-    #[instruction(discriminator = [96, 169, 51, 224, 0, 207, 141, 47])]
-    pub fn init_pool_treasury_vault(
-        ctx: Ctx<InitPoolTreasuryVault>,
-        asset_mint: Pubkey,
-        fee_recipient: Pubkey,
-    ) -> Result<()> {
-        crate::fees::init_pool_treasury_vault(&mut ctx, asset_mint, fee_recipient)
-    }
-
-    #[instruction(discriminator = [68, 122, 148, 84, 91, 98, 198, 167])]
-    pub fn init_pool_oracle_fee_vault(
-        ctx: Ctx<InitPoolOracleFeeVault>,
-        oracle: Pubkey,
-        asset_mint: Pubkey,
-        fee_recipient: Pubkey,
-    ) -> Result<()> {
-        crate::fees::init_pool_oracle_fee_vault(&mut ctx, oracle, asset_mint, fee_recipient)
     }
 
     #[instruction(discriminator = [136, 7, 197, 134, 241, 206, 83, 171])]
@@ -1051,7 +930,6 @@ pub mod omegax_protocol {
         strategy_hash: [u8; 32],
         allowed_exposure_hash: [u8; 32],
         external_yield_adapter_hash: [u8; 32],
-        fee_bps: u16,
         redemption_policy: u8,
         pause_flags: u32,
         pool_id: String<u32, 32>,
@@ -1066,7 +944,6 @@ pub mod omegax_protocol {
             strategy_hash,
             allowed_exposure_hash,
             external_yield_adapter_hash,
-            fee_bps,
             redemption_policy,
             pause_flags,
             &pool_id,
@@ -1084,7 +961,6 @@ pub mod omegax_protocol {
         redemption_terms_mode: u8,
         wrapper_metadata_hash: [u8; 32],
         permissioning_hash: [u8; 32],
-        fee_bps: u16,
         min_lockup_seconds: i64,
         pause_flags: u32,
         class_id: String<u32, 32>,
@@ -1099,7 +975,6 @@ pub mod omegax_protocol {
             redemption_terms_mode,
             wrapper_metadata_hash,
             permissioning_hash,
-            fee_bps,
             min_lockup_seconds,
             pause_flags,
             &class_id,
@@ -1147,48 +1022,6 @@ pub mod omegax_protocol {
     #[instruction(discriminator = [244, 120, 208, 73, 216, 200, 158, 93])]
     pub fn process_redemption_queue(ctx: Ctx<ProcessRedemptionQueue>, shares: u64) -> Result<()> {
         crate::capital::process_redemption_queue(&mut ctx, shares)
-    }
-
-    #[instruction(discriminator = [120, 62, 236, 14, 227, 240, 52, 253])]
-    pub fn withdraw_protocol_fee_spl(ctx: Ctx<WithdrawProtocolFeeSpl>, amount: u64) -> Result<()> {
-        crate::fees::withdraw_protocol_fee_spl(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [193, 33, 140, 185, 45, 190, 112, 7])]
-    pub fn withdraw_protocol_fee_sol(ctx: Ctx<WithdrawProtocolFeeSol>, amount: u64) -> Result<()> {
-        crate::fees::withdraw_protocol_fee_sol(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [43, 146, 116, 123, 106, 69, 242, 104])]
-    pub fn withdraw_pool_treasury_spl(
-        ctx: Ctx<WithdrawPoolTreasurySpl>,
-        amount: u64,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_treasury_spl(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [50, 115, 51, 120, 221, 37, 200, 169])]
-    pub fn withdraw_pool_treasury_sol(
-        ctx: Ctx<WithdrawPoolTreasurySol>,
-        amount: u64,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_treasury_sol(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [242, 75, 247, 122, 255, 183, 48, 189])]
-    pub fn withdraw_pool_oracle_fee_spl(
-        ctx: Ctx<WithdrawPoolOracleFeeSpl>,
-        amount: u64,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_oracle_fee_spl(&mut ctx, amount)
-    }
-
-    #[instruction(discriminator = [208, 223, 250, 62, 199, 8, 221, 185])]
-    pub fn withdraw_pool_oracle_fee_sol(
-        ctx: Ctx<WithdrawPoolOracleFeeSol>,
-        amount: u64,
-    ) -> Result<()> {
-        crate::fees::withdraw_pool_oracle_fee_sol(&mut ctx, amount)
     }
 
     #[instruction(discriminator = [165, 80, 76, 13, 12, 202, 112, 31])]
@@ -1324,7 +1157,6 @@ pub mod omegax_protocol {
         quorum_m: u8,
         quorum_n: u8,
         require_verified_schema: bool,
-        oracle_fee_bps: u16,
         allow_delegate_claim: bool,
         challenge_window_secs: u32,
     ) -> Result<()> {
@@ -1333,7 +1165,6 @@ pub mod omegax_protocol {
             quorum_m,
             quorum_n,
             require_verified_schema,
-            oracle_fee_bps,
             allow_delegate_claim,
             challenge_window_secs,
         )

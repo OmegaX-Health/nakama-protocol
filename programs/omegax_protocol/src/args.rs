@@ -10,7 +10,6 @@ use crate::platform::*;
     derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
 )]
 pub struct InitializeProtocolGovernanceArgs {
-    pub protocol_fee_bps: u16,
     pub emergency_pause: bool,
 }
 
@@ -92,56 +91,6 @@ pub struct PublishReserveAssetRailPriceArgs {
     pub confidence_bps: u16,
     pub published_at_ts: i64,
     pub proof_hash: [u8; 32],
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct InitProtocolFeeVaultArgs {
-    /// SPL mint for the fee rail. Pass `NATIVE_SOL_MINT` to bind a SOL-rail vault.
-    pub asset_mint: Pubkey,
-    /// Configured recipient owner for this rail. SOL withdraws must pay this
-    /// address directly; SPL withdraws must pay a token account owned by it.
-    pub fee_recipient: Pubkey,
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct InitPoolTreasuryVaultArgs {
-    /// Asset mint must equal `liquidity_pool.deposit_asset_mint` for SPL pools, or
-    /// `NATIVE_SOL_MINT` for the SOL rail.
-    pub asset_mint: Pubkey,
-    /// Configured recipient owner for this rail.
-    pub fee_recipient: Pubkey,
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct InitPoolOracleFeeVaultArgs {
-    /// Oracle wallet whose fee vault is being initialized. Must match
-    /// `oracle_profile.oracle` and have an active `PoolOracleApproval` on the pool.
-    pub oracle: Pubkey,
-    /// Asset mint of the rail (use `NATIVE_SOL_MINT` for SOL).
-    pub asset_mint: Pubkey,
-    /// Configured recipient owner for this oracle-fee rail.
-    pub fee_recipient: Pubkey,
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct WithdrawArgs {
-    /// Amount to withdraw, in the rail's native units (lamports for SOL,
-    /// SPL base units for SPL). Must satisfy
-    /// `withdrawn_fees + amount <= accrued_fees` on the rail's fee vault,
-    /// and must not breach rent-exemption on the SOL rail.
-    pub amount: u64,
 }
 
 #[cfg_attr(
@@ -442,7 +391,6 @@ pub struct CreateLiquidityPoolArgs {
     pub strategy_hash: [u8; 32],
     pub allowed_exposure_hash: [u8; 32],
     pub external_yield_adapter_hash: [u8; 32],
-    pub fee_bps: u16,
     pub redemption_policy: u8,
     pub pause_flags: u32,
 }
@@ -463,7 +411,6 @@ pub struct CreateCapitalClassArgs {
     pub redemption_terms_mode: u8,
     pub wrapper_metadata_hash: [u8; 32],
     pub permissioning_hash: [u8; 32],
-    pub fee_bps: u16,
     pub min_lockup_seconds: i64,
     pub pause_flags: u32,
 }
@@ -634,7 +581,6 @@ pub struct SetPoolOraclePolicyArgs {
     pub quorum_m: u8,
     pub quorum_n: u8,
     pub require_verified_schema: bool,
-    pub oracle_fee_bps: u16,
     pub allow_delegate_claim: bool,
     pub challenge_window_secs: u32,
 }

@@ -42,13 +42,6 @@ fn quasar_checked_add(lhs: u64, rhs: u64) -> Result<u64> {
 }
 
 #[cfg(feature = "quasar")]
-#[inline(always)]
-fn quasar_checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
-    lhs.checked_sub(rhs)
-        .ok_or(OmegaXProtocolError::ArithmeticError.into())
-}
-
-#[cfg(feature = "quasar")]
 fn quasar_require_class_access_mode(restriction_mode: u8, credentialed: bool) -> Result<()> {
     match restriction_mode {
         CAPITAL_CLASS_RESTRICTION_OPEN => Ok(()),
@@ -115,34 +108,6 @@ fn quasar_recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
 fn quasar_book_inflow_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
     sheet.funded = quasar_checked_add(sheet.funded, amount)?;
     quasar_recompute_sheet(sheet)
-}
-
-#[cfg(feature = "quasar")]
-fn quasar_book_fee_accrual_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
-    if amount == 0 {
-        return Ok(());
-    }
-    sheet.funded = quasar_checked_sub(sheet.funded, amount)?;
-    quasar_recompute_sheet(sheet)
-}
-
-#[cfg(feature = "quasar")]
-fn quasar_fee_share_from_bps(amount: u64, bps: u16) -> Result<u64> {
-    if bps == 0 || amount == 0 {
-        return Ok(0);
-    }
-    require!(
-        bps <= BASIS_POINTS_DENOMINATOR,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let scaled = (amount as u128)
-        .checked_mul(bps as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?
-        .checked_div(BASIS_POINTS_DENOMINATOR as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
-    let fee = u64::try_from(scaled).map_err(|_| OmegaXProtocolError::ArithmeticError)?;
-    require!(fee <= amount, OmegaXProtocolError::ArithmeticError);
-    Ok(fee)
 }
 
 #[cfg(not(feature = "quasar"))]
@@ -276,28 +241,7 @@ pub(crate) fn deposit_into_capital_class(
     )?;
 
     let amount = args.amount;
-
-    // Phase 1.6 — Pool-treasury entry fee. Validate the canonical fee vault
-    // matches (liquidity_pool, deposit_asset_mint), then compute the fee
-    // against capital_class.fee_bps. DomainAssetVault.total_assets tracks the
-    // full physical balance until withdrawal; LP reserve ledgers and pool TVL
-    // track net claims-paying capital.
-    let pool_key = ctx.accounts.liquidity_pool.key();
-    let pool_deposit_mint = ctx.accounts.liquidity_pool.deposit_asset_mint;
-    let class_fee_bps = ctx.accounts.capital_class.fee_bps;
-    let pool_treasury_vault = &ctx.accounts.pool_treasury_vault;
-    require_keys_eq!(
-        pool_treasury_vault.liquidity_pool,
-        pool_key,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        pool_treasury_vault.asset_mint,
-        pool_deposit_mint,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    let entry_fee = fee_share_from_bps(amount, class_fee_bps)?;
-    let net_amount = checked_sub(amount, entry_fee)?;
+    let net_amount = amount;
 
     let shares = deposit_shares_for_nav(
         net_amount,
@@ -326,28 +270,8 @@ pub(crate) fn deposit_into_capital_class(
     book_inflow(&mut ctx.accounts.domain_asset_vault.total_assets, amount)?;
     book_inflow_sheet(&mut ctx.accounts.domain_asset_ledger.sheet, amount)?;
     book_inflow_sheet(&mut ctx.accounts.pool_class_ledger.sheet, amount)?;
-    if entry_fee > 0 {
-        book_fee_accrual_sheet(&mut ctx.accounts.domain_asset_ledger.sheet, entry_fee)?;
-        book_fee_accrual_sheet(&mut ctx.accounts.pool_class_ledger.sheet, entry_fee)?;
-    }
     ctx.accounts.pool_class_ledger.total_shares =
         checked_add(ctx.accounts.pool_class_ledger.total_shares, shares)?;
-
-    // Accrue the entry fee to the pool-treasury vault. SPL tokens already
-    // sit in the DomainAssetVault from the transfer above; reserve capacity
-    // was netted above, and this updates the rail's claim counter.
-    if entry_fee > 0 {
-        let vault = &mut ctx.accounts.pool_treasury_vault;
-        let vault_key = vault.key();
-        let vault_mint = vault.asset_mint;
-        let accrued_total = accrue_fee(&mut vault.accrued_fees, entry_fee)?;
-        emit!(FeeAccruedEvent {
-            vault: vault_key,
-            asset_mint: vault_mint,
-            amount: entry_fee,
-            accrued_total,
-        });
-    }
 
     emit!(CapitalClassDepositEvent {
         capital_class: capital_class.key(),
@@ -382,21 +306,7 @@ pub(crate) fn deposit_into_capital_class<'info>(
         &ctx.accounts.domain_asset_vault,
     )?;
 
-    let liquidity_pool_key = *ctx.accounts.liquidity_pool.address();
-    let pool_deposit_mint = ctx.accounts.liquidity_pool.deposit_asset_mint;
-    require_keys_eq!(
-        ctx.accounts.pool_treasury_vault.liquidity_pool,
-        liquidity_pool_key,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        ctx.accounts.pool_treasury_vault.asset_mint,
-        pool_deposit_mint,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-
-    let entry_fee = quasar_fee_share_from_bps(amount, ctx.accounts.capital_class.fee_bps.get())?;
-    let net_amount = quasar_checked_sub(amount, entry_fee)?;
+    let net_amount = amount;
     let shares = quasar_deposit_shares_for_nav(
         net_amount,
         ctx.accounts.capital_class.total_shares.get(),
@@ -458,16 +368,8 @@ pub(crate) fn deposit_into_capital_class<'info>(
     let mut pool_class_sheet = ctx.accounts.pool_class_ledger.sheet;
     quasar_book_inflow_sheet(&mut domain_sheet, amount)?;
     quasar_book_inflow_sheet(&mut pool_class_sheet, amount)?;
-    if entry_fee > 0 {
-        quasar_book_fee_accrual_sheet(&mut domain_sheet, entry_fee)?;
-        quasar_book_fee_accrual_sheet(&mut pool_class_sheet, entry_fee)?;
-    }
     let new_ledger_total_shares =
         quasar_checked_add(ctx.accounts.pool_class_ledger.total_shares.get(), shares)?;
-    let new_accrued_fees = quasar_checked_add(
-        ctx.accounts.pool_treasury_vault.accrued_fees.get(),
-        entry_fee,
-    )?;
 
     let lp_position = &mut ctx.accounts.lp_position;
     lp_position.set_inner(
@@ -497,7 +399,6 @@ pub(crate) fn deposit_into_capital_class<'info>(
     let redemption_terms_mode = capital_class.redemption_terms_mode;
     let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
     let permissioning_hash = capital_class.permissioning_hash;
-    let fee_bps = capital_class.fee_bps.get();
     let min_lockup_seconds = capital_class.min_lockup_seconds.get();
     let pause_flags = capital_class.pause_flags.get();
     let queue_only_redemptions = capital_class.queue_only_redemptions.get();
@@ -521,7 +422,6 @@ pub(crate) fn deposit_into_capital_class<'info>(
         redemption_terms_mode,
         wrapper_metadata_hash,
         permissioning_hash,
-        fee_bps,
         min_lockup_seconds,
         pause_flags,
         queue_only_redemptions,
@@ -550,7 +450,6 @@ pub(crate) fn deposit_into_capital_class<'info>(
     let strategy_hash = pool.strategy_hash;
     let allowed_exposure_hash = pool.allowed_exposure_hash;
     let external_yield_adapter_hash = pool.external_yield_adapter_hash;
-    let fee_bps = pool.fee_bps.get();
     let redemption_policy = pool.redemption_policy;
     let pause_flags = pool.pause_flags.get();
     let total_allocated = pool.total_allocated.get();
@@ -571,7 +470,6 @@ pub(crate) fn deposit_into_capital_class<'info>(
         strategy_hash,
         allowed_exposure_hash,
         external_yield_adapter_hash,
-        fee_bps,
         redemption_policy,
         pause_flags,
         new_pool_tvl,
@@ -622,23 +520,6 @@ pub(crate) fn deposit_into_capital_class<'info>(
         realized_loss_amount,
         bump,
     );
-
-    if entry_fee > 0 {
-        let treasury_vault = &mut ctx.accounts.pool_treasury_vault;
-        let liquidity_pool = treasury_vault.liquidity_pool;
-        let asset_mint = treasury_vault.asset_mint;
-        let fee_recipient = treasury_vault.fee_recipient;
-        let withdrawn_fees = treasury_vault.withdrawn_fees.get();
-        let bump = treasury_vault.bump;
-        treasury_vault.set_inner(
-            liquidity_pool,
-            asset_mint,
-            fee_recipient,
-            new_accrued_fees,
-            withdrawn_fees,
-            bump,
-        );
-    }
 
     Ok(())
 }
@@ -826,28 +707,6 @@ pub struct DepositIntoCapitalClass<'info> {
     )]
     #[cfg(feature = "quasar")]
     pub lp_position: &'info mut Account<LPPosition>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(
-        mut,
-        seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
-        bump = pool_treasury_vault.bump,
-        constraint = pool_treasury_vault.liquidity_pool == liquidity_pool.key() @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub pool_treasury_vault: Box<Account<'info, PoolTreasuryVault>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        mut,
-        constraint = quasar_pda_matches(
-            pool_treasury_vault.address(),
-            &crate::ID,
-            &[SEED_POOL_TREASURY_VAULT, liquidity_pool.address().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
-            pool_treasury_vault.bump,
-        ) @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub source_token_account: Account<'info, TokenAccount>,

@@ -198,7 +198,6 @@ export type ProtocolConfigProposalDraft = {
   emergencyPaused: boolean;
   minOracleStake: bigint;
   newGovernanceAuthority: string | null;
-  protocolFeeBps: number;
 };
 
 export type SchemaStateProposalDraft = {
@@ -1172,7 +1171,6 @@ export function buildGovernanceDescriptionLink(params: {
 }): string {
   const url = new URL(`/governance/descriptions/${params.payload.template}`, params.origin);
   if (params.payload.template === "protocol-config") {
-    url.searchParams.set("protocolFeeBps", String(params.payload.protocolFeeBps));
     url.searchParams.set("defaultStakeMint", params.payload.defaultStakeMint);
     url.searchParams.set("minOracleStake", params.payload.minOracleStake.toString());
     url.searchParams.set("emergencyPaused", params.payload.emergencyPaused ? "true" : "false");
@@ -1200,12 +1198,6 @@ export function parseGovernanceDescriptionPayload(params: {
   template: GovernanceDescriptionTemplate;
 }): GovernanceDescriptionPayload {
   if (params.template === "protocol-config") {
-    const protocolFeeBps = Number.parseInt(
-      Array.isArray(params.searchParams.protocolFeeBps)
-        ? params.searchParams.protocolFeeBps[0] ?? "0"
-        : params.searchParams.protocolFeeBps ?? "0",
-      10,
-    );
     const minOracleStakeRaw = Array.isArray(params.searchParams.minOracleStake)
       ? params.searchParams.minOracleStake[0] ?? "0"
       : params.searchParams.minOracleStake ?? "0";
@@ -1228,7 +1220,6 @@ export function parseGovernanceDescriptionPayload(params: {
         Array.isArray(params.searchParams.newGovernanceAuthority)
           ? params.searchParams.newGovernanceAuthority[0] ?? null
           : params.searchParams.newGovernanceAuthority ?? null,
-      protocolFeeBps: Number.isFinite(protocolFeeBps) ? protocolFeeBps : 0,
       template: "protocol-config",
     };
   }

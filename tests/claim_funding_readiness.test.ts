@@ -57,9 +57,6 @@ function emptySnapshot(overrides: Partial<ProtocolConsoleSnapshot> = {}): Protoc
     outcomeSchemas: [],
     schemaDependencyLedgers: [],
     claimAttestations: [],
-    protocolFeeVaults: [],
-    poolTreasuryVaults: [],
-    poolOracleFeeVaults: [],
     ...overrides,
   };
 }

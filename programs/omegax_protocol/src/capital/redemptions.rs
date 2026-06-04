@@ -211,25 +211,6 @@ fn quasar_redemption_assets_to_process(
 }
 
 #[cfg(feature = "quasar")]
-fn quasar_fee_share_from_bps(amount: u64, bps: u16) -> Result<u64> {
-    if bps == 0 || amount == 0 {
-        return Ok(0);
-    }
-    require!(
-        bps <= BASIS_POINTS_DENOMINATOR,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let scaled = (amount as u128)
-        .checked_mul(bps as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?
-        .checked_div(BASIS_POINTS_DENOMINATOR as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
-    let fee = quasar_checked_u128_to_u64(scaled)?;
-    require!(fee <= amount, OmegaXProtocolError::ArithmeticError);
-    Ok(fee)
-}
-
-#[cfg(feature = "quasar")]
 #[inline(always)]
 fn quasar_redeemable_assets_for_shares(
     shares: u64,
@@ -344,7 +325,6 @@ pub(crate) fn request_redemption<'info>(
     let redemption_terms_mode = capital_class.redemption_terms_mode;
     let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
     let permissioning_hash = capital_class.permissioning_hash;
-    let fee_bps = capital_class.fee_bps.get();
     let min_lockup_seconds = capital_class.min_lockup_seconds.get();
     let pause_flags = capital_class.pause_flags.get();
     let queue_only_redemptions = capital_class.queue_only_redemptions.get();
@@ -368,7 +348,6 @@ pub(crate) fn request_redemption<'info>(
         redemption_terms_mode,
         wrapper_metadata_hash,
         permissioning_hash,
-        fee_bps,
         min_lockup_seconds,
         pause_flags,
         queue_only_redemptions,
@@ -397,7 +376,6 @@ pub(crate) fn request_redemption<'info>(
     let strategy_hash = pool.strategy_hash;
     let allowed_exposure_hash = pool.allowed_exposure_hash;
     let external_yield_adapter_hash = pool.external_yield_adapter_hash;
-    let fee_bps = pool.fee_bps.get();
     let redemption_policy = pool.redemption_policy;
     let pause_flags = pool.pause_flags.get();
     let total_value_locked = pool.total_value_locked.get();
@@ -418,7 +396,6 @@ pub(crate) fn request_redemption<'info>(
         strategy_hash,
         allowed_exposure_hash,
         external_yield_adapter_hash,
-        fee_bps,
         redemption_policy,
         pause_flags,
         total_value_locked,
@@ -484,33 +461,6 @@ pub(crate) fn process_redemption_queue(
         ctx.accounts.lp_position.pending_redemption_assets,
     )?;
 
-    // Phase 1.6 — Pool-treasury exit fee. Validate the canonical fee vault
-    // matches (liquidity_pool, deposit_asset_mint), then compute the carve-out.
-    // The full pending request is resolved (LP gives up claim on asset_amount),
-    // but only `net_to_lp` physically leaves the vault — the fee carve-out
-    // stays in the SPL token account as a treasury claim accrued below.
-    let pool_key = ctx.accounts.liquidity_pool.key();
-    let pool_deposit_mint = ctx.accounts.liquidity_pool.deposit_asset_mint;
-    let class_fee_bps = ctx.accounts.capital_class.fee_bps;
-    let pool_treasury_vault = &ctx.accounts.pool_treasury_vault;
-    require_keys_eq!(
-        pool_treasury_vault.liquidity_pool,
-        pool_key,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        pool_treasury_vault.asset_mint,
-        pool_deposit_mint,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    let exit_fee = fee_share_from_bps(asset_amount, class_fee_bps)?;
-    require!(
-        exit_fee < asset_amount,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let net_to_lp = checked_sub(asset_amount, exit_fee)?;
-    require_positive_amount(net_to_lp)?;
-
     ctx.accounts.lp_position.pending_redemption_shares = checked_sub(
         ctx.accounts.lp_position.pending_redemption_shares,
         args.shares,
@@ -520,9 +470,10 @@ pub(crate) fn process_redemption_queue(
         asset_amount,
     )?;
     ctx.accounts.lp_position.shares = checked_sub(ctx.accounts.lp_position.shares, args.shares)?;
-    // realized_distributions tracks what the LP actually received (post-fee).
-    ctx.accounts.lp_position.realized_distributions =
-        checked_add(ctx.accounts.lp_position.realized_distributions, net_to_lp)?;
+    ctx.accounts.lp_position.realized_distributions = checked_add(
+        ctx.accounts.lp_position.realized_distributions,
+        asset_amount,
+    )?;
     resolve_redemption_queue_status_after_process(
         &mut ctx.accounts.capital_class,
         &mut ctx.accounts.lp_position,
@@ -547,13 +498,9 @@ pub(crate) fn process_redemption_queue(
         asset_amount,
     )?;
 
-    // Physical vault counter — only net_to_lp leaves the SPL token account.
     ctx.accounts.domain_asset_vault.total_assets =
-        checked_sub(ctx.accounts.domain_asset_vault.total_assets, net_to_lp)?;
+        checked_sub(ctx.accounts.domain_asset_vault.total_assets, asset_amount)?;
 
-    // Ledger sheets track the full pending -> settled transition. The fee
-    // remains in DomainAssetVault.total_assets until withdrawn but is no
-    // longer LP reserve capacity.
     settle_pending_redemption(
         &mut ctx.accounts.pool_class_ledger,
         asset_amount,
@@ -570,29 +517,13 @@ pub(crate) fn process_redemption_queue(
         OmegaXProtocolError::Unauthorized
     );
     transfer_from_domain_vault(
-        net_to_lp,
+        asset_amount,
         &ctx.accounts.domain_asset_vault,
         &ctx.accounts.vault_token_account,
         &ctx.accounts.recipient_token_account,
         &ctx.accounts.asset_mint,
         &ctx.accounts.token_program,
     )?;
-
-    // Accrue the exit fee to the pool-treasury vault. SPL tokens are still
-    // physically in the vault_token_account; only the rail's claim counter
-    // changes.
-    if exit_fee > 0 {
-        let vault = &mut ctx.accounts.pool_treasury_vault;
-        let vault_key = vault.key();
-        let vault_mint = vault.asset_mint;
-        let accrued_total = accrue_fee(&mut vault.accrued_fees, exit_fee)?;
-        emit!(FeeAccruedEvent {
-            vault: vault_key,
-            asset_mint: vault_mint,
-            amount: exit_fee,
-            accrued_total,
-        });
-    }
 
     Ok(())
 }
@@ -634,24 +565,6 @@ pub(crate) fn process_redemption_queue<'info>(
         pending_redemption_assets,
     )?;
     require_keys_eq!(
-        ctx.accounts.pool_treasury_vault.liquidity_pool,
-        *ctx.accounts.liquidity_pool.address(),
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        ctx.accounts.pool_treasury_vault.asset_mint,
-        ctx.accounts.liquidity_pool.deposit_asset_mint,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    let exit_fee =
-        quasar_fee_share_from_bps(asset_amount, ctx.accounts.capital_class.fee_bps.get())?;
-    require!(
-        exit_fee < asset_amount,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let net_to_lp = quasar_checked_sub(asset_amount, exit_fee)?;
-    require_quasar_positive_amount(net_to_lp)?;
-    require_keys_eq!(
         *ctx.accounts.recipient_token_account.owner(),
         ctx.accounts.lp_position.owner,
         OmegaXProtocolError::Unauthorized
@@ -662,7 +575,7 @@ pub(crate) fn process_redemption_queue<'info>(
     let lp_shares = quasar_checked_sub(ctx.accounts.lp_position.shares.get(), shares)?;
     let realized_distributions = quasar_checked_add(
         ctx.accounts.lp_position.realized_distributions.get(),
-        net_to_lp,
+        asset_amount,
     )?;
     let (queue_status, next_redemption_to_process) = if lp_pending_shares == 0 {
         (
@@ -697,11 +610,7 @@ pub(crate) fn process_redemption_queue<'info>(
     )?;
     let domain_total_assets = quasar_checked_sub(
         ctx.accounts.domain_asset_vault.total_assets.get(),
-        net_to_lp,
-    )?;
-    let treasury_accrued_fees = quasar_checked_add(
-        ctx.accounts.pool_treasury_vault.accrued_fees.get(),
-        exit_fee,
+        asset_amount,
     )?;
 
     let mut pool_class_sheet = ctx.accounts.pool_class_ledger.sheet;
@@ -712,7 +621,7 @@ pub(crate) fn process_redemption_queue<'info>(
     quasar_settle_pending_redemption(&mut domain_asset_sheet, asset_amount)?;
 
     transfer_from_domain_vault(
-        net_to_lp,
+        asset_amount,
         ctx.accounts.domain_asset_vault,
         ctx.accounts.vault_token_account,
         ctx.accounts.recipient_token_account,
@@ -757,7 +666,6 @@ pub(crate) fn process_redemption_queue<'info>(
     let redemption_terms_mode = capital_class.redemption_terms_mode;
     let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
     let permissioning_hash = capital_class.permissioning_hash;
-    let fee_bps = capital_class.fee_bps.get();
     let min_lockup_seconds = capital_class.min_lockup_seconds.get();
     let pause_flags = capital_class.pause_flags.get();
     let queue_only_redemptions = capital_class.queue_only_redemptions.get();
@@ -779,7 +687,6 @@ pub(crate) fn process_redemption_queue<'info>(
         redemption_terms_mode,
         wrapper_metadata_hash,
         permissioning_hash,
-        fee_bps,
         min_lockup_seconds,
         pause_flags,
         queue_only_redemptions,
@@ -808,7 +715,6 @@ pub(crate) fn process_redemption_queue<'info>(
     let strategy_hash = pool.strategy_hash;
     let allowed_exposure_hash = pool.allowed_exposure_hash;
     let external_yield_adapter_hash = pool.external_yield_adapter_hash;
-    let fee_bps = pool.fee_bps.get();
     let redemption_policy = pool.redemption_policy;
     let pause_flags = pool.pause_flags.get();
     let total_allocated = pool.total_allocated.get();
@@ -828,7 +734,6 @@ pub(crate) fn process_redemption_queue<'info>(
         strategy_hash,
         allowed_exposure_hash,
         external_yield_adapter_hash,
-        fee_bps,
         redemption_policy,
         pause_flags,
         pool_total_value_locked,
@@ -879,21 +784,6 @@ pub(crate) fn process_redemption_queue<'info>(
     let asset_mint = domain_asset_ledger.asset_mint;
     let bump = domain_asset_ledger.bump;
     domain_asset_ledger.set_inner(reserve_domain, asset_mint, domain_asset_sheet, bump);
-
-    let treasury_vault = &mut ctx.accounts.pool_treasury_vault;
-    let liquidity_pool = treasury_vault.liquidity_pool;
-    let asset_mint = treasury_vault.asset_mint;
-    let fee_recipient = treasury_vault.fee_recipient;
-    let withdrawn_fees = treasury_vault.withdrawn_fees.get();
-    let bump = treasury_vault.bump;
-    treasury_vault.set_inner(
-        liquidity_pool,
-        asset_mint,
-        fee_recipient,
-        treasury_accrued_fees,
-        withdrawn_fees,
-        bump,
-    );
 
     Ok(())
 }
@@ -1078,28 +968,6 @@ pub struct ProcessRedemptionQueue<'info> {
         ) @ OmegaXProtocolError::AllocationPositionMismatch
     )]
     pub lp_position: &'info mut Account<LPPosition>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(
-        mut,
-        seeds = [SEED_POOL_TREASURY_VAULT, liquidity_pool.key().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
-        bump = pool_treasury_vault.bump,
-        constraint = pool_treasury_vault.liquidity_pool == liquidity_pool.key() @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub pool_treasury_vault: Box<Account<'info, PoolTreasuryVault>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        mut,
-        constraint = quasar_pda_matches(
-            pool_treasury_vault.address(),
-            &crate::ID,
-            &[SEED_POOL_TREASURY_VAULT, liquidity_pool.address().as_ref(), liquidity_pool.deposit_asset_mint.as_ref()],
-            pool_treasury_vault.bump,
-        ) @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = pool_treasury_vault.liquidity_pool == *liquidity_pool.address() @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = pool_treasury_vault.asset_mint == liquidity_pool.deposit_asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub pool_treasury_vault: &'info mut Account<PoolTreasuryVault>,
     // PT-2026-04-27-01/02 fix: outflow CPI accounts. Recipient must be the LP
     // position's owner — there is no delegate-recipient pattern for redemptions.
     #[cfg(not(feature = "quasar"))]

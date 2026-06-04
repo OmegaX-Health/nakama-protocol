@@ -535,7 +535,6 @@ pub(crate) fn allocate_capital<'info>(
     let redemption_terms_mode = capital_class.redemption_terms_mode;
     let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
     let permissioning_hash = capital_class.permissioning_hash;
-    let fee_bps = capital_class.fee_bps.get();
     let min_lockup_seconds = capital_class.min_lockup_seconds.get();
     let pause_flags = capital_class.pause_flags.get();
     let queue_only_redemptions = capital_class.queue_only_redemptions.get();
@@ -560,7 +559,6 @@ pub(crate) fn allocate_capital<'info>(
         redemption_terms_mode,
         wrapper_metadata_hash,
         permissioning_hash,
-        fee_bps,
         min_lockup_seconds,
         pause_flags,
         queue_only_redemptions,
@@ -589,7 +587,6 @@ pub(crate) fn allocate_capital<'info>(
     let strategy_hash = pool.strategy_hash;
     let allowed_exposure_hash = pool.allowed_exposure_hash;
     let external_yield_adapter_hash = pool.external_yield_adapter_hash;
-    let fee_bps = pool.fee_bps.get();
     let redemption_policy = pool.redemption_policy;
     let pause_flags = pool.pause_flags.get();
     let total_value_locked = pool.total_value_locked.get();
@@ -610,7 +607,6 @@ pub(crate) fn allocate_capital<'info>(
         strategy_hash,
         allowed_exposure_hash,
         external_yield_adapter_hash,
-        fee_bps,
         redemption_policy,
         pause_flags,
         total_value_locked,
@@ -786,7 +782,6 @@ pub(crate) fn deallocate_capital<'info>(
     let redemption_terms_mode = capital_class.redemption_terms_mode;
     let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
     let permissioning_hash = capital_class.permissioning_hash;
-    let fee_bps = capital_class.fee_bps.get();
     let min_lockup_seconds = capital_class.min_lockup_seconds.get();
     let pause_flags = capital_class.pause_flags.get();
     let queue_only_redemptions = capital_class.queue_only_redemptions.get();
@@ -811,7 +806,6 @@ pub(crate) fn deallocate_capital<'info>(
         redemption_terms_mode,
         wrapper_metadata_hash,
         permissioning_hash,
-        fee_bps,
         min_lockup_seconds,
         pause_flags,
         queue_only_redemptions,
@@ -840,7 +834,6 @@ pub(crate) fn deallocate_capital<'info>(
     let strategy_hash = pool.strategy_hash;
     let allowed_exposure_hash = pool.allowed_exposure_hash;
     let external_yield_adapter_hash = pool.external_yield_adapter_hash;
-    let fee_bps = pool.fee_bps.get();
     let redemption_policy = pool.redemption_policy;
     let pause_flags = pool.pause_flags.get();
     let total_value_locked = pool.total_value_locked.get();
@@ -861,7 +854,6 @@ pub(crate) fn deallocate_capital<'info>(
         strategy_hash,
         allowed_exposure_hash,
         external_yield_adapter_hash,
-        fee_bps,
         redemption_policy,
         pause_flags,
         total_value_locked,

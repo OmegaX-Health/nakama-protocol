@@ -336,7 +336,6 @@ async function main(): Promise<void> {
       protocol.buildInitializeProtocolGovernanceTx({
         governanceAuthority: signer.publicKey,
         recentBlockhash: blockhash,
-        protocolFeeBps: 0,
         emergencyPaused: false,
       }),
       "Initialize protocol governance",

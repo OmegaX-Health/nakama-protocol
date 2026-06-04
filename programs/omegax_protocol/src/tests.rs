@@ -348,7 +348,6 @@ fn sentinel_is_not_curator_control() {
     let governance_authority = Pubkey::new_unique();
     let governance = ProtocolGovernance {
         governance_authority,
-        protocol_fee_bps: 0,
         emergency_pause: false,
         audit_nonce: 0,
         bump: 1,
@@ -364,7 +363,6 @@ fn sentinel_is_not_curator_control() {
         strategy_hash: [0u8; 32],
         allowed_exposure_hash: [0u8; 32],
         external_yield_adapter_hash: [0u8; 32],
-        fee_bps: 0,
         redemption_policy: 0,
         pause_flags: 0,
         total_value_locked: 0,
@@ -1372,7 +1370,6 @@ fn membership_proof_input(membership_mode: u8, proof_mode: u8) -> MembershipProo
 fn sample_governance(governance_authority: Pubkey) -> ProtocolGovernance {
     ProtocolGovernance {
         governance_authority,
-        protocol_fee_bps: 50,
         emergency_pause: false,
         audit_nonce: 0,
         bump: 1,
@@ -1498,7 +1495,6 @@ fn sample_liquidity_pool(reserve_domain: Pubkey, asset_mint: Pubkey) -> Liquidit
         strategy_hash: [0; 32],
         allowed_exposure_hash: [0; 32],
         external_yield_adapter_hash: [0; 32],
-        fee_bps: 0,
         redemption_policy: REDEMPTION_POLICY_OPEN,
         pause_flags: 0,
         total_value_locked: 0,
@@ -1526,7 +1522,6 @@ fn sample_capital_class(reserve_domain: Pubkey, liquidity_pool: Pubkey) -> Capit
         redemption_terms_mode: REDEMPTION_POLICY_OPEN,
         wrapper_metadata_hash: [0; 32],
         permissioning_hash: [0; 32],
-        fee_bps: 0,
         min_lockup_seconds: 0,
         pause_flags: 0,
         queue_only_redemptions: false,
@@ -2256,7 +2251,6 @@ fn lp_claim_attestation_scope_requires_pool_permission() {
         quorum_m: 1,
         quorum_n: 1,
         require_verified_schema: true,
-        oracle_fee_bps: 0,
         allow_delegate_claim: false,
         challenge_window_secs: 0,
         updated_at_ts: 0,
@@ -2312,149 +2306,6 @@ fn lp_claim_attestation_scope_requires_pool_permission() {
         },
     )
     .is_ok());
-}
-
-// -------- Phase 1.6 fee-vault helper tests --------
-
-#[test]
-fn fee_share_from_bps_zero_bps_or_zero_amount_returns_zero() {
-    // bps == 0 short-circuits regardless of amount.
-    assert_eq!(fee_share_from_bps(1_000_000, 0).unwrap(), 0);
-    // amount == 0 short-circuits regardless of bps.
-    assert_eq!(fee_share_from_bps(0, 50).unwrap(), 0);
-    // both zero is OK too.
-    assert_eq!(fee_share_from_bps(0, 0).unwrap(), 0);
-}
-
-#[test]
-fn fee_share_from_bps_typical_50_bps_yields_half_percent() {
-    // 1_000_000_000 lamports * 50 / 10_000 = 5_000_000.
-    assert_eq!(fee_share_from_bps(1_000_000_000, 50).unwrap(), 5_000_000);
-    // 1_000_000 USDC base units (6 decimals = $1) * 25 / 10_000 = 2_500
-    // (= 0.0025 USDC = 0.25%).
-    assert_eq!(fee_share_from_bps(1_000_000, 25).unwrap(), 2_500);
-}
-
-#[test]
-fn fee_share_from_bps_floors_to_zero_below_one_unit() {
-    // 100 * 50 / 10_000 = 0.5 — Solana convention floors to zero.
-    assert_eq!(fee_share_from_bps(100, 50).unwrap(), 0);
-    // 199 * 1 / 10_000 = 0.0199 — also floors to zero.
-    assert_eq!(fee_share_from_bps(199, 1).unwrap(), 0);
-    // 10_000 * 1 / 10_000 = 1 — first non-zero share.
-    assert_eq!(fee_share_from_bps(10_000, 1).unwrap(), 1);
-}
-
-#[test]
-fn fee_share_from_bps_rejects_bps_above_10000() {
-    // 100% (10_000 bps) is the maximum legal bps; anything higher is a
-    // configuration error and returns FeeVaultBpsMisconfigured.
-    assert_eq!(fee_share_from_bps(1_000_000, 10_000).unwrap(), 1_000_000);
-    assert!(fee_share_from_bps(1_000_000, 10_001).is_err());
-}
-
-#[test]
-fn accrue_fee_increments_running_total() {
-    let mut accrued: u64 = 100;
-    let new_total = accrue_fee(&mut accrued, 50).unwrap();
-    assert_eq!(new_total, 150);
-    assert_eq!(accrued, 150);
-    // Subsequent accrual continues to add.
-    let next = accrue_fee(&mut accrued, 25).unwrap();
-    assert_eq!(next, 175);
-    assert_eq!(accrued, 175);
-}
-
-#[test]
-fn accrue_fee_zero_amount_returns_existing_total_unchanged() {
-    let mut accrued: u64 = 12_345;
-    let total = accrue_fee(&mut accrued, 0).unwrap();
-    assert_eq!(total, 12_345);
-    assert_eq!(accrued, 12_345);
-}
-
-#[test]
-fn accrue_fee_overflow_errors() {
-    let mut accrued: u64 = u64::MAX - 10;
-    // 11 onto MAX-10 overflows.
-    assert!(accrue_fee(&mut accrued, 11).is_err());
-    // The accrued value is unchanged on error (checked_add returns None).
-    assert_eq!(accrued, u64::MAX - 10);
-    // Accruing exactly to MAX is allowed.
-    let total = accrue_fee(&mut accrued, 10).unwrap();
-    assert_eq!(total, u64::MAX);
-}
-
-#[test]
-fn fee_accrual_removes_inflow_fee_from_reserve_capacity_before_withdrawal() {
-    let mut sheet = ReserveBalanceSheet::default();
-    book_inflow_sheet(&mut sheet, 1_000).unwrap();
-
-    book_fee_accrual_sheet(&mut sheet, 50).unwrap();
-
-    assert_eq!(sheet.funded, 950);
-    assert_eq!(sheet.free, 950);
-    assert_eq!(sheet.redeemable, 950);
-
-    let mut domain_assets = 1_000;
-    book_fee_withdrawal(&mut domain_assets, 50).unwrap();
-
-    assert_eq!(domain_assets, 950);
-    assert_eq!(sheet.funded, 950);
-    assert_eq!(sheet.free, 950);
-}
-
-#[test]
-fn settlement_origin_fee_withdrawal_does_not_double_debit_domain_sheet() {
-    let reserve_domain = Pubkey::new_unique();
-    let health_plan = Pubkey::new_unique();
-    let policy_series = Pubkey::new_unique();
-    let asset_mint = Pubkey::new_unique();
-    let mut funding_line = sample_funding_line(
-        reserve_domain,
-        health_plan,
-        policy_series,
-        asset_mint,
-        FUNDING_LINE_TYPE_SPONSOR_BUDGET,
-    );
-    funding_line.reserved_amount = 100;
-
-    let mut domain_assets = 1_000;
-    let mut domain_sheet = ReserveBalanceSheet {
-        funded: 1_000,
-        claimable: 100,
-        free: 900,
-        redeemable: 900,
-        ..ReserveBalanceSheet::default()
-    };
-    let mut plan_sheet = domain_sheet;
-    let mut line_sheet = domain_sheet;
-
-    book_settlement_from_delivery(
-        &mut domain_assets,
-        &mut domain_sheet,
-        &mut plan_sheet,
-        &mut line_sheet,
-        None,
-        None,
-        None,
-        None,
-        &mut funding_line,
-        100,
-    )
-    .unwrap();
-
-    let fee_kept_in_custody = 10;
-    domain_assets = checked_add(domain_assets, fee_kept_in_custody).unwrap();
-    assert_eq!(domain_assets, 910);
-    assert_eq!(domain_sheet.funded, 900);
-    assert_eq!(domain_sheet.settled, 100);
-
-    book_fee_withdrawal(&mut domain_assets, fee_kept_in_custody).unwrap();
-
-    assert_eq!(domain_assets, 900);
-    assert_eq!(domain_sheet.funded, 900);
-    assert_eq!(domain_sheet.settled, 100);
 }
 
 #[test]
@@ -2608,84 +2459,6 @@ fn allocation_ledger_settlement_does_not_require_funded_balance() {
     assert_eq!(sheet.reserved, 0);
     assert_eq!(sheet.owed, 0);
     assert_eq!(sheet.settled, 500);
-}
-
-#[test]
-fn redemption_origin_fee_withdrawal_does_not_double_debit_domain_sheet() {
-    let mut domain_assets = 1_000;
-    let mut domain_sheet = ReserveBalanceSheet::default();
-    book_inflow_sheet(&mut domain_sheet, 1_000).unwrap();
-    book_pending_redemption(&mut domain_sheet, 100).unwrap();
-
-    let asset_amount = 100;
-    let exit_fee = 10;
-    let net_to_lp = checked_sub(asset_amount, exit_fee).unwrap();
-    domain_assets = checked_sub(domain_assets, net_to_lp).unwrap();
-    settle_pending_redemption_domain(&mut domain_sheet, asset_amount).unwrap();
-
-    assert_eq!(domain_assets, 910);
-    assert_eq!(domain_sheet.funded, 900);
-    assert_eq!(domain_sheet.settled, 100);
-
-    book_fee_withdrawal(&mut domain_assets, exit_fee).unwrap();
-
-    assert_eq!(domain_assets, 900);
-    assert_eq!(domain_sheet.funded, 900);
-    assert_eq!(domain_sheet.settled, 100);
-}
-
-// -------- Phase 1.7 withdraw-helper tests --------
-
-#[test]
-fn fee_vault_balance_accepts_within_headroom() {
-    // accrued = 100, withdrawn = 30, requesting 50 → new_withdrawn = 80 ≤ 100.
-    let new_withdrawn = require_fee_vault_balance(100, 30, 50).unwrap();
-    assert_eq!(new_withdrawn, 80);
-}
-
-#[test]
-fn fee_vault_balance_accepts_exact_remaining() {
-    // Drain to zero remaining headroom in a single call.
-    let new_withdrawn = require_fee_vault_balance(1_000, 250, 750).unwrap();
-    assert_eq!(new_withdrawn, 1_000);
-}
-
-#[test]
-fn fee_vault_balance_rejects_overdraw() {
-    // accrued = 100, withdrawn = 80, requesting 21 → new_withdrawn = 101 > 100.
-    let err = require_fee_vault_balance(100, 80, 21).unwrap_err();
-    let msg = format!("{err:?}");
-    assert!(
-        msg.contains("FeeVaultInsufficientBalance"),
-        "expected FeeVaultInsufficientBalance, got: {msg}"
-    );
-}
-
-#[test]
-fn fee_vault_balance_rejects_zero_amount() {
-    // Zero-amount withdrawals are rejected by require_positive_amount —
-    // matches the existing convention used for premium/deposit/redemption.
-    assert!(require_fee_vault_balance(100, 0, 0).is_err());
-}
-
-#[test]
-fn fee_vault_balance_rejects_overflow_on_withdrawn_sum() {
-    // withdrawn near MAX, requesting any positive amount overflows.
-    assert!(require_fee_vault_balance(u64::MAX, u64::MAX - 5, 10).is_err());
-}
-
-#[test]
-fn configured_fee_recipient_must_be_nonzero_and_match() {
-    let recipient = Pubkey::new_unique();
-    let attacker = Pubkey::new_unique();
-
-    assert_eq!(
-        require_configured_fee_recipient(recipient).unwrap(),
-        recipient
-    );
-    assert!(require_configured_fee_recipient(ZERO_PUBKEY).is_err());
-    assert!(require_fee_recipient_owner(recipient, recipient).is_ok());
-    assert!(require_fee_recipient_owner(attacker, recipient).is_err());
 }
 
 #[test]

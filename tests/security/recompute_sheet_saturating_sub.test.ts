@@ -18,7 +18,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractRustFunctionBody, programSource as programSrc } from "./program_source.ts";
+import { extractRustFunctionBody } from "./program_source.ts";
 
 function extractFunctionBody(signaturePrefix: string): string {
   const match = /(?:pub\s+)?fn\s+(\w+)\s*\(/.exec(signaturePrefix);
@@ -71,10 +71,23 @@ test("[PT-12] money-out paths decrement vault.total_assets via checked_sub, not 
     "PT-12 mitigation: process_redemption_queue must use checked_sub on vault.total_assets",
   );
 
-  // settle_obligation uses a helper (book_settlement_from_delivery). Confirm
-  // the helper exists and that it does the checked_sub via book_outflow.
+  // Settlement and claim payout helpers must still use checked_sub directly
+  // on the reserve asset totals after the fee-vault rail cleanup.
+  const settleDelivery = extractFunctionBody("pub(crate) fn settle_delivery(");
   assert.ok(
-    /fn\s+book_settlement_from_delivery/.test(programSrc),
-    "PT-12 prerequisite: book_settlement_from_delivery helper must exist",
+    /\*domain_assets\s*=\s*checked_sub\(\*domain_assets,\s*amount\)\?/.test(settleDelivery),
+    "PT-12 mitigation: settle_delivery must checked_sub domain_assets",
+  );
+
+  const selectedAssetPayout = extractFunctionBody("pub(crate) fn book_selected_asset_claim_payout(");
+  assert.ok(
+    /\*domain_assets\s*=\s*checked_sub\(\*domain_assets,\s*amount\)\?/.test(selectedAssetPayout),
+    "PT-12 mitigation: selected-asset claim payout must checked_sub domain_assets",
+  );
+
+  const directClaimPayout = extractFunctionBody("pub(crate) fn book_direct_claim_payout(");
+  assert.ok(
+    /book_selected_asset_claim_payout\(/.test(directClaimPayout),
+    "PT-12 mitigation: direct claim payout must route through selected-asset checked_sub helper",
   );
 });

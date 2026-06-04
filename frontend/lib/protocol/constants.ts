@@ -9,16 +9,6 @@ export const BPF_UPGRADEABLE_LOADER_PROGRAM_ID = new PublicKey(
 export const ZERO_PUBKEY = "11111111111111111111111111111111";
 export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
 
-// Phase 1.7 — wrapped-SOL mint sentinel mirrors the on-chain `NATIVE_SOL_MINT`
-// constant in `programs/omegax_protocol/src/lib.rs`. SOL-rail fee vaults use
-// this as their `asset_mint` so the on-chain seeds and rail-mismatch guards
-// can distinguish lamport accounting from SPL accounting. The pool-treasury
-// panel UI surfaces SOL rails as `paymentMint === ZERO_PUBKEY` (a UI-friendly
-// sentinel that doesn't depend on the WSOL mint magic string); listers map
-// `vault.asset_mint == NATIVE_SOL_MINT` to `paymentMint = ZERO_PUBKEY` in the
-// returned summaries.
-export const NATIVE_SOL_MINT = "So11111111111111111111111111111111111111112";
-export const NATIVE_SOL_MINT_KEY = new PublicKey(NATIVE_SOL_MINT);
 export const MAX_ID_SEED_BYTES = 32;
 export const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS = 50;
 
@@ -28,9 +18,6 @@ export const SEED_DOMAIN_ASSET_VAULT = "domain_asset_vault";
 export const SEED_DOMAIN_ASSET_VAULT_TOKEN = "domain_asset_vault_token";
 export const SEED_DOMAIN_ASSET_LEDGER = "domain_asset_ledger";
 export const SEED_RESERVE_ASSET_RAIL = "reserve_asset_rail";
-export const SEED_PROTOCOL_FEE_VAULT = "protocol_fee_vault";
-export const SEED_POOL_TREASURY_VAULT = "pool_treasury_vault";
-export const SEED_POOL_ORACLE_FEE_VAULT = "pool_oracle_fee_vault";
 export const SEED_HEALTH_PLAN = "health_plan";
 export const SEED_PLAN_RESERVE_LEDGER = "plan_reserve_ledger";
 export const SEED_POLICY_SERIES = "policy_series";

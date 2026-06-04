@@ -43,11 +43,6 @@ pub(crate) fn create_liquidity_pool(
         ctx.accounts.domain_asset_vault.asset_mint == args.deposit_asset_mint,
         OmegaXProtocolError::AssetMintMismatch
     );
-    require!(
-        args.fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
-
     let pool = &mut ctx.accounts.liquidity_pool;
     pool.reserve_domain = ctx.accounts.reserve_domain.key();
     pool.curator = args.curator;
@@ -59,7 +54,6 @@ pub(crate) fn create_liquidity_pool(
     pool.strategy_hash = args.strategy_hash;
     pool.allowed_exposure_hash = args.allowed_exposure_hash;
     pool.external_yield_adapter_hash = args.external_yield_adapter_hash;
-    pool.fee_bps = args.fee_bps;
     pool.redemption_policy = args.redemption_policy;
     pool.pause_flags = args.pause_flags;
     pool.total_value_locked = 0;
@@ -90,7 +84,6 @@ pub(crate) fn create_liquidity_pool<'info>(
     strategy_hash: [u8; 32],
     allowed_exposure_hash: [u8; 32],
     external_yield_adapter_hash: [u8; 32],
-    fee_bps: u16,
     redemption_policy: u8,
     pause_flags: u32,
     pool_id: &str,
@@ -107,11 +100,6 @@ pub(crate) fn create_liquidity_pool<'info>(
         ctx.accounts.domain_asset_vault.asset_mint == deposit_asset_mint,
         OmegaXProtocolError::AssetMintMismatch
     );
-    require!(
-        fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
-
     let bump = ctx.accounts.liquidity_pool.bump;
     ctx.accounts.liquidity_pool.set_inner(
         *ctx.accounts.reserve_domain.address(),
@@ -122,7 +110,6 @@ pub(crate) fn create_liquidity_pool<'info>(
         strategy_hash,
         allowed_exposure_hash,
         external_yield_adapter_hash,
-        fee_bps,
         redemption_policy,
         pause_flags,
         0,
@@ -154,7 +141,6 @@ pub(crate) fn create_liquidity_pool<'info>(
         _strategy_hash: [u8; 32],
         _allowed_exposure_hash: [u8; 32],
         _external_yield_adapter_hash: [u8; 32],
-        _fee_bps: u16,
         _redemption_policy: u8,
         _pause_flags: u32,
         pool_id: String<u32, 32>

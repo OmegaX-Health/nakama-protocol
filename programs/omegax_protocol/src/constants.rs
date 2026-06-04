@@ -13,7 +13,6 @@ pub const MAX_ORACLE_SUPPORTED_SCHEMAS: usize = 16;
 pub const MAX_SCHEMA_KEY_LEN: usize = 96;
 pub const MAX_SCHEMA_DEPENDENCY_RULES: usize = 32;
 pub const BASIS_POINTS_DENOMINATOR: u16 = 10_000;
-pub const MAX_CONFIGURED_FEE_BPS: u16 = BASIS_POINTS_DENOMINATOR - 1;
 pub const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS: u16 = 50;
 
 pub const SEED_PROTOCOL_GOVERNANCE: &[u8] = b"protocol_governance";
@@ -22,9 +21,6 @@ pub const SEED_DOMAIN_ASSET_VAULT: &[u8] = b"domain_asset_vault";
 pub const SEED_DOMAIN_ASSET_VAULT_TOKEN: &[u8] = b"domain_asset_vault_token";
 pub const SEED_DOMAIN_ASSET_LEDGER: &[u8] = b"domain_asset_ledger";
 pub const SEED_RESERVE_ASSET_RAIL: &[u8] = b"reserve_asset_rail";
-pub const SEED_PROTOCOL_FEE_VAULT: &[u8] = b"protocol_fee_vault";
-pub const SEED_POOL_TREASURY_VAULT: &[u8] = b"pool_treasury_vault";
-pub const SEED_POOL_ORACLE_FEE_VAULT: &[u8] = b"pool_oracle_fee_vault";
 pub const SEED_HEALTH_PLAN: &[u8] = b"health_plan";
 pub const SEED_PLAN_RESERVE_LEDGER: &[u8] = b"plan_reserve_ledger";
 pub const SEED_POLICY_SERIES: &[u8] = b"policy_series";
@@ -154,15 +150,3 @@ pub const PAUSE_FLAG_ORACLE_FINALITY_HOLD: u32 = 1 << 6;
 pub const PAUSE_FLAG_ALLOCATION_FREEZE: u32 = 1 << 7;
 
 pub const ZERO_PUBKEY: Pubkey = Pubkey::new_from_array([0u8; 32]);
-
-// Native SOL "mint" sentinel used by fee-vault rails to distinguish lamport
-// accounting from SPL token accounting. Matches `spl_token::native_mint::ID`
-// (canonical wrapped-SOL mint). For SOL fee vaults the lamports physically
-// reside on the fee-vault PDA itself and `transfer_lamports_from_fee_vault`
-// drains them with rent-exemption preserved. For SPL fee vaults the tokens
-// physically reside in the matching `DomainAssetVault.vault_token_account`
-// and `transfer_from_domain_vault` (PDA-signed) drains them.
-#[cfg(not(feature = "quasar"))]
-pub const NATIVE_SOL_MINT: Pubkey = anchor_spl::token::spl_token::native_mint::ID;
-#[cfg(feature = "quasar")]
-pub const NATIVE_SOL_MINT: Pubkey = address!("So11111111111111111111111111111111111111112");

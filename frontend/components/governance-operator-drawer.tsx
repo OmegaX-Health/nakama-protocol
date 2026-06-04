@@ -87,10 +87,6 @@ export function GovernanceOperatorDrawer(props: GovernanceOperatorDrawerProps) {
     if (props.open && props.initialSection) setSection(props.initialSection);
   }, [props.open, props.initialSection]);
 
-  // Governance
-  const [protocolFeeBps, setProtocolFeeBps] = useState(
-    String(props.snapshot.protocolGovernance?.protocolFeeBps ?? 0),
-  );
   const [emergencyPaused, setEmergencyPaused] = useState(
     props.snapshot.protocolGovernance?.emergencyPause ?? false,
   );
@@ -250,13 +246,8 @@ export function GovernanceOperatorDrawer(props: GovernanceOperatorDrawerProps) {
                 <p className="operator-drawer-hint">
                   {governanceReady
                     ? "Protocol governance is already initialized."
-                    : "Sets the governance authority, protocol fee, and emergency pause posture."}
+                    : "Sets the governance authority and emergency pause posture."}
                 </p>
-                <TextField
-                  label="Protocol fee (bps)"
-                  value={protocolFeeBps}
-                  onChange={setProtocolFeeBps}
-                />
                 <Toggle
                   label="Emergency pause"
                   description="Enable to freeze the protocol at launch."
@@ -274,7 +265,6 @@ export function GovernanceOperatorDrawer(props: GovernanceOperatorDrawerProps) {
                         return buildInitializeProtocolGovernanceTx({
                           governanceAuthority: publicKey!,
                           recentBlockhash: blockhash,
-                          protocolFeeBps: parseInteger(protocolFeeBps),
                           emergencyPaused,
                         });
                       })

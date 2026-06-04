@@ -17,7 +17,6 @@ const { DEVNET_PROTOCOL_FIXTURE_STATE } =
 const {
   buildCreateDomainAssetVaultTx,
   buildDepositIntoCapitalClassTx,
-  buildWithdrawProtocolFeeSplTx,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
 
 const recentBlockhash = "11111111111111111111111111111111";
@@ -52,19 +51,6 @@ test("[CSO-2026-04-29] custody builders reject non-classic token program ids", (
       recentBlockhash,
       amount: 1n,
       shares: 0n,
-      tokenProgramId: SystemProgram.programId,
-    }),
-    /classic SPL Token program/,
-  );
-
-  assert.throws(
-    () => buildWithdrawProtocolFeeSplTx({
-      governanceAuthority: wallet,
-      reserveDomainAddress: reserveDomain,
-      paymentMint: pool.depositAssetMint,
-      recipientTokenAccount: recipient,
-      amount: 1n,
-      recentBlockhash,
       tokenProgramId: SystemProgram.programId,
     }),
     /classic SPL Token program/,

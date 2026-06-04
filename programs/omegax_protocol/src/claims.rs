@@ -98,31 +98,6 @@ fn quasar_checked_sub_i64(lhs: i64, rhs: i64) -> Result<i64> {
 }
 
 #[cfg(feature = "quasar")]
-#[inline(always)]
-fn checked_u128_to_u64(value: u128) -> Result<u64> {
-    u64::try_from(value).map_err(|_| OmegaXProtocolError::ArithmeticError.into())
-}
-
-#[cfg(feature = "quasar")]
-fn fee_share_from_bps(amount: u64, bps: u16) -> Result<u64> {
-    if bps == 0 || amount == 0 {
-        return Ok(0);
-    }
-    require!(
-        bps <= BASIS_POINTS_DENOMINATOR,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let scaled = (amount as u128)
-        .checked_mul(bps as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?
-        .checked_div(BASIS_POINTS_DENOMINATOR as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
-    let fee = checked_u128_to_u64(scaled)?;
-    require!(fee <= amount, OmegaXProtocolError::ArithmeticError);
-    Ok(fee)
-}
-
-#[cfg(feature = "quasar")]
 fn recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
     let encumbered = sheet
         .reserved
@@ -417,128 +392,6 @@ fn book_quasar_direct_claim_payout(
     *domain_assets = checked_sub(*domain_assets, amount)?;
     *funding_spent_amount = checked_add(*funding_spent_amount, amount)?;
     Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn require_quasar_oracle_fee_accounts_canonical(
-    vault: &Account<PoolOracleFeeVault>,
-    policy: &Account<PoolOraclePolicy>,
-    attestation: &Account<ClaimAttestation>,
-    claim_case: Pubkey,
-    asset_mint: Pubkey,
-) -> Result<()> {
-    require!(
-        quasar_pda_matches(
-            policy.address(),
-            &crate::ID,
-            &[SEED_POOL_ORACLE_POLICY, policy.liquidity_pool.as_ref()],
-            policy.bump,
-        ),
-        OmegaXProtocolError::PoolOracleApprovalRequired
-    );
-    require!(
-        quasar_pda_matches(
-            attestation.address(),
-            &crate::ID,
-            &[
-                SEED_CLAIM_ATTESTATION,
-                claim_case.as_ref(),
-                attestation.oracle.as_ref(),
-            ],
-            attestation.bump,
-        ),
-        OmegaXProtocolError::Unauthorized
-    );
-    require!(
-        quasar_pda_matches(
-            vault.address(),
-            &crate::ID,
-            &[
-                SEED_POOL_ORACLE_FEE_VAULT,
-                policy.liquidity_pool.as_ref(),
-                attestation.oracle.as_ref(),
-                asset_mint.as_ref(),
-            ],
-            vault.bump,
-        ),
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    Ok(())
-}
-
-#[cfg(feature = "quasar")]
-fn resolve_quasar_claim_oracle_fee(
-    health_plan_key: Pubkey,
-    claim_case: &Account<ClaimCaseAccountData<'_>>,
-    pool_oracle_fee_vault: Option<&Account<PoolOracleFeeVault>>,
-    pool_oracle_policy: Option<&Account<PoolOraclePolicy>>,
-    oracle_fee_attestation: Option<&Account<ClaimAttestation>>,
-    amount: u64,
-) -> Result<u64> {
-    match (
-        pool_oracle_fee_vault,
-        pool_oracle_policy,
-        oracle_fee_attestation,
-    ) {
-        (Some(vault), Some(policy), Some(attestation)) => {
-            let claim_case_key = *claim_case.address();
-            require_quasar_oracle_fee_accounts_canonical(
-                vault,
-                policy,
-                attestation,
-                claim_case_key,
-                claim_case.asset_mint,
-            )?;
-            require_keys_eq!(
-                vault.oracle,
-                attestation.oracle,
-                OmegaXProtocolError::OracleProfileMismatch
-            );
-            require_keys_eq!(
-                attestation.claim_case,
-                claim_case_key,
-                OmegaXProtocolError::Unauthorized
-            );
-            require_keys_eq!(
-                attestation.health_plan,
-                health_plan_key,
-                OmegaXProtocolError::HealthPlanMismatch
-            );
-            require_keys_eq!(
-                attestation.policy_series,
-                claim_case.policy_series,
-                OmegaXProtocolError::PolicySeriesMismatch
-            );
-            require!(
-                attestation.evidence_ref_hash == claim_case.evidence_ref_hash,
-                OmegaXProtocolError::ClaimEvidenceMismatch
-            );
-            require_keys_eq!(
-                vault.asset_mint,
-                claim_case.asset_mint,
-                OmegaXProtocolError::FeeVaultMismatch
-            );
-            require_keys_eq!(
-                vault.liquidity_pool,
-                policy.liquidity_pool,
-                OmegaXProtocolError::LiquidityPoolMismatch
-            );
-            require_keys_eq!(
-                attestation.liquidity_pool,
-                policy.liquidity_pool,
-                OmegaXProtocolError::LiquidityPoolMismatch
-            );
-            fee_share_from_bps(amount, policy.oracle_fee_bps.get())
-        }
-        (Some(_), Some(_), None) => {
-            err!(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee)
-        }
-        (None, Some(_), _) => err!(OmegaXProtocolError::FeeVaultRequiredForConfiguredFee),
-        (None, None, None) => Ok(0),
-        (Some(_), None, _) | (None, None, Some(_)) => {
-            err!(OmegaXProtocolError::FeeVaultBpsMisconfigured)
-        }
-    }
 }
 
 #[cfg(not(feature = "quasar"))]
@@ -1180,107 +1033,6 @@ pub(crate) fn settle_claim_case(
 
     let amount = args.amount;
 
-    // Phase 1.6 — Compute protocol fee + adjudicator-oracle fee carve-outs.
-    // The full `amount` is what the claim is settling against (claim_case.paid_amount
-    // increments by amount, funding_line.spent_amount increments by amount, sheets
-    // record the full obligation delivery). But only `net_to_recipient = amount -
-    // total_fee` physically leaves the vault — fee tokens stay as treasury claims.
-    let reserve_domain = ctx.accounts.health_plan.reserve_domain;
-    let asset_mint_key = ctx.accounts.funding_line.asset_mint;
-    let protocol_fee_bps = ctx.accounts.protocol_governance.protocol_fee_bps;
-
-    let protocol_fee_vault = &ctx.accounts.protocol_fee_vault;
-    require_keys_eq!(
-        protocol_fee_vault.reserve_domain,
-        reserve_domain,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        protocol_fee_vault.asset_mint,
-        asset_mint_key,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    let protocol_fee = fee_share_from_bps(amount, protocol_fee_bps)?;
-
-    // Oracle fee: requires the fee vault, policy, and a matching attestation.
-    // The attestation binds the revshare recipient to the oracle that actually
-    // attested this claim case.
-    let oracle_fee = match (
-        ctx.accounts.pool_oracle_fee_vault.as_deref(),
-        ctx.accounts.pool_oracle_policy.as_deref(),
-        ctx.accounts.oracle_fee_attestation.as_deref(),
-    ) {
-        (Some(vault), Some(policy), Some(attestation)) => {
-            require_oracle_fee_accounts_canonical(
-                vault,
-                policy,
-                attestation,
-                ctx.accounts.claim_case.key(),
-                asset_mint_key,
-            )?;
-            require_keys_eq!(
-                vault.oracle,
-                attestation.oracle,
-                OmegaXProtocolError::OracleProfileMismatch
-            );
-            require_keys_eq!(
-                attestation.claim_case,
-                ctx.accounts.claim_case.key(),
-                OmegaXProtocolError::Unauthorized
-            );
-            require_keys_eq!(
-                attestation.health_plan,
-                ctx.accounts.health_plan.key(),
-                OmegaXProtocolError::HealthPlanMismatch
-            );
-            require_keys_eq!(
-                attestation.policy_series,
-                ctx.accounts.claim_case.policy_series,
-                OmegaXProtocolError::PolicySeriesMismatch
-            );
-            require!(
-                attestation.evidence_ref_hash == ctx.accounts.claim_case.evidence_ref_hash,
-                OmegaXProtocolError::ClaimEvidenceMismatch
-            );
-            require_keys_eq!(
-                vault.asset_mint,
-                asset_mint_key,
-                OmegaXProtocolError::FeeVaultMismatch
-            );
-            require_keys_eq!(
-                vault.liquidity_pool,
-                policy.liquidity_pool,
-                OmegaXProtocolError::LiquidityPoolMismatch
-            );
-            require_keys_eq!(
-                attestation.liquidity_pool,
-                policy.liquidity_pool,
-                OmegaXProtocolError::LiquidityPoolMismatch
-            );
-            fee_share_from_bps(amount, policy.oracle_fee_bps)?
-        }
-        (Some(_), Some(_), None) => {
-            return Err(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee.into());
-        }
-        (None, Some(_), _) => {
-            return Err(OmegaXProtocolError::FeeVaultRequiredForConfiguredFee.into());
-        }
-        (None, None, None) => 0,
-        (Some(_), None, _) | (None, None, Some(_)) => {
-            // Vault provided without policy is a configuration error;
-            // refuse to silently zero the bps.
-            return Err(OmegaXProtocolError::FeeVaultBpsMisconfigured.into());
-        }
-    };
-
-    let total_fee = checked_add(protocol_fee, oracle_fee)?;
-    require!(
-        total_fee < amount,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let net_to_recipient = checked_sub(amount, total_fee)?;
-    require_positive_amount(net_to_recipient)?;
-
     let claim_case = &mut ctx.accounts.claim_case;
     claim_case.paid_amount = checked_add(claim_case.paid_amount, amount)?;
     claim_case.reserved_amount = claim_case.reserved_amount.saturating_sub(amount);
@@ -1308,51 +1060,17 @@ pub(crate) fn settle_claim_case(
         &mut ctx.accounts.funding_line,
         amount,
     )?;
-    if total_fee > 0 {
-        ctx.accounts.domain_asset_vault.total_assets =
-            checked_add(ctx.accounts.domain_asset_vault.total_assets, total_fee)?;
-    }
 
     // PT-01/02 fix: actually move the SPL tokens. The vault token account
     // is owned by the domain_asset_vault PDA, which signs via seeds.
-    // Phase 1.6: outflow is net_to_recipient; fee tokens stay in vault.
     transfer_from_domain_vault(
-        net_to_recipient,
+        amount,
         &ctx.accounts.domain_asset_vault,
         &ctx.accounts.vault_token_account,
         &ctx.accounts.recipient_token_account,
         &ctx.accounts.asset_mint,
         &ctx.accounts.token_program,
     )?;
-
-    // Accrue the protocol fee carve-out.
-    if protocol_fee > 0 {
-        let vault = &mut ctx.accounts.protocol_fee_vault;
-        let key = vault.key();
-        let mint = vault.asset_mint;
-        let total = accrue_fee(&mut vault.accrued_fees, protocol_fee)?;
-        emit!(FeeAccruedEvent {
-            vault: key,
-            asset_mint: mint,
-            amount: protocol_fee,
-            accrued_total: total,
-        });
-    }
-
-    // Accrue the adjudicator-oracle fee carve-out.
-    if oracle_fee > 0 {
-        if let Some(vault) = ctx.accounts.pool_oracle_fee_vault.as_deref_mut() {
-            let key = vault.key();
-            let mint = vault.asset_mint;
-            let total = accrue_fee(&mut vault.accrued_fees, oracle_fee)?;
-            emit!(FeeAccruedEvent {
-                vault: key,
-                asset_mint: mint,
-                amount: oracle_fee,
-                accrued_total: total,
-            });
-        }
-    }
 
     let claim_case_key = ctx.accounts.claim_case.key();
     let intake_status = ctx.accounts.claim_case.intake_status;
@@ -1373,7 +1091,6 @@ pub(crate) fn settle_claim_case<'info>(
 ) -> Result<()> {
     require_quasar_protocol_not_paused(&ctx.accounts.protocol_governance)?;
     let authority = *ctx.accounts.authority.address();
-    let health_plan_key = *ctx.accounts.health_plan.address();
     let funding_line_key = *ctx.accounts.funding_line.address();
     require_quasar_claim_operator(
         &authority,
@@ -1430,51 +1147,6 @@ pub(crate) fn settle_claim_case<'info>(
         OmegaXProtocolError::Unauthorized
     );
 
-    let reserve_domain = ctx.accounts.health_plan.reserve_domain;
-    let asset_mint_key = ctx.accounts.funding_line.asset_mint;
-    require_keys_eq!(
-        ctx.accounts.protocol_fee_vault.reserve_domain,
-        reserve_domain,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        ctx.accounts.protocol_fee_vault.asset_mint,
-        asset_mint_key,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    let protocol_fee = fee_share_from_bps(
-        amount,
-        ctx.accounts.protocol_governance.protocol_fee_bps.get(),
-    )?;
-
-    let pool_oracle_fee_vault = ctx
-        .accounts
-        .pool_oracle_fee_vault
-        .as_ref()
-        .map(|vault| &**vault);
-    let oracle_fee = resolve_quasar_claim_oracle_fee(
-        health_plan_key,
-        &ctx.accounts.claim_case,
-        pool_oracle_fee_vault,
-        ctx.accounts
-            .pool_oracle_policy
-            .as_ref()
-            .map(|policy| *policy),
-        ctx.accounts
-            .oracle_fee_attestation
-            .as_ref()
-            .map(|attestation| *attestation),
-        amount,
-    )?;
-
-    let total_fee = checked_add(protocol_fee, oracle_fee)?;
-    require!(
-        total_fee < amount,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let net_to_recipient = checked_sub(amount, total_fee)?;
-    require_quasar_positive_amount(net_to_recipient)?;
-
     let mut domain_total_assets = ctx.accounts.domain_asset_vault.total_assets.get();
     let mut domain_sheet = ctx.accounts.domain_asset_ledger.sheet;
     let mut plan_sheet = ctx.accounts.plan_reserve_ledger.sheet;
@@ -1494,12 +1166,9 @@ pub(crate) fn settle_claim_case<'info>(
         &mut funding_spent_amount,
         amount,
     )?;
-    if total_fee > 0 {
-        domain_total_assets = checked_add(domain_total_assets, total_fee)?;
-    }
 
     transfer_from_domain_vault(
-        net_to_recipient,
+        amount,
         ctx.accounts.domain_asset_vault,
         ctx.accounts.vault_token_account,
         ctx.accounts.recipient_token_account,
@@ -1614,46 +1283,6 @@ pub(crate) fn settle_claim_case<'info>(
         series_ledger.set_inner(policy_series, asset_mint, *sheet, bump);
     }
 
-    if protocol_fee > 0 {
-        let vault = &mut ctx.accounts.protocol_fee_vault;
-        let reserve_domain = vault.reserve_domain;
-        let asset_mint = vault.asset_mint;
-        let fee_recipient = vault.fee_recipient;
-        let accrued_fees = checked_add(vault.accrued_fees.get(), protocol_fee)?;
-        let withdrawn_fees = vault.withdrawn_fees.get();
-        let bump = vault.bump;
-        vault.set_inner(
-            reserve_domain,
-            asset_mint,
-            fee_recipient,
-            accrued_fees,
-            withdrawn_fees,
-            bump,
-        );
-    }
-
-    if oracle_fee > 0 {
-        if let Some(vault) = ctx.accounts.pool_oracle_fee_vault.as_mut() {
-            let vault = &mut **vault;
-            let liquidity_pool = vault.liquidity_pool;
-            let oracle = vault.oracle;
-            let asset_mint = vault.asset_mint;
-            let fee_recipient = vault.fee_recipient;
-            let accrued_fees = checked_add(vault.accrued_fees.get(), oracle_fee)?;
-            let withdrawn_fees = vault.withdrawn_fees.get();
-            let bump = vault.bump;
-            vault.set_inner(
-                liquidity_pool,
-                oracle,
-                asset_mint,
-                fee_recipient,
-                accrued_fees,
-                withdrawn_fees,
-                bump,
-            );
-        }
-    }
-
     let funding_line = &mut ctx.accounts.funding_line;
     let reserve_domain = funding_line.reserve_domain;
     let health_plan = funding_line.health_plan;
@@ -1690,68 +1319,6 @@ pub(crate) fn settle_claim_case<'info>(
         ctx.accounts.authority.to_account_view(),
         None,
     )?;
-
-    Ok(())
-}
-
-#[cfg(not(feature = "quasar"))]
-pub(crate) fn require_oracle_fee_accounts_canonical(
-    vault: &Account<PoolOracleFeeVault>,
-    policy: &Account<PoolOraclePolicy>,
-    attestation: &Account<ClaimAttestation>,
-    claim_case: Pubkey,
-    asset_mint: Pubkey,
-) -> Result<()> {
-    let (expected_policy, expected_policy_bump) = Pubkey::find_program_address(
-        &[SEED_POOL_ORACLE_POLICY, policy.liquidity_pool.as_ref()],
-        &crate::ID,
-    );
-    require_keys_eq!(
-        policy.key(),
-        expected_policy,
-        OmegaXProtocolError::PoolOracleApprovalRequired
-    );
-    require!(
-        policy.bump == expected_policy_bump,
-        OmegaXProtocolError::PoolOracleApprovalRequired
-    );
-
-    let (expected_attestation, expected_attestation_bump) = Pubkey::find_program_address(
-        &[
-            SEED_CLAIM_ATTESTATION,
-            claim_case.as_ref(),
-            attestation.oracle.as_ref(),
-        ],
-        &crate::ID,
-    );
-    require_keys_eq!(
-        attestation.key(),
-        expected_attestation,
-        OmegaXProtocolError::Unauthorized
-    );
-    require!(
-        attestation.bump == expected_attestation_bump,
-        OmegaXProtocolError::Unauthorized
-    );
-
-    let (expected_vault, expected_vault_bump) = Pubkey::find_program_address(
-        &[
-            SEED_POOL_ORACLE_FEE_VAULT,
-            policy.liquidity_pool.as_ref(),
-            attestation.oracle.as_ref(),
-            asset_mint.as_ref(),
-        ],
-        &crate::ID,
-    );
-    require_keys_eq!(
-        vault.key(),
-        expected_vault,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require!(
-        vault.bump == expected_vault_bump,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
 
     Ok(())
 }
@@ -3459,50 +3026,6 @@ pub struct SettleClaimCase<'info> {
     pub obligation: Option<Box<Account<'info, Obligation>>>,
     #[cfg(feature = "quasar")]
     pub obligation: Option<Account<ObligationAccountData<'info>>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(
-        mut,
-        seeds = [SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
-        bump = protocol_fee_vault.bump,
-        constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub protocol_fee_vault: Box<Account<'info, ProtocolFeeVault>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        mut,
-        constraint = quasar_pda_matches(
-            protocol_fee_vault.address(),
-            &crate::ID,
-            &[SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
-            protocol_fee_vault.bump,
-        ) @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
-    /// Phase 1.6 — optional pool-oracle fee vault for attesting-oracle revshare.
-    /// When supplied alongside `pool_oracle_policy` and `oracle_fee_attestation`,
-    /// the bps from policy is applied to the gross amount and credited to the
-    /// oracle that signed the supplied attestation.
-    #[cfg(not(feature = "quasar"))]
-    #[account(mut)]
-    pub pool_oracle_fee_vault: Option<Box<Account<'info, PoolOracleFeeVault>>>,
-    #[cfg(feature = "quasar")]
-    pub pool_oracle_fee_vault: Option<&'info mut Account<PoolOracleFeeVault>>,
-    /// Phase 1.6 — pairs with pool_oracle_fee_vault. The handler reads
-    /// `oracle_fee_bps` from policy. Required when pool_oracle_fee_vault is Some;
-    /// ignored otherwise. Validated at runtime.
-    #[cfg(not(feature = "quasar"))]
-    pub pool_oracle_policy: Option<Box<Account<'info, PoolOraclePolicy>>>,
-    #[cfg(feature = "quasar")]
-    pub pool_oracle_policy: Option<&'info Account<PoolOraclePolicy>>,
-    /// Phase 1.6 — matching claim attestation for the oracle fee recipient.
-    /// Required when pool_oracle_fee_vault and pool_oracle_policy are supplied.
-    #[cfg(not(feature = "quasar"))]
-    pub oracle_fee_attestation: Option<Box<Account<'info, ClaimAttestation>>>,
-    #[cfg(feature = "quasar")]
-    pub oracle_fee_attestation: Option<&'info Account<ClaimAttestation>>,
     // PT-2026-04-27-01/02 fix: outflow CPI accounts. The handler resolves the
     // settlement recipient as `claim_case.delegate_recipient` if non-zero,
     // else `member_position.wallet`, and asserts

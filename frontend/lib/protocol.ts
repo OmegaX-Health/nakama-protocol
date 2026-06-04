@@ -23,8 +23,6 @@ import {
 import {
   ZERO_PUBKEY,
   ZERO_PUBKEY_KEY,
-  NATIVE_SOL_MINT,
-  NATIVE_SOL_MINT_KEY,
   MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS,
   CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
   CLAIM_ATTESTATION_DECISION_SUPPORT_DENY,
@@ -80,9 +78,6 @@ import type {
   ReserveDomainSnapshot,
   DomainAssetVaultSnapshot,
   ReserveAssetRailSnapshot,
-  ProtocolFeeVaultSnapshot,
-  PoolTreasuryVaultSnapshot,
-  PoolOracleFeeVaultSnapshot,
   HealthPlanSnapshot,
   PolicySeriesSnapshot,
   MemberPositionSnapshot,
@@ -121,9 +116,6 @@ import type {
   PoolOracleApprovalSummary,
   PoolOraclePolicySummary,
   PoolOraclePermissionSetSummary,
-  ProtocolFeeVaultSummary,
-  PoolTreasuryReserveSummary,
-  PoolOracleFeeVaultSummary,
   SchemaSummary,
   SchemaDependencyLedgerSummary,
   ProtocolConfigSummary,
@@ -181,12 +173,9 @@ import {
   derivePolicySeriesPda,
   derivePoolClassLedgerPda,
   derivePoolOracleApprovalPda,
-  derivePoolOracleFeeVaultPda,
   derivePoolOraclePermissionSetPda,
   derivePoolOraclePolicyPda,
-  derivePoolTreasuryVaultPda,
   deriveProgramDataAddress,
-  deriveProtocolFeeVaultPda,
   deriveProtocolGovernancePda,
   deriveReserveAssetRailPda,
   deriveReserveDomainPda,
@@ -1221,9 +1210,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
     outcomeSchemas: [],
     schemaDependencyLedgers: [],
     claimAttestations: [],
-    protocolFeeVaults: [],
-    poolTreasuryVaults: [],
-    poolOracleFeeVaults: [],
   };
 
   const planLedgersRaw: Array<{ address: string; healthPlan: string; assetMint: string; sheet: unknown }> = [];
@@ -1246,7 +1232,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
         snapshot.protocolGovernance = {
           address,
           governanceAuthority: asAddress(decodedField(decoded, "governanceAuthority")),
-          protocolFeeBps: Number(decodedField(decoded, "protocolFeeBps") ?? 0),
           emergencyPause: Boolean(decodedField(decoded, "emergencyPause")),
           auditNonce: bigintFromAnchorValue(decodedField(decoded, "auditNonce")),
         };
@@ -1297,40 +1282,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           lastPriceSlot: bigintFromAnchorValue(decodedField(decoded, "lastPriceSlot", "last_price_slot")),
           lastPriceProofHashHex: bytesToHex(decodedField(decoded, "lastPriceProofHash", "last_price_proof_hash")),
           auditNonce: bigintFromAnchorValue(decodedField(decoded, "auditNonce", "audit_nonce")),
-          bump: Number(decodedField(decoded, "bump") ?? 0),
-        });
-        break;
-      case "ProtocolFeeVault":
-        snapshot.protocolFeeVaults.push({
-          address,
-          reserveDomain: asAddress(decodedField(decoded, "reserveDomain")),
-          assetMint: asAddress(decodedField(decoded, "assetMint")),
-          feeRecipient: asAddress(decodedField(decoded, "feeRecipient")),
-          accruedFees: bigintFromAnchorValue(decodedField(decoded, "accruedFees")),
-          withdrawnFees: bigintFromAnchorValue(decodedField(decoded, "withdrawnFees")),
-          bump: Number(decodedField(decoded, "bump") ?? 0),
-        });
-        break;
-      case "PoolTreasuryVault":
-        snapshot.poolTreasuryVaults.push({
-          address,
-          liquidityPool: asAddress(decodedField(decoded, "liquidityPool")),
-          assetMint: asAddress(decodedField(decoded, "assetMint")),
-          feeRecipient: asAddress(decodedField(decoded, "feeRecipient")),
-          accruedFees: bigintFromAnchorValue(decodedField(decoded, "accruedFees")),
-          withdrawnFees: bigintFromAnchorValue(decodedField(decoded, "withdrawnFees")),
-          bump: Number(decodedField(decoded, "bump") ?? 0),
-        });
-        break;
-      case "PoolOracleFeeVault":
-        snapshot.poolOracleFeeVaults.push({
-          address,
-          liquidityPool: asAddress(decodedField(decoded, "liquidityPool")),
-          oracle: asAddress(decodedField(decoded, "oracle")),
-          assetMint: asAddress(decodedField(decoded, "assetMint")),
-          feeRecipient: asAddress(decodedField(decoded, "feeRecipient")),
-          accruedFees: bigintFromAnchorValue(decodedField(decoded, "accruedFees")),
-          withdrawnFees: bigintFromAnchorValue(decodedField(decoded, "withdrawnFees")),
           bump: Number(decodedField(decoded, "bump") ?? 0),
         });
         break;
@@ -1506,7 +1457,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           displayName: stringFromAnchorValue(decodedField(decoded, "displayName")),
           priority: Number(decodedField(decoded, "priority") ?? 0),
           restrictionMode: Number(decodedField(decoded, "restrictionMode") ?? 0),
-          feeBps: Number(decodedField(decoded, "feeBps") ?? decodedField(decoded, "fee_bps") ?? 0),
           totalShares: bigintFromAnchorValue(decodedField(decoded, "totalShares")),
           navAssets: bigintFromAnchorValue(decodedField(decoded, "navAssets")),
           allocatedAssets: bigintFromAnchorValue(decodedField(decoded, "allocatedAssets")),
@@ -1643,7 +1593,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           quorumM: Number(decodedField(decoded, "quorumM") ?? 0),
           quorumN: Number(decodedField(decoded, "quorumN") ?? 0),
           requireVerifiedSchema: Boolean(decodedField(decoded, "requireVerifiedSchema")),
-          oracleFeeBps: Number(decodedField(decoded, "oracleFeeBps") ?? 0),
           allowDelegateClaim: Boolean(decodedField(decoded, "allowDelegateClaim")),
           challengeWindowSecs: Number(decodedField(decoded, "challengeWindowSecs") ?? 0),
           updatedAtTs: numberFromAnchorValue(decodedField(decoded, "updatedAtTs")),
@@ -2032,7 +1981,6 @@ function protocolConfigFromSnapshot(snapshot: ProtocolConsoleSnapshot): Protocol
     governanceAuthority: snapshot.protocolGovernance.governanceAuthority,
     governanceRealm,
     governanceConfig,
-    protocolFeeBps: snapshot.protocolGovernance.protocolFeeBps,
     defaultStakeMint: ZERO_PUBKEY,
     minOracleStake: 0n,
     emergencyPaused: snapshot.protocolGovernance.emergencyPause,
@@ -2157,100 +2105,6 @@ export async function listPoolOracleApprovals(params: {
     (!params.poolAddress || approval.liquidityPool === params.poolAddress)
     && (!params.activeOnly || approval.active),
   );
-}
-
-// Phase 1.6/1.7 — Fee-vault listers. All three follow the snapshot-derived
-// pattern (one chain read in `loadProtocolConsoleSnapshot`, then in-memory
-// filtering). `paymentMint` is mapped: NATIVE_SOL_MINT → ZERO_PUBKEY for the
-// panel's SOL detection; everything else passes through verbatim.
-
-function paymentMintForUi(assetMint: string): string {
-  return assetMint === NATIVE_SOL_MINT ? ZERO_PUBKEY : assetMint;
-}
-
-function feeVaultAvailable(accrued: bigint, withdrawn: bigint): bigint {
-  // Saturating sub: defends against a transient indexing race where the
-  // chain reads `withdrawn > accrued` momentarily.
-  return withdrawn >= accrued ? 0n : accrued - withdrawn;
-}
-
-export async function listProtocolFeeVaults(params: {
-  connection: Connection;
-  reserveDomainAddress?: string | null;
-  paymentMint?: string | null;
-}): Promise<ProtocolFeeVaultSummary[]> {
-  const snapshot = await loadProtocolConsoleSnapshot(params.connection);
-  return snapshot.protocolFeeVaults
-    .filter((vault) => !params.reserveDomainAddress || vault.reserveDomain === params.reserveDomainAddress)
-    .filter((vault) => !params.paymentMint || paymentMintForUi(vault.assetMint) === params.paymentMint)
-    .map((vault) => ({
-      address: vault.address,
-      reserveDomain: vault.reserveDomain,
-      paymentMint: paymentMintForUi(vault.assetMint),
-      feeRecipient: vault.feeRecipient,
-      accruedFees: vault.accruedFees,
-      withdrawnFees: vault.withdrawnFees,
-      availableFees: feeVaultAvailable(vault.accruedFees, vault.withdrawnFees),
-      bump: vault.bump,
-    }));
-}
-
-export async function listPoolTreasuryReserves(params: {
-  connection: Connection;
-  poolAddress: string;
-  paymentMint?: string | null;
-}): Promise<PoolTreasuryReserveSummary[]> {
-  const snapshot = await loadProtocolConsoleSnapshot(params.connection);
-  // Resolve reserve domain for each pool by joining with the pool snapshot.
-  const poolByAddress = new Map(snapshot.liquidityPools.map((pool) => [pool.address, pool]));
-  return snapshot.poolTreasuryVaults
-    .filter((vault) => vault.liquidityPool === params.poolAddress)
-    .filter((vault) => !params.paymentMint || paymentMintForUi(vault.assetMint) === params.paymentMint)
-    .map((vault) => ({
-      address: vault.address,
-      pool: vault.liquidityPool,
-      reserveDomain: poolByAddress.get(vault.liquidityPool)?.reserveDomain ?? ZERO_PUBKEY,
-      paymentMint: paymentMintForUi(vault.assetMint),
-      feeRecipient: vault.feeRecipient,
-      accruedFees: vault.accruedFees,
-      withdrawnFees: vault.withdrawnFees,
-      availableFees: feeVaultAvailable(vault.accruedFees, vault.withdrawnFees),
-      // TODO (PR3 follow-up): populate by joining DomainAssetLedger sheets
-      // for the matching (reserve_domain, asset_mint) so the panel's display
-      // counters match the on-chain ledger. The panel renders these read-only
-      // and PR3 ships them as 0n so the UI doesn't crash.
-      reservedRewardAmount: 0n,
-      reservedCoverageClaimAmount: 0n,
-      paidCoverageClaimAmount: 0n,
-      impairedAmount: 0n,
-      bump: vault.bump,
-    }));
-}
-
-export async function listPoolOracleFeeVaults(params: {
-  connection: Connection;
-  poolAddress: string;
-  oracleAddress?: string | null;
-  paymentMint?: string | null;
-}): Promise<PoolOracleFeeVaultSummary[]> {
-  const snapshot = await loadProtocolConsoleSnapshot(params.connection);
-  const poolByAddress = new Map(snapshot.liquidityPools.map((pool) => [pool.address, pool]));
-  return snapshot.poolOracleFeeVaults
-    .filter((vault) => vault.liquidityPool === params.poolAddress)
-    .filter((vault) => !params.oracleAddress || vault.oracle === params.oracleAddress)
-    .filter((vault) => !params.paymentMint || paymentMintForUi(vault.assetMint) === params.paymentMint)
-    .map((vault) => ({
-      address: vault.address,
-      pool: vault.liquidityPool,
-      reserveDomain: poolByAddress.get(vault.liquidityPool)?.reserveDomain ?? ZERO_PUBKEY,
-      oracle: vault.oracle,
-      paymentMint: paymentMintForUi(vault.assetMint),
-      feeRecipient: vault.feeRecipient,
-      accruedFees: vault.accruedFees,
-      withdrawnFees: vault.withdrawnFees,
-      availableFees: feeVaultAvailable(vault.accruedFees, vault.withdrawnFees),
-      bump: vault.bump,
-    }));
 }
 
 export async function listPoolOraclePolicies(params: {
@@ -2541,7 +2395,6 @@ export async function fetchProtocolReadiness(params: {
 export function buildInitializeProtocolGovernanceTx(params: {
   governanceAuthority: PublicKeyish;
   recentBlockhash: string;
-  protocolFeeBps: number;
   emergencyPaused: boolean;
 }): Transaction {
   const governanceAuthority = toPublicKey(params.governanceAuthority);
@@ -2550,7 +2403,6 @@ export function buildInitializeProtocolGovernanceTx(params: {
     recentBlockhash: params.recentBlockhash,
     instructionName: "initialize_protocol_governance",
     args: {
-      protocol_fee_bps: params.protocolFeeBps,
       emergency_pause: params.emergencyPaused,
     },
     accounts: [
@@ -2762,294 +2614,6 @@ export function buildSetProtocolEmergencyPauseTx(params: {
     accounts: [
       { pubkey: authority, isSigner: true },
       { pubkey: deriveProtocolGovernancePda(), isWritable: true },
-    ],
-  });
-}
-
-// Phase 1.6/1.7 — Fee-vault withdrawal builders.
-//
-// Six builders mirror the on-chain instruction matrix (SOL + SPL × 3 rails).
-// Each takes the per-rail authority as the signer + fee payer, plus the
-// rail-scope identifier (reserve_domain / liquidity_pool / oracle), the
-// payment mint, the recipient, and the amount.
-//
-// Per-rail authority (enforced on-chain by PR2):
-//   - withdraw_protocol_fee_*       → governance authority
-//   - withdraw_pool_treasury_*      → pool curator OR governance
-//   - withdraw_pool_oracle_fee_*    → oracle wallet OR oracle admin OR governance
-//
-// The pool-treasury panel calls these builders with `oracle: publicKey`
-// (the connected wallet) for treasury+oracle-fee flows. That naming is a
-// vestige of the panel's first draft; semantically the param is the rail's
-// authority signer. Tests should use the builders with whichever wallet
-// matches the on-chain authority requirement above.
-//
-// SPL builders need `reserveDomainAddress` to derive the matching
-// `DomainAssetVault` and `DomainAssetLedger` (where SPL fee tokens physically
-// reside and where funded-balance accounting is reduced). SOL builders don't
-// reference DomainAssetVault — lamports come straight off the fee-vault PDA
-// via `transfer_lamports_from_fee_vault`.
-
-export function buildWithdrawProtocolFeeSplTx(params: {
-  governanceAuthority: PublicKeyish;
-  reserveDomainAddress: PublicKeyish;
-  paymentMint: PublicKeyish;
-  recipientTokenAccount: PublicKeyish;
-  amount: bigint;
-  tokenProgramId?: PublicKeyish | null;
-  recentBlockhash: string;
-}): Transaction {
-  const authority = toPublicKey(params.governanceAuthority);
-  const reserveDomain = toPublicKey(params.reserveDomainAddress);
-  const assetMint = toPublicKey(params.paymentMint);
-  const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "withdraw_protocol_fee_spl",
-    args: {
-      amount: params.amount,
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: deriveProtocolGovernancePda() },
-      { pubkey: reserveDomain },
-      {
-        pubkey: deriveProtocolFeeVaultPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      {
-        pubkey: deriveDomainAssetVaultPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      {
-        pubkey: deriveDomainAssetLedgerPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      { pubkey: assetMint },
-      {
-        pubkey: deriveDomainAssetVaultTokenAccountPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      { pubkey: params.recipientTokenAccount, isWritable: true },
-      { pubkey: tokenProgramId },
-    ],
-  });
-}
-
-export function buildWithdrawProtocolFeeSolTx(params: {
-  governanceAuthority: PublicKeyish;
-  reserveDomainAddress: PublicKeyish;
-  recipientSystemAccount: PublicKeyish;
-  amount: bigint;
-  recentBlockhash: string;
-}): Transaction {
-  const authority = toPublicKey(params.governanceAuthority);
-  const reserveDomain = toPublicKey(params.reserveDomainAddress);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "withdraw_protocol_fee_sol",
-    args: {
-      amount: params.amount,
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: deriveProtocolGovernancePda() },
-      { pubkey: reserveDomain },
-      {
-        pubkey: deriveProtocolFeeVaultPda({
-          reserveDomain,
-          assetMint: NATIVE_SOL_MINT_KEY,
-        }),
-        isWritable: true,
-      },
-      { pubkey: params.recipientSystemAccount, isWritable: true },
-      { pubkey: SystemProgram.programId },
-    ],
-  });
-}
-
-export function buildWithdrawPoolTreasurySplTx(params: {
-  /** Pool authority signer (curator or governance). Named `oracle` historically
-   *  to match the dead pool-treasury-panel first draft; semantically this is
-   *  the rail authority, not the registered oracle wallet. */
-  oracle: PublicKeyish;
-  poolAddress: PublicKeyish;
-  reserveDomainAddress: PublicKeyish;
-  paymentMint: PublicKeyish;
-  recipientTokenAccount: PublicKeyish;
-  amount: bigint;
-  tokenProgramId?: PublicKeyish | null;
-  recentBlockhash: string;
-}): Transaction {
-  const authority = toPublicKey(params.oracle);
-  const pool = toPublicKey(params.poolAddress);
-  const reserveDomain = toPublicKey(params.reserveDomainAddress);
-  const assetMint = toPublicKey(params.paymentMint);
-  const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "withdraw_pool_treasury_spl",
-    args: {
-      amount: params.amount,
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: deriveProtocolGovernancePda() },
-      { pubkey: pool },
-      {
-        pubkey: derivePoolTreasuryVaultPda({ liquidityPool: pool, assetMint }),
-        isWritable: true,
-      },
-      {
-        pubkey: deriveDomainAssetVaultPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      {
-        pubkey: deriveDomainAssetLedgerPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      { pubkey: assetMint },
-      {
-        pubkey: deriveDomainAssetVaultTokenAccountPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      { pubkey: params.recipientTokenAccount, isWritable: true },
-      { pubkey: tokenProgramId },
-    ],
-  });
-}
-
-export function buildWithdrawPoolTreasurySolTx(params: {
-  /** Pool authority signer; see naming note on the SPL variant. */
-  oracle: PublicKeyish;
-  poolAddress: PublicKeyish;
-  recipientSystemAccount: PublicKeyish;
-  amount: bigint;
-  recentBlockhash: string;
-}): Transaction {
-  const authority = toPublicKey(params.oracle);
-  const pool = toPublicKey(params.poolAddress);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "withdraw_pool_treasury_sol",
-    args: {
-      amount: params.amount,
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: deriveProtocolGovernancePda() },
-      { pubkey: pool },
-      {
-        pubkey: derivePoolTreasuryVaultPda({
-          liquidityPool: pool,
-          assetMint: NATIVE_SOL_MINT_KEY,
-        }),
-        isWritable: true,
-      },
-      { pubkey: params.recipientSystemAccount, isWritable: true },
-      { pubkey: SystemProgram.programId },
-    ],
-  });
-}
-
-export function buildWithdrawPoolOracleFeeSplTx(params: {
-  /** Oracle authority signer (oracle wallet, oracle admin, or governance).
-   *  By default this also identifies the registered oracle whose vault is
-   *  being drained — pass `oracleAddress` separately if the signer is an
-   *  admin/governance rather than the oracle wallet itself. */
-  oracle: PublicKeyish;
-  oracleAddress?: PublicKeyish;
-  poolAddress: PublicKeyish;
-  reserveDomainAddress: PublicKeyish;
-  paymentMint: PublicKeyish;
-  recipientTokenAccount: PublicKeyish;
-  amount: bigint;
-  tokenProgramId?: PublicKeyish | null;
-  recentBlockhash: string;
-}): Transaction {
-  const authority = toPublicKey(params.oracle);
-  const oracleKey = toPublicKey(params.oracleAddress ?? params.oracle);
-  const pool = toPublicKey(params.poolAddress);
-  const reserveDomain = toPublicKey(params.reserveDomainAddress);
-  const assetMint = toPublicKey(params.paymentMint);
-  const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "withdraw_pool_oracle_fee_spl",
-    args: {
-      amount: params.amount,
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: deriveProtocolGovernancePda() },
-      { pubkey: pool },
-      { pubkey: deriveOracleProfilePda({ oracle: oracleKey }) },
-      {
-        pubkey: derivePoolOracleFeeVaultPda({
-          liquidityPool: pool,
-          oracle: oracleKey,
-          assetMint,
-        }),
-        isWritable: true,
-      },
-      {
-        pubkey: deriveDomainAssetVaultPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      {
-        pubkey: deriveDomainAssetLedgerPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      { pubkey: assetMint },
-      {
-        pubkey: deriveDomainAssetVaultTokenAccountPda({ reserveDomain, assetMint }),
-        isWritable: true,
-      },
-      { pubkey: params.recipientTokenAccount, isWritable: true },
-      { pubkey: tokenProgramId },
-    ],
-  });
-}
-
-export function buildWithdrawPoolOracleFeeSolTx(params: {
-  /** Oracle authority signer; see naming note on the SPL variant. */
-  oracle: PublicKeyish;
-  oracleAddress?: PublicKeyish;
-  poolAddress: PublicKeyish;
-  recipientSystemAccount: PublicKeyish;
-  amount: bigint;
-  recentBlockhash: string;
-}): Transaction {
-  const authority = toPublicKey(params.oracle);
-  const oracleKey = toPublicKey(params.oracleAddress ?? params.oracle);
-  const pool = toPublicKey(params.poolAddress);
-  return buildProtocolTransactionFromInstruction({
-    feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructionName: "withdraw_pool_oracle_fee_sol",
-    args: {
-      amount: params.amount,
-    },
-    accounts: [
-      { pubkey: authority, isSigner: true },
-      { pubkey: deriveProtocolGovernancePda() },
-      { pubkey: pool },
-      { pubkey: deriveOracleProfilePda({ oracle: oracleKey }) },
-      {
-        pubkey: derivePoolOracleFeeVaultPda({
-          liquidityPool: pool,
-          oracle: oracleKey,
-          assetMint: NATIVE_SOL_MINT_KEY,
-        }),
-        isWritable: true,
-      },
-      { pubkey: params.recipientSystemAccount, isWritable: true },
-      { pubkey: SystemProgram.programId },
     ],
   });
 }
@@ -3564,13 +3128,6 @@ export function buildRecordPremiumPaymentTx(params: {
         isWritable: true,
       },
       optionalSeriesReserveLedgerAccount(params.policySeriesAddress, params.assetMint),
-      {
-        pubkey: deriveProtocolFeeVaultPda({
-          reserveDomain: params.reserveDomainAddress,
-          assetMint: params.assetMint,
-        }),
-        isWritable: true,
-      },
       { pubkey: params.sourceTokenAccountAddress, isWritable: true },
       { pubkey: params.assetMint },
       { pubkey: params.vaultTokenAccountAddress, isWritable: true },
@@ -3869,22 +3426,10 @@ function buildObligationFlowTx(params: {
   vaultTokenAccountAddress?: PublicKeyish | null;
   recipientTokenAccountAddress?: PublicKeyish | null;
   tokenProgramId?: PublicKeyish | null;
-  poolOracleFeeVaultAddress?: PublicKeyish | null;
-  poolOraclePolicyAddress?: PublicKeyish | null;
-  oracleFeeAttestationAddress?: PublicKeyish | null;
-  oracleFeeAddress?: PublicKeyish | null;
   args: Record<string, unknown>;
   includeVault?: boolean;
 }): Transaction {
   const authority = toPublicKey(params.authority);
-  const oracleFeeAttestation = params.oracleFeeAttestationAddress
-    ? toPublicKey(params.oracleFeeAttestationAddress)
-    : params.oracleFeeAddress && params.claimCaseAddress
-      ? deriveClaimAttestationPda({
-        claimCase: params.claimCaseAddress,
-        oracle: params.oracleFeeAddress,
-      })
-      : null;
   const includeSettlementOutflow = Boolean(
     params.vaultTokenAccountAddress
       && params.recipientTokenAccountAddress,
@@ -3906,14 +3451,6 @@ function buildObligationFlowTx(params: {
           optionalProtocolAccount(undefined),
           optionalProtocolAccount(undefined),
         ]
-      : [];
-  const settlementFeeAccounts: ProtocolInstructionAccountInput[] =
-    params.instructionName === "settle_obligation"
-      ? [
-        optionalProtocolAccount(params.poolOracleFeeVaultAddress, true),
-        optionalProtocolAccount(params.poolOraclePolicyAddress),
-        optionalProtocolAccount(oracleFeeAttestation),
-      ]
       : [];
   return buildProtocolTransactionFromInstruction({
     feePayer: authority,
@@ -3966,7 +3503,6 @@ function buildObligationFlowTx(params: {
       { pubkey: params.obligationAddress, isWritable: true },
       optionalProtocolAccount(params.claimCaseAddress, true),
       ...settlementOutflowAccounts,
-      ...settlementFeeAccounts,
     ],
   });
 }
@@ -4035,10 +3571,6 @@ export function buildSettleObligationTx(params: {
   vaultTokenAccountAddress?: PublicKeyish | null;
   recipientTokenAccountAddress?: PublicKeyish | null;
   tokenProgramId?: PublicKeyish | null;
-  poolOracleFeeVaultAddress?: PublicKeyish | null;
-  poolOraclePolicyAddress?: PublicKeyish | null;
-  oracleFeeAttestationAddress?: PublicKeyish | null;
-  oracleFeeAddress?: PublicKeyish | null;
 }): Transaction {
   return buildObligationFlowTx({
     ...params,
@@ -4066,10 +3598,6 @@ export function buildSettleClaimCaseTx(params: {
   capitalClassAddress?: PublicKeyish | null;
   allocationPositionAddress?: PublicKeyish | null;
   poolAssetMint?: PublicKeyish | null;
-  poolOracleFeeVaultAddress?: PublicKeyish | null;
-  poolOraclePolicyAddress?: PublicKeyish | null;
-  oracleFeeAttestationAddress?: PublicKeyish | null;
-  oracleFeeAddress?: PublicKeyish | null;
   memberPositionAddress?: PublicKeyish | null;
   vaultTokenAccountAddress?: PublicKeyish | null;
   recipientTokenAccountAddress?: PublicKeyish | null;
@@ -4077,14 +3605,6 @@ export function buildSettleClaimCaseTx(params: {
 }): Transaction {
   const authority = toPublicKey(params.authority);
   const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
-  const oracleFeeAttestation = params.oracleFeeAttestationAddress
-    ? toPublicKey(params.oracleFeeAttestationAddress)
-    : params.oracleFeeAddress
-      ? deriveClaimAttestationPda({
-        claimCase: params.claimCaseAddress,
-        oracle: params.oracleFeeAddress,
-      })
-      : null;
   return buildProtocolTransactionFromInstruction({
     feePayer: authority,
     recentBlockhash: params.recentBlockhash,
@@ -4135,16 +3655,6 @@ export function buildSettleClaimCaseTx(params: {
       optionalAllocationLedgerAccount(params.allocationPositionAddress, params.assetMint),
       { pubkey: params.claimCaseAddress, isWritable: true },
       optionalProtocolAccount(params.obligationAddress, true),
-      {
-        pubkey: deriveProtocolFeeVaultPda({
-          reserveDomain: params.reserveDomainAddress,
-          assetMint: params.assetMint,
-        }),
-        isWritable: true,
-      },
-      optionalProtocolAccount(params.poolOracleFeeVaultAddress, true),
-      optionalProtocolAccount(params.poolOraclePolicyAddress),
-      optionalProtocolAccount(oracleFeeAttestation),
       optionalProtocolAccount(params.memberPositionAddress),
       { pubkey: params.assetMint },
       optionalProtocolAccount(params.vaultTokenAccountAddress, true),
@@ -4259,7 +3769,6 @@ export function buildCreateLiquidityPoolTx(params: {
   strategyHashHex?: string | null;
   allowedExposureHashHex?: string | null;
   externalYieldAdapterHashHex?: string | null;
-  feeBps: number;
   redemptionPolicy: number;
   pauseFlags: number;
 }): Transaction {
@@ -4282,7 +3791,6 @@ export function buildCreateLiquidityPoolTx(params: {
       strategy_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.strategyHashHex), 32)),
       allowed_exposure_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.allowedExposureHashHex), 32)),
       external_yield_adapter_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.externalYieldAdapterHashHex), 32)),
-      fee_bps: params.feeBps,
       redemption_policy: params.redemptionPolicy,
       pause_flags: params.pauseFlags,
     },
@@ -4316,7 +3824,6 @@ export function buildCreateCapitalClassTx(params: {
   redemptionTermsMode: number;
   wrapperMetadataHashHex?: string | null;
   permissioningHashHex?: string | null;
-  feeBps: number;
   minLockupSeconds: bigint;
   pauseFlags: number;
 }): Transaction {
@@ -4343,7 +3850,6 @@ export function buildCreateCapitalClassTx(params: {
       redemption_terms_mode: params.redemptionTermsMode,
       wrapper_metadata_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.wrapperMetadataHashHex), 32)),
       permissioning_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.permissioningHashHex), 32)),
-      fee_bps: params.feeBps,
       min_lockup_seconds: params.minLockupSeconds,
       pause_flags: params.pauseFlags,
     },
@@ -4443,13 +3949,6 @@ export function buildDepositIntoCapitalClassTx(params: {
         isWritable: true,
       },
       { pubkey: lpPosition, isWritable: true },
-      {
-        pubkey: derivePoolTreasuryVaultPda({
-          liquidityPool: params.poolAddress,
-          assetMint: params.poolDepositAssetMint,
-        }),
-        isWritable: true,
-      },
       { pubkey: params.sourceTokenAccountAddress, isWritable: true },
       { pubkey: params.poolDepositAssetMint },
       { pubkey: params.vaultTokenAccountAddress, isWritable: true },
@@ -4595,13 +4094,6 @@ export function buildProcessRedemptionQueueTx(params: {
         isWritable: true,
       },
       { pubkey: lpPosition, isWritable: true },
-      {
-        pubkey: derivePoolTreasuryVaultPda({
-          liquidityPool: params.poolAddress,
-          assetMint: params.poolDepositAssetMint,
-        }),
-        isWritable: true,
-      },
       { pubkey: params.poolDepositAssetMint },
       { pubkey: params.vaultTokenAccountAddress, isWritable: true },
       { pubkey: params.recipientTokenAccountAddress, isWritable: true },
@@ -4998,7 +4490,6 @@ export function buildSetPoolOraclePolicyTx(params: {
   quorumM: number;
   quorumN: number;
   requireVerifiedSchema: boolean;
-  oracleFeeBps: number;
   allowDelegateClaim: boolean;
   challengeWindowSecs: number;
 }): Transaction {
@@ -5011,7 +4502,6 @@ export function buildSetPoolOraclePolicyTx(params: {
       quorum_m: params.quorumM,
       quorum_n: params.quorumN,
       require_verified_schema: params.requireVerifiedSchema,
-      oracle_fee_bps: params.oracleFeeBps,
       allow_delegate_claim: params.allowDelegateClaim,
       challenge_window_secs: params.challengeWindowSecs,
     },

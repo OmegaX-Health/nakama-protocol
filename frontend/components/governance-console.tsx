@@ -621,10 +621,6 @@ export function GovernanceConsole({
                   <p className="metric-label">Governance authority</p>
                   <p className="text-sm font-semibold text-[var(--foreground)]">{shortAddress(protocolConfig?.governanceAuthority)}</p>
                 </article>
-                <article className="operator-summary-card">
-                  <p className="metric-label">Protocol fee</p>
-                  <p className="text-sm font-semibold text-[var(--foreground)]">{protocolConfig?.protocolFeeBps ?? 0} bps</p>
-                </article>
               </div>
 
               <div className="grid gap-3">

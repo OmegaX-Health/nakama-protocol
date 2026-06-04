@@ -27,9 +27,6 @@ pub mod instruction {
     pub const IX_DEALLOCATE_CAPITAL: [u8; 8] = [10, 97, 97, 189, 60, 170, 102, 29];
     pub const IX_DEPOSIT_INTO_CAPITAL_CLASS: [u8; 8] = [40, 215, 33, 115, 185, 101, 196, 167];
     pub const IX_FUND_SPONSOR_BUDGET: [u8; 8] = [150, 210, 161, 31, 50, 12, 224, 32];
-    pub const IX_INIT_POOL_ORACLE_FEE_VAULT: [u8; 8] = [68, 122, 148, 84, 91, 98, 198, 167];
-    pub const IX_INIT_POOL_TREASURY_VAULT: [u8; 8] = [96, 169, 51, 224, 0, 207, 141, 47];
-    pub const IX_INIT_PROTOCOL_FEE_VAULT: [u8; 8] = [212, 235, 61, 42, 96, 183, 225, 57];
     pub const IX_INITIALIZE_PROTOCOL_GOVERNANCE: [u8; 8] = [220, 188, 231, 198, 20, 71, 42, 123];
     pub const IX_INITIALIZE_SERIES_RESERVE_LEDGER: [u8; 8] =
         [113, 155, 191, 126, 81, 152, 220, 249];
@@ -61,12 +58,6 @@ pub mod instruction {
     pub const IX_UPDATE_RESERVE_DOMAIN_CONTROLS: [u8; 8] = [3, 60, 38, 233, 198, 167, 116, 197];
     pub const IX_VERIFY_OUTCOME_SCHEMA: [u8; 8] = [221, 10, 144, 137, 106, 214, 205, 170];
     pub const IX_VERSION_POLICY_SERIES: [u8; 8] = [64, 76, 132, 253, 41, 220, 169, 146];
-    pub const IX_WITHDRAW_POOL_ORACLE_FEE_SOL: [u8; 8] = [208, 223, 250, 62, 199, 8, 221, 185];
-    pub const IX_WITHDRAW_POOL_ORACLE_FEE_SPL: [u8; 8] = [242, 75, 247, 122, 255, 183, 48, 189];
-    pub const IX_WITHDRAW_POOL_TREASURY_SOL: [u8; 8] = [50, 115, 51, 120, 221, 37, 200, 169];
-    pub const IX_WITHDRAW_POOL_TREASURY_SPL: [u8; 8] = [43, 146, 116, 123, 106, 69, 242, 104];
-    pub const IX_WITHDRAW_PROTOCOL_FEE_SOL: [u8; 8] = [193, 33, 140, 185, 45, 190, 112, 7];
-    pub const IX_WITHDRAW_PROTOCOL_FEE_SPL: [u8; 8] = [120, 62, 236, 14, 227, 240, 52, 253];
 }
 
 pub mod account {
@@ -90,11 +81,8 @@ pub mod account {
     pub const ACCOUNT_POLICY_SERIES: [u8; 8] = [196, 117, 121, 249, 37, 71, 245, 23];
     pub const ACCOUNT_POOL_CLASS_LEDGER: [u8; 8] = [147, 125, 17, 88, 188, 78, 109, 204];
     pub const ACCOUNT_POOL_ORACLE_APPROVAL: [u8; 8] = [116, 241, 25, 184, 205, 21, 153, 29];
-    pub const ACCOUNT_POOL_ORACLE_FEE_VAULT: [u8; 8] = [167, 128, 29, 44, 248, 197, 244, 23];
     pub const ACCOUNT_POOL_ORACLE_PERMISSION_SET: [u8; 8] = [3, 136, 243, 231, 172, 143, 123, 245];
     pub const ACCOUNT_POOL_ORACLE_POLICY: [u8; 8] = [246, 134, 133, 108, 100, 203, 226, 43];
-    pub const ACCOUNT_POOL_TREASURY_VAULT: [u8; 8] = [93, 195, 95, 29, 127, 28, 59, 193];
-    pub const ACCOUNT_PROTOCOL_FEE_VAULT: [u8; 8] = [199, 15, 107, 45, 108, 244, 162, 105];
     pub const ACCOUNT_PROTOCOL_GOVERNANCE: [u8; 8] = [71, 235, 253, 251, 202, 254, 132, 177];
     pub const ACCOUNT_RESERVE_ASSET_RAIL: [u8; 8] = [48, 92, 233, 170, 158, 126, 122, 67];
     pub const ACCOUNT_RESERVE_DOMAIN: [u8; 8] = [119, 76, 223, 192, 177, 116, 88, 178];
@@ -110,9 +98,6 @@ pub mod event {
         [15, 13, 219, 43, 68, 58, 135, 157];
     pub const EVENT_CLAIM_CASE_STATE_CHANGED_EVENT: [u8; 8] =
         [162, 195, 160, 236, 219, 18, 240, 208];
-    pub const EVENT_FEE_ACCRUED_EVENT: [u8; 8] = [7, 169, 161, 187, 109, 43, 5, 157];
-    pub const EVENT_FEE_VAULT_INITIALIZED_EVENT: [u8; 8] = [219, 138, 2, 184, 253, 99, 165, 51];
-    pub const EVENT_FEE_WITHDRAWN_EVENT: [u8; 8] = [206, 148, 200, 231, 65, 75, 11, 150];
     pub const EVENT_FUNDING_FLOW_RECORDED_EVENT: [u8; 8] = [207, 159, 154, 43, 193, 239, 239, 163];
     pub const EVENT_FUNDING_LINE_OPENED_EVENT: [u8; 8] = [47, 172, 14, 218, 139, 94, 10, 145];
     pub const EVENT_HEALTH_PLAN_CREATED_EVENT: [u8; 8] = [160, 200, 242, 77, 168, 222, 253, 22];

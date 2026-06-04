@@ -77,40 +77,6 @@ export type ReserveAssetRailSnapshot = {
   bump: number;
 };
 
-// Phase 1.6/1.7 — Fee-vault snapshot types. The panel surfaces SOL rails
-// as `paymentMint === ZERO_PUBKEY`; the listers below translate
-// `assetMint === NATIVE_SOL_MINT` to that UI sentinel.
-export type ProtocolFeeVaultSnapshot = {
-  address: string;
-  reserveDomain: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
-export type PoolTreasuryVaultSnapshot = {
-  address: string;
-  liquidityPool: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
-export type PoolOracleFeeVaultSnapshot = {
-  address: string;
-  liquidityPool: string;
-  oracle: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
 export type HealthPlanSnapshot = {
   address: string;
   reserveDomain: string;
@@ -251,7 +217,6 @@ export type CapitalClassSnapshot = {
   displayName: string;
   priority: number;
   restrictionMode: number;
-  feeBps?: number;
   totalShares: BigNumberish;
   navAssets: BigNumberish;
   allocatedAssets?: BigNumberish;
@@ -320,7 +285,6 @@ export type AllocationLedgerSnapshot = {
 export type ProtocolGovernanceSnapshot = {
   address: string;
   governanceAuthority: string;
-  protocolFeeBps: number;
   emergencyPause: boolean;
   auditNonce: BigNumberish;
 };
@@ -360,7 +324,6 @@ export type PoolOraclePolicySnapshot = {
   quorumM: number;
   quorumN: number;
   requireVerifiedSchema: boolean;
-  oracleFeeBps: number;
   allowDelegateClaim: boolean;
   challengeWindowSecs: number;
   updatedAtTs: number;
@@ -451,9 +414,6 @@ export type ProtocolConsoleSnapshot = {
   outcomeSchemas: OutcomeSchemaSnapshot[];
   schemaDependencyLedgers: SchemaDependencyLedgerSnapshot[];
   claimAttestations: ClaimAttestationSnapshot[];
-  protocolFeeVaults: ProtocolFeeVaultSnapshot[];
-  poolTreasuryVaults: PoolTreasuryVaultSnapshot[];
-  poolOracleFeeVaults: PoolOracleFeeVaultSnapshot[];
 };
 
 export type SponsorReadModel = {
@@ -640,73 +600,6 @@ export type PoolOraclePolicySummary = PoolOraclePolicySnapshot;
 
 export type PoolOraclePermissionSetSummary = PoolOraclePermissionSetSnapshot;
 
-// Phase 1.6/1.7 — Fee-vault summaries surfaced to the pool-treasury panel.
-//
-// `paymentMint` is the panel's UI sentinel: SOL rails expose
-// `paymentMint === ZERO_PUBKEY` (the all-zeros system program key, not the
-// real wrapped-SOL mint). Listers translate the on-chain
-// `assetMint === NATIVE_SOL_MINT` to that sentinel so the panel's
-// `paymentMint === ZERO_PUBKEY ? sol : spl` switching code can stay simple.
-//
-// `availableFees = accruedFees - withdrawnFees` is the safe withdrawable
-// headroom; computed via saturating subtraction so a misordered chain read
-// (e.g., withdrawn briefly leading accrued during indexing) doesn't surface
-// as a bigint underflow in the UI.
-
-export type ProtocolFeeVaultSummary = {
-  address: string;
-  reserveDomain: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  bump: number;
-};
-
-export type PoolTreasuryReserveSummary = {
-  address: string;
-  /** Pool the treasury vault is scoped to. */
-  pool: string;
-  reserveDomain: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  // Display-only ledger counters surfaced by the panel. The on-chain
-  // PoolTreasuryVault tracks only accrued/withdrawn fees — these aliases
-  // are populated by joining DomainAssetLedger / PolicySeries / Obligation
-  // sums in a follow-up. PR3 ships them as 0n placeholders so the panel
-  // renders zeros without crashing; they are NOT used for any withdrawal
-  // safety check (only `availableFees` gates the panel).
-  reservedRewardAmount: bigint;
-  reservedCoverageClaimAmount: bigint;
-  paidCoverageClaimAmount: bigint;
-  impairedAmount: bigint;
-  bump: number;
-};
-
-export type PoolOracleFeeVaultSummary = {
-  address: string;
-  /** Pool the oracle-fee vault is scoped to. */
-  pool: string;
-  /** Reserve domain (joined via the pool's `liquidityPool.reserveDomain`).
-   *  Required by SPL withdraw builders to derive the matching DomainAssetVault. */
-  reserveDomain: string;
-  /** Registered oracle wallet receiving the fee accruals. */
-  oracle: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  bump: number;
-};
-
 export type SchemaSummary = OutcomeSchemaSnapshot;
 
 export type SchemaDependencyLedgerSummary = SchemaDependencyLedgerSnapshot;
@@ -717,7 +610,6 @@ export type ProtocolConfigSummary = {
   governanceAuthority: string;
   governanceRealm: string;
   governanceConfig: string;
-  protocolFeeBps: number;
   defaultStakeMint: string;
   minOracleStake: bigint;
   emergencyPaused: boolean;

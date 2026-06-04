@@ -3541,47 +3541,6 @@
           }
         },
         {
-          "name": "pool_treasury_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
           "name": "source_token_account",
           "writable": true
         },
@@ -3919,643 +3878,6 @@
           "type": {
             "defined": {
               "name": "FundSponsorBudgetArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "init_pool_oracle_fee_vault",
-      "docs": [
-        "Phase 1.6 — Initialize the pool-oracle fee vault for a (liquidity_pool,",
-        "oracle, asset_mint) rail. Governance-only init; the registered oracle",
-        "wallet (or oracle profile admin) signs withdrawals (PR2)."
-      ],
-      "discriminator": [
-        68,
-        122,
-        148,
-        84,
-        91,
-        98,
-        198,
-        167
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "oracle_profile",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "args.oracle"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_oracle_approval",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  97,
-                  112,
-                  112,
-                  114,
-                  111,
-                  118,
-                  97,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "arg",
-                "path": "args.oracle"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_vault",
-          "docs": [
-            "Required for SPL rails. The oracle fee vault accrues claims against the",
-            "same DomainAssetVault used by the pool."
-          ],
-          "optional": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "arg",
-                "path": "args.asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_oracle_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "arg",
-                "path": "args.oracle"
-              },
-              {
-                "kind": "arg",
-                "path": "args.asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "InitPoolOracleFeeVaultArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "init_pool_treasury_vault",
-      "docs": [
-        "Phase 1.6 — Initialize the pool-treasury vault for a (liquidity_pool, asset_mint)",
-        "rail. Governance-only init; pool-admin signs withdrawals (PR2)."
-      ],
-      "discriminator": [
-        96,
-        169,
-        51,
-        224,
-        0,
-        207,
-        141,
-        47
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_vault",
-          "docs": [
-            "Required for SPL rails. Must match (liquidity_pool.reserve_domain, args.asset_mint)."
-          ],
-          "optional": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "arg",
-                "path": "args.asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_treasury_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "arg",
-                "path": "args.asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "InitPoolTreasuryVaultArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "init_protocol_fee_vault",
-      "docs": [
-        "Phase 1.6 — Initialize the protocol-fee vault for a (reserve_domain, asset_mint)",
-        "rail. Governance-only; binds the rail to the asset mint at the program edge.",
-        "Withdrawal authority is governance (PR2). Accrual is wired in PR1 hooks."
-      ],
-      "discriminator": [
-        212,
-        235,
-        61,
-        42,
-        96,
-        183,
-        225,
-        57
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "writable": true,
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "reserve_domain",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain.domain_id",
-                "account": "ReserveDomain"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_vault",
-          "docs": [
-            "Optional anchor to the SPL-rail DomainAssetVault. Required when",
-            "`args.asset_mint != NATIVE_SOL_MINT`; absent for SOL-rail vaults."
-          ],
-          "optional": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "arg",
-                "path": "args.asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "protocol_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "arg",
-                "path": "args.asset_mint"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "InitProtocolFeeVaultArgs"
             }
           }
         }
@@ -6010,47 +5332,6 @@
           }
         },
         {
-          "name": "pool_treasury_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.deposit_asset_mint",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
           "name": "asset_mint"
         },
         {
@@ -6462,47 +5743,6 @@
           "name": "series_reserve_ledger",
           "writable": true,
           "optional": true
-        },
-        {
-          "name": "protocol_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
         },
         {
           "name": "source_token_account",
@@ -8589,75 +7829,6 @@
           "optional": true
         },
         {
-          "name": "protocol_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "health_plan.reserve_domain",
-                "account": "HealthPlan"
-              },
-              {
-                "kind": "account",
-                "path": "funding_line.asset_mint",
-                "account": "FundingLine"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_oracle_fee_vault",
-          "docs": [
-            "Phase 1.6 — optional pool-oracle fee vault for attesting-oracle revshare.",
-            "When supplied alongside `pool_oracle_policy` and `oracle_fee_attestation`,",
-            "the bps from policy is applied to the gross amount and credited to the",
-            "oracle that signed the supplied attestation."
-          ],
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "pool_oracle_policy",
-          "docs": [
-            "Phase 1.6 — pairs with pool_oracle_fee_vault. The handler reads",
-            "`oracle_fee_bps` from policy. Required when pool_oracle_fee_vault is Some;",
-            "ignored otherwise. Validated at runtime."
-          ],
-          "optional": true
-        },
-        {
-          "name": "oracle_fee_attestation",
-          "docs": [
-            "Phase 1.6 — matching claim attestation for the oracle fee recipient.",
-            "Required when pool_oracle_fee_vault and pool_oracle_policy are supplied."
-          ],
-          "optional": true
-        },
-        {
           "name": "member_position"
         },
         {
@@ -9544,19 +8715,6 @@
           "name": "token_program",
           "optional": true,
           "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        },
-        {
-          "name": "pool_oracle_fee_vault",
-          "writable": true,
-          "optional": true
-        },
-        {
-          "name": "pool_oracle_policy",
-          "optional": true
-        },
-        {
-          "name": "oracle_fee_attestation",
-          "optional": true
         }
       ],
       "args": [
@@ -10720,1235 +9878,6 @@
           }
         }
       ]
-    },
-    {
-      "name": "withdraw_pool_oracle_fee_sol",
-      "docs": [
-        "Sweep accrued pool-oracle fees (SOL rail) to a recipient system account.",
-        "Authority: registered oracle wallet OR oracle profile admin OR governance."
-      ],
-      "discriminator": [
-        208,
-        223,
-        250,
-        62,
-        199,
-        8,
-        221,
-        185
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "oracle_profile",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "oracle_profile.oracle",
-                "account": "OracleProfile"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_oracle_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_oracle_fee_vault.oracle",
-                "account": "PoolOracleFeeVault"
-              },
-              {
-                "kind": "account",
-                "path": "pool_oracle_fee_vault.asset_mint",
-                "account": "PoolOracleFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "recipient",
-          "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "WithdrawArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "withdraw_pool_oracle_fee_spl",
-      "docs": [
-        "Sweep accrued pool-oracle fees (SPL rail) to a recipient ATA.",
-        "Authority: registered oracle wallet OR oracle profile admin OR governance."
-      ],
-      "discriminator": [
-        242,
-        75,
-        247,
-        122,
-        255,
-        183,
-        48,
-        189
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "oracle_profile",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  112,
-                  114,
-                  111,
-                  102,
-                  105,
-                  108,
-                  101
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "oracle_profile.oracle",
-                "account": "OracleProfile"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_oracle_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  111,
-                  114,
-                  97,
-                  99,
-                  108,
-                  101,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_oracle_fee_vault.oracle",
-                "account": "PoolOracleFeeVault"
-              },
-              {
-                "kind": "account",
-                "path": "pool_oracle_fee_vault.asset_mint",
-                "account": "PoolOracleFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_oracle_fee_vault.asset_mint",
-                "account": "PoolOracleFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_oracle_fee_vault.asset_mint",
-                "account": "PoolOracleFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "asset_mint"
-        },
-        {
-          "name": "vault_token_account",
-          "writable": true
-        },
-        {
-          "name": "recipient_token_account",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "WithdrawArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "withdraw_pool_treasury_sol",
-      "docs": [
-        "Sweep accrued pool-treasury fees (SOL rail).",
-        "Authority: pool curator OR governance."
-      ],
-      "discriminator": [
-        50,
-        115,
-        51,
-        120,
-        221,
-        37,
-        200,
-        169
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_treasury_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_treasury_vault.asset_mint",
-                "account": "PoolTreasuryVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "recipient",
-          "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "WithdrawArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "withdraw_pool_treasury_spl",
-      "docs": [
-        "Sweep accrued pool-treasury fees (SPL rail).",
-        "Authority: pool curator OR governance."
-      ],
-      "discriminator": [
-        43,
-        146,
-        116,
-        123,
-        106,
-        69,
-        242,
-        104
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "liquidity_pool",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  108,
-                  105,
-                  113,
-                  117,
-                  105,
-                  100,
-                  105,
-                  116,
-                  121,
-                  95,
-                  112,
-                  111,
-                  111,
-                  108
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.pool_id",
-                "account": "LiquidityPool"
-              }
-            ]
-          }
-        },
-        {
-          "name": "pool_treasury_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  111,
-                  111,
-                  108,
-                  95,
-                  116,
-                  114,
-                  101,
-                  97,
-                  115,
-                  117,
-                  114,
-                  121,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_treasury_vault.asset_mint",
-                "account": "PoolTreasuryVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_treasury_vault.asset_mint",
-                "account": "PoolTreasuryVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "liquidity_pool.reserve_domain",
-                "account": "LiquidityPool"
-              },
-              {
-                "kind": "account",
-                "path": "pool_treasury_vault.asset_mint",
-                "account": "PoolTreasuryVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "asset_mint"
-        },
-        {
-          "name": "vault_token_account",
-          "writable": true
-        },
-        {
-          "name": "recipient_token_account",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "WithdrawArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "withdraw_protocol_fee_sol",
-      "docs": [
-        "Sweep accrued protocol fees (SOL rail) to a recipient system account.",
-        "Authority: governance only. Lamports come straight off the fee-vault",
-        "PDA; rent-exempt minimum is preserved."
-      ],
-      "discriminator": [
-        193,
-        33,
-        140,
-        185,
-        45,
-        190,
-        112,
-        7
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "reserve_domain",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain.domain_id",
-                "account": "ReserveDomain"
-              }
-            ]
-          }
-        },
-        {
-          "name": "protocol_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "account",
-                "path": "protocol_fee_vault.asset_mint",
-                "account": "ProtocolFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "recipient",
-          "writable": true
-        },
-        {
-          "name": "system_program",
-          "address": "11111111111111111111111111111111"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "WithdrawArgs"
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "withdraw_protocol_fee_spl",
-      "docs": [
-        "Sweep accrued protocol fees (SPL rail) to a recipient ATA.",
-        "Authority: governance only. Fees physically reside in the matching",
-        "DomainAssetVault.vault_token_account; the CPI is PDA-signed via",
-        "transfer_from_domain_vault."
-      ],
-      "discriminator": [
-        120,
-        62,
-        236,
-        14,
-        227,
-        240,
-        52,
-        253
-      ],
-      "accounts": [
-        {
-          "name": "authority",
-          "signer": true
-        },
-        {
-          "name": "protocol_governance",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  103,
-                  111,
-                  118,
-                  101,
-                  114,
-                  110,
-                  97,
-                  110,
-                  99,
-                  101
-                ]
-              }
-            ]
-          }
-        },
-        {
-          "name": "reserve_domain",
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  114,
-                  101,
-                  115,
-                  101,
-                  114,
-                  118,
-                  101,
-                  95,
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain.domain_id",
-                "account": "ReserveDomain"
-              }
-            ]
-          }
-        },
-        {
-          "name": "protocol_fee_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  112,
-                  114,
-                  111,
-                  116,
-                  111,
-                  99,
-                  111,
-                  108,
-                  95,
-                  102,
-                  101,
-                  101,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "account",
-                "path": "protocol_fee_vault.asset_mint",
-                "account": "ProtocolFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_vault",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  118,
-                  97,
-                  117,
-                  108,
-                  116
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "account",
-                "path": "protocol_fee_vault.asset_mint",
-                "account": "ProtocolFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "domain_asset_ledger",
-          "writable": true,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  100,
-                  111,
-                  109,
-                  97,
-                  105,
-                  110,
-                  95,
-                  97,
-                  115,
-                  115,
-                  101,
-                  116,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "reserve_domain"
-              },
-              {
-                "kind": "account",
-                "path": "protocol_fee_vault.asset_mint",
-                "account": "ProtocolFeeVault"
-              }
-            ]
-          }
-        },
-        {
-          "name": "asset_mint"
-        },
-        {
-          "name": "vault_token_account",
-          "writable": true
-        },
-        {
-          "name": "recipient_token_account",
-          "writable": true
-        },
-        {
-          "name": "token_program",
-          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-        }
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "WithdrawArgs"
-            }
-          }
-        }
-      ]
     }
   ],
   "accounts": [
@@ -12213,19 +10142,6 @@
       ]
     },
     {
-      "name": "PoolOracleFeeVault",
-      "discriminator": [
-        167,
-        128,
-        29,
-        44,
-        248,
-        197,
-        244,
-        23
-      ]
-    },
-    {
       "name": "PoolOraclePermissionSet",
       "discriminator": [
         3,
@@ -12249,32 +10165,6 @@
         203,
         226,
         43
-      ]
-    },
-    {
-      "name": "PoolTreasuryVault",
-      "discriminator": [
-        93,
-        195,
-        95,
-        29,
-        127,
-        28,
-        59,
-        193
-      ]
-    },
-    {
-      "name": "ProtocolFeeVault",
-      "discriminator": [
-        199,
-        15,
-        107,
-        45,
-        108,
-        244,
-        162,
-        105
       ]
     },
     {
@@ -12407,45 +10297,6 @@
         18,
         240,
         208
-      ]
-    },
-    {
-      "name": "FeeAccruedEvent",
-      "discriminator": [
-        7,
-        169,
-        161,
-        187,
-        109,
-        43,
-        5,
-        157
-      ]
-    },
-    {
-      "name": "FeeVaultInitializedEvent",
-      "discriminator": [
-        219,
-        138,
-        2,
-        184,
-        253,
-        99,
-        165,
-        51
-      ]
-    },
-    {
-      "name": "FeeWithdrawnEvent",
-      "discriminator": [
-        206,
-        148,
-        200,
-        231,
-        65,
-        75,
-        11,
-        150
       ]
     },
     {
@@ -13150,161 +11001,126 @@
     },
     {
       "code": 6072,
-      "name": "FeeVaultMismatch",
-      "msg": "Fee vault account does not match the expected scope"
-    },
-    {
-      "code": 6073,
-      "name": "FeeVaultInsufficientBalance",
-      "msg": "Fee vault has insufficient accrued balance for this withdrawal"
-    },
-    {
-      "code": 6074,
-      "name": "FeeVaultRentExemptionBreach",
-      "msg": "Fee vault withdrawal would breach the rent-exempt minimum balance"
-    },
-    {
-      "code": 6075,
-      "name": "FeeVaultRailMismatch",
-      "msg": "Fee vault rail and asset mint disagree (SOL vault used on SPL path or vice versa)"
-    },
-    {
-      "code": 6076,
-      "name": "FeeVaultBpsMisconfigured",
-      "msg": "Fee vault basis-points configuration is out of range"
-    },
-    {
-      "code": 6077,
       "name": "SettlementOutflowAccountsRequired",
       "msg": "Linked claim settlement requires the member, mint, vault token, recipient token, and token program accounts"
     },
     {
-      "code": 6078,
-      "name": "FeeVaultRequiredForConfiguredFee",
-      "msg": "Configured fee basis points require the matching fee vault account"
-    },
-    {
-      "code": 6079,
-      "name": "ClaimAttestationRequiredForOracleFee",
-      "msg": "Oracle fee accrual requires a matching claim attestation account"
-    },
-    {
-      "code": 6080,
+      "code": 6073,
       "name": "InsufficientStableCoverageCapacity",
       "msg": "Stable coverage capacity is insufficient"
     },
     {
-      "code": 6081,
+      "code": 6074,
       "name": "InvalidReserveAssetRole",
       "msg": "Reserve asset role is invalid"
     },
     {
-      "code": 6082,
+      "code": 6075,
       "name": "InvalidReserveOracleSource",
       "msg": "Reserve asset oracle source is invalid"
     },
     {
-      "code": 6083,
+      "code": 6076,
       "name": "ReserveAssetRailMismatch",
       "msg": "Reserve asset rail mismatch"
     },
     {
-      "code": 6084,
+      "code": 6077,
       "name": "ReserveDomainMismatch",
       "msg": "Reserve domain mismatch"
     },
     {
-      "code": 6085,
+      "code": 6078,
       "name": "ReserveAssetRailInactive",
       "msg": "Reserve asset rail is inactive"
     },
     {
-      "code": 6086,
+      "code": 6079,
       "name": "ReserveAssetRailPayoutDisabled",
       "msg": "Reserve asset rail does not allow claims payout"
     },
     {
-      "code": 6087,
+      "code": 6080,
       "name": "ReserveAssetRailCapacityDisabled",
       "msg": "Reserve asset rail cannot count toward claims capacity"
     },
     {
-      "code": 6088,
+      "code": 6081,
       "name": "ReserveAssetPriceStale",
       "msg": "Reserve asset oracle price is stale or missing"
     },
     {
-      "code": 6089,
+      "code": 6082,
       "name": "ReserveAssetPriceInvalid",
       "msg": "Reserve asset oracle price is invalid"
     },
     {
-      "code": 6090,
+      "code": 6083,
       "name": "ReserveAssetPriceConfidenceTooWide",
       "msg": "Reserve asset oracle price confidence exceeds rail threshold"
     },
     {
-      "code": 6091,
+      "code": 6084,
       "name": "PartialObligationTransitionUnsupported",
       "msg": "Partial obligation lifecycle transitions are not supported"
     },
     {
-      "code": 6092,
+      "code": 6085,
       "name": "InvalidObligationDeliveryMode",
       "msg": "Invalid obligation delivery mode"
     },
     {
-      "code": 6093,
+      "code": 6086,
       "name": "ClaimAdjudicationLocked",
       "msg": "Claim adjudication is locked after payout or terminal state"
     },
     {
-      "code": 6094,
+      "code": 6087,
       "name": "SelectedAssetPayoutSameMint",
       "msg": "Selected-asset claim payout must use a different mint from the claim denomination"
     },
     {
-      "code": 6095,
+      "code": 6088,
       "name": "SelectedAssetPayoutUnderpaid",
       "msg": "Selected-asset claim payout value is below the credited claim amount"
     },
     {
-      "code": 6096,
+      "code": 6089,
       "name": "SelectedAssetPayoutOverpaid",
       "msg": "Selected-asset claim payout value exceeds the configured overpay tolerance"
     },
     {
-      "code": 6097,
+      "code": 6090,
       "name": "SelectedAssetOverpayBpsTooHigh",
       "msg": "Selected-asset claim payout overpay bps exceeds the protocol maximum"
     },
     {
-      "code": 6098,
+      "code": 6091,
       "name": "ReserveAssetMintDecimalsUnsupported",
       "msg": "Reserve asset mint decimals are unsupported"
     },
     {
-      "code": 6099,
+      "code": 6092,
       "name": "HealthPlanInactive",
       "msg": "Health plan is inactive"
     },
     {
-      "code": 6100,
+      "code": 6093,
       "name": "CapitalClassInactive",
       "msg": "Capital class is inactive"
     },
     {
-      "code": 6101,
+      "code": 6094,
       "name": "DirectClaimReserveUnsupported",
       "msg": "Direct claim reserves require linked obligation settlement"
     },
     {
-      "code": 6102,
+      "code": 6095,
       "name": "LiquidityPoolInactive",
       "msg": "Liquidity pool is inactive"
     },
     {
-      "code": 6103,
+      "code": 6096,
       "name": "AllocationPositionInactive",
       "msg": "Allocation position is inactive or deallocation-only"
     }
@@ -13649,10 +11465,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "fee_bps",
-            "type": "u16"
           },
           {
             "name": "min_lockup_seconds",
@@ -14221,10 +12033,6 @@
             }
           },
           {
-            "name": "fee_bps",
-            "type": "u16"
-          },
-          {
             "name": "min_lockup_seconds",
             "type": "i64"
           },
@@ -14401,10 +12209,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "fee_bps",
-            "type": "u16"
           },
           {
             "name": "redemption_policy",
@@ -14719,93 +12523,6 @@
           {
             "name": "bump",
             "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "FeeAccruedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "accrued_total",
-            "type": "u64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "FeeVaultInitializedEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "scope",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "fee_recipient",
-            "type": "pubkey"
-          },
-          {
-            "name": "rail",
-            "docs": [
-              "0 = ProtocolFeeVault, 1 = PoolTreasuryVault, 2 = PoolOracleFeeVault."
-            ],
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "FeeWithdrawnEvent",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "vault",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "amount",
-            "type": "u64"
-          },
-          {
-            "name": "configured_recipient",
-            "type": "pubkey"
-          },
-          {
-            "name": "recipient",
-            "type": "pubkey"
-          },
-          {
-            "name": "withdrawn_total",
-            "type": "u64"
           }
         ]
       }
@@ -15140,90 +12857,10 @@
       }
     },
     {
-      "name": "InitPoolOracleFeeVaultArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracle",
-            "docs": [
-              "Oracle wallet whose fee vault is being initialized. Must match",
-              "`oracle_profile.oracle` and have an active `PoolOracleApproval` on the pool."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "docs": [
-              "Asset mint of the rail (use `NATIVE_SOL_MINT` for SOL)."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "fee_recipient",
-            "docs": [
-              "Configured recipient owner for this oracle-fee rail."
-            ],
-            "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "InitPoolTreasuryVaultArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "asset_mint",
-            "docs": [
-              "Asset mint must equal `liquidity_pool.deposit_asset_mint` for SPL pools, or",
-              "`NATIVE_SOL_MINT` for the SOL rail."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "fee_recipient",
-            "docs": [
-              "Configured recipient owner for this rail."
-            ],
-            "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
-      "name": "InitProtocolFeeVaultArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "asset_mint",
-            "docs": [
-              "SPL mint for the fee rail. Pass `NATIVE_SOL_MINT` to bind a SOL-rail vault."
-            ],
-            "type": "pubkey"
-          },
-          {
-            "name": "fee_recipient",
-            "docs": [
-              "Configured recipient owner for this rail. SOL withdraws must pay this",
-              "address directly; SPL withdraws must pay a token account owned by it."
-            ],
-            "type": "pubkey"
-          }
-        ]
-      }
-    },
-    {
       "name": "InitializeProtocolGovernanceArgs",
       "type": {
         "kind": "struct",
         "fields": [
-          {
-            "name": "protocol_fee_bps",
-            "type": "u16"
-          },
           {
             "name": "emergency_pause",
             "type": "bool"
@@ -15419,10 +13056,6 @@
                 32
               ]
             }
-          },
-          {
-            "name": "fee_bps",
-            "type": "u16"
           },
           {
             "name": "redemption_policy",
@@ -16451,42 +14084,6 @@
       }
     },
     {
-      "name": "PoolOracleFeeVault",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "liquidity_pool",
-            "type": "pubkey"
-          },
-          {
-            "name": "oracle",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "fee_recipient",
-            "type": "pubkey"
-          },
-          {
-            "name": "accrued_fees",
-            "type": "u64"
-          },
-          {
-            "name": "withdrawn_fees",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
       "name": "PoolOraclePermissionSet",
       "type": {
         "kind": "struct",
@@ -16560,10 +14157,6 @@
             "type": "bool"
           },
           {
-            "name": "oracle_fee_bps",
-            "type": "u16"
-          },
-          {
             "name": "allow_delegate_claim",
             "type": "bool"
           },
@@ -16602,42 +14195,6 @@
           {
             "name": "quorum_n",
             "type": "u8"
-          },
-          {
-            "name": "oracle_fee_bps",
-            "type": "u16"
-          }
-        ]
-      }
-    },
-    {
-      "name": "PoolTreasuryVault",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "liquidity_pool",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "fee_recipient",
-            "type": "pubkey"
-          },
-          {
-            "name": "accrued_fees",
-            "type": "u64"
-          },
-          {
-            "name": "withdrawn_fees",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
           }
         ]
       }
@@ -16655,38 +14212,6 @@
       }
     },
     {
-      "name": "ProtocolFeeVault",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "reserve_domain",
-            "type": "pubkey"
-          },
-          {
-            "name": "asset_mint",
-            "type": "pubkey"
-          },
-          {
-            "name": "fee_recipient",
-            "type": "pubkey"
-          },
-          {
-            "name": "accrued_fees",
-            "type": "u64"
-          },
-          {
-            "name": "withdrawn_fees",
-            "type": "u64"
-          },
-          {
-            "name": "bump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
       "name": "ProtocolGovernance",
       "type": {
         "kind": "struct",
@@ -16694,10 +14219,6 @@
           {
             "name": "governance_authority",
             "type": "pubkey"
-          },
-          {
-            "name": "protocol_fee_bps",
-            "type": "u16"
           },
           {
             "name": "emergency_pause",
@@ -16722,10 +14243,6 @@
           {
             "name": "governance_authority",
             "type": "pubkey"
-          },
-          {
-            "name": "protocol_fee_bps",
-            "type": "u16"
           },
           {
             "name": "emergency_pause",
@@ -17445,10 +14962,6 @@
             "type": "bool"
           },
           {
-            "name": "oracle_fee_bps",
-            "type": "u16"
-          },
-          {
             "name": "allow_delegate_claim",
             "type": "bool"
           },
@@ -17924,24 +15437,6 @@
           {
             "name": "cycle_seconds",
             "type": "i64"
-          }
-        ]
-      }
-    },
-    {
-      "name": "WithdrawArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "docs": [
-              "Amount to withdraw, in the rail's native units (lamports for SOL,",
-              "SPL base units for SPL). Must satisfy",
-              "`withdrawn_fees + amount <= accrued_fees` on the rail's fee vault,",
-              "and must not breach rent-exemption on the SOL rail."
-            ],
-            "type": "u64"
           }
         ]
       }

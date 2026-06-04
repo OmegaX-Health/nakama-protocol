@@ -151,22 +151,8 @@ pub enum OmegaXProtocolError {
     LiquidityPoolMismatch,
     #[msg("Oracle profile reference does not match the supplied account")]
     OracleProfileMismatch,
-    #[msg("Fee vault account does not match the expected scope")]
-    FeeVaultMismatch,
-    #[msg("Fee vault has insufficient accrued balance for this withdrawal")]
-    FeeVaultInsufficientBalance,
-    #[msg("Fee vault withdrawal would breach the rent-exempt minimum balance")]
-    FeeVaultRentExemptionBreach,
-    #[msg("Fee vault rail and asset mint disagree (SOL vault used on SPL path or vice versa)")]
-    FeeVaultRailMismatch,
-    #[msg("Fee vault basis-points configuration is out of range")]
-    FeeVaultBpsMisconfigured,
     #[msg("Linked claim settlement requires the member, mint, vault token, recipient token, and token program accounts")]
     SettlementOutflowAccountsRequired,
-    #[msg("Configured fee basis points require the matching fee vault account")]
-    FeeVaultRequiredForConfiguredFee,
-    #[msg("Oracle fee accrual requires a matching claim attestation account")]
-    ClaimAttestationRequiredForOracleFee,
     #[msg("Stable coverage capacity is insufficient")]
     InsufficientStableCoverageCapacity,
     #[msg("Reserve asset role is invalid")]
@@ -292,14 +278,7 @@ pub enum OmegaXProtocolError {
     DomainAssetVaultRequired,
     LiquidityPoolMismatch,
     OracleProfileMismatch,
-    FeeVaultMismatch,
-    FeeVaultInsufficientBalance,
-    FeeVaultRentExemptionBreach,
-    FeeVaultRailMismatch,
-    FeeVaultBpsMisconfigured,
     SettlementOutflowAccountsRequired,
-    FeeVaultRequiredForConfiguredFee,
-    ClaimAttestationRequiredForOracleFee,
     InsufficientStableCoverageCapacity,
     InvalidReserveAssetRole,
     InvalidReserveOracleSource,

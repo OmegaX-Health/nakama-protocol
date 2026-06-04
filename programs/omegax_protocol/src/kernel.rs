@@ -13,8 +13,6 @@ mod custody;
 #[cfg(feature = "quasar")]
 mod custody;
 #[cfg(not(feature = "quasar"))]
-mod fees;
-#[cfg(not(feature = "quasar"))]
 mod membership;
 #[cfg(not(feature = "quasar"))]
 mod reserve_accounting;
@@ -29,8 +27,6 @@ pub(crate) use capital_math::*;
 pub(crate) use custody::*;
 #[cfg(feature = "quasar")]
 pub(crate) use custody::*;
-#[cfg(not(feature = "quasar"))]
-pub(crate) use fees::*;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use membership::*;
 #[cfg(not(feature = "quasar"))]

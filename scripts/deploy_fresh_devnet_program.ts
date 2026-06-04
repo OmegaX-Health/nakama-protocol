@@ -301,7 +301,6 @@ async function main(): Promise<void> {
       label: "initialize_protocol_governance:fresh-devnet",
       tx: protocol.buildInitializeProtocolGovernanceTx({
         governanceAuthority: governance.publicKey,
-        protocolFeeBps: 50,
         emergencyPaused: false,
         recentBlockhash: "11111111111111111111111111111111",
       }),

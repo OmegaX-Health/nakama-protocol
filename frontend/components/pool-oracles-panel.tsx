@@ -49,13 +49,6 @@ function shortAddress(value: string): string {
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
 }
 
-function formatBasisPoints(value: string | number): string {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return `${value} bps`;
-  const percent = parsed / 100;
-  return `${parsed} bps (${percent.toLocaleString(undefined, { maximumFractionDigits: 2 })}%)`;
-}
-
 function formatDurationSeconds(value: bigint | number | string): string {
   const seconds = Number(value);
   if (!Number.isFinite(seconds)) return `${value.toString()} seconds`;
@@ -91,7 +84,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
   const [quorumN, setQuorumN] = useState("3");
   const [requireVerifiedSchema, setRequireVerifiedSchema] = useState(true);
   const [allowDelegateClaim, setAllowDelegateClaim] = useState(true);
-  const [oracleFeeBps, setOracleFeeBps] = useState("0");
   const [challengeWindowSecs, setChallengeWindowSecs] = useState("0");
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -272,7 +264,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
     setQuorumN(String(policy.quorumN));
     setRequireVerifiedSchema(policy.requireVerifiedSchema);
     setAllowDelegateClaim(policy.allowDelegateClaim);
-    setOracleFeeBps(String(policy.oracleFeeBps));
     setChallengeWindowSecs(policy.challengeWindowSecs.toString());
   }, [policy]);
 
@@ -364,7 +355,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
         quorumM: Number.parseInt(quorumM, 10) || 0,
         quorumN: Number.parseInt(quorumN, 10) || 0,
         requireVerifiedSchema,
-        oracleFeeBps: Number.parseInt(oracleFeeBps, 10) || 0,
         allowDelegateClaim,
         challengeWindowSecs: Number.parseInt(challengeWindowSecs, 10) || 0,
       });
@@ -464,7 +454,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
             <span className={`status-pill ${policy.allowDelegateClaim ? "status-ok" : "status-off"}`}>
               Delegate claims {policy.allowDelegateClaim ? "allowed" : "not allowed"}
             </span>
-            <span className="status-pill status-off">Oracle fee {formatBasisPoints(policy.oracleFeeBps)}</span>
             <span className="status-pill status-off">Challenge window {formatDurationSeconds(policy.challengeWindowSecs)}</span>
           </div>
         ) : (
@@ -479,10 +468,6 @@ export function PoolOraclesPanel({ poolAddress, sectionMode = "standalone" }: Po
           <label className="space-y-1">
             <span className="metric-label">Eligible oracles</span>
             <input className="field-input" value={quorumN} onChange={(event) => setQuorumN(event.target.value)} />
-          </label>
-          <label className="space-y-1">
-            <span className="metric-label">Oracle fee (bps)</span>
-            <input className="field-input" value={oracleFeeBps} onChange={(event) => setOracleFeeBps(event.target.value)} />
           </label>
           <label className="space-y-1 xl:col-span-3">
             <span className="metric-label">Challenge window (seconds)</span>

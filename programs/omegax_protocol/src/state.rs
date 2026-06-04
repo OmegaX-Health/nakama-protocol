@@ -10,7 +10,6 @@ use crate::platform::*;
 #[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
 pub struct ProtocolGovernance {
     pub governance_authority: Pubkey,
-    pub protocol_fee_bps: u16,
     pub emergency_pause: bool,
     pub audit_nonce: u64,
     pub bump: u8,
@@ -120,48 +119,6 @@ pub struct ReserveAssetRail<'info> {
     pub audit_nonce: u64,
     pub bump: u8,
     pub asset_symbol: String<u32, 32>,
-}
-
-// Fee accounting account types. SPL tokens for fees physically reside in the
-// matching DomainAssetVault.vault_token_account; these accounts track each
-// rail's claim against that pool. Withdrawals decrement `withdrawn_fees` and
-// transfer SPL out of DomainAssetVault via PDA-signed CPI.
-
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [199, 15, 107, 45, 108, 244, 162, 105]))]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct ProtocolFeeVault {
-    pub reserve_domain: Pubkey,
-    pub asset_mint: Pubkey,
-    pub fee_recipient: Pubkey,
-    pub accrued_fees: u64,
-    pub withdrawn_fees: u64,
-    pub bump: u8,
-}
-
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [93, 195, 95, 29, 127, 28, 59, 193]))]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct PoolTreasuryVault {
-    pub liquidity_pool: Pubkey,
-    pub asset_mint: Pubkey,
-    pub fee_recipient: Pubkey,
-    pub accrued_fees: u64,
-    pub withdrawn_fees: u64,
-    pub bump: u8,
-}
-
-#[cfg_attr(not(feature = "quasar"), account)]
-#[cfg_attr(feature = "quasar", account(discriminator = [167, 128, 29, 44, 248, 197, 244, 23]))]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct PoolOracleFeeVault {
-    pub liquidity_pool: Pubkey,
-    pub oracle: Pubkey,
-    pub asset_mint: Pubkey,
-    pub fee_recipient: Pubkey,
-    pub accrued_fees: u64,
-    pub withdrawn_fees: u64,
-    pub bump: u8,
 }
 
 #[cfg(not(feature = "quasar"))]
@@ -507,7 +464,6 @@ pub struct LiquidityPool {
     pub strategy_hash: [u8; 32],
     pub allowed_exposure_hash: [u8; 32],
     pub external_yield_adapter_hash: [u8; 32],
-    pub fee_bps: u16,
     pub redemption_policy: u8,
     pub pause_flags: u32,
     pub total_value_locked: u64,
@@ -531,7 +487,6 @@ pub struct LiquidityPool<'info> {
     pub strategy_hash: [u8; 32],
     pub allowed_exposure_hash: [u8; 32],
     pub external_yield_adapter_hash: [u8; 32],
-    pub fee_bps: u16,
     pub redemption_policy: u8,
     pub pause_flags: u32,
     pub total_value_locked: u64,
@@ -563,7 +518,6 @@ pub struct CapitalClass {
     pub redemption_terms_mode: u8,
     pub wrapper_metadata_hash: [u8; 32],
     pub permissioning_hash: [u8; 32],
-    pub fee_bps: u16,
     pub min_lockup_seconds: i64,
     pub pause_flags: u32,
     pub queue_only_redemptions: bool,
@@ -591,7 +545,6 @@ pub struct CapitalClass<'info> {
     pub redemption_terms_mode: u8,
     pub wrapper_metadata_hash: [u8; 32],
     pub permissioning_hash: [u8; 32],
-    pub fee_bps: u16,
     pub min_lockup_seconds: i64,
     pub pause_flags: u32,
     pub queue_only_redemptions: bool,
@@ -815,7 +768,6 @@ pub struct PoolOraclePolicy {
     pub quorum_m: u8,
     pub quorum_n: u8,
     pub require_verified_schema: bool,
-    pub oracle_fee_bps: u16,
     pub allow_delegate_claim: bool,
     pub challenge_window_secs: u32,
     pub updated_at_ts: i64,
@@ -1014,9 +966,6 @@ macro_rules! impl_quasar_dynamic_init_space {
 impl_quasar_fixed_init_space!(
     ProtocolGovernance,
     DomainAssetVault,
-    ProtocolFeeVault,
-    PoolTreasuryVault,
-    PoolOracleFeeVault,
     MemberPosition,
     LPPosition,
     AllocationPosition,

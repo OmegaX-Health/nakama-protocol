@@ -107,12 +107,11 @@ const TAB_HEROES: Record<CapitalTabId, TabHero> = {
     subtitle: "Plans currently drawing from this reserve.",
   },
   treasury: {
-    eyebrow: "Fee treasury",
+    eyebrow: "Treasury",
     title: "Treasury",
-    emphasis: "Withdrawals.",
+    emphasis: "Status.",
     tail: "",
-    subtitle:
-      "Sweep accrued protocol, pool, and oracle fees once the matching authority is connected.",
+    subtitle: "Pool custody and reserve status.",
   },
 };
 
@@ -425,15 +424,6 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
   const eyebrow = activeTab === "overview" ? personaEyebrow(effectivePersona) : hero.eyebrow;
 
   /* ── Treasury-tab capabilities ── */
-  // Phase 1.7 PR4 — minimal capabilities derivation for the treasury tab.
-  // Builds a synthetic ProtocolConfigSummary from the snapshot's
-  // ProtocolGovernance so canManageProtocolConfig (and therefore
-  // canWithdrawProtocolFees) detects the governance-authority wallet without
-  // requiring an extra RPC fetch. PoolSummary has the curator field that
-  // canWithdrawPoolTreasury (per-rail authority) reads. walletOracle is
-  // resolved by matching the wallet against any oracle profile in the snapshot.
-  // walletMembership / walletClaimDelegate / walletCapitalPosition are out of
-  // scope for the treasury tab.
   const walletAddress = wallet.publicKey?.toBase58() ?? null;
   const treasuryProtocolConfig = useMemo<ProtocolConfigSummary | null>(() => {
     const governance = snapshot.protocolGovernance;
@@ -444,7 +434,6 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
       governanceAuthority: governance.governanceAuthority,
       governanceRealm: ZERO_PUBKEY,
       governanceConfig: ZERO_PUBKEY,
-      protocolFeeBps: governance.protocolFeeBps,
       defaultStakeMint: ZERO_PUBKEY,
       minOracleStake: 0n,
       emergencyPaused: governance.emergencyPause,
@@ -1112,11 +1101,11 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
                   <PoolWorkspaceProvider capabilities={treasuryCapabilities}>
                     <PoolTreasuryPanel poolAddress={selectedPool.address} />
                   </PoolWorkspaceProvider>
-                ) : (
-                  <CapitalEmptyState
-                    title="Select a pool"
-                    copy="Choose a liquidity pool above to inspect its fee treasury rails and (when authorized) sweep accrued protocol, pool, and oracle fees."
-                  />
+	                ) : (
+	                  <CapitalEmptyState
+	                    title="Select a pool"
+	                    copy="Choose a liquidity pool above to inspect current treasury status."
+	                  />
                 )
               ) : null}
             </section>
@@ -1253,7 +1242,6 @@ export function CapitalWorkbench({ searchParams = {} }: CapitalWorkbenchProps) {
           plans={snapshot.healthPlans}
           fundingLines={snapshot.fundingLines}
           domainAssetVaults={snapshot.domainAssetVaults}
-          poolTreasuryVaults={snapshot.poolTreasuryVaults}
         />
       ) : null}
     </div>

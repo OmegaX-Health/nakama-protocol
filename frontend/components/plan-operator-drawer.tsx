@@ -39,17 +39,12 @@ import {
   FUNDING_LINE_TYPE_SPONSOR_BUDGET,
   FUNDING_LINE_TYPE_SUBSIDY,
   MEMBER_DELEGATED_RIGHT_FLAGS,
-  MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT,
   MEMBERSHIP_GATE_KIND_INVITE_ONLY,
-  MEMBERSHIP_GATE_KIND_NFT_ANCHOR,
   MEMBERSHIP_GATE_KIND_OPEN,
-  MEMBERSHIP_GATE_KIND_STAKE_ANCHOR,
   MEMBERSHIP_MODE_INVITE_ONLY,
   MEMBERSHIP_MODE_OPEN,
-  MEMBERSHIP_MODE_TOKEN_GATE,
   MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
   MEMBERSHIP_PROOF_MODE_OPEN,
-  MEMBERSHIP_PROOF_MODE_TOKEN_GATE,
   OBLIGATION_DELIVERY_MODE_CLAIMABLE,
   OBLIGATION_STATUS_CANCELED,
   OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
@@ -74,9 +69,6 @@ import {
   type LiquidityPoolSnapshot,
   type MemberPositionSnapshot,
   type ObligationSnapshot,
-  type PoolOracleFeeVaultSnapshot,
-  type PoolOraclePolicySnapshot,
-  type ProtocolFeeVaultSnapshot,
   type PolicySeriesSnapshot,
   type ReserveDomainSnapshot,
 } from "@/lib/protocol";
@@ -107,9 +99,6 @@ type PlanOperatorDrawerProps = {
   classes: CapitalClassSnapshot[];
   pools: LiquidityPoolSnapshot[];
   domainAssetVaults: DomainAssetVaultSnapshot[];
-  protocolFeeVaults: ProtocolFeeVaultSnapshot[];
-  poolOracleFeeVaults: PoolOracleFeeVaultSnapshot[];
-  poolOraclePolicies: PoolOraclePolicySnapshot[];
 };
 
 const SECTIONS: Array<{ id: PlanOperatorSection; label: string; blurb: string }> = [
@@ -195,14 +184,6 @@ function membershipModeForPlan(plan: HealthPlanSnapshot): number {
   if (typeof plan.membershipModeValue === "number") return plan.membershipModeValue;
   const label = normalizedMembershipLabel(plan.membershipModel);
   if (label.includes("invite")) return MEMBERSHIP_MODE_INVITE_ONLY;
-  if (
-    label.includes("token") ||
-    label.includes("nft") ||
-    label.includes("stake") ||
-    label.includes("fungible")
-  ) {
-    return MEMBERSHIP_MODE_TOKEN_GATE;
-  }
   return MEMBERSHIP_MODE_OPEN;
 }
 
@@ -210,22 +191,15 @@ function membershipGateKindForPlan(plan: HealthPlanSnapshot): number {
   if (typeof plan.membershipGateKindValue === "number") return plan.membershipGateKindValue;
   const gateLabel = normalizedMembershipLabel(plan.membershipGateKind);
   if (gateLabel.includes("invite")) return MEMBERSHIP_GATE_KIND_INVITE_ONLY;
-  if (gateLabel.includes("nft")) return MEMBERSHIP_GATE_KIND_NFT_ANCHOR;
-  if (gateLabel.includes("stake")) return MEMBERSHIP_GATE_KIND_STAKE_ANCHOR;
-  if (gateLabel.includes("fungible") || gateLabel.includes("token")) {
-    return MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT;
-  }
 
   const mode = membershipModeForPlan(plan);
   if (mode === MEMBERSHIP_MODE_INVITE_ONLY) return MEMBERSHIP_GATE_KIND_INVITE_ONLY;
-  if (mode === MEMBERSHIP_MODE_TOKEN_GATE) return MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT;
   return MEMBERSHIP_GATE_KIND_OPEN;
 }
 
 function proofModeForPlan(plan: HealthPlanSnapshot): number {
   const mode = membershipModeForPlan(plan);
   if (mode === MEMBERSHIP_MODE_INVITE_ONLY) return MEMBERSHIP_PROOF_MODE_INVITE_PERMIT;
-  if (mode === MEMBERSHIP_MODE_TOKEN_GATE) return MEMBERSHIP_PROOF_MODE_TOKEN_GATE;
   return MEMBERSHIP_PROOF_MODE_OPEN;
 }
 
@@ -281,9 +255,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
   const [subjectCommitment, setSubjectCommitment] = useState("");
   const [eligibilityStatus, setEligibilityStatus] = useState(String(ELIGIBILITY_PENDING));
   const [proofMode, setProofMode] = useState("0");
-  const [tokenGateAccountAddress, setTokenGateAccountAddress] = useState("");
-  const [membershipAnchorRefAddress, setMembershipAnchorRefAddress] = useState("");
-  const [tokenGateSnapshot, setTokenGateSnapshot] = useState("0");
   const [inviteId, setInviteId] = useState("");
   const [inviteAuthorityAddress, setInviteAuthorityAddress] = useState("");
   const [inviteExpiresAt, setInviteExpiresAt] = useState("0");
@@ -357,15 +328,9 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
     setPlanPauseFlags(String(props.plan.pauseFlags ?? 0));
     setPlanActive(props.plan.active);
     setProofMode(String(proofModeForPlan(props.plan)));
-    setTokenGateSnapshot(String(props.plan.membershipGateMinAmount ?? 0));
     setInviteAuthorityAddress(
       props.plan.membershipInviteAuthority && props.plan.membershipInviteAuthority !== ZERO_PUBKEY
         ? props.plan.membershipInviteAuthority
-        : "",
-    );
-    setMembershipAnchorRefAddress(
-      membershipGateKindForPlan(props.plan) === MEMBERSHIP_GATE_KIND_NFT_ANCHOR
-        ? props.plan.membershipGateMint ?? ""
         : "",
     );
   }, [props.plan]);
@@ -507,20 +472,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
     () => props.pools.find((pool) => pool.address === selectedAllocation?.liquidityPool) ?? null,
     [props.pools, selectedAllocation?.liquidityPool],
   );
-  const selectedPoolOraclePolicy = useMemo(
-    () => props.poolOraclePolicies.find((policy) => policy.liquidityPool === selectedPool?.address) ?? null,
-    [props.poolOraclePolicies, selectedPool?.address],
-  );
-  const selectedPoolOracleFeeVault = useMemo(
-    () =>
-      props.poolOracleFeeVaults.find(
-        (vault) =>
-          vault.liquidityPool === selectedPool?.address &&
-          vault.oracle === selectedClaim?.adjudicator &&
-          vault.assetMint === settleClaimAssetMint,
-      ) ?? null,
-    [props.poolOracleFeeVaults, selectedPool?.address, selectedClaim?.adjudicator, settleClaimAssetMint],
-  );
   const selectedFundingVault = useMemo(
     () =>
       props.domainAssetVaults.find(
@@ -545,19 +496,9 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
   }, 0);
   const connectedWalletAddress = publicKey?.toBase58() ?? "";
   const normalizedMemberWalletAddress = walletAddress.trim();
-  const normalizedTokenGateAccountAddress = tokenGateAccountAddress.trim();
-  const normalizedMembershipAnchorRefAddress = membershipAnchorRefAddress.trim();
   const normalizedInviteAuthorityAddress = inviteAuthorityAddress.trim();
   const activeMembershipMode = props.plan ? membershipModeForPlan(props.plan) : MEMBERSHIP_MODE_OPEN;
-  const activeMembershipGateKind = props.plan
-    ? membershipGateKindForPlan(props.plan)
-    : MEMBERSHIP_GATE_KIND_OPEN;
-  const tokenGateRequired = activeMembershipMode === MEMBERSHIP_MODE_TOKEN_GATE;
   const inviteAuthorityRequired = activeMembershipMode === MEMBERSHIP_MODE_INVITE_ONLY;
-  const membershipAnchorRequired =
-    tokenGateRequired &&
-    (activeMembershipGateKind === MEMBERSHIP_GATE_KIND_NFT_ANCHOR ||
-      activeMembershipGateKind === MEMBERSHIP_GATE_KIND_STAKE_ANCHOR);
   const memberWalletMatchesSigner =
     Boolean(connectedWalletAddress) &&
     (normalizedMemberWalletAddress || connectedWalletAddress) === connectedWalletAddress;
@@ -566,8 +507,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
     (Boolean(normalizedInviteAuthorityAddress) &&
       normalizedInviteAuthorityAddress === connectedWalletAddress);
   const memberProofReady =
-    (!tokenGateRequired || Boolean(normalizedTokenGateAccountAddress)) &&
-    (!membershipAnchorRequired || Boolean(normalizedMembershipAnchorRefAddress)) &&
     (!inviteAuthorityRequired || Boolean(normalizedInviteAuthorityAddress));
 
   async function run(label: string, factory: () => Promise<Transaction>) {
@@ -1173,8 +1112,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               capitalClassAddress: selectedObligation?.capitalClass ?? null,
                               allocationPositionAddress: selectedObligation?.allocationPosition ?? null,
                               poolAssetMint: selectedPool?.depositAssetMint ?? null,
-                              poolOracleFeeVaultAddress: selectedPoolOracleFeeVault?.address ?? null,
-                              poolOraclePolicyAddress: selectedPoolOraclePolicy?.address ?? null,
                               memberPositionAddress: selectedClaim!.memberPosition,
                               vaultTokenAccountAddress: selectedClaimSettlementVault!.vaultTokenAccount,
                               recipientTokenAccountAddress: recipientTokenAccount.trim(),
@@ -1339,38 +1276,12 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                       <option value={String(ELIGIBILITY_PENDING)}>Pending</option>
                       <option value={String(ELIGIBILITY_ELIGIBLE)}>Eligible</option>
                     </SelectField>
-                    <SelectField label="Proof mode" value={proofMode} onChange={setProofMode}>
-                      <option value="0">Open</option>
-                      <option value="1">Token gate</option>
-                      <option value="2">Invite permit</option>
-                    </SelectField>
-                  </div>
-                  {tokenGateRequired ? (
-                    <>
-                      <div className="plans-wizard-row">
-                        <TextField
-                          label="Token gate account"
-                          value={tokenGateAccountAddress}
-                          onChange={setTokenGateAccountAddress}
-                          placeholder="Token account owned by the member wallet"
-                        />
-                        <TextField
-                          label="Token gate snapshot"
-                          value={tokenGateSnapshot}
-                          onChange={setTokenGateSnapshot}
-                        />
-                      </div>
-                      {membershipAnchorRequired ? (
-                        <TextField
-                          label="Membership anchor ref"
-                          value={membershipAnchorRefAddress}
-                          onChange={setMembershipAnchorRefAddress}
-                          placeholder="NFT mint or stake-token account anchor"
-                        />
-                      ) : null}
-                    </>
-                  ) : null}
-                  {inviteAuthorityRequired ? (
+	                    <SelectField label="Proof mode" value={proofMode} onChange={setProofMode}>
+	                      <option value="0">Open</option>
+	                      <option value="2">Invite permit</option>
+	                    </SelectField>
+	                  </div>
+	                  {inviteAuthorityRequired ? (
                     <>
                       <div className="plans-wizard-row">
                         <TextField
@@ -1423,21 +1334,14 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                             recentBlockhash: blockhash,
                             seriesScopeAddress: props.series?.address ?? ZERO_PUBKEY,
                             subjectCommitmentHashHex: await hashReason(subjectCommitment),
-                            eligibilityStatus:
-                              Number.parseInt(eligibilityStatus, 10) || ELIGIBILITY_PENDING,
-                            delegatedRightsMask,
-                            proofMode: Number.parseInt(proofMode, 10) || 0,
-                            tokenGateAmountSnapshot: parseBigIntInput(tokenGateSnapshot),
-                            inviteIdHashHex: await hashReason(inviteId),
-                            inviteExpiresAt: parseBigIntInput(inviteExpiresAt),
-                            tokenGateAccountAddress: tokenGateRequired
-                              ? normalizedTokenGateAccountAddress
-                              : undefined,
-                            anchorRefAddress: membershipAnchorRequired
-                              ? normalizedMembershipAnchorRefAddress
-                              : undefined,
-                            inviteAuthorityAddress: inviteAuthorityRequired
-                              ? normalizedInviteAuthorityAddress
+	                            eligibilityStatus:
+	                              Number.parseInt(eligibilityStatus, 10) || ELIGIBILITY_PENDING,
+	                            delegatedRightsMask,
+	                            proofMode: Number.parseInt(proofMode, 10) || 0,
+	                            inviteIdHashHex: await hashReason(inviteId),
+	                            inviteExpiresAt: parseBigIntInput(inviteExpiresAt),
+	                            inviteAuthorityAddress: inviteAuthorityRequired
+	                              ? normalizedInviteAuthorityAddress
                               : undefined,
                           });
                         })

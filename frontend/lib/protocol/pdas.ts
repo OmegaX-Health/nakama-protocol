@@ -27,11 +27,8 @@ import {
   SEED_POLICY_SERIES,
   SEED_POOL_CLASS_LEDGER,
   SEED_POOL_ORACLE_APPROVAL,
-  SEED_POOL_ORACLE_FEE_VAULT,
   SEED_POOL_ORACLE_PERMISSION_SET,
   SEED_POOL_ORACLE_POLICY,
-  SEED_POOL_TREASURY_VAULT,
-  SEED_PROTOCOL_FEE_VAULT,
   SEED_PROTOCOL_GOVERNANCE,
   SEED_RESERVE_ASSET_RAIL,
   SEED_RESERVE_DOMAIN,
@@ -127,58 +124,6 @@ export function deriveReserveAssetRailPda(params: {
     [
       TEXT_ENCODER.encode(SEED_RESERVE_ASSET_RAIL),
       toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-// Phase 1.6/1.7 — Fee-vault PDA derivers. SPL rails pass `assetMint = the
-// SPL mint pubkey`; SOL rails pass `assetMint = NATIVE_SOL_MINT_KEY` (the
-// canonical wrapped-SOL mint). The on-chain seeds are identical for both
-// rails — the rail is selected at withdraw time by which asset_mint the
-// vault was initialized with.
-export function deriveProtocolFeeVaultPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_PROTOCOL_FEE_VAULT),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function derivePoolTreasuryVaultPda(params: {
-  liquidityPool: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_TREASURY_VAULT),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function derivePoolOracleFeeVaultPda(params: {
-  liquidityPool: PublicKeyish;
-  oracle: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_ORACLE_FEE_VAULT),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
       toPublicKey(params.assetMint).toBytes(),
     ],
     params.programId ?? getProgramId(),

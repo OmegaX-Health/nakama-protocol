@@ -8,7 +8,6 @@ use crate::platform::*;
 #[event]
 pub struct ProtocolGovernanceInitializedEvent {
     pub governance_authority: Pubkey,
-    pub protocol_fee_bps: u16,
     pub emergency_pause: bool,
 }
 
@@ -16,7 +15,6 @@ pub struct ProtocolGovernanceInitializedEvent {
 #[cfg_attr(any(), event(discriminator = [89, 34, 67, 141, 79, 64, 188, 254]))]
 pub struct ProtocolGovernanceInitializedEvent {
     pub governance_authority: Address,
-    pub protocol_fee_bps: u16,
     pub emergency_pause: bool,
 }
 
@@ -404,68 +402,6 @@ pub struct LedgerInitializedEvent {
 
 #[cfg(not(feature = "quasar"))]
 #[event]
-pub struct FeeVaultInitializedEvent {
-    pub vault: Pubkey,
-    pub scope: Pubkey,
-    pub asset_mint: Pubkey,
-    pub fee_recipient: Pubkey,
-    /// 0 = ProtocolFeeVault, 1 = PoolTreasuryVault, 2 = PoolOracleFeeVault.
-    pub rail: u8,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [219, 138, 2, 184, 253, 99, 165, 51]))]
-pub struct FeeVaultInitializedEvent {
-    pub vault: Address,
-    pub scope: Address,
-    pub asset_mint: Address,
-    pub fee_recipient: Address,
-    /// 0 = ProtocolFeeVault, 1 = PoolTreasuryVault, 2 = PoolOracleFeeVault.
-    pub rail: u8,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct FeeAccruedEvent {
-    pub vault: Pubkey,
-    pub asset_mint: Pubkey,
-    pub amount: u64,
-    pub accrued_total: u64,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [7, 169, 161, 187, 109, 43, 5, 157]))]
-pub struct FeeAccruedEvent {
-    pub vault: Address,
-    pub asset_mint: Address,
-    pub amount: u64,
-    pub accrued_total: u64,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
-pub struct FeeWithdrawnEvent {
-    pub vault: Pubkey,
-    pub asset_mint: Pubkey,
-    pub amount: u64,
-    pub configured_recipient: Pubkey,
-    pub recipient: Pubkey,
-    pub withdrawn_total: u64,
-}
-
-#[cfg(feature = "quasar")]
-#[cfg_attr(any(), event(discriminator = [206, 148, 200, 231, 65, 75, 11, 150]))]
-pub struct FeeWithdrawnEvent {
-    pub vault: Address,
-    pub asset_mint: Address,
-    pub amount: u64,
-    pub configured_recipient: Address,
-    pub recipient: Address,
-    pub withdrawn_total: u64,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[event]
 pub struct OracleProfileRegisteredEvent {
     pub oracle_profile: Pubkey,
     pub oracle: Pubkey,
@@ -561,7 +497,6 @@ pub struct PoolOraclePolicyChangedEvent {
     pub authority: Pubkey,
     pub quorum_m: u8,
     pub quorum_n: u8,
-    pub oracle_fee_bps: u16,
 }
 
 #[cfg(feature = "quasar")]
@@ -571,7 +506,6 @@ pub struct PoolOraclePolicyChangedEvent {
     pub authority: Address,
     pub quorum_m: u8,
     pub quorum_n: u8,
-    pub oracle_fee_bps: u16,
 }
 
 #[cfg(not(feature = "quasar"))]

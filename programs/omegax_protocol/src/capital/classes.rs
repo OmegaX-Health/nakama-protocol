@@ -26,10 +26,6 @@ pub(crate) fn create_capital_class(
         &ctx.accounts.liquidity_pool,
     )?;
     require!(
-        args.fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
-    require!(
         args.min_lockup_seconds >= 0,
         OmegaXProtocolError::InvalidLockupSeconds
     );
@@ -46,7 +42,6 @@ pub(crate) fn create_capital_class(
     capital_class.redemption_terms_mode = args.redemption_terms_mode;
     capital_class.wrapper_metadata_hash = args.wrapper_metadata_hash;
     capital_class.permissioning_hash = args.permissioning_hash;
-    capital_class.fee_bps = args.fee_bps;
     capital_class.min_lockup_seconds = args.min_lockup_seconds;
     capital_class.pause_flags = args.pause_flags;
     capital_class.queue_only_redemptions = derive_queue_only_redemptions(
@@ -116,7 +111,6 @@ pub(crate) fn create_capital_class<'info>(
     redemption_terms_mode: u8,
     wrapper_metadata_hash: [u8; 32],
     permissioning_hash: [u8; 32],
-    fee_bps: u16,
     min_lockup_seconds: i64,
     pause_flags: u32,
     class_id: &str,
@@ -129,10 +123,6 @@ pub(crate) fn create_capital_class<'info>(
         &ctx.accounts.protocol_governance,
         &ctx.accounts.liquidity_pool,
     )?;
-    require!(
-        fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
     require!(
         min_lockup_seconds >= 0,
         OmegaXProtocolError::InvalidLockupSeconds
@@ -154,7 +144,6 @@ pub(crate) fn create_capital_class<'info>(
         redemption_terms_mode,
         wrapper_metadata_hash,
         permissioning_hash,
-        fee_bps,
         min_lockup_seconds,
         pause_flags,
         queue_only_redemptions,
@@ -236,7 +225,6 @@ pub(crate) fn update_capital_class_controls<'info>(
     let redemption_terms_mode = capital_class.redemption_terms_mode;
     let wrapper_metadata_hash = capital_class.wrapper_metadata_hash;
     let permissioning_hash = capital_class.permissioning_hash;
-    let fee_bps = capital_class.fee_bps.get();
     let min_lockup_seconds = capital_class.min_lockup_seconds.get();
     let total_shares = capital_class.total_shares.get();
     let nav_assets = capital_class.nav_assets.get();
@@ -260,7 +248,6 @@ pub(crate) fn update_capital_class_controls<'info>(
         redemption_terms_mode,
         wrapper_metadata_hash,
         permissioning_hash,
-        fee_bps,
         min_lockup_seconds,
         pause_flags,
         queue_only_redemptions,
@@ -295,7 +282,6 @@ pub(crate) fn update_capital_class_controls<'info>(
         _redemption_terms_mode: u8,
         _wrapper_metadata_hash: [u8; 32],
         _permissioning_hash: [u8; 32],
-        _fee_bps: u16,
         _min_lockup_seconds: i64,
         _pause_flags: u32,
         class_id: String<u32, 32>

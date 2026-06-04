@@ -52,48 +52,6 @@ pub fn rule_selected_asset_payout_bounds() {
 }
 
 #[rule]
-pub fn rule_fee_recipient_binding() {
-    let configured_recipient: u64 = nondet();
-    let actual_owner: u64 = nondet();
-
-    let accepted = configured_recipient != 0 && actual_owner == configured_recipient;
-
-    if accepted {
-        cvlr_assert!(configured_recipient != 0);
-        cvlr_assert!(actual_owner == configured_recipient);
-    }
-
-    cvlr_satisfy!(accepted);
-}
-
-#[rule]
-pub fn rule_fee_vault_withdrawal_bounds() {
-    let accrued: u64 = nondet();
-    let withdrawn: u64 = nondet();
-    let requested: u64 = nondet();
-
-    let positive_request = requested > 0;
-    let addition_safe = withdrawn <= u64::MAX - requested;
-    let candidate_safe = positive_request && addition_safe;
-
-    if candidate_safe {
-        let new_withdrawn = withdrawn + requested;
-        let accepted = new_withdrawn <= accrued;
-
-        if accepted {
-            cvlr_assert!(requested > 0);
-            cvlr_assert!(new_withdrawn >= withdrawn);
-            cvlr_assert!(new_withdrawn <= accrued);
-            cvlr_assert!(requested <= accrued - withdrawn);
-        }
-
-        cvlr_satisfy!(accepted);
-    }
-
-    cvlr_satisfy!(candidate_safe);
-}
-
-#[rule]
 pub fn rule_reserve_capacity_non_overflow() {
     let funded: u64 = nondet();
     let allocated: u64 = nondet();

@@ -87,13 +87,7 @@ pub(crate) fn record_premium_payment(
     )?;
 
     let amount = args.amount;
-    // Capture immutable values needed after the mutable borrow on funding_line
-    // and during the protocol_fee_vault accrual block below.
     let funding_line_key = ctx.accounts.funding_line.key();
-    let funding_line_asset_mint = ctx.accounts.funding_line.asset_mint;
-    let health_plan_reserve_domain = ctx.accounts.health_plan.reserve_domain;
-    let protocol_fee_bps = ctx.accounts.protocol_governance.protocol_fee_bps;
-    let fee = fee_share_from_bps(amount, protocol_fee_bps)?;
 
     let funding_line = &mut ctx.accounts.funding_line;
     funding_line.funded_amount = checked_add(funding_line.funded_amount, amount)?;
@@ -104,41 +98,6 @@ pub(crate) fn record_premium_payment(
 
     if let Some(series_ledger) = ctx.accounts.series_reserve_ledger.as_deref_mut() {
         book_inflow_sheet(&mut series_ledger.sheet, amount)?;
-    }
-
-    if fee > 0 {
-        book_fee_accrual_sheet(&mut ctx.accounts.domain_asset_ledger.sheet, fee)?;
-        book_fee_accrual_sheet(&mut ctx.accounts.plan_reserve_ledger.sheet, fee)?;
-        book_fee_accrual_sheet(&mut ctx.accounts.funding_line_ledger.sheet, fee)?;
-        if let Some(series_ledger) = ctx.accounts.series_reserve_ledger.as_deref_mut() {
-            book_fee_accrual_sheet(&mut series_ledger.sheet, fee)?;
-        }
-    }
-
-    // Phase 1.6 — Protocol fee accrual on premium income.
-    // The full premium amount stays physically in the vault until withdrawal,
-    // but the fee carve-out leaves reserve capacity at accrual time.
-    let vault = &mut ctx.accounts.protocol_fee_vault;
-    require_keys_eq!(
-        vault.reserve_domain,
-        health_plan_reserve_domain,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        vault.asset_mint,
-        funding_line_asset_mint,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    if fee > 0 {
-        let vault_key = vault.key();
-        let vault_mint = vault.asset_mint;
-        let accrued_total = accrue_fee(&mut vault.accrued_fees, fee)?;
-        emit!(FeeAccruedEvent {
-            vault: vault_key,
-            asset_mint: vault_mint,
-            amount: fee,
-            accrued_total,
-        });
     }
 
     emit!(FundingFlowRecordedEvent {
@@ -154,13 +113,6 @@ pub(crate) fn record_premium_payment(
 #[inline(always)]
 fn quasar_checked_add(lhs: u64, rhs: u64) -> Result<u64> {
     lhs.checked_add(rhs)
-        .ok_or(OmegaXProtocolError::ArithmeticError.into())
-}
-
-#[cfg(feature = "quasar")]
-#[inline(always)]
-fn quasar_checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
-    lhs.checked_sub(rhs)
         .ok_or(OmegaXProtocolError::ArithmeticError.into())
 }
 
@@ -220,42 +172,6 @@ fn quasar_recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
 fn quasar_book_inflow_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
     sheet.funded = quasar_checked_add(sheet.funded, amount)?;
     quasar_recompute_sheet(sheet)
-}
-
-#[cfg(feature = "quasar")]
-fn quasar_book_fee_accrual_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
-    if amount == 0 {
-        return Ok(());
-    }
-    sheet.funded = quasar_checked_sub(sheet.funded, amount)?;
-    quasar_recompute_sheet(sheet)
-}
-
-#[cfg(feature = "quasar")]
-fn quasar_fee_share_from_bps(amount: u64, bps: u16) -> Result<u64> {
-    if bps == 0 || amount == 0 {
-        return Ok(0);
-    }
-    require!(
-        bps <= BASIS_POINTS_DENOMINATOR,
-        OmegaXProtocolError::FeeVaultBpsMisconfigured
-    );
-    let scaled = (amount as u128)
-        .checked_mul(bps as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?
-        .checked_div(BASIS_POINTS_DENOMINATOR as u128)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
-    let fee = u64::try_from(scaled).map_err(|_| OmegaXProtocolError::ArithmeticError)?;
-    require!(fee <= amount, OmegaXProtocolError::ArithmeticError);
-    Ok(fee)
-}
-
-#[cfg(feature = "quasar")]
-fn quasar_accrue_fee(accrued: u64, amount: u64) -> Result<u64> {
-    if amount == 0 {
-        return Ok(accrued);
-    }
-    quasar_checked_add(accrued, amount)
 }
 
 #[cfg(feature = "quasar")]
@@ -458,12 +374,6 @@ pub(crate) fn record_premium_payment<'info>(
         ctx.accounts.funding_line.asset_mint,
     )?;
 
-    let funding_line_asset_mint = ctx.accounts.funding_line.asset_mint;
-    let health_plan_reserve_domain = ctx.accounts.health_plan.reserve_domain;
-    let fee = quasar_fee_share_from_bps(
-        amount,
-        ctx.accounts.protocol_governance.protocol_fee_bps.get(),
-    )?;
     let new_funded_amount =
         quasar_checked_add(ctx.accounts.funding_line.funded_amount.get(), amount)?;
     let new_total_assets =
@@ -474,24 +384,6 @@ pub(crate) fn record_premium_payment<'info>(
     quasar_book_inflow_sheet(&mut domain_sheet, amount)?;
     quasar_book_inflow_sheet(&mut plan_sheet, amount)?;
     quasar_book_inflow_sheet(&mut funding_line_sheet, amount)?;
-    if fee > 0 {
-        quasar_book_fee_accrual_sheet(&mut domain_sheet, fee)?;
-        quasar_book_fee_accrual_sheet(&mut plan_sheet, fee)?;
-        quasar_book_fee_accrual_sheet(&mut funding_line_sheet, fee)?;
-    }
-
-    require_keys_eq!(
-        ctx.accounts.protocol_fee_vault.reserve_domain,
-        health_plan_reserve_domain,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    require_keys_eq!(
-        ctx.accounts.protocol_fee_vault.asset_mint,
-        funding_line_asset_mint,
-        OmegaXProtocolError::FeeVaultMismatch
-    );
-    let new_accrued_fees =
-        quasar_accrue_fee(ctx.accounts.protocol_fee_vault.accrued_fees.get(), fee)?;
 
     let domain_vault = &mut ctx.accounts.domain_asset_vault;
     let reserve_domain = domain_vault.reserve_domain;
@@ -565,30 +457,10 @@ pub(crate) fn record_premium_payment<'info>(
         let series_ledger = &mut **series_ledger;
         let mut sheet = series_ledger.sheet;
         quasar_book_inflow_sheet(&mut sheet, amount)?;
-        if fee > 0 {
-            quasar_book_fee_accrual_sheet(&mut sheet, fee)?;
-        }
         let policy_series = series_ledger.policy_series;
         let asset_mint = series_ledger.asset_mint;
         let bump = series_ledger.bump;
         series_ledger.set_inner(policy_series, asset_mint, sheet, bump);
-    }
-
-    if fee > 0 {
-        let fee_vault = &mut ctx.accounts.protocol_fee_vault;
-        let reserve_domain = fee_vault.reserve_domain;
-        let asset_mint = fee_vault.asset_mint;
-        let fee_recipient = fee_vault.fee_recipient;
-        let withdrawn_fees = fee_vault.withdrawn_fees.get();
-        let bump = fee_vault.bump;
-        fee_vault.set_inner(
-            reserve_domain,
-            asset_mint,
-            fee_recipient,
-            new_accrued_fees,
-            withdrawn_fees,
-            bump,
-        );
     }
 
     Ok(())
@@ -815,28 +687,6 @@ pub struct RecordPremiumPayment<'info> {
     pub series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
     #[cfg(feature = "quasar")]
     pub series_reserve_ledger: Option<&'info mut Account<SeriesReserveLedger>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(
-        mut,
-        seeds = [SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
-        bump = protocol_fee_vault.bump,
-        constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub protocol_fee_vault: Box<Account<'info, ProtocolFeeVault>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        mut,
-        constraint = quasar_pda_matches(
-            protocol_fee_vault.address(),
-            &crate::ID,
-            &[SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
-            protocol_fee_vault.bump,
-        ) @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
-        constraint = protocol_fee_vault.asset_mint == funding_line.asset_mint @ OmegaXProtocolError::FeeVaultMismatch,
-    )]
-    pub protocol_fee_vault: &'info mut Account<ProtocolFeeVault>,
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
     pub source_token_account: Account<'info, TokenAccount>,

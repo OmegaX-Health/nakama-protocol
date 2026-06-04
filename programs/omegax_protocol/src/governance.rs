@@ -23,21 +23,14 @@ pub(crate) fn initialize_protocol_governance(
     ctx: Context<InitializeProtocolGovernance>,
     args: InitializeProtocolGovernanceArgs,
 ) -> Result<()> {
-    require!(
-        args.protocol_fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
-
     let governance = &mut ctx.accounts.protocol_governance;
     governance.governance_authority = ctx.accounts.governance_authority.key();
-    governance.protocol_fee_bps = args.protocol_fee_bps;
     governance.emergency_pause = args.emergency_pause;
     governance.audit_nonce = 0;
     governance.bump = ctx.bumps.protocol_governance;
 
     emit!(ProtocolGovernanceInitializedEvent {
         governance_authority: governance.governance_authority,
-        protocol_fee_bps: governance.protocol_fee_bps,
         emergency_pause: governance.emergency_pause,
     });
 
@@ -87,17 +80,10 @@ fn require_quasar_governance(authority: &Pubkey, governance: &ProtocolGovernance
 #[cfg(feature = "quasar")]
 pub(crate) fn initialize_protocol_governance<'info>(
     ctx: &mut Ctx<'info, InitializeProtocolGovernance<'info>>,
-    protocol_fee_bps: u16,
     emergency_pause: bool,
 ) -> Result<()> {
-    require!(
-        protocol_fee_bps <= MAX_CONFIGURED_FEE_BPS,
-        OmegaXProtocolError::InvalidBps
-    );
-
     ctx.accounts.protocol_governance.set_inner(
         *ctx.accounts.governance_authority.address(),
-        protocol_fee_bps,
         emergency_pause,
         0,
         ctx.bumps.protocol_governance,
@@ -115,17 +101,10 @@ pub(crate) fn set_protocol_emergency_pause<'info>(
     let governance = &mut ctx.accounts.protocol_governance;
     require_quasar_governance(&authority, governance)?;
     let governance_authority = governance.governance_authority;
-    let protocol_fee_bps = governance.protocol_fee_bps.get();
     let audit_nonce = governance.audit_nonce.get().saturating_add(1);
     let bump = governance.bump;
 
-    governance.set_inner(
-        governance_authority,
-        protocol_fee_bps,
-        emergency_pause,
-        audit_nonce,
-        bump,
-    );
+    governance.set_inner(governance_authority, emergency_pause, audit_nonce, bump);
 
     Ok(())
 }

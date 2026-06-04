@@ -47,19 +47,6 @@ pub(crate) fn book_restricted_sheet(sheet: &mut ReserveBalanceSheet, amount: u64
     recompute_sheet(sheet)
 }
 
-pub(crate) fn book_fee_accrual_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
-    if amount == 0 {
-        return Ok(());
-    }
-    sheet.funded = checked_sub(sheet.funded, amount)?;
-    recompute_sheet(sheet)
-}
-
-pub(crate) fn book_fee_withdrawal(domain_assets: &mut u64, amount: u64) -> Result<()> {
-    *domain_assets = checked_sub(*domain_assets, amount)?;
-    Ok(())
-}
-
 pub(crate) fn book_owed(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
     sheet.owed = checked_add(sheet.owed, amount)?;
     recompute_sheet(sheet)
@@ -637,45 +624,6 @@ pub(crate) fn cancel_outstanding(
         return err!(OmegaXProtocolError::InvalidObligationStateTransition);
     }
     obligation.outstanding_amount = obligation.outstanding_amount.saturating_sub(amount);
-    Ok(())
-}
-
-#[cfg(test)]
-pub(crate) fn book_settlement_from_delivery(
-    domain_assets: &mut u64,
-    domain_sheet: &mut ReserveBalanceSheet,
-    plan_sheet: &mut ReserveBalanceSheet,
-    line_sheet: &mut ReserveBalanceSheet,
-    series_sheet: Option<&mut Account<SeriesReserveLedger>>,
-    class_sheet: Option<&mut Account<PoolClassLedger>>,
-    allocation_position: Option<&mut Account<AllocationPosition>>,
-    allocation_sheet: Option<&mut Account<AllocationLedger>>,
-    funding_line: &mut FundingLineAccountData<'_>,
-    amount: u64,
-) -> Result<()> {
-    let delivery_mode = if line_sheet.claimable >= amount {
-        OBLIGATION_DELIVERY_MODE_CLAIMABLE
-    } else {
-        OBLIGATION_DELIVERY_MODE_PAYABLE
-    };
-    settle_from_sheet(domain_sheet, delivery_mode, amount)?;
-    settle_from_sheet(plan_sheet, delivery_mode, amount)?;
-    settle_from_sheet(line_sheet, delivery_mode, amount)?;
-    if let Some(series) = series_sheet {
-        settle_from_sheet(&mut series.sheet, delivery_mode, amount)?;
-    }
-    if let Some(class_ledger) = class_sheet {
-        settle_from_sheet(&mut class_ledger.sheet, delivery_mode, amount)?;
-    }
-    if let Some(position) = allocation_position {
-        position.reserved_capacity = position.reserved_capacity.saturating_sub(amount);
-    }
-    if let Some(ledger) = allocation_sheet {
-        settle_from_allocation_sheet(&mut ledger.sheet, delivery_mode, amount)?;
-    }
-    *domain_assets = checked_sub(*domain_assets, amount)?;
-    funding_line.reserved_amount = funding_line.reserved_amount.saturating_sub(amount);
-    funding_line.spent_amount = checked_add(funding_line.spent_amount, amount)?;
     Ok(())
 }
 
