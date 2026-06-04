@@ -26,16 +26,7 @@ All current public instructions remain present in [`programs/omegax_protocol/src
 | `update_oracle_profile` | update the canonical oracle profile metadata and supported schema set |
 | `set_pool_oracle` | approve or deactivate an oracle for a specific liquidity pool |
 | `set_pool_oracle_permissions` | set pool-scoped oracle permission bits |
-| `set_pool_oracle_policy` | configure quorum, schema-verification, fee, and challenge posture for a pool |
-
-## Schema Registry
-
-| Instruction | Primary purpose |
-| --- | --- |
-| `register_outcome_schema` | register a versioned outcome schema and initialize its dependency ledger |
-| `verify_outcome_schema` | mark a schema as verified or unverified through governance authority |
-| `backfill_schema_dependency_ledger` | refresh the schema dependency ledger with the current pool-rule references |
-| `close_outcome_schema` | retire a schema and close its dependency ledger through governance authority |
+| `set_pool_oracle_policy` | configure quorum, schema posture, fee, and challenge settings for a pool |
 
 ## Plan and Product Surface
 
@@ -62,7 +53,7 @@ All current public instructions remain present in [`programs/omegax_protocol/src
 | `release_reserve` | release reserved liability back to free capital and mirror linked protection-claim reserve state |
 | `open_claim_case` | open an explicit claim lifecycle from the enrolled member wallet or a plan claim/operator path |
 | `attach_claim_evidence_ref` | attach evidence and decision-support references |
-| `attest_claim_case` | anchor a verified-schema oracle attestation against the claim's locked evidence hash; non-LP claims require the plan oracle authority, while LP-allocation claims require pool oracle approval and `ATTEST_CLAIM` permission |
+| `attest_claim_case` | anchor an oracle attestation against the claim's locked evidence hash and a schema hash advertised by the oracle profile; non-LP claims require the plan oracle authority, while LP-allocation claims require pool oracle approval and `ATTEST_CLAIM` permission |
 | `adjudicate_claim_case` | approve or deny a claim case and optionally bind it to the matching `Obligation` |
 | `settle_claim_case` | settle approved same-asset claim payouts through the reserve kernel only when no linked `Obligation` exists; the claim asset must have an active, payout-enabled, fresh confidence-bounded `ReserveAssetRail`; fee carve-outs must leave a positive net payout and oracle-fee accrual must bind to the attesting `ClaimAttestation` |
 | `settle_claim_case_selected_asset` | settle an approved direct claim by crediting the claim denomination amount while paying a different selected reserve asset to the member/delegate; requires fresh confidence-bounded prices for both assets, bounded value conversion, selected payout rail enablement, and debits only the selected payout asset ledgers/vault |

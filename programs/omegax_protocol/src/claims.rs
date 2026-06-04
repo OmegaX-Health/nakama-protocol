@@ -1663,7 +1663,6 @@ pub(crate) fn attest_claim_case(
 
     let now_ts = Clock::get()?.unix_timestamp;
     let oracle_profile = &ctx.accounts.oracle_profile;
-    let outcome_schema = &ctx.accounts.outcome_schema;
     let claim_case_key = ctx.accounts.claim_case.key();
 
     validate_claim_attestation_common(
@@ -1672,7 +1671,6 @@ pub(crate) fn attest_claim_case(
         ctx.accounts.funding_line.key(),
         &ctx.accounts.funding_line,
         &ctx.accounts.claim_case,
-        outcome_schema,
         oracle_profile,
         &args,
     )?;
@@ -1691,9 +1689,9 @@ pub(crate) fn attest_claim_case(
     attestation.attestation_ref_hash = args.attestation_ref_hash;
     attestation.evidence_ref_hash = ctx.accounts.claim_case.evidence_ref_hash;
     attestation.decision_support_hash = ctx.accounts.claim_case.decision_support_hash;
-    attestation.schema_key_hash = outcome_schema.schema_key_hash;
-    attestation.schema_hash = outcome_schema.schema_hash;
-    attestation.schema_version = outcome_schema.version;
+    attestation.schema_key_hash = args.schema_key_hash;
+    attestation.schema_hash = [0; 32];
+    attestation.schema_version = 0;
     attestation.liquidity_pool = liquidity_pool;
     attestation.allocation_position = allocation_position;
     attestation.created_at_ts = now_ts;
@@ -1783,8 +1781,8 @@ fn validate_quasar_claim_attestation_common(
     funding_line_key: Pubkey,
     funding_line: &FundingLineAccountData<'_>,
     claim_case: &ClaimCaseAccountData<'_>,
-    outcome_schema: &OutcomeSchemaAccountData<'_>,
     oracle_profile: &OracleProfileAccountData<'_>,
+    schema_key_hash: [u8; 32],
     attestation_ref_hash: [u8; 32],
 ) -> Result<()> {
     require!(
@@ -1800,11 +1798,7 @@ fn validate_quasar_claim_attestation_common(
         OmegaXProtocolError::ClaimEvidenceMismatch
     );
     require!(
-        outcome_schema.verified.get(),
-        OmegaXProtocolError::OutcomeSchemaUnverified
-    );
-    require!(
-        quasar_oracle_profile_supports_schema(oracle_profile, outcome_schema.schema_key_hash),
+        quasar_oracle_profile_supports_schema(oracle_profile, schema_key_hash),
         OmegaXProtocolError::ClaimAttestationSchemaUnsupported
     );
     require_keys_eq!(
@@ -2105,8 +2099,8 @@ pub(crate) fn attest_claim_case<'info>(
         funding_line_key,
         &ctx.accounts.funding_line,
         &ctx.accounts.claim_case,
-        &ctx.accounts.outcome_schema,
         &ctx.accounts.oracle_profile,
+        schema_key_hash,
         attestation_ref_hash,
     )?;
 
@@ -2118,8 +2112,6 @@ pub(crate) fn attest_claim_case<'info>(
     let policy_series = ctx.accounts.claim_case.policy_series;
     let evidence_ref_hash = ctx.accounts.claim_case.evidence_ref_hash;
     let decision_support_hash = ctx.accounts.claim_case.decision_support_hash;
-    let schema_hash = ctx.accounts.outcome_schema.schema_hash;
-    let schema_version = ctx.accounts.outcome_schema.version.get();
     let claim_attestation_bump = ctx.accounts.claim_attestation.bump;
 
     ctx.accounts.claim_attestation.set_inner(
@@ -2133,9 +2125,9 @@ pub(crate) fn attest_claim_case<'info>(
         attestation_ref_hash,
         evidence_ref_hash,
         decision_support_hash,
-        ctx.accounts.outcome_schema.schema_key_hash,
-        schema_hash,
-        schema_version,
+        schema_key_hash,
+        [0; 32],
+        0,
         liquidity_pool,
         allocation_position,
         now_ts,
@@ -2233,7 +2225,6 @@ pub(crate) fn validate_claim_attestation_common(
     funding_line_key: Pubkey,
     funding_line: &FundingLineAccountData<'_>,
     claim_case: &ClaimCaseAccountData<'_>,
-    outcome_schema: &OutcomeSchemaAccountData<'_>,
     oracle_profile: &OracleProfileAccountData<'_>,
     args: &AttestClaimCaseArgs,
 ) -> Result<()> {
@@ -2250,11 +2241,7 @@ pub(crate) fn validate_claim_attestation_common(
         OmegaXProtocolError::ClaimEvidenceMismatch
     );
     require!(
-        outcome_schema.verified,
-        OmegaXProtocolError::OutcomeSchemaUnverified
-    );
-    require!(
-        oracle_profile_supports_schema(oracle_profile, outcome_schema.schema_key_hash),
+        oracle_profile_supports_schema(oracle_profile, args.schema_key_hash),
         OmegaXProtocolError::ClaimAttestationSchemaUnsupported
     );
     require_keys_eq!(
@@ -3216,16 +3203,6 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
 }
 
 #[derive(Accounts)]
-#[cfg_attr(not(feature = "quasar"), instruction(args: AttestClaimCaseArgs))]
-#[cfg_attr(
-    feature = "quasar",
-    instruction(
-        _decision: u8,
-        _attestation_hash: [u8; 32],
-        _attestation_ref_hash: [u8; 32],
-        schema_key_hash: [u8; 32]
-    )
-)]
 pub struct AttestClaimCase<'info> {
     #[cfg(not(feature = "quasar"))]
     #[account(mut)]
@@ -3316,22 +3293,6 @@ pub struct AttestClaimCase<'info> {
         constraint = funding_line.asset_mint == claim_case.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
     )]
     pub funding_line: Account<FundingLineAccountData<'info>>,
-    #[cfg(not(feature = "quasar"))]
-    #[account(
-        seeds = [SEED_OUTCOME_SCHEMA, args.schema_key_hash.as_ref()],
-        bump = outcome_schema.bump,
-    )]
-    pub outcome_schema: Box<Account<'info, OutcomeSchema>>,
-    #[cfg(feature = "quasar")]
-    #[account(
-        constraint = quasar_pda_matches(
-            outcome_schema.address(),
-            &crate::ID,
-            &[SEED_OUTCOME_SCHEMA, schema_key_hash.as_ref()],
-            outcome_schema.bump,
-        ) @ OmegaXProtocolError::ClaimAttestationSchemaRequired
-    )]
-    pub outcome_schema: Account<OutcomeSchemaAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
     pub liquidity_pool: Option<Box<Account<'info, LiquidityPool>>>,
     #[cfg(feature = "quasar")]

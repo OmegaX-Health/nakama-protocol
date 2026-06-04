@@ -32,8 +32,8 @@ It is intentionally a hard-break devnet migration rather than a compatibility re
 ## On-chain release notes
 
 - the canonical public program now includes first-class oracle registry state: `OracleProfile`, `PoolOracleApproval`, `PoolOraclePolicy`, and `PoolOraclePermissionSet`
-- the canonical public program now includes first-class schema registry state: `OutcomeSchema` and `SchemaDependencyLedger`
-- the canonical public program now includes `attest_claim_case`, which anchors schema-bound oracle attestations directly against live `ClaimCase` state
+- schema metadata is now off-chain; oracle profiles advertise supported schema hashes instead of creating on-chain schema registry accounts
+- the canonical public program now includes `attest_claim_case`, which anchors schema-hash-bound oracle attestations directly against live `ClaimCase` state
 - linked protection claims now settle through the obligation path, with reserve, release, and settlement lifecycle mirrored back onto the linked `ClaimCase`
 - claim-to-obligation linkage is now stricter: linked claims cannot silently relink or bypass the obligation path through direct `settle_claim_case`
 - checked-in generated artifacts in `idl/`, `shared/`, and `frontend/lib/generated/` are aligned with the current public program surface
@@ -42,7 +42,7 @@ It is intentionally a hard-break devnet migration rather than a compatibility re
 
 - the public console now mounts canonical routes for `/plans`, `/capital`, `/claims`, `/members`, `/governance`, `/oracles`, and `/schemas`
 - mounted workbenches read live protocol snapshot data rather than depending on fixture-only preview state
-- `/plans/new` now sources reserve domains, domain asset vault rails, claimed oracle profiles, and registry schemas from the live canonical snapshot
+- `/plans/new` now sources reserve domains, domain asset vault rails, and claimed oracle profiles from the live canonical snapshot while schema definitions stay off-chain
 - `/governance` now includes mounted bootstrap actions for `initialize_protocol_governance`, `create_reserve_domain`, and `create_domain_asset_vault`
 - `/members` and `/claims` now route into the mounted plan/operator workspace instead of advertising standalone self-serve dapp actions
 - the plan operator drawer now carries membership proof posture, token-gate accounts, invite authority, anchor references, and selected funding-line context through the transaction builders
@@ -50,7 +50,7 @@ It is intentionally a hard-break devnet migration rather than a compatibility re
 - `/oracles` now renders live registry, claim/profile readiness, pool approval, permission, and policy binding posture in one mounted route
 - the oracles workbench now renders live on-chain claim-case attestations instead of synthetic placeholder rows
 - oracle profile authoring now runs through dedicated `/oracles/register` and `/oracles/[oracleAddress]/update` wizard flows, while `/oracles` stays focused on registry and readiness operations
-- `/schemas` now renders the live versioned schema registry, dependency posture, and shared binding context for policy series
+- `/schemas` now renders schema binding context for policy series using off-chain schema metadata and oracle-advertised schema hashes
 - the launch flow continues to create plans, policy series, and funding lines through the canonical launch wizard instead of the retired pool-first workspace
 - `/plans/new?template=genesis-protect-acute` now bootstraps the canonical Genesis Protect Acute shell in place, including Event 7 and Travel 30 series, funding lanes, pool shell, capital classes, and launch allocations
 - `/plans?...&setup=genesis-protect-acute` now exposes the Genesis setup checklist, reserve-warning posture, and per-SKU issuance posture inside the mounted sponsor/operator workspace
@@ -67,7 +67,7 @@ It is intentionally a hard-break devnet migration rather than a compatibility re
 
 ## Operations release notes
 
-- shared-devnet bootstrap now includes `npm run protocol:bootstrap:devnet-live` to seed the canonical plan/capital/oracle/schema graph
+- shared-devnet bootstrap now includes `npm run protocol:bootstrap:devnet-live` to seed the canonical plan/capital/oracle graph
 - frontend parity sign-off now runs through `npm run devnet:frontend:bootstrap` and `npm run devnet:frontend:signoff`
 - operator drawer parity sign-off now includes `npm run devnet:operator:drawer:sim`, which treats membership proof/gate mismatches as real failures instead of green builder-health output
 - governance rollout sign-off now records a created proposal, a post-execution readonly governance check, and structured observability output

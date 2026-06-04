@@ -17,12 +17,10 @@ const {
   deriveHealthPlanPda,
   deriveLiquidityPoolPda,
   deriveOracleProfilePda,
-  deriveOutcomeSchemaPda,
   derivePoolOracleApprovalPda,
   derivePoolOraclePolicyPda,
   derivePoolOraclePermissionSetPda,
   deriveReserveDomainPda,
-  deriveSchemaDependencyLedgerPda,
   MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
   ZERO_PUBKEY,
 } = protocolModule as typeof import("../frontend/lib/protocol.ts");
@@ -68,18 +66,6 @@ test("fixture addresses stay deterministic under canonical seeds", () => {
     derivePoolOraclePermissionSetPda({
       liquidityPool: pool.address,
       oracle: oracleAddress,
-    }).toBase58(),
-    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
-  );
-  assert.match(
-    deriveOutcomeSchemaPda({
-      schemaKeyHashHex: "11".repeat(32),
-    }).toBase58(),
-    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
-  );
-  assert.match(
-    deriveSchemaDependencyLedgerPda({
-      schemaKeyHashHex: "11".repeat(32),
     }).toBase58(),
     /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
   );

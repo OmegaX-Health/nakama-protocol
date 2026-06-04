@@ -131,8 +131,6 @@ pub enum OmegaXProtocolError {
     ClaimAttestationSchemaRequired,
     #[msg("Oracle profile does not advertise support for the selected claim-attestation schema")]
     ClaimAttestationSchemaUnsupported,
-    #[msg("Claim attestation schema must be governance verified")]
-    OutcomeSchemaUnverified,
     #[msg("Claim attestation requires a locked evidence reference")]
     ClaimEvidenceRequired,
     #[msg("Claim attestation evidence reference does not match the claim case")]
@@ -268,7 +266,6 @@ pub enum OmegaXProtocolError {
     InvalidClaimAttestationDecision,
     ClaimAttestationSchemaRequired,
     ClaimAttestationSchemaUnsupported,
-    OutcomeSchemaUnverified,
     ClaimEvidenceRequired,
     ClaimEvidenceMismatch,
     ClaimEvidenceLocked,

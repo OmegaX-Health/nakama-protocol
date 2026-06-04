@@ -650,39 +650,6 @@
           }
         },
         {
-          "name": "outcome_schema",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  117,
-                  116,
-                  99,
-                  111,
-                  109,
-                  101,
-                  95,
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "args.schema_key_hash"
-              }
-            ]
-          }
-        },
-        {
           "name": "liquidity_pool",
           "writable": false,
           "signer": false,
@@ -879,120 +846,6 @@
       ]
     },
     {
-      "name": "backfill_schema_dependency_ledger",
-      "discriminator": [
-        109,
-        109,
-        247,
-        151,
-        229,
-        78,
-        52,
-        167
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "BackfillSchemaDependencyLedgerArgs"
-            }
-          }
-        }
-      ],
-      "accounts": [
-        {
-          "name": "governance_authority",
-          "writable": true,
-          "signer": true,
-          "optional": false
-        },
-        {
-          "name": "outcome_schema",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  117,
-                  116,
-                  99,
-                  111,
-                  109,
-                  101,
-                  95,
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "args.schema_key_hash"
-              }
-            ]
-          }
-        },
-        {
-          "name": "schema_dependency_ledger",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97,
-                  95,
-                  100,
-                  101,
-                  112,
-                  101,
-                  110,
-                  100,
-                  101,
-                  110,
-                  99,
-                  121,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "args.schema_key_hash"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "address": "11111111111111111111111111111111"
-        }
-      ]
-    },
-    {
       "name": "claim_oracle",
       "discriminator": [
         1,
@@ -1045,112 +898,6 @@
               }
             ]
           }
-        }
-      ]
-    },
-    {
-      "name": "close_outcome_schema",
-      "discriminator": [
-        196,
-        81,
-        8,
-        61,
-        95,
-        145,
-        225,
-        2
-      ],
-      "args": [],
-      "accounts": [
-        {
-          "name": "governance_authority",
-          "writable": false,
-          "signer": true,
-          "optional": false
-        },
-        {
-          "name": "outcome_schema",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  117,
-                  116,
-                  99,
-                  111,
-                  109,
-                  101,
-                  95,
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "outcome_schema.schema_key_hash",
-                "account": "OutcomeSchema"
-              }
-            ]
-          }
-        },
-        {
-          "name": "schema_dependency_ledger",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97,
-                  95,
-                  100,
-                  101,
-                  112,
-                  101,
-                  110,
-                  100,
-                  101,
-                  110,
-                  99,
-                  121,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "outcome_schema.schema_key_hash",
-                "account": "OutcomeSchema"
-              }
-            ]
-          }
-        },
-        {
-          "name": "recipient_system_account",
-          "writable": true,
-          "signer": false,
-          "optional": false
         }
       ]
     },
@@ -5340,120 +5087,6 @@
       ]
     },
     {
-      "name": "register_outcome_schema",
-      "discriminator": [
-        187,
-        68,
-        109,
-        211,
-        168,
-        181,
-        105,
-        32
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "RegisterOutcomeSchemaArgs"
-            }
-          }
-        }
-      ],
-      "accounts": [
-        {
-          "name": "publisher",
-          "writable": true,
-          "signer": true,
-          "optional": false
-        },
-        {
-          "name": "outcome_schema",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  117,
-                  116,
-                  99,
-                  111,
-                  109,
-                  101,
-                  95,
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "args.schema_key_hash"
-              }
-            ]
-          }
-        },
-        {
-          "name": "schema_dependency_ledger",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97,
-                  95,
-                  100,
-                  101,
-                  112,
-                  101,
-                  110,
-                  100,
-                  101,
-                  110,
-                  99,
-                  121,
-                  95,
-                  108,
-                  101,
-                  100,
-                  103,
-                  101,
-                  114
-                ]
-              },
-              {
-                "kind": "arg",
-                "path": "args.schema_key_hash"
-              }
-            ]
-          }
-        },
-        {
-          "name": "system_program",
-          "writable": false,
-          "signer": false,
-          "optional": false,
-          "address": "11111111111111111111111111111111"
-        }
-      ]
-    },
-    {
       "name": "release_reserve",
       "discriminator": [
         170,
@@ -8776,71 +8409,6 @@
       ]
     },
     {
-      "name": "verify_outcome_schema",
-      "discriminator": [
-        221,
-        10,
-        144,
-        137,
-        106,
-        214,
-        205,
-        170
-      ],
-      "args": [
-        {
-          "name": "args",
-          "type": {
-            "defined": {
-              "name": "VerifyOutcomeSchemaArgs"
-            }
-          }
-        }
-      ],
-      "accounts": [
-        {
-          "name": "governance_authority",
-          "writable": false,
-          "signer": true,
-          "optional": false
-        },
-        {
-          "name": "outcome_schema",
-          "writable": true,
-          "signer": false,
-          "optional": false,
-          "pda": {
-            "seeds": [
-              {
-                "kind": "const",
-                "value": [
-                  111,
-                  117,
-                  116,
-                  99,
-                  111,
-                  109,
-                  101,
-                  95,
-                  115,
-                  99,
-                  104,
-                  101,
-                  109,
-                  97
-                ]
-              },
-              {
-                "kind": "account",
-                "path": "outcome_schema.schema_key_hash",
-                "account": "OutcomeSchema"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "name": "version_policy_series",
       "discriminator": [
         64,
@@ -9184,16 +8752,6 @@
       114,
       142
     ],
-    "OutcomeSchema": [
-      243,
-      62,
-      72,
-      224,
-      198,
-      100,
-      29,
-      58
-    ],
     "PlanReserveLedger": [
       243,
       245,
@@ -9273,16 +8831,6 @@
       116,
       88,
       178
-    ],
-    "SchemaDependencyLedger": [
-      87,
-      115,
-      211,
-      54,
-      36,
-      177,
-      77,
-      131
     ],
     "SeriesReserveLedger": [
       0,
@@ -9413,14 +8961,6 @@
       "pool_oracle_permission_set",
       "<liquidity_pool>",
       "<oracle>"
-    ],
-    "outcome_schema": [
-      "outcome_schema",
-      "<schema_key_hash>"
-    ],
-    "schema_dependency_ledger": [
-      "schema_dependency_ledger",
-      "<schema_key_hash>"
     ],
     "claim_attestation": [
       "claim_attestation",

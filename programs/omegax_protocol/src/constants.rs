@@ -39,8 +39,6 @@ pub const SEED_ORACLE_PROFILE: &[u8] = b"oracle_profile";
 pub const SEED_POOL_ORACLE_APPROVAL: &[u8] = b"pool_oracle_approval";
 pub const SEED_POOL_ORACLE_POLICY: &[u8] = b"pool_oracle_policy";
 pub const SEED_POOL_ORACLE_PERMISSION_SET: &[u8] = b"pool_oracle_permission_set";
-pub const SEED_OUTCOME_SCHEMA: &[u8] = b"outcome_schema";
-pub const SEED_SCHEMA_DEPENDENCY_LEDGER: &[u8] = b"schema_dependency_ledger";
 pub const SEED_CLAIM_ATTESTATION: &[u8] = b"claim_attestation";
 
 pub const SERIES_MODE_REWARD: u8 = 0;

@@ -46,9 +46,6 @@ import {
 import { Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 
 import {
-  buildBackfillSchemaDependencyLedgerTx,
-  buildCloseOutcomeSchemaTx,
-  buildVerifyOutcomeSchemaTx,
   fetchProtocolConfig,
   listPoolRules,
   type ProtocolConfigSummary,
@@ -1037,71 +1034,13 @@ function toSchemaInstructionSet(params: {
   verifySchemaHashHex: string | null;
   enabledRulesBySchemaHash: Map<string, RuleSummary[]>;
 }): TransactionInstruction[] {
-  const instructions: TransactionInstruction[] = [];
-  if (params.verifySchemaHashHex) {
-    const verifyInstruction = buildVerifyOutcomeSchemaTx({
-      governanceAuthority: params.governanceAuthority,
-      recentBlockhash: params.recentBlockhash,
-      schemaKeyHashHex: params.verifySchemaHashHex,
-      verified: true,
-    }).instructions[0];
-    if (!verifyInstruction) {
-      throw new Error("Failed to build verify_outcome_schema instruction.");
-    }
-    instructions.push(verifyInstruction);
+  void params.governanceAuthority;
+  void params.recentBlockhash;
+  void params.enabledRulesBySchemaHash;
+  if (params.verifySchemaHashHex || params.unverifySchemaHashes.length > 0 || params.closeSchemaHashes.length > 0) {
+    throw new Error("On-chain schema-state governance has been removed; publish schema metadata off-chain and advertise schema hashes through oracle profiles.");
   }
-
-  for (const schemaKeyHashHex of params.unverifySchemaHashes) {
-    const unverifyInstruction = buildVerifyOutcomeSchemaTx({
-      governanceAuthority: params.governanceAuthority,
-      recentBlockhash: params.recentBlockhash,
-      schemaKeyHashHex,
-      verified: false,
-    }).instructions[0];
-    if (!unverifyInstruction) {
-      throw new Error(`Failed to build unverify instruction for ${schemaKeyHashHex}.`);
-    }
-    instructions.push(unverifyInstruction);
-  }
-
-  const effectiveBackfillHashes = [...new Set([
-    ...params.unverifySchemaHashes,
-    ...params.closeSchemaHashes,
-  ])];
-
-  for (const schemaKeyHashHex of effectiveBackfillHashes) {
-    const enabledRules = params.enabledRulesBySchemaHash.get(schemaKeyHashHex) ?? [];
-    if (params.closeSchemaHashes.includes(schemaKeyHashHex) && enabledRules.length > 0) {
-      throw new Error(
-        `Cannot close schema ${schemaKeyHashHex}: ${enabledRules.length} enabled pool rule(s) still reference it.`,
-      );
-    }
-    const backfillInstruction = buildBackfillSchemaDependencyLedgerTx({
-      governanceAuthority: params.governanceAuthority,
-      recentBlockhash: params.recentBlockhash,
-      schemaKeyHashHex,
-      poolRuleAddresses: enabledRules.map((row) => new PublicKey(row.address)),
-    }).instructions[0];
-    if (!backfillInstruction) {
-      throw new Error(`Failed to build backfill instruction for ${schemaKeyHashHex}.`);
-    }
-    instructions.push(backfillInstruction);
-  }
-
-  for (const schemaKeyHashHex of params.closeSchemaHashes) {
-    const closeInstruction = buildCloseOutcomeSchemaTx({
-      governanceAuthority: params.governanceAuthority,
-      recipientSystemAccount: params.governanceAuthority,
-      recentBlockhash: params.recentBlockhash,
-      schemaKeyHashHex,
-    }).instructions[0];
-    if (!closeInstruction) {
-      throw new Error(`Failed to build close instruction for ${schemaKeyHashHex}.`);
-    }
-    instructions.push(closeInstruction);
-  }
-
-  return instructions;
+  return [];
 }
 
 export function buildProtocolConfigProposalInstructions(params: {

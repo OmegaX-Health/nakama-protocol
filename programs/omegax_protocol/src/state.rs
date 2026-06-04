@@ -797,63 +797,6 @@ pub struct ClaimAttestation {
     pub bump: u8,
 }
 
-#[cfg(not(feature = "quasar"))]
-#[account]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct OutcomeSchema {
-    pub publisher: Pubkey,
-    pub schema_key_hash: [u8; 32],
-    #[max_len(MAX_SCHEMA_KEY_LEN)]
-    pub schema_key: String,
-    pub version: u16,
-    pub schema_hash: [u8; 32],
-    pub schema_family: u8,
-    pub visibility: u8,
-    #[max_len(MAX_URI_LEN)]
-    pub metadata_uri: String,
-    pub verified: bool,
-    pub created_at_ts: i64,
-    pub updated_at_ts: i64,
-    pub bump: u8,
-}
-
-#[cfg(feature = "quasar")]
-#[account(discriminator = [243, 62, 72, 224, 198, 100, 29, 58])]
-pub struct OutcomeSchema<'info> {
-    pub publisher: Pubkey,
-    pub schema_key_hash: [u8; 32],
-    pub version: u16,
-    pub schema_hash: [u8; 32],
-    pub schema_family: u8,
-    pub visibility: u8,
-    pub verified: bool,
-    pub created_at_ts: i64,
-    pub updated_at_ts: i64,
-    pub bump: u8,
-    pub schema_key: String<u32, 96>,
-    pub metadata_uri: String<u32, 160>,
-}
-
-#[cfg(not(feature = "quasar"))]
-#[account]
-#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
-pub struct SchemaDependencyLedger {
-    pub schema_key_hash: [u8; 32],
-    #[max_len(MAX_SCHEMA_DEPENDENCY_RULES)]
-    pub pool_rule_addresses: Vec<Pubkey>,
-    pub updated_at_ts: i64,
-    pub bump: u8,
-}
-
-#[cfg(feature = "quasar")]
-#[account(discriminator = [87, 115, 211, 54, 36, 177, 77, 131])]
-pub struct SchemaDependencyLedger<'info> {
-    pub schema_key_hash: [u8; 32],
-    pub updated_at_ts: i64,
-    pub bump: u8,
-    pub pool_rule_addresses: Vec<Pubkey, u32, 32>,
-}
-
 pub enum FrameworkAccountData {}
 
 pub trait AccountDataLifetime<'info> {
@@ -867,8 +810,6 @@ pub trait AccountDataLifetime<'info> {
     type LiquidityPool;
     type CapitalClass;
     type OracleProfile;
-    type OutcomeSchema;
-    type SchemaDependencyLedger;
 }
 
 #[cfg(not(feature = "quasar"))]
@@ -883,8 +824,6 @@ impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
     type LiquidityPool = LiquidityPool;
     type CapitalClass = CapitalClass;
     type OracleProfile = OracleProfile;
-    type OutcomeSchema = OutcomeSchema;
-    type SchemaDependencyLedger = SchemaDependencyLedger;
 }
 
 #[cfg(feature = "quasar")]
@@ -899,8 +838,6 @@ impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
     type LiquidityPool = LiquidityPool<'info>;
     type CapitalClass = CapitalClass<'info>;
     type OracleProfile = OracleProfile<'info>;
-    type OutcomeSchema = OutcomeSchema<'info>;
-    type SchemaDependencyLedger = SchemaDependencyLedger<'info>;
 }
 
 pub type ReserveDomainAccountData<'info> =
@@ -923,10 +860,6 @@ pub type CapitalClassAccountData<'info> =
     <FrameworkAccountData as AccountDataLifetime<'info>>::CapitalClass;
 pub type OracleProfileAccountData<'info> =
     <FrameworkAccountData as AccountDataLifetime<'info>>::OracleProfile;
-pub type OutcomeSchemaAccountData<'info> =
-    <FrameworkAccountData as AccountDataLifetime<'info>>::OutcomeSchema;
-pub type SchemaDependencyLedgerAccountData<'info> =
-    <FrameworkAccountData as AccountDataLifetime<'info>>::SchemaDependencyLedger;
 
 #[cfg(feature = "quasar")]
 macro_rules! impl_quasar_fixed_init_space {
@@ -980,6 +913,4 @@ impl_quasar_dynamic_init_space!(
     LiquidityPool,
     CapitalClass,
     OracleProfile,
-    OutcomeSchema,
-    SchemaDependencyLedger,
 );

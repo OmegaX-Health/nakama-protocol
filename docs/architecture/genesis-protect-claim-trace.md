@@ -18,7 +18,7 @@ The following objects exist before the first claim is opened. Their addresses, o
 | `HealthPlan` | `genesis-protect-acute-v1` | Owns membership state, plan-level pause flags, and the `claims_operator` / `plan_admin` keys |
 | `PolicySeries` (Event 7) | `genesis-event-7-v1` | 7-day acute event cover; tier benefits up to USD 3,000; fixed-only |
 | `PolicySeries` (Travel 30) | `genesis-travel-30-v1` | 30-day acute travel cover; tier benefits + reimbursement top-up up to the cap locked at activation; hybrid |
-| `OutcomeSchema` | `genesis-protect-acute-claim` v1 | Verified evidence schema; key hash recorded in `idl/omegax_protocol.source-hash` lineage |
+| Schema hash | `genesis-protect-acute-claim` v1 | Off-chain evidence schema; key hash is advertised through the oracle profile and bound into claim attestations |
 | `OracleProfile` | configured oracle authority | Will sign claim attestations |
 | `FundingLine` (premium) | `genesis-event7-premium` / `genesis-travel30-premium` | Member premium income; reduces claims-paying floor when reserved against |
 | `FundingLine` (sponsor budget) | `genesis-event7-sponsor` (Event 7 only) | Sponsor backstop; secondary reserve lane |

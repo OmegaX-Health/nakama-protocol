@@ -11,10 +11,7 @@ pub mod instruction {
     pub const IX_ATTACH_CLAIM_EVIDENCE_REF: [u8; 8] = [52, 246, 203, 87, 244, 143, 132, 131];
     pub const IX_ATTEST_CLAIM_CASE: [u8; 8] = [111, 40, 46, 51, 76, 157, 214, 136];
     pub const IX_AUTHORIZE_CLAIM_RECIPIENT: [u8; 8] = [112, 97, 129, 42, 125, 165, 226, 163];
-    pub const IX_BACKFILL_SCHEMA_DEPENDENCY_LEDGER: [u8; 8] =
-        [109, 109, 247, 151, 229, 78, 52, 167];
     pub const IX_CLAIM_ORACLE: [u8; 8] = [1, 252, 166, 132, 45, 24, 23, 233];
-    pub const IX_CLOSE_OUTCOME_SCHEMA: [u8; 8] = [196, 81, 8, 61, 95, 145, 225, 2];
     pub const IX_CONFIGURE_RESERVE_ASSET_RAIL: [u8; 8] = [78, 48, 108, 190, 181, 203, 194, 176];
     pub const IX_CREATE_ALLOCATION_POSITION: [u8; 8] = [165, 80, 76, 13, 12, 202, 112, 31];
     pub const IX_CREATE_CAPITAL_CLASS: [u8; 8] = [0, 161, 244, 112, 151, 137, 35, 221];
@@ -37,7 +34,6 @@ pub mod instruction {
     pub const IX_PUBLISH_RESERVE_ASSET_RAIL_PRICE: [u8; 8] = [132, 35, 143, 147, 59, 80, 162, 117];
     pub const IX_RECORD_PREMIUM_PAYMENT: [u8; 8] = [196, 182, 182, 56, 146, 87, 170, 29];
     pub const IX_REGISTER_ORACLE: [u8; 8] = [176, 200, 234, 37, 199, 129, 164, 111];
-    pub const IX_REGISTER_OUTCOME_SCHEMA: [u8; 8] = [187, 68, 109, 211, 168, 181, 105, 32];
     pub const IX_RELEASE_RESERVE: [u8; 8] = [170, 102, 52, 144, 33, 176, 41, 60];
     pub const IX_REQUEST_REDEMPTION: [u8; 8] = [14, 62, 182, 237, 59, 79, 149, 22];
     pub const IX_RESERVE_OBLIGATION: [u8; 8] = [48, 113, 133, 225, 40, 36, 197, 86];
@@ -54,7 +50,6 @@ pub mod instruction {
     pub const IX_UPDATE_MEMBER_ELIGIBILITY: [u8; 8] = [254, 66, 68, 244, 98, 157, 111, 191];
     pub const IX_UPDATE_ORACLE_PROFILE: [u8; 8] = [175, 66, 157, 51, 96, 190, 163, 98];
     pub const IX_UPDATE_RESERVE_DOMAIN_CONTROLS: [u8; 8] = [3, 60, 38, 233, 198, 167, 116, 197];
-    pub const IX_VERIFY_OUTCOME_SCHEMA: [u8; 8] = [221, 10, 144, 137, 106, 214, 205, 170];
     pub const IX_VERSION_POLICY_SERIES: [u8; 8] = [64, 76, 132, 253, 41, 220, 169, 146];
 }
 
@@ -74,7 +69,6 @@ pub mod account {
     pub const ACCOUNT_MEMBER_POSITION: [u8; 8] = [88, 118, 224, 251, 240, 186, 123, 175];
     pub const ACCOUNT_OBLIGATION: [u8; 8] = [168, 206, 141, 106, 88, 76, 172, 167];
     pub const ACCOUNT_ORACLE_PROFILE: [u8; 8] = [232, 217, 185, 162, 237, 208, 114, 142];
-    pub const ACCOUNT_OUTCOME_SCHEMA: [u8; 8] = [243, 62, 72, 224, 198, 100, 29, 58];
     pub const ACCOUNT_PLAN_RESERVE_LEDGER: [u8; 8] = [243, 245, 230, 224, 27, 105, 48, 128];
     pub const ACCOUNT_POLICY_SERIES: [u8; 8] = [196, 117, 121, 249, 37, 71, 245, 23];
     pub const ACCOUNT_POOL_CLASS_LEDGER: [u8; 8] = [147, 125, 17, 88, 188, 78, 109, 204];
@@ -83,7 +77,6 @@ pub mod account {
     pub const ACCOUNT_POOL_ORACLE_POLICY: [u8; 8] = [246, 134, 133, 108, 100, 203, 226, 43];
     pub const ACCOUNT_RESERVE_ASSET_RAIL: [u8; 8] = [48, 92, 233, 170, 158, 126, 122, 67];
     pub const ACCOUNT_RESERVE_DOMAIN: [u8; 8] = [119, 76, 223, 192, 177, 116, 88, 178];
-    pub const ACCOUNT_SCHEMA_DEPENDENCY_LEDGER: [u8; 8] = [87, 115, 211, 54, 36, 177, 77, 131];
     pub const ACCOUNT_SERIES_RESERVE_LEDGER: [u8; 8] = [0, 109, 195, 30, 140, 79, 210, 234];
 }
 
@@ -109,11 +102,6 @@ pub mod event {
     pub const EVENT_ORACLE_PROFILE_REGISTERED_EVENT: [u8; 8] =
         [114, 97, 218, 155, 43, 175, 101, 227];
     pub const EVENT_ORACLE_PROFILE_UPDATED_EVENT: [u8; 8] = [187, 146, 36, 213, 31, 160, 208, 86];
-    pub const EVENT_OUTCOME_SCHEMA_CLOSED_EVENT: [u8; 8] = [16, 92, 224, 187, 114, 106, 105, 41];
-    pub const EVENT_OUTCOME_SCHEMA_REGISTERED_EVENT: [u8; 8] =
-        [243, 156, 15, 145, 167, 84, 187, 209];
-    pub const EVENT_OUTCOME_SCHEMA_STATE_CHANGED_EVENT: [u8; 8] =
-        [79, 241, 101, 121, 94, 199, 61, 228];
     pub const EVENT_POLICY_SERIES_CREATED_EVENT: [u8; 8] = [106, 212, 178, 224, 202, 185, 17, 157];
     pub const EVENT_POLICY_SERIES_VERSIONED_EVENT: [u8; 8] = [37, 154, 96, 209, 46, 91, 162, 255];
     pub const EVENT_POOL_ORACLE_APPROVAL_CHANGED_EVENT: [u8; 8] =
@@ -128,7 +116,5 @@ pub mod event {
     pub const EVENT_RESERVE_ASSET_RAIL_PRICE_PUBLISHED_EVENT: [u8; 8] =
         [161, 207, 64, 197, 138, 47, 213, 44];
     pub const EVENT_RESERVE_DOMAIN_CREATED_EVENT: [u8; 8] = [138, 101, 116, 228, 188, 195, 89, 37];
-    pub const EVENT_SCHEMA_DEPENDENCY_LEDGER_UPDATED_EVENT: [u8; 8] =
-        [159, 128, 141, 211, 86, 155, 144, 70];
     pub const EVENT_SCOPED_CONTROL_CHANGED_EVENT: [u8; 8] = [103, 133, 3, 156, 72, 49, 119, 157];
 }

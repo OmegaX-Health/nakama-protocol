@@ -38,8 +38,6 @@ export const SEED_ORACLE_PROFILE = "oracle_profile";
 export const SEED_POOL_ORACLE_APPROVAL = "pool_oracle_approval";
 export const SEED_POOL_ORACLE_POLICY = "pool_oracle_policy";
 export const SEED_POOL_ORACLE_PERMISSION_SET = "pool_oracle_permission_set";
-export const SEED_OUTCOME_SCHEMA = "outcome_schema";
-export const SEED_SCHEMA_DEPENDENCY_LEDGER = "schema_dependency_ledger";
 export const SEED_CLAIM_ATTESTATION = "claim_attestation";
 
 export const CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE = 0;

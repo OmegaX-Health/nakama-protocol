@@ -360,31 +360,6 @@ pub mod omegax_protocol {
         crate::oracle_schema::set_pool_oracle_policy(ctx, args)
     }
 
-    pub fn register_outcome_schema(
-        ctx: Context<RegisterOutcomeSchema>,
-        args: RegisterOutcomeSchemaArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::register_outcome_schema(ctx, args)
-    }
-
-    pub fn verify_outcome_schema(
-        ctx: Context<VerifyOutcomeSchema>,
-        args: VerifyOutcomeSchemaArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::verify_outcome_schema(ctx, args)
-    }
-
-    pub fn backfill_schema_dependency_ledger(
-        ctx: Context<BackfillSchemaDependencyLedger>,
-        args: BackfillSchemaDependencyLedgerArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::backfill_schema_dependency_ledger(ctx, args)
-    }
-
-    pub fn close_outcome_schema(ctx: Context<CloseOutcomeSchema>) -> Result<()> {
-        crate::oracle_schema::close_outcome_schema(ctx)
-    }
-
     pub fn attest_claim_case(
         ctx: Context<AttestClaimCase>,
         args: AttestClaimCaseArgs,
@@ -1134,52 +1109,6 @@ pub mod omegax_protocol {
             allow_delegate_claim,
             challenge_window_secs,
         )
-    }
-
-    #[instruction(discriminator = [187, 68, 109, 211, 168, 181, 105, 32])]
-    pub fn register_outcome_schema(
-        ctx: Ctx<RegisterOutcomeSchema>,
-        schema_key_hash: [u8; 32],
-        version: u16,
-        schema_hash: [u8; 32],
-        schema_family: u8,
-        visibility: u8,
-        schema_key: String<u32, 96>,
-        metadata_uri: String<u32, 160>,
-    ) -> Result<()> {
-        crate::oracle_schema::register_outcome_schema(
-            &mut ctx,
-            schema_key_hash,
-            version,
-            schema_hash,
-            schema_family,
-            visibility,
-            schema_key,
-            metadata_uri,
-        )
-    }
-
-    #[instruction(discriminator = [221, 10, 144, 137, 106, 214, 205, 170])]
-    pub fn verify_outcome_schema(ctx: Ctx<VerifyOutcomeSchema>, verified: bool) -> Result<()> {
-        crate::oracle_schema::verify_outcome_schema(&mut ctx, verified)
-    }
-
-    #[instruction(discriminator = [109, 109, 247, 151, 229, 78, 52, 167])]
-    pub fn backfill_schema_dependency_ledger(
-        ctx: Ctx<BackfillSchemaDependencyLedger>,
-        schema_key_hash: [u8; 32],
-        pool_rule_addresses: Vec<Pubkey, u32, 32>,
-    ) -> Result<()> {
-        crate::oracle_schema::backfill_schema_dependency_ledger(
-            &mut ctx,
-            schema_key_hash,
-            pool_rule_addresses,
-        )
-    }
-
-    #[instruction(discriminator = [196, 81, 8, 61, 95, 145, 225, 2])]
-    pub fn close_outcome_schema(ctx: Ctx<CloseOutcomeSchema>) -> Result<()> {
-        crate::oracle_schema::close_outcome_schema(&mut ctx)
     }
 
     #[instruction(discriminator = [111, 40, 46, 51, 76, 157, 214, 136])]

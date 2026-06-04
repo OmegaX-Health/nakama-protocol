@@ -1450,24 +1450,6 @@ fn sample_funding_line(
 }
 
 #[allow(dead_code)]
-fn sample_outcome_schema(schema_key_hash: [u8; 32], verified: bool) -> OutcomeSchema {
-    OutcomeSchema {
-        publisher: Pubkey::new_unique(),
-        schema_key_hash,
-        schema_key: "claims.schema.v1".to_string(),
-        version: 1,
-        schema_hash: [4; 32],
-        schema_family: SCHEMA_FAMILY_CLAIMS_CODING,
-        visibility: SCHEMA_VISIBILITY_PUBLIC,
-        metadata_uri: String::new(),
-        verified,
-        created_at_ts: 0,
-        updated_at_ts: 0,
-        bump: 1,
-    }
-}
-
-#[allow(dead_code)]
 fn sample_liquidity_pool(reserve_domain: Pubkey, asset_mint: Pubkey) -> LiquidityPool {
     LiquidityPool {
         reserve_domain,
@@ -1952,7 +1934,7 @@ fn claim_evidence_locks_after_first_attestation() {
 }
 
 #[test]
-fn claim_attestation_common_rejects_pause_evidence_and_unverified_schema_gaps() {
+fn claim_attestation_common_rejects_pause_evidence_and_unsupported_schema_gaps() {
     let health_plan_key = Pubkey::new_unique();
     let funding_line_key = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();
@@ -1975,7 +1957,6 @@ fn claim_attestation_common_rejects_pause_evidence_and_unverified_schema_gaps() 
         sample_claim_case(health_plan_key, policy_series, funding_line_key, asset_mint);
     claim_case.evidence_ref_hash = [5; 32];
     let schema_key_hash = [6; 32];
-    let schema = sample_outcome_schema(schema_key_hash, true);
     let oracle_profile = oracle_profile_with_supported_schemas(&[schema_key_hash]);
     health_plan.oracle_authority = oracle_profile.oracle;
     let args = AttestClaimCaseArgs {
@@ -1991,7 +1972,6 @@ fn claim_attestation_common_rejects_pause_evidence_and_unverified_schema_gaps() 
         funding_line_key,
         &funding_line,
         &claim_case,
-        &schema,
         &oracle_profile,
         &args,
     )
@@ -2004,7 +1984,6 @@ fn claim_attestation_common_rejects_pause_evidence_and_unverified_schema_gaps() 
         funding_line_key,
         &funding_line,
         &claim_case,
-        &schema,
         &oracle_profile,
         &args,
     )
@@ -2021,7 +2000,6 @@ fn claim_attestation_common_rejects_pause_evidence_and_unverified_schema_gaps() 
         funding_line_key,
         &funding_line,
         &claim_case,
-        &schema,
         &oracle_profile,
         &mismatched_args,
     )
@@ -2029,20 +2007,19 @@ fn claim_attestation_common_rejects_pause_evidence_and_unverified_schema_gaps() 
     .to_string()
     .contains("evidence reference does not match"));
 
-    let draft_schema = sample_outcome_schema(schema_key_hash, false);
+    let unsupported_oracle_profile = oracle_profile_with_supported_schemas(&[[9; 32]]);
     assert!(claims::validate_claim_attestation_common(
         health_plan_key,
         &health_plan,
         funding_line_key,
         &funding_line,
         &claim_case,
-        &draft_schema,
-        &oracle_profile,
+        &unsupported_oracle_profile,
         &args,
     )
     .unwrap_err()
     .to_string()
-    .contains("schema must be governance verified"));
+    .contains("does not advertise support"));
 
     let unapproved_oracle_profile = oracle_profile_with_supported_schemas(&[schema_key_hash]);
     assert!(claims::validate_claim_attestation_common(
@@ -2051,7 +2028,6 @@ fn claim_attestation_common_rejects_pause_evidence_and_unverified_schema_gaps() 
         funding_line_key,
         &funding_line,
         &claim_case,
-        &schema,
         &unapproved_oracle_profile,
         &args,
     )

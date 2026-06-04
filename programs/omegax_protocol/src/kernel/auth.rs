@@ -135,12 +135,6 @@ pub(crate) fn write_supported_schema_hashes(
     }
 }
 
-pub(crate) fn validate_outcome_schema_fields(args: &RegisterOutcomeSchemaArgs) -> Result<()> {
-    require_bounded_string(&args.schema_key, MAX_SCHEMA_KEY_LEN)?;
-    require_bounded_string(&args.metadata_uri, MAX_URI_LEN)?;
-    Ok(())
-}
-
 pub(crate) fn require_plan_control(
     authority: &Pubkey,
     plan: &HealthPlanAccountData<'_>,

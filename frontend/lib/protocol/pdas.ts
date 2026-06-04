@@ -22,7 +22,6 @@ import {
   SEED_MEMBERSHIP_ANCHOR_SEAT,
   SEED_OBLIGATION,
   SEED_ORACLE_PROFILE,
-  SEED_OUTCOME_SCHEMA,
   SEED_PLAN_RESERVE_LEDGER,
   SEED_POLICY_SERIES,
   SEED_POOL_CLASS_LEDGER,
@@ -32,11 +31,10 @@ import {
   SEED_PROTOCOL_GOVERNANCE,
   SEED_RESERVE_ASSET_RAIL,
   SEED_RESERVE_DOMAIN,
-  SEED_SCHEMA_DEPENDENCY_LEDGER,
   SEED_SERIES_RESERVE_LEDGER,
   ZERO_PUBKEY_KEY,
 } from "./constants";
-import { assertSeedId, hexToFixedBytes, TEXT_ENCODER } from "./encoding";
+import { assertSeedId, TEXT_ENCODER } from "./encoding";
 import type { PublicKeyish } from "./types";
 
 function derivePda(seeds: Uint8Array[], programId = getProgramId()): PublicKey {
@@ -418,26 +416,6 @@ export function derivePoolOraclePermissionSetPda(params: {
       toPublicKey(params.liquidityPool).toBytes(),
       toPublicKey(params.oracle).toBytes(),
     ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveOutcomeSchemaPda(params: {
-  schemaKeyHashHex: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_OUTCOME_SCHEMA), hexToFixedBytes(params.schemaKeyHashHex, 32)],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveSchemaDependencyLedgerPda(params: {
-  schemaKeyHashHex: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_SCHEMA_DEPENDENCY_LEDGER), hexToFixedBytes(params.schemaKeyHashHex, 32)],
     params.programId ?? getProgramId(),
   );
 }

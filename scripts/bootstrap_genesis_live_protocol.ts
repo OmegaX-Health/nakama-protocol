@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
 import { Buffer } from "node:buffer";
-import { createHash } from "node:crypto";
 
 import {
   Connection,
@@ -19,7 +18,6 @@ import protocolModule from "../frontend/lib/protocol.ts";
 import { loadEnvFile } from "./support/load_env_file.ts";
 import {
   loadGenesisLiveBootstrapConfig,
-  stableStringify,
 } from "./support/genesis_live_bootstrap_config.ts";
 import { wrapConnectionWithRpcRetry } from "./support/rpc_retry.ts";
 import { keypairFromFile, requiredPublicKeyEnv, sha256Bytes } from "./support/script_helpers.ts";
@@ -35,7 +33,6 @@ type ProtocolInstructionAccountInput = {
 type CurrentValue = {
   fundingLine: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["fundingLines"][number] | undefined;
   allocationPosition: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["allocationPositions"][number] | undefined;
-  schema: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["outcomeSchemas"][number] | undefined;
   oracleProfile: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["oracleProfiles"][number] | undefined;
   poolOraclePolicy: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["poolOraclePolicies"][number] | undefined;
   poolOracleApproval: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["poolOracleApprovals"][number] | undefined;
@@ -45,12 +42,6 @@ type CurrentValue = {
 
 const FRONTEND_ENV_PATH = resolve(process.cwd(), "frontend/.env.local");
 const DEFAULT_GOVERNANCE_KEYPAIR_PATH = resolve(homedir(), ".config/solana/id.json");
-
-function schemaMetadataHashHex(path: string): string {
-  const raw = readFileSync(path, "utf8");
-  const parsed = JSON.parse(raw);
-  return createHash("sha256").update(stableStringify(parsed)).digest("hex");
-}
 
 function parseArgs(argv: string[]): { planOnly: boolean } {
   return {
@@ -65,21 +56,12 @@ function currentValue(
   return {
     fundingLine: snapshot.fundingLines.find((row) => row.address === address),
     allocationPosition: snapshot.allocationPositions.find((row) => row.address === address),
-    schema: snapshot.outcomeSchemas.find((row) => row.address === address),
     oracleProfile: snapshot.oracleProfiles.find((row) => row.address === address),
     poolOraclePolicy: snapshot.poolOraclePolicies.find((row) => row.address === address),
     poolOracleApproval: snapshot.poolOracleApprovals.find((row) => row.address === address),
     poolOraclePermissionSet: snapshot.poolOraclePermissionSets.find((row) => row.address === address),
     lpPosition: snapshot.lpPositions.find((row) => row.address === address),
   };
-}
-
-async function directProtocolGovernanceAuthority(
-  protocol: ProtocolModule,
-  connection: Connection,
-): Promise<string | null> {
-  const protocolConfig = await protocol.fetchProtocolConfig({ connection });
-  return protocolConfig?.governanceAuthority ?? null;
 }
 
 async function sendProtocolInstruction(params: {
@@ -557,87 +539,7 @@ async function main() {
     });
   }
 
-  const outcomeSchemaAddress = protocol.deriveOutcomeSchemaPda({
-    schemaKeyHashHex: config.schema.keyHashHex,
-  }).toBase58();
-  const schemaDependencyLedger = protocol.deriveSchemaDependencyLedgerPda({
-    schemaKeyHashHex: config.schema.keyHashHex,
-  }).toBase58();
-
   let snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!currentValue(snapshot, outcomeSchemaAddress).schema) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "register_outcome_schema:genesis",
-      instructionName: "register_outcome_schema",
-      args: {
-        schema_key_hash: [...Buffer.from(config.schema.keyHashHex, "hex")],
-        schema_key: config.schema.key,
-        version: config.schema.version,
-        schema_hash: [...Buffer.from(schemaMetadataHashHex(config.schema.metadataLocalPath), "hex")],
-        schema_family: protocol.SCHEMA_FAMILY_KERNEL,
-        visibility: protocol.SCHEMA_VISIBILITY_PUBLIC,
-        metadata_uri: config.schema.metadataUri,
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: outcomeSchemaAddress, isWritable: true },
-        { pubkey: schemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!currentValue(snapshot, outcomeSchemaAddress).schema?.verified) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "verify_outcome_schema:genesis",
-      instructionName: "verify_outcome_schema",
-      args: { verified: true },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true },
-        { pubkey: governanceAddress },
-        { pubkey: outcomeSchemaAddress, isWritable: true },
-      ],
-    });
-  }
-
-  const directGovernanceAuthority = await directProtocolGovernanceAuthority(protocol, connection);
-  if (directGovernanceAuthority === governance.publicKey.toBase58()) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "backfill_schema_dependency_ledger:genesis",
-      instructionName: "backfill_schema_dependency_ledger",
-      args: {
-        schema_key_hash: [...Buffer.from(config.schema.keyHashHex, "hex")],
-        pool_rule_addresses: [new PublicKey(config.liquidityPool.address)],
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: governanceAddress },
-        { pubkey: outcomeSchemaAddress },
-        { pubkey: schemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    }).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes("already in use")) {
-        throw error;
-      }
-    });
-  } else {
-    console.log(
-      `[genesis-live] skipping direct schema backfill because protocol governance authority is ${directGovernanceAuthority ?? "(unset)"} instead of ${governance.publicKey.toBase58()}; use governance proposal flow if a schema dependency backfill is still required.`,
-    );
-  }
-
   const oracleProfileAddress = protocol.deriveOracleProfilePda({
     oracle: config.roles.oracleAuthority,
   }).toBase58();
@@ -707,7 +609,7 @@ async function main() {
       args: {
         quorum_m: 1,
         quorum_n: 1,
-        require_verified_schema: true,
+        require_verified_schema: false,
         oracle_fee_bps: 25,
         allow_delegate_claim: true,
         challenge_window_secs: 86_400,

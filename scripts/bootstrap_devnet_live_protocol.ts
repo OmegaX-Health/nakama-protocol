@@ -62,7 +62,6 @@ const RIGHT_CLAIM_REWARD = 1 << 0;
 const RIGHT_VIEW_PAYOUT_HISTORY = 1 << 1;
 const RIGHT_OPEN_CLAIM_CASE = 1 << 2;
 const RIGHT_APPOINT_DELEGATE = 1 << 3;
-const STANDARD_SCHEMA_KEY_HASH_BYTES = [...Buffer.from(STANDARD_OUTCOMES_SCHEMA_KEY_HASH_HEX, "hex")];
 
 function expandHome(path: string): string {
   return path.replace(/^~(?=\/|$)/, homedir());
@@ -98,14 +97,6 @@ function configuredGovernanceControlAddress(): string | null {
   } catch {
     throw new Error(`Invalid governance config address: ${normalized}`);
   }
-}
-
-async function directProtocolGovernanceAuthority(
-  protocol: ProtocolModule,
-  connection: Connection,
-): Promise<string | null> {
-  const protocolConfig = await protocol.fetchProtocolConfig({ connection });
-  return protocolConfig?.governanceAuthority ?? null;
 }
 
 function upsertEnvFile(path: string, updates: Record<string, string>): void {
@@ -276,7 +267,6 @@ function currentValue(
     poolOraclePolicy: snapshot.poolOraclePolicies.find((row) => row.address === address),
     poolOracleApproval: snapshot.poolOracleApprovals.find((row) => row.address === address),
     poolOraclePermissionSet: snapshot.poolOraclePermissionSets.find((row) => row.address === address),
-    schema: snapshot.outcomeSchemas.find((row) => row.address === address),
   };
 }
 
@@ -559,12 +549,6 @@ async function main() {
   const protectionSettledObligation = protocol.deriveObligationPda({
     fundingLine: blendedPremiumLine.address,
     obligationId: "protection-obligation-002",
-  }).toBase58();
-  const standardSchemaAddress = protocol.deriveOutcomeSchemaPda({
-    schemaKeyHashHex: STANDARD_OUTCOMES_SCHEMA_KEY_HASH_HEX,
-  }).toBase58();
-  const standardSchemaDependencyLedger = protocol.deriveSchemaDependencyLedgerPda({
-    schemaKeyHashHex: STANDARD_OUTCOMES_SCHEMA_KEY_HASH_HEX,
   }).toBase58();
   const oracleProfileAddress = protocol.deriveOracleProfilePda({
     oracle: roleWallets.oracle.publicKey,
@@ -1057,81 +1041,6 @@ async function main() {
 
   let snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
 
-  const standardSchema = currentValue(snapshot, standardSchemaAddress).schema;
-  if (!standardSchema) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "register_outcome_schema:standard",
-      instructionName: "register_outcome_schema",
-      args: {
-        schema_key_hash: STANDARD_SCHEMA_KEY_HASH_BYTES,
-        schema_key: "standard.health.outcomes",
-        version: 1,
-        schema_hash: sha256Bytes("standard-health-outcomes-schema-v1"),
-        schema_family: protocol.SCHEMA_FAMILY_KERNEL,
-        visibility: protocol.SCHEMA_VISIBILITY_PUBLIC,
-        metadata_uri: "https://protocol.omegax.health/schemas/standard-health-outcomes-v1.json",
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: standardSchemaAddress, isWritable: true },
-        { pubkey: standardSchemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  const liveStandardSchema = currentValue(snapshot, standardSchemaAddress).schema;
-  if (!liveStandardSchema?.verified) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "verify_outcome_schema:standard",
-      instructionName: "verify_outcome_schema",
-      args: { verified: true },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true },
-        { pubkey: governanceAddress },
-        { pubkey: standardSchemaAddress, isWritable: true },
-      ],
-    });
-  }
-
-  const directGovernanceAuthority = await directProtocolGovernanceAuthority(protocol, connection);
-  if (directGovernanceAuthority === governance.publicKey.toBase58()) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "backfill_schema_dependency_ledger:standard",
-      instructionName: "backfill_schema_dependency_ledger",
-      args: {
-        schema_key_hash: STANDARD_SCHEMA_KEY_HASH_BYTES,
-        pool_rule_addresses: [new PublicKey(pool.address)],
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: governanceAddress },
-        { pubkey: standardSchemaAddress },
-        { pubkey: standardSchemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    }).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes("already in use")) {
-        throw error;
-      }
-    });
-  } else {
-    console.log(
-      `[bootstrap-live] skipping direct schema backfill because protocol governance authority is ${directGovernanceAuthority ?? "(unset)"} instead of ${governance.publicKey.toBase58()}; use governance proposal flow if a schema dependency backfill is still required.`,
-    );
-  }
-
   if (!currentValue(snapshot, oracleProfileAddress).oracleProfile) {
     await sendProtocolInstruction({
       protocol,
@@ -1184,7 +1093,7 @@ async function main() {
       args: {
         quorum_m: 1,
         quorum_n: 1,
-        require_verified_schema: true,
+        require_verified_schema: false,
         oracle_fee_bps: 25,
         allow_delegate_claim: true,
         challenge_window_secs: 86_400,
@@ -2107,8 +2016,6 @@ async function main() {
         poolOracleApprovals: finalSnapshot.poolOracleApprovals.length,
         poolOraclePolicies: finalSnapshot.poolOraclePolicies.length,
         poolOraclePermissionSets: finalSnapshot.poolOraclePermissionSets.length,
-        outcomeSchemas: finalSnapshot.outcomeSchemas.length,
-        schemaDependencyLedgers: finalSnapshot.schemaDependencyLedgers.length,
       },
       null,
       2,

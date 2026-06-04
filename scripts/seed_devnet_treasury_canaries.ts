@@ -444,7 +444,6 @@ async function ensureOracleCanary(params: {
   const approval = protocol.derivePoolOracleApprovalPda({ liquidityPool: pool, oracle: oracle.publicKey });
   const permissionSet = protocol.derivePoolOraclePermissionSetPda({ liquidityPool: pool, oracle: oracle.publicKey });
   const policy = protocol.derivePoolOraclePolicyPda({ liquidityPool: pool });
-  const outcomeSchema = protocol.deriveOutcomeSchemaPda({ schemaKeyHashHex: CANARY_SCHEMA_KEY_HASH_HEX });
 
   await sendLamportsIfNeeded({
     connection,
@@ -455,43 +454,6 @@ async function ensureOracleCanary(params: {
   });
 
   let snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!snapshot.outcomeSchemas.find((row) => row.address === outcomeSchema.toBase58())) {
-    await sendTransaction({
-      connection,
-      feePayer: governance,
-      label: "register_outcome_schema:treasury-canary",
-      tx: protocol.buildRegisterOutcomeSchemaTx({
-        publisher: governance.publicKey,
-        schemaKeyHashHex: CANARY_SCHEMA_KEY_HASH_HEX,
-        schemaKey: "omegax.treasury.canary.claim.v1",
-        version: 1,
-        schemaHashHex: stableHash("treasury-canary:oracle-schema:body"),
-        schemaFamily: protocol.SCHEMA_FAMILY_CLAIMS_CODING,
-        visibility: protocol.SCHEMA_VISIBILITY_PUBLIC,
-        metadataUri: "ipfs://omegax-devnet-treasury-canary",
-        recentBlockhash: ZERO_PUBKEY,
-      }),
-      signers: [governance],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!snapshot.outcomeSchemas.find((row) => row.address === outcomeSchema.toBase58() && row.verified)) {
-    await sendTransaction({
-      connection,
-      feePayer: governance,
-      label: "verify_outcome_schema:treasury-canary",
-      tx: protocol.buildVerifyOutcomeSchemaTx({
-        governanceAuthority: governance.publicKey,
-        schemaKeyHashHex: CANARY_SCHEMA_KEY_HASH_HEX,
-        verified: true,
-        recentBlockhash: ZERO_PUBKEY,
-      }),
-      signers: [governance],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
   const liveProfile = snapshot.oracleProfiles.find((row) => row.address === oracleProfile.toBase58());
   if (!liveProfile) {
     await sendTransaction({

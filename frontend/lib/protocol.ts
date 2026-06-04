@@ -94,8 +94,6 @@ import type {
   PoolOracleApprovalSnapshot,
   PoolOraclePolicySnapshot,
   PoolOraclePermissionSetSnapshot,
-  OutcomeSchemaSnapshot,
-  SchemaDependencyLedgerSnapshot,
   ClaimAttestationSnapshot,
   ProtocolConsoleSnapshot,
   SponsorReadModel,
@@ -116,7 +114,6 @@ import type {
   PoolOraclePolicySummary,
   PoolOraclePermissionSetSummary,
   SchemaSummary,
-  SchemaDependencyLedgerSummary,
   ProtocolConfigSummary,
   PoolSummary,
   RuleSummary,
@@ -167,7 +164,6 @@ import {
   deriveMemberPositionPda,
   deriveObligationPda,
   deriveOracleProfilePda,
-  deriveOutcomeSchemaPda,
   derivePlanReserveLedgerPda,
   derivePolicySeriesPda,
   derivePoolClassLedgerPda,
@@ -176,7 +172,6 @@ import {
   derivePoolOraclePolicyPda,
   deriveReserveAssetRailPda,
   deriveReserveDomainPda,
-  deriveSchemaDependencyLedgerPda,
   deriveSeriesReserveLedgerPda,
 } from "./protocol/pdas";
 
@@ -1598,35 +1593,6 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           bump: Number(decodedField(decoded, "bump") ?? 0),
         });
         break;
-      case "OutcomeSchema":
-        snapshot.outcomeSchemas.push({
-          address,
-          publisher: asAddress(decodedField(decoded, "publisher")),
-          schemaKeyHashHex: bytesToHex(decodedField(decoded, "schemaKeyHash", "schema_key_hash")),
-          schemaKey: stringFromAnchorValue(decodedField(decoded, "schemaKey", "schema_key")),
-          version: Number(decodedField(decoded, "version") ?? 0),
-          schemaHashHex: bytesToHex(decodedField(decoded, "schemaHash", "schema_hash")),
-          schemaFamily: Number(decodedField(decoded, "schemaFamily", "schema_family") ?? 0),
-          visibility: Number(decodedField(decoded, "visibility") ?? 0),
-          metadataUri: stringFromAnchorValue(decodedField(decoded, "metadataUri", "metadata_uri")),
-          verified: Boolean(decodedField(decoded, "verified")),
-          createdAtTs: numberFromAnchorValue(decodedField(decoded, "createdAtTs", "created_at_ts")),
-          updatedAtTs: numberFromAnchorValue(decodedField(decoded, "updatedAtTs", "updated_at_ts")),
-          bump: Number(decodedField(decoded, "bump") ?? 0),
-        });
-        break;
-      case "SchemaDependencyLedger":
-        snapshot.schemaDependencyLedgers.push({
-          address,
-          schemaKeyHashHex: bytesToHex(decodedField(decoded, "schemaKeyHash", "schema_key_hash")),
-          poolRuleAddresses: Array.isArray(decodedField(decoded, "poolRuleAddresses", "pool_rule_addresses"))
-            ? decodedField<Array<PublicKeyish>>(decoded, "poolRuleAddresses", "pool_rule_addresses")!
-              .map((value) => asAddress(value))
-            : [],
-          updatedAtTs: numberFromAnchorValue(decodedField(decoded, "updatedAtTs", "updated_at_ts")),
-          bump: Number(decodedField(decoded, "bump") ?? 0),
-        });
-        break;
       case "ClaimAttestation": {
         const policySeriesValue = decodedField(decoded, "policySeries", "policy_series");
         const policySeries = policySeriesValue ? asAddress(policySeriesValue) : null;
@@ -2190,32 +2156,8 @@ export async function listSchemas(params: {
   verifiedOnly?: boolean;
   search?: string | null;
 }): Promise<SchemaSummary[]> {
-  const snapshot = await loadProtocolConsoleSnapshot(params.connection);
-  return snapshot.outcomeSchemas
-    .filter((schema) => !params.verifiedOnly || schema.verified)
-    .filter((schema) =>
-      matchesSearch(
-        [
-          schema.schemaKey,
-          schema.schemaKeyHashHex,
-          schema.schemaHashHex,
-          schema.metadataUri,
-          schema.verified ? "verified" : "unverified",
-        ],
-        params.search,
-      ),
-    );
-}
-
-export async function listSchemaDependencyLedgers(params: {
-  connection: Connection;
-  schemaKeyHashHex?: string | null;
-}): Promise<SchemaDependencyLedgerSummary[]> {
-  const snapshot = await loadProtocolConsoleSnapshot(params.connection);
-  const targetHash = params.schemaKeyHashHex?.trim().toLowerCase();
-  return snapshot.schemaDependencyLedgers.filter((ledger) =>
-    !targetHash || ledger.schemaKeyHashHex.toLowerCase() === targetHash,
-  );
+  void params;
+  return [];
 }
 
 export async function listPoolRules(params: {
@@ -3247,9 +3189,6 @@ export function buildAttestClaimCaseTx(params: {
     claimCase: params.claimCaseAddress,
     oracle,
   });
-  const outcomeSchema = deriveOutcomeSchemaPda({
-    schemaKeyHashHex: normalizedSchemaKeyHashHex,
-  });
   return buildProtocolTransactionFromInstruction({
     feePayer: oracle,
     recentBlockhash: params.recentBlockhash,
@@ -3270,7 +3209,6 @@ export function buildAttestClaimCaseTx(params: {
       { pubkey: oracleProfile },
       { pubkey: params.claimCaseAddress, isWritable: true },
       { pubkey: fundingLine },
-      { pubkey: outcomeSchema },
       optionalProtocolAccount(liquidityPool),
       optionalProtocolAccount(capitalClass),
       optionalProtocolAccount(allocationPosition),
@@ -4404,127 +4342,6 @@ export function buildSetPoolOraclePolicyTx(params: {
   );
   return buildProtocolTransaction({
     feePayer: authority,
-    recentBlockhash: params.recentBlockhash,
-    instructions: [instruction],
-  });
-}
-
-export function buildRegisterOutcomeSchemaTx(params: {
-  publisher: PublicKeyish;
-  recentBlockhash: string;
-  schemaKeyHashHex: string;
-  schemaKey: string;
-  version: number;
-  schemaHashHex: string;
-  schemaFamily: number;
-  visibility: number;
-  metadataUri: string;
-}): Transaction {
-  const publisher = toPublicKey(params.publisher);
-  const normalizedHash = normalizeHex32(params.schemaKeyHashHex);
-  const outcomeSchema = deriveOutcomeSchemaPda({ schemaKeyHashHex: normalizedHash });
-  const dependencyLedger = deriveSchemaDependencyLedgerPda({ schemaKeyHashHex: normalizedHash });
-  const instruction = buildProtocolInstruction(
-    "register_outcome_schema",
-    {
-      schema_key_hash: Array.from(hexToFixedBytes(normalizedHash, 32)),
-      schema_key: params.schemaKey,
-      version: params.version,
-      schema_hash: Array.from(hexToFixedBytes(params.schemaHashHex, 32)),
-      schema_family: params.schemaFamily,
-      visibility: params.visibility,
-      metadata_uri: params.metadataUri,
-    },
-    [
-      { pubkey: publisher, isSigner: true, isWritable: true },
-      { pubkey: outcomeSchema, isWritable: true },
-      { pubkey: dependencyLedger, isWritable: true },
-      { pubkey: SystemProgram.programId },
-    ],
-  );
-  return buildProtocolTransaction({
-    feePayer: publisher,
-    recentBlockhash: params.recentBlockhash,
-    instructions: [instruction],
-  });
-}
-
-export function buildVerifyOutcomeSchemaTx(params: {
-  governanceAuthority: PublicKeyish;
-  recentBlockhash: string;
-  schemaKeyHashHex: string;
-  verified: boolean;
-}): Transaction {
-  const governanceAuthority = toPublicKey(params.governanceAuthority);
-  const outcomeSchema = deriveOutcomeSchemaPda({ schemaKeyHashHex: params.schemaKeyHashHex });
-  const instruction = buildProtocolInstruction(
-    "verify_outcome_schema",
-    { verified: params.verified },
-    [
-      { pubkey: governanceAuthority, isSigner: true },
-      { pubkey: outcomeSchema, isWritable: true },
-    ],
-  );
-  return buildProtocolTransaction({
-    feePayer: governanceAuthority,
-    recentBlockhash: params.recentBlockhash,
-    instructions: [instruction],
-  });
-}
-
-export function buildBackfillSchemaDependencyLedgerTx(params: {
-  governanceAuthority: PublicKeyish;
-  recentBlockhash: string;
-  schemaKeyHashHex: string;
-  poolRuleAddresses: PublicKeyish[];
-}): Transaction {
-  const governanceAuthority = toPublicKey(params.governanceAuthority);
-  const normalizedHash = normalizeHex32(params.schemaKeyHashHex);
-  const outcomeSchema = deriveOutcomeSchemaPda({ schemaKeyHashHex: normalizedHash });
-  const dependencyLedger = deriveSchemaDependencyLedgerPda({ schemaKeyHashHex: normalizedHash });
-  const instruction = buildProtocolInstruction(
-    "backfill_schema_dependency_ledger",
-    {
-      schema_key_hash: Array.from(hexToFixedBytes(normalizedHash, 32)),
-      pool_rule_addresses: params.poolRuleAddresses.map((value) => toPublicKey(value)),
-    },
-    [
-      { pubkey: governanceAuthority, isSigner: true, isWritable: true },
-      { pubkey: outcomeSchema },
-      { pubkey: dependencyLedger, isWritable: true },
-      { pubkey: SystemProgram.programId },
-    ],
-  );
-  return buildProtocolTransaction({
-    feePayer: governanceAuthority,
-    recentBlockhash: params.recentBlockhash,
-    instructions: [instruction],
-  });
-}
-
-export function buildCloseOutcomeSchemaTx(params: {
-  governanceAuthority: PublicKeyish;
-  recipientSystemAccount: PublicKeyish;
-  recentBlockhash: string;
-  schemaKeyHashHex: string;
-}): Transaction {
-  const governanceAuthority = toPublicKey(params.governanceAuthority);
-  const normalizedHash = normalizeHex32(params.schemaKeyHashHex);
-  const outcomeSchema = deriveOutcomeSchemaPda({ schemaKeyHashHex: normalizedHash });
-  const dependencyLedger = deriveSchemaDependencyLedgerPda({ schemaKeyHashHex: normalizedHash });
-  const recipient = toPublicKey(params.recipientSystemAccount);
-  const instruction = buildProtocolInstruction(
-    "close_outcome_schema",
-    {},
-    [
-      { pubkey: governanceAuthority, isSigner: true },
-      { pubkey: outcomeSchema, isWritable: true },
-      { pubkey: dependencyLedger, isWritable: true },
-      { pubkey: recipient, isWritable: true },
-    ],
-  );
-  return buildProtocolTransaction({
-    feePayer: governanceAuthority,
     recentBlockhash: params.recentBlockhash,
     instructions: [instruction],
   });

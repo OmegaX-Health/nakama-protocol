@@ -567,37 +567,3 @@ pub struct SetPoolOraclePolicyArgs {
     pub allow_delegate_claim: bool,
     pub challenge_window_secs: u32,
 }
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct RegisterOutcomeSchemaArgs {
-    pub schema_key_hash: [u8; 32],
-    #[cfg_attr(not(feature = "quasar"), max_len(MAX_SCHEMA_KEY_LEN))]
-    pub schema_key: String,
-    pub version: u16,
-    pub schema_hash: [u8; 32],
-    pub schema_family: u8,
-    pub visibility: u8,
-    #[cfg_attr(not(feature = "quasar"), max_len(MAX_URI_LEN))]
-    pub metadata_uri: String,
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct VerifyOutcomeSchemaArgs {
-    pub verified: bool,
-}
-
-#[cfg_attr(
-    not(feature = "quasar"),
-    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
-)]
-pub struct BackfillSchemaDependencyLedgerArgs {
-    pub schema_key_hash: [u8; 32],
-    #[cfg_attr(not(feature = "quasar"), max_len(MAX_SCHEMA_DEPENDENCY_RULES))]
-    pub pool_rule_addresses: Vec<Pubkey>,
-}
