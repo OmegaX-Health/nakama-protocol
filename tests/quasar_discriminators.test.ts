@@ -73,6 +73,7 @@ test("Quasar account attributes match the checked-in protocol IDL", () => {
   const accounts = idl.accounts ?? [];
   const patterns = [
     /#\[cfg_attr\(feature = "quasar", account\(discriminator = \[([0-9,\s]+)\]\)\)\]\s+(?:#\[[^\]]+\]\s+)*pub struct ([A-Za-z0-9_]+)/g,
+    /#\[cfg_attr\(\s*feature = "quasar",\s*account\(discriminator = \[([0-9,\s]+)\]\)\s*\)\]\s+(?:#\[[^\]]+\]\s+)*pub struct ([A-Za-z0-9_]+)/g,
     /#\[cfg\(feature = "quasar"\)\]\s+#\[account\(discriminator = \[([0-9,\s]+)\]\)\]\s+pub struct ([A-Za-z0-9_]+)/g,
   ];
   const attributes = new Map<string, number[]>();

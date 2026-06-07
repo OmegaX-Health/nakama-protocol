@@ -166,6 +166,33 @@ pub struct RecordPremiumPaymentArgs {
     not(feature = "quasar"),
     derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
 )]
+pub struct DepositReserveCapitalArgs {
+    pub amount: u64,
+    pub terms_hash: [u8; 32],
+}
+
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
+pub struct ReturnReserveCapitalArgs {
+    pub amount: u64,
+    pub reason_hash: [u8; 32],
+}
+
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
+pub struct RecordReserveEarningsArgs {
+    pub amount: u64,
+    pub earnings_ref_hash: [u8; 32],
+}
+
+#[cfg_attr(
+    not(feature = "quasar"),
+    derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)
+)]
 pub struct CreateObligationArgs {
     #[cfg_attr(not(feature = "quasar"), max_len(MAX_ID_LEN))]
     pub obligation_id: String,

@@ -23,8 +23,12 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   const healthPlanAccount = idl.types.find((entry) => entry.name === "HealthPlan");
   const policySeriesAccount = idl.types.find((entry) => entry.name === "PolicySeries");
   const claimCaseAccount = idl.types.find((entry) => entry.name === "ClaimCase");
+  const capitalContributionAccount = idl.types.find((entry) => entry.name === "CapitalContribution");
   const openClaimCaseArgs = idl.types.find((entry) => entry.name === "OpenClaimCaseArgs");
   const adjudicateClaimCaseArgs = idl.types.find((entry) => entry.name === "AdjudicateClaimCaseArgs");
+  const depositReserveCapitalArgs = idl.types.find((entry) => entry.name === "DepositReserveCapitalArgs");
+  const returnReserveCapitalArgs = idl.types.find((entry) => entry.name === "ReturnReserveCapitalArgs");
+  const recordReserveEarningsArgs = idl.types.find((entry) => entry.name === "RecordReserveEarningsArgs");
 
   assert(!instructionNames.includes("initialize_protocol_governance"));
   assert(!instructionNames.includes("set_protocol_emergency_pause"));
@@ -35,6 +39,9 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(instructionNames.includes("create_health_plan"));
   assert(instructionNames.includes("create_policy_series"));
   assert(instructionNames.includes("open_funding_line"));
+  assert(instructionNames.includes("deposit_reserve_capital"));
+  assert(instructionNames.includes("return_reserve_capital"));
+  assert(instructionNames.includes("record_reserve_earnings"));
   assert(!instructionNames.includes("open_member_position"));
   assert(!instructionNames.includes("update_member_eligibility"));
   assert(!instructionNames.includes("register_oracle"));
@@ -89,6 +96,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(accountNames.includes("HealthPlan"));
   assert(accountNames.includes("PolicySeries"));
   assert(accountNames.includes("FundingLine"));
+  assert(accountNames.includes("CapitalContribution"));
   assert(accountNames.includes("Obligation"));
   assert(!accountNames.includes("MemberPosition"));
   assert(!accountNames.includes("OracleProfile"));
@@ -159,6 +167,10 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "source_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "vault_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.record_premium_payment.some((account) => account.name === "token_program"));
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.deposit_reserve_capital.some((account) => account.name === "capital_contribution"));
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.deposit_reserve_capital.some((account) => account.name === "source_token_account"));
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.return_reserve_capital.some((account) => account.name === "recipient_token_account"));
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.record_reserve_earnings.some((account) => account.name === "source_token_account"));
   assert(!idl.types.some((entry) => entry.name === "ConfigureReserveAssetRailArgs"));
   assert(!idl.types.some((entry) => entry.name === "PublishReserveAssetRailPriceArgs"));
   assert(!idl.types.some((entry) => entry.name === "ReserveAssetRail"));
@@ -178,9 +190,16 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(!claimCaseAccount?.type.fields?.some((field) => field.name === "member_position"));
   assert(claimCaseAccount?.type.fields?.some((field) => field.name === "evidence_ref_hash"));
   assert(claimCaseAccount?.type.fields?.some((field) => field.name === "decision_support_hash"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "contributor"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "contributed_amount"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "returned_amount"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "terms_hash"));
   assert(openClaimCaseArgs?.type.fields?.some((field) => field.name === "evidence_ref_hash"));
   assert(adjudicateClaimCaseArgs?.type.fields?.some((field) => field.name === "evidence_ref_hash"));
   assert(adjudicateClaimCaseArgs?.type.fields?.some((field) => field.name === "decision_support_hash"));
+  assert(depositReserveCapitalArgs?.type.fields?.some((field) => field.name === "terms_hash"));
+  assert(returnReserveCapitalArgs?.type.fields?.some((field) => field.name === "reason_hash"));
+  assert(recordReserveEarningsArgs?.type.fields?.some((field) => field.name === "earnings_ref_hash"));
   for (const removedClaimField of ["attestation_count"]) {
     assert(!claimCaseAccount?.type.fields?.some((field) => field.name === removedClaimField));
   }

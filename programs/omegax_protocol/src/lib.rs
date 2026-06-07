@@ -43,10 +43,11 @@ pub use types::*;
 // names after moving the contexts into child modules.
 #[cfg(not(feature = "quasar"))]
 pub(crate) use funding_obligations::{
-    __client_accounts_create_obligation, __client_accounts_fund_sponsor_budget,
-    __client_accounts_open_funding_line, __client_accounts_record_premium_payment,
+    __client_accounts_create_obligation, __client_accounts_deposit_reserve_capital,
+    __client_accounts_fund_sponsor_budget, __client_accounts_open_funding_line,
+    __client_accounts_record_premium_payment, __client_accounts_record_reserve_earnings,
     __client_accounts_release_reserve, __client_accounts_reserve_obligation,
-    __client_accounts_settle_obligation,
+    __client_accounts_return_reserve_capital, __client_accounts_settle_obligation,
 };
 #[cfg(not(feature = "quasar"))]
 #[program]
@@ -121,6 +122,27 @@ pub mod omegax_protocol {
         args: RecordPremiumPaymentArgs,
     ) -> Result<()> {
         crate::funding_obligations::record_premium_payment(ctx, args)
+    }
+
+    pub fn deposit_reserve_capital(
+        ctx: Context<DepositReserveCapital>,
+        args: DepositReserveCapitalArgs,
+    ) -> Result<()> {
+        crate::funding_obligations::deposit_reserve_capital(ctx, args)
+    }
+
+    pub fn return_reserve_capital(
+        ctx: Context<ReturnReserveCapital>,
+        args: ReturnReserveCapitalArgs,
+    ) -> Result<()> {
+        crate::funding_obligations::return_reserve_capital(ctx, args)
+    }
+
+    pub fn record_reserve_earnings(
+        ctx: Context<RecordReserveEarnings>,
+        args: RecordReserveEarningsArgs,
+    ) -> Result<()> {
+        crate::funding_obligations::record_reserve_earnings(ctx, args)
     }
 
     pub fn create_obligation(
@@ -404,6 +426,33 @@ pub mod omegax_protocol {
     #[instruction(discriminator = [196, 182, 182, 56, 146, 87, 170, 29])]
     pub fn record_premium_payment(ctx: Ctx<RecordPremiumPayment>, amount: u64) -> Result<()> {
         crate::funding_obligations::record_premium_payment(&mut ctx, amount)
+    }
+
+    #[instruction(discriminator = [131, 164, 249, 242, 239, 66, 61, 250])]
+    pub fn deposit_reserve_capital(
+        ctx: Ctx<DepositReserveCapital>,
+        amount: u64,
+        terms_hash: [u8; 32],
+    ) -> Result<()> {
+        crate::funding_obligations::deposit_reserve_capital(&mut ctx, amount, terms_hash)
+    }
+
+    #[instruction(discriminator = [184, 37, 251, 62, 82, 35, 174, 28])]
+    pub fn return_reserve_capital(
+        ctx: Ctx<ReturnReserveCapital>,
+        amount: u64,
+        reason_hash: [u8; 32],
+    ) -> Result<()> {
+        crate::funding_obligations::return_reserve_capital(&mut ctx, amount, reason_hash)
+    }
+
+    #[instruction(discriminator = [75, 139, 1, 155, 75, 113, 61, 166])]
+    pub fn record_reserve_earnings(
+        ctx: Ctx<RecordReserveEarnings>,
+        amount: u64,
+        earnings_ref_hash: [u8; 32],
+    ) -> Result<()> {
+        crate::funding_obligations::record_reserve_earnings(&mut ctx, amount, earnings_ref_hash)
     }
 
     #[instruction(discriminator = [216, 144, 172, 223, 19, 106, 220, 54])]

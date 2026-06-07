@@ -13,9 +13,13 @@ const {
 const {
   buildAttachClaimEvidenceRefTx,
   buildAttestClaimCaseTx,
+  buildDepositReserveCapitalTx,
   buildAdjudicateClaimCaseTx,
+  buildRecordReserveEarningsTx,
   buildOpenClaimCaseTx,
   buildOpenMemberPositionTx,
+  buildReturnReserveCapitalTx,
+  deriveCapitalContributionPda,
   deriveHealthPlanPda,
   deriveLiquidityPoolPda,
   deriveReserveDomainPda,
@@ -103,6 +107,80 @@ test("claim builders serialize proof fingerprints without restoring attestation 
         reserveAmount: 0n,
       }),
     /claim proof fingerprints are required/,
+  );
+});
+
+test("reserve capital builders serialize contributor and earnings fingerprints", () => {
+  const plan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
+  const fundingLine = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines[0]!;
+  const contributor = DEVNET_PROTOCOL_FIXTURE_STATE.wallets.find((wallet) => wallet.role === "member")!.address;
+  const tokenAccount = DEFAULT_HEALTH_PLAN_ADDRESS;
+  const capitalContribution = deriveCapitalContributionPda({
+    fundingLine: fundingLine.address,
+    contributor,
+  });
+  const termsHashHex = "44".repeat(32);
+  const earningsRefHashHex = "55".repeat(32);
+
+  const deposit = buildDepositReserveCapitalTx({
+    contributor,
+    healthPlanAddress: plan.address,
+    reserveDomainAddress: plan.reserveDomain,
+    fundingLineAddress: fundingLine.address,
+    assetMint: fundingLine.assetMint,
+    sourceTokenAccountAddress: tokenAccount,
+    vaultTokenAccountAddress: tokenAccount,
+    recentBlockhash: "11111111111111111111111111111111",
+    amount: 25n,
+    termsHashHex,
+  });
+  assert.equal(deposit.instructions[0]!.keys[5]!.pubkey.toBase58(), capitalContribution.toBase58());
+  assert.notEqual(deposit.instructions[0]!.data.indexOf(Buffer.from(termsHashHex, "hex")), -1);
+
+  const returned = buildReturnReserveCapitalTx({
+    authority: DEFAULT_HEALTH_PLAN_ADDRESS,
+    contributorAddress: contributor,
+    healthPlanAddress: plan.address,
+    reserveDomainAddress: plan.reserveDomain,
+    fundingLineAddress: fundingLine.address,
+    assetMint: fundingLine.assetMint,
+    vaultTokenAccountAddress: tokenAccount,
+    recipientTokenAccountAddress: tokenAccount,
+    recentBlockhash: "11111111111111111111111111111111",
+    amount: 10n,
+    reasonHashHex: "66".repeat(32),
+  });
+  assert.equal(returned.instructions[0]!.keys[5]!.pubkey.toBase58(), capitalContribution.toBase58());
+
+  const earnings = buildRecordReserveEarningsTx({
+    authority: DEFAULT_HEALTH_PLAN_ADDRESS,
+    healthPlanAddress: plan.address,
+    reserveDomainAddress: plan.reserveDomain,
+    fundingLineAddress: fundingLine.address,
+    assetMint: fundingLine.assetMint,
+    sourceTokenAccountAddress: tokenAccount,
+    vaultTokenAccountAddress: tokenAccount,
+    recentBlockhash: "11111111111111111111111111111111",
+    amount: 7n,
+    earningsRefHashHex,
+  });
+  assert.notEqual(earnings.instructions[0]!.data.indexOf(Buffer.from(earningsRefHashHex, "hex")), -1);
+
+  assert.throws(
+    () =>
+      buildRecordReserveEarningsTx({
+        authority: DEFAULT_HEALTH_PLAN_ADDRESS,
+        healthPlanAddress: plan.address,
+        reserveDomainAddress: plan.reserveDomain,
+        fundingLineAddress: fundingLine.address,
+        assetMint: fundingLine.assetMint,
+        sourceTokenAccountAddress: tokenAccount,
+        vaultTokenAccountAddress: tokenAccount,
+        recentBlockhash: "11111111111111111111111111111111",
+        amount: 1n,
+        earningsRefHashHex: "00".repeat(32),
+      }),
+    /earningsRefHashHex must be a nonzero/,
   );
 });
 

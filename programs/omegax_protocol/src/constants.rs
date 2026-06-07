@@ -20,6 +20,7 @@ pub const SEED_PLAN_RESERVE_LEDGER: &[u8] = b"plan_reserve_ledger";
 pub const SEED_POLICY_SERIES: &[u8] = b"policy_series";
 pub const SEED_FUNDING_LINE: &[u8] = b"funding_line";
 pub const SEED_FUNDING_LINE_LEDGER: &[u8] = b"funding_line_ledger";
+pub const SEED_CAPITAL_CONTRIBUTION: &[u8] = b"capital_contribution";
 pub const SEED_CLAIM_CASE: &[u8] = b"claim_case";
 pub const SEED_OBLIGATION: &[u8] = b"obligation";
 

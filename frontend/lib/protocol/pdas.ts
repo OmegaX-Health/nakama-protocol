@@ -8,6 +8,7 @@ import {
   SEED_ALLOCATION_LEDGER,
   SEED_ALLOCATION_POSITION,
   SEED_CAPITAL_CLASS,
+  SEED_CAPITAL_CONTRIBUTION,
   SEED_CLAIM_CASE,
   SEED_DOMAIN_ASSET_LEDGER,
   SEED_DOMAIN_ASSET_VAULT,
@@ -209,6 +210,21 @@ export function deriveFundingLineLedgerPda(params: {
       TEXT_ENCODER.encode(SEED_FUNDING_LINE_LEDGER),
       toPublicKey(params.fundingLine).toBytes(),
       toPublicKey(params.assetMint).toBytes(),
+    ],
+    params.programId ?? getProgramId(),
+  );
+}
+
+export function deriveCapitalContributionPda(params: {
+  fundingLine: PublicKeyish;
+  contributor: PublicKeyish;
+  programId?: PublicKey;
+}): PublicKey {
+  return derivePda(
+    [
+      TEXT_ENCODER.encode(SEED_CAPITAL_CONTRIBUTION),
+      toPublicKey(params.fundingLine).toBytes(),
+      toPublicKey(params.contributor).toBytes(),
     ],
     params.programId ?? getProgramId(),
   );

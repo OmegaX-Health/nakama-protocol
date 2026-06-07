@@ -89,6 +89,8 @@ test("[PT-02] The only token CPI lives in transfer_to_domain_vault and is inflow
   const expectedInflowHandlers = new Set([
     "fund_sponsor_budget",
     "record_premium_payment",
+    "deposit_reserve_capital",
+    "record_reserve_earnings",
   ]);
   const lines = programSource.split("\n");
   const violations: Array<{ lineno: number; handler: string }> = [];
@@ -105,7 +107,7 @@ test("[PT-02] The only token CPI lives in transfer_to_domain_vault and is inflow
     `Token CPI must only appear in inflow handlers; finding PT-02 would change if otherwise. Got: ${JSON.stringify(violations, null, 2)}`,
   );
 
-  // Sanity: all three expected inflow handlers must in fact use the helper.
+  // Sanity: all expected inflow handlers must in fact use the helper.
   const handlersWithCpi = new Set(
     callsiteLines.map(({ lineno }) => {
       return findEnclosingRustFunctionName(lines, lineno) ?? "<unknown>";

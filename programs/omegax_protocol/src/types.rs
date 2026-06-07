@@ -14,4 +14,7 @@ pub enum ScopeKind {
 pub enum FundingFlowKind {
     SponsorBudgetFunded = 0,
     PremiumRecorded = 1,
+    ReserveCapitalContributed = 2,
+    ReserveCapitalReturned = 3,
+    ReserveEarningsRecorded = 4,
 }

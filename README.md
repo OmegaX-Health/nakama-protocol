@@ -9,6 +9,7 @@ The current public launch reference is Genesis Protect Acute. `Travel 30` is the
 On Solana devnet beta today, the public surface in this repository can already anchor:
 
 - sponsor-funded reward or protection lanes with explicit reserve and funding-line attribution
+- contributor-signed backstop deposits with on-chain contribution/return balances
 - operator-mediated member enrollment, claim intake, obligations, reserve booking, and payouts
 
 ## Start Here
@@ -82,6 +83,7 @@ The canonical public model in this repository is:
 - `HealthPlan`: sponsor/liability root
 - `PolicySeries`: versioned product lane
 - `FundingLine`: plan-side funding source
+- `CapitalContribution`: contributor-level reserve capital balance per funding line
 - `ClaimCase`: explicit adjudication lifecycle for material claims
 - `Obligation`: canonical liability unit
 
@@ -90,6 +92,7 @@ The canonical public model in this repository is:
 This repository treats the earlier pool-first surface as retired devnet history and improves the current canonical model in place.
 
 - sponsor budgets are not LP capital
+- reserve-capital deposits are tracked as contribution facts, not tokenized LP shares
 - reward and protection reconcile through one reserve kernel
 - reserve truth is ledger-based, not implied by scattered treasuries
 - LP/capital-class formation, allocation, redemption, impairment, protocol-governance, fee-vault, token-gate, and outcome-schema registry rails are retired from the live program surface
@@ -108,6 +111,8 @@ This patch hardens the first publishable canonical OmegaX reserve, obligation, a
 - reserve domains define hard custody and legal settlement boundaries
 - health plans define sponsor, member, liability, and claims administration roots
 - funding lines separate sponsor budgets, premiums, backstops, and subsidies
+- backstop contributors can deposit into open backstop funding lines; the program tracks contributed and returned amounts for quote-oracle discounts or manual credits off-chain
+- realized reserve earnings can be recorded only after same-mint tokens are transferred back into the domain vault with a nonzero earnings reference hash
 - the canonical console now mounts `/plans`, `/claims`, `/members`, `/oracles`, and `/schemas` against live snapshot-backed protocol reads
 - `/plans/new` now launches from live reserve-domain, vault, oracle, and schema registry data rather than fixture-only defaults
 - `/plans/new?template=genesis-protect-acute` now bootstraps the canonical Genesis Protect Acute shell in place using the frozen Event 7 and Travel 30 launch truth
@@ -117,6 +122,7 @@ This patch hardens the first publishable canonical OmegaX reserve, obligation, a
 - `/members` and `/claims` now route into the mounted plan/operator workspace instead of advertising standalone self-serve dapp actions
 - mounted workbenches now include sponsor-side post-launch series, funding-line actions, claim intake, and payout handling
 - raw evidence review and oracle attestations are off-chain/adjunct concerns; the live program stores claim intake, proof fingerprints, adjudication, reserve, and settlement state
+- pricing/yield benefits stay outside the program math for now: the quote oracle reads contribution and earnings facts and decides whether to issue discounts, credits, or manual rewards
 
 Genesis Protect Acute sprint-1 launch truth is frozen in the public metadata and fixture surface for the April 16-20, 2026 implementation window.
 

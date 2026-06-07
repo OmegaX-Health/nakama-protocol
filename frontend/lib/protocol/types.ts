@@ -142,6 +142,18 @@ export type FundingLineSnapshot = {
   sheet?: PartialReserveBalanceSheet;
 };
 
+export type CapitalContributionSnapshot = {
+  address: string;
+  reserveDomain: string;
+  healthPlan: string;
+  fundingLine: string;
+  contributor: string;
+  assetMint: string;
+  contributedAmount: BigNumberish;
+  returnedAmount: BigNumberish;
+  termsHashHex: string;
+};
+
 export type ClaimCaseSnapshot = {
   address: string;
   reserveDomain: string;
@@ -364,6 +376,7 @@ export type ProtocolConsoleSnapshot = {
   policySeries: PolicySeriesSnapshot[];
   memberPositions: MemberPositionSnapshot[];
   fundingLines: FundingLineSnapshot[];
+  capitalContributions: CapitalContributionSnapshot[];
   claimCases: ClaimCaseSnapshot[];
   obligations: ObligationSnapshot[];
   liquidityPools: LiquidityPoolSnapshot[];

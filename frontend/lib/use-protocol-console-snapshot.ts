@@ -26,6 +26,7 @@ const EMPTY_PROTOCOL_CONSOLE_SNAPSHOT: ProtocolConsoleSnapshot = {
   policySeries: [],
   memberPositions: [],
   fundingLines: [],
+  capitalContributions: [],
   claimCases: [],
   obligations: [],
   liquidityPools: [],

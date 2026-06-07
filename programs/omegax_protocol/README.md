@@ -46,6 +46,7 @@ The active public object model is:
 - `PolicySeries`
 - `FundingLine`
 - `FundingLineLedger`
+- `CapitalContribution`
 - `ClaimCase`
 - `Obligation`
 
@@ -56,6 +57,10 @@ movement now flows through reserve domains, health plans, policy series,
 funding lines, obligations, and claim cases. Claim cases keep only proof
 fingerprints for evidence and decision packages; raw evidence review and oracle
 attestations stay off-chain or in adjunct programs instead of the base protocol.
+Backstop capital now uses `CapitalContribution` records instead of tokenized LP
+positions: contributors sign deposits into open backstop funding lines, the
+program tracks contributed and returned amounts, and quote/reward policy remains
+off-chain.
 
 Founder reservations are off-chain payment reservations into Squads custody,
 not on-chain protocol accounts. They do not increase claims-paying reserve,
@@ -64,6 +69,9 @@ books reserve through the existing reserve, premium, and claim controls.
 The base program now enforces same-asset settlement through domain asset vaults,
 domain/funding/plan/series ledgers, funding-line asset binding, and SPL outflow
 accounts instead of a separate reserve-asset rail and price feed layer.
+Realized reserve earnings can be recorded only after tokens move back into the
+domain vault, and each recording carries a nonzero reference hash for off-chain
+auditability.
 
 ## Important reviewer rule
 

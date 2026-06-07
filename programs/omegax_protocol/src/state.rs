@@ -206,6 +206,24 @@ pub struct FundingLine<'info> {
     pub line_id: String<u32, 32>,
 }
 
+#[cfg_attr(not(feature = "quasar"), account)]
+#[cfg_attr(
+    feature = "quasar",
+    account(discriminator = [224, 26, 65, 64, 146, 247, 37, 24])
+)]
+#[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
+pub struct CapitalContribution {
+    pub reserve_domain: Pubkey,
+    pub health_plan: Pubkey,
+    pub funding_line: Pubkey,
+    pub contributor: Pubkey,
+    pub asset_mint: Pubkey,
+    pub contributed_amount: u64,
+    pub returned_amount: u64,
+    pub terms_hash: [u8; 32],
+    pub bump: u8,
+}
+
 #[cfg(not(feature = "quasar"))]
 #[account]
 #[cfg_attr(not(feature = "quasar"), derive(InitSpace))]
@@ -400,6 +418,7 @@ pub trait AccountDataLifetime<'info> {
     type HealthPlan;
     type PolicySeries;
     type FundingLine;
+    type CapitalContribution;
     type ClaimCase;
     type Obligation;
 }
@@ -410,6 +429,7 @@ impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
     type HealthPlan = HealthPlan;
     type PolicySeries = PolicySeries;
     type FundingLine = FundingLine;
+    type CapitalContribution = CapitalContribution;
     type ClaimCase = ClaimCase;
     type Obligation = Obligation;
 }
@@ -420,6 +440,7 @@ impl<'info> AccountDataLifetime<'info> for FrameworkAccountData {
     type HealthPlan = HealthPlan<'info>;
     type PolicySeries = PolicySeries<'info>;
     type FundingLine = FundingLine<'info>;
+    type CapitalContribution = CapitalContribution;
     type ClaimCase = ClaimCase<'info>;
     type Obligation = Obligation<'info>;
 }
@@ -432,6 +453,8 @@ pub type PolicySeriesAccountData<'info> =
     <FrameworkAccountData as AccountDataLifetime<'info>>::PolicySeries;
 pub type FundingLineAccountData<'info> =
     <FrameworkAccountData as AccountDataLifetime<'info>>::FundingLine;
+pub type CapitalContributionAccountData<'info> =
+    <FrameworkAccountData as AccountDataLifetime<'info>>::CapitalContribution;
 pub type ClaimCaseAccountData<'info> =
     <FrameworkAccountData as AccountDataLifetime<'info>>::ClaimCase;
 pub type ObligationAccountData<'info> =
@@ -465,6 +488,7 @@ impl_quasar_fixed_init_space!(
     DomainAssetLedger,
     PlanReserveLedger,
     FundingLineLedger,
+    CapitalContribution,
 );
 
 #[cfg(feature = "quasar")]

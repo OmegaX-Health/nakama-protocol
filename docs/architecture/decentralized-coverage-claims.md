@@ -92,15 +92,21 @@ Each material claim links back to:
 - one `HealthPlan`
 - one `PolicySeries`
 - one `FundingLine`
-- optional `LiquidityPool`, `CapitalClass`, and `AllocationPosition` when LP capital is part of the funding stack
+- optional contributor-level `CapitalContribution` facts when an open backstop funding line is funded by outside capital
 
 That keeps it possible to answer:
 
 - which funding line is responsible
-- which capital class is exposed
+- which contributor supplied simple backstop capital, if any
 - how much is reserved
 - how much is payable
 - what remains free or redeemable
+
+Contributor economics are intentionally not priced on-chain in this version. The
+quote oracle can read `CapitalContribution` records and realized reserve
+earnings references to decide discounts, credits, or manual rewards, while the
+program stays focused on custody, reserve accounting, claim fingerprints, and
+payout safety.
 
 ## Reviewer path
 
@@ -121,6 +127,6 @@ The localnet audit covers:
 - explicit protection-series premium funding
 - claim-case creation, adjudication, and linkage
 - approved and settled claim states
-- obligation linkage back to plan-side and capital-side funding
+- obligation linkage back to plan-side funding and backstop contribution facts
 - linked claim cases mirroring reserve and settlement state from the obligation path
 - reserve visibility during payout and post-settlement

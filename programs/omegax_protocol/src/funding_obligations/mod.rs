@@ -25,9 +25,15 @@ pub(crate) use funding_lines::open_funding_line;
 #[cfg(feature = "quasar")]
 pub(crate) use funding_lines::open_funding_line;
 #[cfg(not(feature = "quasar"))]
-pub(crate) use inflows::{fund_sponsor_budget, record_premium_payment};
+pub(crate) use inflows::{
+    deposit_reserve_capital, fund_sponsor_budget, record_premium_payment, record_reserve_earnings,
+    return_reserve_capital,
+};
 #[cfg(feature = "quasar")]
-pub(crate) use inflows::{fund_sponsor_budget, record_premium_payment};
+pub(crate) use inflows::{
+    deposit_reserve_capital, fund_sponsor_budget, record_premium_payment, record_reserve_earnings,
+    return_reserve_capital,
+};
 #[cfg(not(feature = "quasar"))]
 pub(crate) use obligations::create_obligation;
 #[cfg(feature = "quasar")]
@@ -42,7 +48,10 @@ pub(crate) use settlement::settle_obligation;
 pub(crate) use settlement::settle_obligation;
 
 pub use funding_lines::OpenFundingLine;
-pub use inflows::{FundSponsorBudget, RecordPremiumPayment};
+pub use inflows::{
+    DepositReserveCapital, FundSponsorBudget, RecordPremiumPayment, RecordReserveEarnings,
+    ReturnReserveCapital,
+};
 pub use obligations::CreateObligation;
 pub use reserves::{ReleaseReserve, ReserveObligation};
 pub use settlement::SettleObligation;
@@ -51,7 +60,9 @@ pub use settlement::SettleObligation;
 pub(crate) use funding_lines::__client_accounts_open_funding_line;
 #[cfg(not(feature = "quasar"))]
 pub(crate) use inflows::{
-    __client_accounts_fund_sponsor_budget, __client_accounts_record_premium_payment,
+    __client_accounts_deposit_reserve_capital, __client_accounts_fund_sponsor_budget,
+    __client_accounts_record_premium_payment, __client_accounts_record_reserve_earnings,
+    __client_accounts_return_reserve_capital,
 };
 #[cfg(not(feature = "quasar"))]
 pub(crate) use obligations::__client_accounts_create_obligation;

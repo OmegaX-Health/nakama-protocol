@@ -23,6 +23,7 @@ export const SEED_MEMBER_POSITION = "member_position";
 export const SEED_MEMBERSHIP_ANCHOR_SEAT = "membership_anchor_seat";
 export const SEED_FUNDING_LINE = "funding_line";
 export const SEED_FUNDING_LINE_LEDGER = "funding_line_ledger";
+export const SEED_CAPITAL_CONTRIBUTION = "capital_contribution";
 export const SEED_CLAIM_CASE = "claim_case";
 export const SEED_OBLIGATION = "obligation";
 export const SEED_LIQUIDITY_POOL = "liquidity_pool";

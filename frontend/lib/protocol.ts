@@ -77,6 +77,7 @@ import type {
   PolicySeriesSnapshot,
   MemberPositionSnapshot,
   FundingLineSnapshot,
+  CapitalContributionSnapshot,
   ClaimCaseSnapshot,
   ObligationSnapshot,
   LiquidityPoolSnapshot,
@@ -140,6 +141,7 @@ import {
   deriveAllocationLedgerPda,
   deriveAllocationPositionPda,
   deriveCapitalClassPda,
+  deriveCapitalContributionPda,
   deriveClaimCasePda,
   deriveDomainAssetLedgerPda,
   deriveDomainAssetVaultPda,
@@ -1097,6 +1099,7 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
     policySeries: [],
     memberPositions: [],
     fundingLines: [],
+    capitalContributions: [],
     claimCases: [],
     obligations: [],
     liquidityPools: [],
@@ -1235,6 +1238,19 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           releasedAmount: bigintFromAnchorValue(decodedField(decoded, "releasedAmount")),
           returnedAmount: bigintFromAnchorValue(decodedField(decoded, "returnedAmount")),
           status: Number(decodedField(decoded, "status") ?? 0),
+        });
+        break;
+      case "CapitalContribution":
+        snapshot.capitalContributions.push({
+          address,
+          reserveDomain: asAddress(decodedField(decoded, "reserveDomain")),
+          healthPlan: asAddress(decodedField(decoded, "healthPlan")),
+          fundingLine: asAddress(decodedField(decoded, "fundingLine")),
+          contributor: asAddress(decodedField(decoded, "contributor")),
+          assetMint: asAddress(decodedField(decoded, "assetMint")),
+          contributedAmount: bigintFromAnchorValue(decodedField(decoded, "contributedAmount")),
+          returnedAmount: bigintFromAnchorValue(decodedField(decoded, "returnedAmount")),
+          termsHashHex: bytesToHex(decodedField(decoded, "termsHash")),
         });
         break;
       case "ClaimCase":
@@ -1469,6 +1485,10 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
   snapshot.healthPlans = sortByLabel(snapshot.healthPlans, (row) => row.displayName || row.planId);
   snapshot.policySeries = sortByLabel(snapshot.policySeries, (row) => row.displayName || row.seriesId);
   snapshot.fundingLines = sortByLabel(snapshot.fundingLines, (row) => row.displayName || row.lineId);
+  snapshot.capitalContributions = sortByLabel(
+    snapshot.capitalContributions,
+    (row) => `${row.fundingLine}:${row.contributor}`,
+  );
   snapshot.claimCases = sortByLabel(snapshot.claimCases, (row) => row.claimId);
   snapshot.obligations = sortByLabel(snapshot.obligations, (row) => row.obligationId);
   snapshot.liquidityPools = sortByLabel(snapshot.liquidityPools, (row) => row.displayName || row.poolId);
@@ -2556,6 +2576,215 @@ export function buildRecordPremiumPaymentTx(params: {
     recentBlockhash: params.recentBlockhash,
     instructionName: "record_premium_payment",
     args: { amount: params.amount },
+    accounts: [
+      { pubkey: authority, isSigner: true },
+      { pubkey: params.healthPlanAddress },
+      {
+        pubkey: deriveDomainAssetVaultPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: deriveDomainAssetLedgerPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      { pubkey: params.fundingLineAddress, isWritable: true },
+      {
+        pubkey: deriveFundingLineLedgerPda({
+          fundingLine: params.fundingLineAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: derivePlanReserveLedgerPda({
+          healthPlan: params.healthPlanAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      { pubkey: params.sourceTokenAccountAddress, isWritable: true },
+      { pubkey: params.assetMint },
+      { pubkey: params.vaultTokenAccountAddress, isWritable: true },
+      { pubkey: tokenProgramId },
+    ],
+  });
+}
+
+export function buildDepositReserveCapitalTx(params: {
+  contributor: PublicKeyish;
+  healthPlanAddress: PublicKeyish;
+  reserveDomainAddress: PublicKeyish;
+  fundingLineAddress: PublicKeyish;
+  assetMint: PublicKeyish;
+  sourceTokenAccountAddress: PublicKeyish;
+  vaultTokenAccountAddress: PublicKeyish;
+  tokenProgramId?: PublicKeyish | null;
+  recentBlockhash: string;
+  amount: bigint;
+  termsHashHex?: string | null;
+}): Transaction {
+  const contributor = toPublicKey(params.contributor);
+  const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
+  return buildProtocolTransactionFromInstruction({
+    feePayer: contributor,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "deposit_reserve_capital",
+    args: {
+      amount: params.amount,
+      terms_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.termsHashHex), 32)),
+    },
+    accounts: [
+      { pubkey: contributor, isSigner: true, isWritable: true },
+      { pubkey: params.healthPlanAddress },
+      {
+        pubkey: deriveDomainAssetVaultPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: deriveDomainAssetLedgerPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      { pubkey: params.fundingLineAddress, isWritable: true },
+      {
+        pubkey: deriveCapitalContributionPda({
+          fundingLine: params.fundingLineAddress,
+          contributor,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: deriveFundingLineLedgerPda({
+          fundingLine: params.fundingLineAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: derivePlanReserveLedgerPda({
+          healthPlan: params.healthPlanAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      { pubkey: params.sourceTokenAccountAddress, isWritable: true },
+      { pubkey: params.assetMint },
+      { pubkey: params.vaultTokenAccountAddress, isWritable: true },
+      { pubkey: tokenProgramId },
+      { pubkey: SystemProgram.programId },
+    ],
+  });
+}
+
+export function buildReturnReserveCapitalTx(params: {
+  authority: PublicKeyish;
+  contributorAddress: PublicKeyish;
+  healthPlanAddress: PublicKeyish;
+  reserveDomainAddress: PublicKeyish;
+  fundingLineAddress: PublicKeyish;
+  assetMint: PublicKeyish;
+  vaultTokenAccountAddress: PublicKeyish;
+  recipientTokenAccountAddress: PublicKeyish;
+  tokenProgramId?: PublicKeyish | null;
+  recentBlockhash: string;
+  amount: bigint;
+  reasonHashHex?: string | null;
+}): Transaction {
+  const authority = toPublicKey(params.authority);
+  const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
+  return buildProtocolTransactionFromInstruction({
+    feePayer: authority,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "return_reserve_capital",
+    args: {
+      amount: params.amount,
+      reason_hash: Array.from(hexToFixedBytes(normalizeOptionalHex32(params.reasonHashHex), 32)),
+    },
+    accounts: [
+      { pubkey: authority, isSigner: true },
+      { pubkey: params.healthPlanAddress },
+      {
+        pubkey: deriveDomainAssetVaultPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: deriveDomainAssetLedgerPda({
+          reserveDomain: params.reserveDomainAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      { pubkey: params.fundingLineAddress, isWritable: true },
+      {
+        pubkey: deriveCapitalContributionPda({
+          fundingLine: params.fundingLineAddress,
+          contributor: params.contributorAddress,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: deriveFundingLineLedgerPda({
+          fundingLine: params.fundingLineAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      {
+        pubkey: derivePlanReserveLedgerPda({
+          healthPlan: params.healthPlanAddress,
+          assetMint: params.assetMint,
+        }),
+        isWritable: true,
+      },
+      { pubkey: params.assetMint },
+      { pubkey: params.vaultTokenAccountAddress, isWritable: true },
+      { pubkey: params.recipientTokenAccountAddress, isWritable: true },
+      { pubkey: tokenProgramId },
+    ],
+  });
+}
+
+export function buildRecordReserveEarningsTx(params: {
+  authority: PublicKeyish;
+  healthPlanAddress: PublicKeyish;
+  reserveDomainAddress: PublicKeyish;
+  fundingLineAddress: PublicKeyish;
+  assetMint: PublicKeyish;
+  sourceTokenAccountAddress: PublicKeyish;
+  vaultTokenAccountAddress: PublicKeyish;
+  tokenProgramId?: PublicKeyish | null;
+  recentBlockhash: string;
+  amount: bigint;
+  earningsRefHashHex: string;
+}): Transaction {
+  const authority = toPublicKey(params.authority);
+  const earningsRefHashHex = normalizeHex32(params.earningsRefHashHex);
+  if (!isNonZeroHashHex(earningsRefHashHex)) {
+    throw new Error("earningsRefHashHex must be a nonzero 32-byte hex string.");
+  }
+  const tokenProgramId = classicTokenProgramId(params.tokenProgramId);
+  return buildProtocolTransactionFromInstruction({
+    feePayer: authority,
+    recentBlockhash: params.recentBlockhash,
+    instructionName: "record_reserve_earnings",
+    args: {
+      amount: params.amount,
+      earnings_ref_hash: Array.from(hexToFixedBytes(earningsRefHashHex, 32)),
+    },
     accounts: [
       { pubkey: authority, isSigner: true },
       { pubkey: params.healthPlanAddress },

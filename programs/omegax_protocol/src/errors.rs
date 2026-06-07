@@ -91,6 +91,12 @@ pub enum OmegaXProtocolError {
     ClaimProofFingerprintRequired,
     #[msg("Claim proof fingerprints are locked after reserve or payout")]
     ClaimProofFingerprintLocked,
+    #[msg("Capital contribution amount exceeds available contribution")]
+    CapitalContributionAmountExceedsAvailable,
+    #[msg("Capital contribution terms hash mismatch")]
+    CapitalContributionTermsMismatch,
+    #[msg("Reserve earnings reference hash is required")]
+    ReserveEarningsReferenceRequired,
 }
 
 #[cfg(feature = "quasar")]
@@ -138,4 +144,7 @@ pub enum OmegaXProtocolError {
     DirectClaimReserveUnsupported,
     ClaimProofFingerprintRequired,
     ClaimProofFingerprintLocked,
+    CapitalContributionAmountExceedsAvailable,
+    CapitalContributionTermsMismatch,
+    ReserveEarningsReferenceRequired,
 }

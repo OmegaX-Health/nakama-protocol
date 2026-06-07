@@ -13,12 +13,15 @@ pub mod instruction {
     pub const IX_CREATE_OBLIGATION: [u8; 8] = [216, 144, 172, 223, 19, 106, 220, 54];
     pub const IX_CREATE_POLICY_SERIES: [u8; 8] = [70, 162, 231, 218, 211, 136, 110, 176];
     pub const IX_CREATE_RESERVE_DOMAIN: [u8; 8] = [222, 2, 8, 218, 45, 157, 193, 246];
+    pub const IX_DEPOSIT_RESERVE_CAPITAL: [u8; 8] = [131, 164, 249, 242, 239, 66, 61, 250];
     pub const IX_FUND_SPONSOR_BUDGET: [u8; 8] = [150, 210, 161, 31, 50, 12, 224, 32];
     pub const IX_OPEN_CLAIM_CASE: [u8; 8] = [151, 125, 231, 211, 63, 132, 248, 184];
     pub const IX_OPEN_FUNDING_LINE: [u8; 8] = [231, 140, 66, 127, 163, 1, 197, 9];
     pub const IX_RECORD_PREMIUM_PAYMENT: [u8; 8] = [196, 182, 182, 56, 146, 87, 170, 29];
+    pub const IX_RECORD_RESERVE_EARNINGS: [u8; 8] = [75, 139, 1, 155, 75, 113, 61, 166];
     pub const IX_RELEASE_RESERVE: [u8; 8] = [170, 102, 52, 144, 33, 176, 41, 60];
     pub const IX_RESERVE_OBLIGATION: [u8; 8] = [48, 113, 133, 225, 40, 36, 197, 86];
+    pub const IX_RETURN_RESERVE_CAPITAL: [u8; 8] = [184, 37, 251, 62, 82, 35, 174, 28];
     pub const IX_SETTLE_CLAIM_CASE: [u8; 8] = [178, 123, 229, 204, 50, 204, 91, 71];
     pub const IX_SETTLE_OBLIGATION: [u8; 8] = [209, 166, 218, 35, 147, 139, 238, 208];
     pub const IX_UPDATE_HEALTH_PLAN_CONTROLS: [u8; 8] = [108, 11, 28, 140, 226, 164, 239, 113];
@@ -27,6 +30,7 @@ pub mod instruction {
 }
 
 pub mod account {
+    pub const ACCOUNT_CAPITAL_CONTRIBUTION: [u8; 8] = [224, 26, 65, 64, 146, 247, 37, 24];
     pub const ACCOUNT_CLAIM_CASE: [u8; 8] = [7, 178, 225, 1, 54, 47, 117, 180];
     pub const ACCOUNT_DOMAIN_ASSET_LEDGER: [u8; 8] = [82, 42, 164, 106, 70, 160, 154, 99];
     pub const ACCOUNT_DOMAIN_ASSET_VAULT: [u8; 8] = [105, 110, 75, 179, 247, 58, 135, 229];
