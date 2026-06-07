@@ -886,6 +886,69 @@ fn claim_intake_submitter_allows_operator_for_explicit_claimant() {
 }
 
 #[test]
+fn direct_claim_settlement_control_requires_plan_admin() {
+    let plan_admin = Pubkey::new_unique();
+    let sponsor_operator = Pubkey::new_unique();
+    let claims_operator = Pubkey::new_unique();
+    let plan = sample_health_plan_roles(
+        plan_admin,
+        sponsor_operator,
+        claims_operator,
+        Pubkey::new_unique(),
+    );
+
+    assert!(require_direct_claim_settlement_control(&plan_admin, &plan).is_ok());
+
+    let claims_error =
+        require_direct_claim_settlement_control(&claims_operator, &plan).unwrap_err();
+    assert!(claims_error.to_string().contains("Unauthorized"));
+
+    let sponsor_error =
+        require_direct_claim_settlement_control(&sponsor_operator, &plan).unwrap_err();
+    assert!(sponsor_error.to_string().contains("Unauthorized"));
+}
+
+#[test]
+fn plan_pause_guards_block_money_and_claim_finality_paths() {
+    let plan_admin = Pubkey::new_unique();
+    let mut plan = sample_health_plan_roles(
+        plan_admin,
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+    );
+
+    assert!(require_reserve_rails_open(&plan).is_ok());
+    assert!(require_claim_intake_open(&plan).is_ok());
+    assert!(require_claim_finality_open(&plan).is_ok());
+    assert!(require_capital_subscriptions_open(&plan).is_ok());
+
+    plan.pause_flags = PAUSE_FLAG_PROTOCOL_EMERGENCY;
+    assert_eq!(
+        require_reserve_rails_open(&plan).unwrap_err(),
+        OmegaXProtocolError::HealthPlanPaused.into()
+    );
+
+    plan.pause_flags = PAUSE_FLAG_CLAIM_INTAKE;
+    assert_eq!(
+        require_claim_intake_open(&plan).unwrap_err(),
+        OmegaXProtocolError::ClaimIntakePaused.into()
+    );
+
+    plan.pause_flags = PAUSE_FLAG_ORACLE_FINALITY_HOLD;
+    assert_eq!(
+        require_claim_finality_open(&plan).unwrap_err(),
+        OmegaXProtocolError::OracleFinalityHeld.into()
+    );
+
+    plan.pause_flags = PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS;
+    assert_eq!(
+        require_capital_subscriptions_open(&plan).unwrap_err(),
+        OmegaXProtocolError::HealthPlanPaused.into()
+    );
+}
+
+#[test]
 fn claim_settlement_routes_to_claimant_when_no_delegate() {
     let claimant = Pubkey::new_unique();
     let policy_series = Pubkey::new_unique();

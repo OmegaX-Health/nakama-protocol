@@ -1,21 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Devnet simulate-only smoke harness for the operator drawer builders.
+// Devnet simulate-only smoke harness for the live operator builders.
 //
-// Replicates the exact argument construction used by
-// frontend/components/plan-operator-drawer.tsx and
-// frontend/components/governance-operator-drawer.tsx, then signs each tx
-// with the local governance keypair and runs connection.simulateTransaction
-// against devnet. Does NOT submit. No state is mutated.
+// Replicates the current trimmed reserve, plan, funding, obligation, and claim
+// builder shapes, then signs each tx with the local operator keypair and runs
+// connection.simulateTransaction against devnet. Does NOT submit. No state is
+// mutated.
 //
 // Usage:
 //   npm run devnet:operator:drawer:sim
 //
 // Keypair is read from OMEGAX_DEVNET_PROTOCOL_GOVERNANCE_KEYPAIR_PATH
-// (falling back to SOLANA_KEYPAIR, then ~/.config/solana/id.json). The pubkey
-// must equal the devnet governance wallet configured in
-// NEXT_PUBLIC_DEVNET_PROTOCOL_GOVERNANCE_WALLET; mismatch aborts before any RPC
-// work.
+// (falling back to SOLANA_KEYPAIR, then ~/.config/solana/id.json). When
+// NEXT_PUBLIC_DEVNET_PROTOCOL_GOVERNANCE_WALLET is configured, the pubkey must
+// match it before any RPC work begins.
 
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
@@ -79,49 +77,9 @@ function hashReason(value: string): string {
   return hashStringTo32HexLocal(trimmed);
 }
 
-function normalizedMembershipLabel(value?: string | null): string {
-  return (value ?? "").trim().toLowerCase().replace(/[-\s]+/g, "_");
-}
-
-function membershipModeForPlan(protocol: ProtocolModule, plan: { membershipModeValue?: number; membershipModel: string }): number {
-  if (typeof plan.membershipModeValue === "number") return plan.membershipModeValue;
-  const label = normalizedMembershipLabel(plan.membershipModel);
-  if (label.includes("invite")) return protocol.MEMBERSHIP_MODE_INVITE_ONLY;
-  if (
-    label.includes("token") ||
-    label.includes("nft") ||
-    label.includes("stake") ||
-    label.includes("fungible")
-  ) {
-    return protocol.MEMBERSHIP_MODE_TOKEN_GATE;
-  }
-  return protocol.MEMBERSHIP_MODE_OPEN;
-}
-
-function membershipGateKindForPlan(
-  protocol: ProtocolModule,
-  plan: { membershipGateKindValue?: number; membershipGateKind?: string; membershipModel: string },
-): number {
-  if (typeof plan.membershipGateKindValue === "number") return plan.membershipGateKindValue;
-  const gateLabel = normalizedMembershipLabel(plan.membershipGateKind);
-  if (gateLabel.includes("invite")) return protocol.MEMBERSHIP_GATE_KIND_INVITE_ONLY;
-  if (gateLabel.includes("nft")) return protocol.MEMBERSHIP_GATE_KIND_NFT_ANCHOR;
-  if (gateLabel.includes("stake")) return protocol.MEMBERSHIP_GATE_KIND_STAKE_ANCHOR;
-  if (gateLabel.includes("fungible") || gateLabel.includes("token")) {
-    return protocol.MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT;
-  }
-
-  const mode = membershipModeForPlan(protocol, plan);
-  if (mode === protocol.MEMBERSHIP_MODE_INVITE_ONLY) return protocol.MEMBERSHIP_GATE_KIND_INVITE_ONLY;
-  if (mode === protocol.MEMBERSHIP_MODE_TOKEN_GATE) return protocol.MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT;
-  return protocol.MEMBERSHIP_GATE_KIND_OPEN;
-}
-
-function proofModeForPlan(protocol: ProtocolModule, plan: { membershipModeValue?: number; membershipModel: string }): number {
-  const mode = membershipModeForPlan(protocol, plan);
-  if (mode === protocol.MEMBERSHIP_MODE_INVITE_ONLY) return protocol.MEMBERSHIP_PROOF_MODE_INVITE_PERMIT;
-  if (mode === protocol.MEMBERSHIP_MODE_TOKEN_GATE) return protocol.MEMBERSHIP_PROOF_MODE_TOKEN_GATE;
-  return protocol.MEMBERSHIP_PROOF_MODE_OPEN;
+function publicKeyOrFallback(value: string | null | undefined, fallback: PublicKey | string): PublicKey | string {
+  const trimmed = String(value ?? "").trim();
+  return trimmed || fallback;
 }
 
 function classifyError(
@@ -143,13 +101,7 @@ function classifyError(
     ?.replace(/.*Error Code: /, "")
     .split(".")[0]
     ?.trim();
-  if (
-    anchorCode === "ConstraintSeeds" ||
-    anchorCode === "MembershipProofModeMismatch" ||
-    anchorCode === "MembershipGateConfigurationInvalid" ||
-    anchorCode === "MembershipTokenGateAccountMissing" ||
-    anchorCode === "MembershipInviteAuthorityInvalid"
-  ) {
+  if (anchorCode === "ConstraintSeeds") {
     return "FAIL";
   }
   // If the program emitted an AnchorError, the builder reached the program
@@ -259,7 +211,20 @@ async function main(): Promise<void> {
   const fixturesModule = (await import("../frontend/lib/devnet-fixtures.ts")) as FixturesModule;
   const fixtures = fixturesModule.DEVNET_PROTOCOL_FIXTURE_STATE;
 
-  const plan = fixtures.healthPlans[0] ?? null;
+  const plan =
+    fixtures.healthPlans.find((candidate) =>
+      fixtures.claimCases.some((entry) => entry.healthPlan === candidate.address) &&
+      fixtures.fundingLines.some(
+        (entry) =>
+          entry.healthPlan === candidate.address &&
+          entry.lineType === protocol.FUNDING_LINE_TYPE_PREMIUM_INCOME,
+      ),
+    ) ??
+    fixtures.healthPlans.find((candidate) =>
+      fixtures.fundingLines.some((entry) => entry.healthPlan === candidate.address),
+    ) ??
+    fixtures.healthPlans[0] ??
+    null;
   const reserveDomain =
     (plan ? fixtures.reserveDomains.find((domain) => domain.address === plan.reserveDomain) : null) ??
     fixtures.reserveDomains[0] ??
@@ -269,9 +234,6 @@ async function main(): Promise<void> {
     : [];
   const planFundingLines = plan
     ? fixtures.fundingLines.filter((entry) => entry.healthPlan === plan.address)
-    : [];
-  const planMembers = plan
-    ? fixtures.memberPositions.filter((entry) => entry.healthPlan === plan.address)
     : [];
   const planClaims = plan
     ? fixtures.claimCases.filter((entry) => entry.healthPlan === plan.address)
@@ -284,6 +246,15 @@ async function main(): Promise<void> {
     planFundingLines.find((l) => l.lineType === protocol.FUNDING_LINE_TYPE_SPONSOR_BUDGET) ?? null;
   const premiumLine =
     planFundingLines.find((l) => l.lineType === protocol.FUNDING_LINE_TYPE_PREMIUM_INCOME) ?? null;
+  const capitalLine =
+    planFundingLines.find((l) => l.lineType === protocol.FUNDING_LINE_TYPE_BACKSTOP) ??
+    planFundingLines[0] ??
+    null;
+  const earningsLine =
+    planFundingLines.find(
+      (l) => l.lineType === protocol.FUNDING_LINE_TYPE_BACKSTOP || l.lineType === protocol.FUNDING_LINE_TYPE_SUBSIDY,
+    ) ??
+    capitalLine;
   const operatorSourceTokenAccount =
     process.env.NEXT_PUBLIC_DEVNET_OPERATOR_SOURCE_TOKEN_ACCOUNT ||
     process.env.OMEGAX_DEVNET_OPERATOR_SOURCE_TOKEN_ACCOUNT ||
@@ -306,16 +277,6 @@ async function main(): Promise<void> {
     planObligations.find((entry) => entry.claimCase === claim?.address) ??
     planObligations[0] ??
     null;
-  const member =
-    (claim ? planMembers.find((entry) => entry.address === claim.memberPosition) : null) ??
-    planMembers[0] ??
-    null;
-  const capitalClass = fixtures.capitalClasses[0] ?? null;
-  const pool = fixtures.liquidityPools[0] ?? null;
-  const allocation =
-    fixtures.allocationPositions.find((entry) => entry.healthPlan === plan?.address) ??
-    fixtures.allocationPositions[0] ??
-    null;
 
   const results: FlowResult[] = [];
 
@@ -326,23 +287,7 @@ async function main(): Promise<void> {
     note: reason,
   });
 
-  // ── GOVERNANCE DRAWER ─────────────────────────────────────────────────────
-
-  results.push(
-    await simulate(
-      connection,
-      signer,
-      blockhash,
-      protocol.buildInitializeProtocolGovernanceTx({
-        governanceAuthority: signer.publicKey,
-        recentBlockhash: blockhash,
-        emergencyPaused: false,
-      }),
-      "Initialize protocol governance",
-      "governance",
-      true,
-    ),
-  );
+  // ── RESERVE SETUP ─────────────────────────────────────────────────────────
 
   results.push(
     await simulate(
@@ -404,15 +349,7 @@ async function main(): Promise<void> {
     }
   }
 
-  // ── PLAN DRAWER ───────────────────────────────────────────────────────────
-
-  const requirePlan = <T>(label: string, value: T | null | undefined): T | null => {
-    if (!value) {
-      results.push(skip(label, "plan", "required fixture missing"));
-      return null;
-    }
-    return value;
-  };
+  // ── PLAN OPERATIONS ───────────────────────────────────────────────────────
 
   if (plan) {
     // Fund sponsor budget
@@ -470,8 +407,6 @@ async function main(): Promise<void> {
             recentBlockhash: blockhash,
             amount: 100_000n,
             policySeriesAddress: premiumLine.policySeries ?? null,
-            capitalClassAddress: capitalClass?.address ?? null,
-            poolAssetMint: pool?.depositAssetMint ?? null,
           }),
           "Record premium payment",
           "plan",
@@ -489,8 +424,115 @@ async function main(): Promise<void> {
       );
     }
 
+    // Deposit reserve capital. If the fixture line is not BACKSTOP, the
+    // program should reject semantically after the builder reaches it.
+    const capitalVaultTokenAccount = vaultTokenForLine(capitalLine);
+    if (capitalLine && operatorSourceTokenAccount && capitalVaultTokenAccount) {
+      results.push(
+        await simulate(
+          connection,
+          signer,
+          blockhash,
+          protocol.buildDepositReserveCapitalTx({
+            contributor: signer.publicKey,
+            healthPlanAddress: plan.address,
+            reserveDomainAddress: plan.reserveDomain,
+            fundingLineAddress: capitalLine.address,
+            assetMint: capitalLine.assetMint,
+            sourceTokenAccountAddress: operatorSourceTokenAccount,
+            vaultTokenAccountAddress: capitalVaultTokenAccount,
+            recentBlockhash: blockhash,
+            amount: 1n,
+            termsHashHex: hashReason("sim-capital-terms"),
+          }),
+          "Deposit reserve capital",
+          "plan",
+        ),
+      );
+    } else {
+      results.push(
+        skip(
+          "Deposit reserve capital",
+          "plan",
+          capitalLine
+            ? "operator source token account or vault token account missing"
+            : "no funding line fixture",
+        ),
+      );
+    }
+
+    if (capitalLine && operatorSourceTokenAccount && capitalVaultTokenAccount) {
+      results.push(
+        await simulate(
+          connection,
+          signer,
+          blockhash,
+          protocol.buildReturnReserveCapitalTx({
+            authority: signer.publicKey,
+            contributorAddress: signer.publicKey,
+            healthPlanAddress: plan.address,
+            reserveDomainAddress: plan.reserveDomain,
+            fundingLineAddress: capitalLine.address,
+            assetMint: capitalLine.assetMint,
+            vaultTokenAccountAddress: capitalVaultTokenAccount,
+            recipientTokenAccountAddress: operatorSourceTokenAccount,
+            recentBlockhash: blockhash,
+            amount: 1n,
+            reasonHashHex: hashReason("sim-capital-return"),
+          }),
+          "Return reserve capital",
+          "plan",
+        ),
+      );
+    } else {
+      results.push(
+        skip(
+          "Return reserve capital",
+          "plan",
+          capitalLine
+            ? "operator token account or vault token account missing"
+            : "no funding line fixture",
+        ),
+      );
+    }
+
+    const earningsVaultTokenAccount = vaultTokenForLine(earningsLine);
+    if (earningsLine && operatorSourceTokenAccount && earningsVaultTokenAccount) {
+      results.push(
+        await simulate(
+          connection,
+          signer,
+          blockhash,
+          protocol.buildRecordReserveEarningsTx({
+            authority: signer.publicKey,
+            healthPlanAddress: plan.address,
+            reserveDomainAddress: plan.reserveDomain,
+            fundingLineAddress: earningsLine.address,
+            assetMint: earningsLine.assetMint,
+            sourceTokenAccountAddress: operatorSourceTokenAccount,
+            vaultTokenAccountAddress: earningsVaultTokenAccount,
+            recentBlockhash: blockhash,
+            amount: 1n,
+            earningsRefHashHex: hashReason("sim-reserve-earnings"),
+          }),
+          "Record reserve earnings",
+          "plan",
+        ),
+      );
+    } else {
+      results.push(
+        skip(
+          "Record reserve earnings",
+          "plan",
+          earningsLine
+            ? "operator source token account or vault token account missing"
+            : "no funding line fixture",
+        ),
+      );
+    }
+
     // Open claim case (use random claim id to probe builder shape)
-    if (member && firstLine) {
+    if (firstLine) {
       results.push(
         await simulate(
           connection,
@@ -499,22 +541,20 @@ async function main(): Promise<void> {
           protocol.buildOpenClaimCaseTx({
             authority: signer.publicKey,
             healthPlanAddress: plan.address,
-            memberPositionAddress: member.address,
             fundingLineAddress: firstLine.address,
             recentBlockhash: blockhash,
             claimId: `sim-${randomBytes(4).toString("hex")}`,
             policySeriesAddress: series?.address ?? firstLine.policySeries ?? null,
             claimantAddress: signer.publicKey,
+            evidenceRefHashHex: hashReason("sim-evidence-bundle"),
           }),
           "Open claim case",
           "plan",
         ),
       );
     } else {
-      results.push(skip("Open claim case", "plan", "no member or funding line"));
+      results.push(skip("Open claim case", "plan", "no funding line"));
     }
-
-    results.push(skip("Attach claim evidence", "plan", "removed from the base protocol surface"));
 
     // Adjudicate claim case
     if (claim) {
@@ -532,6 +572,8 @@ async function main(): Promise<void> {
             approvedAmount: 0n,
             deniedAmount: 0n,
             reserveAmount: 0n,
+            evidenceRefHashHex: hashReason("sim-evidence-bundle"),
+            decisionSupportHashHex: hashReason("sim-decision-support"),
             obligationAddress: obligation?.address ?? null,
           }),
           "Adjudicate claim case",
@@ -558,16 +600,12 @@ async function main(): Promise<void> {
             recentBlockhash: blockhash,
             obligationId: `sim-${randomBytes(4).toString("hex")}`,
             policySeriesAddress: series?.address ?? firstLine.policySeries ?? null,
-            memberWalletAddress: member?.wallet ?? null,
+            memberWalletAddress: signer.publicKey,
             beneficiaryAddress: signer.publicKey,
             claimCaseAddress: claim?.address ?? null,
-            liquidityPoolAddress: pool?.address ?? null,
-            capitalClassAddress: capitalClass?.address ?? null,
-            allocationPositionAddress: allocation?.address ?? null,
             deliveryMode: protocol.OBLIGATION_DELIVERY_MODE_CLAIMABLE,
             amount: 10_000n,
             creationReasonHashHex: hashReason("sim-reason"),
-            poolAssetMint: pool?.depositAssetMint ?? null,
           }),
           "Create obligation",
           "plan",
@@ -595,9 +633,6 @@ async function main(): Promise<void> {
             amount: 1_000n,
             claimCaseAddress: obligation.claimCase ?? null,
             policySeriesAddress: obligation.policySeries ?? null,
-            capitalClassAddress: obligation.capitalClass ?? null,
-            allocationPositionAddress: obligation.allocationPosition ?? null,
-            poolAssetMint: pool?.depositAssetMint ?? null,
           }),
           "Reserve obligation",
           "plan",
@@ -620,9 +655,6 @@ async function main(): Promise<void> {
             amount: 0n,
             claimCaseAddress: obligation.claimCase ?? null,
             policySeriesAddress: obligation.policySeries ?? null,
-            capitalClassAddress: obligation.capitalClass ?? null,
-            allocationPositionAddress: obligation.allocationPosition ?? null,
-            poolAssetMint: pool?.depositAssetMint ?? null,
           }),
           "Release reserve",
           "plan",
@@ -647,9 +679,6 @@ async function main(): Promise<void> {
             settlementReasonHashHex: hashReason("sim-settlement"),
             claimCaseAddress: obligation.claimCase ?? null,
             policySeriesAddress: obligation.policySeries ?? null,
-            capitalClassAddress: obligation.capitalClass ?? null,
-            allocationPositionAddress: obligation.allocationPosition ?? null,
-            poolAssetMint: pool?.depositAssetMint ?? null,
           }),
           "Settle obligation",
           "plan",
@@ -679,9 +708,6 @@ async function main(): Promise<void> {
             amount: 0n,
             policySeriesAddress: claim.policySeries ?? null,
             obligationAddress: obligation?.address ?? null,
-            capitalClassAddress: obligation?.capitalClass ?? null,
-            allocationPositionAddress: obligation?.allocationPosition ?? null,
-            poolAssetMint: pool?.depositAssetMint ?? null,
           }),
           "Settle claim case",
           "plan",
@@ -689,109 +715,6 @@ async function main(): Promise<void> {
       );
     } else {
       results.push(skip("Settle claim case", "plan", "no claim case or funding line"));
-    }
-
-    // Mark impairment
-    if (firstLine) {
-      results.push(
-        await simulate(
-          connection,
-          signer,
-          blockhash,
-          protocol.buildMarkImpairmentTx({
-            authority: signer.publicKey,
-            healthPlanAddress: plan.address,
-            reserveDomainAddress: plan.reserveDomain,
-            fundingLineAddress: firstLine.address,
-            assetMint: obligation?.assetMint ?? firstLine.assetMint,
-            recentBlockhash: blockhash,
-            amount: 1n,
-            reasonHashHex: hashReason("sim-impairment"),
-            policySeriesAddress:
-              obligation?.policySeries ?? firstLine.policySeries ?? null,
-            capitalClassAddress: obligation?.capitalClass ?? capitalClass?.address ?? null,
-            allocationPositionAddress:
-              obligation?.allocationPosition ?? allocation?.address ?? null,
-            obligationAddress: obligation?.address ?? null,
-            poolAssetMint: pool?.depositAssetMint ?? null,
-          }),
-          "Mark impairment",
-          "plan",
-        ),
-      );
-    } else {
-      results.push(skip("Mark impairment", "plan", "no funding line"));
-    }
-
-    // Open member position. Simulate only when the local signer can satisfy
-    // the plan posture; otherwise report a real fixture/signature gap instead
-    // of turning a guaranteed semantic rejection into "builder ok".
-    const memberProofMode = proofModeForPlan(protocol, plan);
-    const memberMode = membershipModeForPlan(protocol, plan);
-    const tokenGateRequired = memberMode === protocol.MEMBERSHIP_MODE_TOKEN_GATE;
-    const inviteRequired = memberMode === protocol.MEMBERSHIP_MODE_INVITE_ONLY;
-    const inviteAuthority =
-      plan.membershipInviteAuthority && plan.membershipInviteAuthority !== protocol.ZERO_PUBKEY
-        ? plan.membershipInviteAuthority
-        : "";
-
-    if (inviteRequired && inviteAuthority !== signerAddress) {
-      results.push(
-        skip("Open member position", "plan", "invite authority signer fixture missing"),
-      );
-    } else if (tokenGateRequired) {
-      results.push(
-        skip("Open member position", "plan", "token-gated membership was removed from the program"),
-      );
-    } else {
-      results.push(
-        await simulate(
-          connection,
-          signer,
-          blockhash,
-          protocol.buildOpenMemberPositionTx({
-            wallet: signer.publicKey,
-            healthPlanAddress: plan.address,
-            recentBlockhash: blockhash,
-            seriesScopeAddress: series?.address ?? protocol.ZERO_PUBKEY,
-            subjectCommitmentHashHex: hashReason(signer.publicKey.toBase58()),
-            eligibilityStatus: protocol.ELIGIBILITY_PENDING,
-            delegatedRightsMask: 0,
-            proofMode: memberProofMode,
-            inviteIdHashHex: inviteRequired ? hashReason("sim-invite") : "",
-            inviteExpiresAt: 0n,
-            inviteAuthorityAddress: inviteRequired ? inviteAuthority : undefined,
-          }),
-          "Open member position",
-          "plan",
-          true,
-        ),
-      );
-    }
-
-    // Update member eligibility
-    if (member) {
-      results.push(
-        await simulate(
-          connection,
-          signer,
-          blockhash,
-          protocol.buildUpdateMemberEligibilityTx({
-            authority: signer.publicKey,
-            healthPlanAddress: plan.address,
-            walletAddress: member.wallet,
-            recentBlockhash: blockhash,
-            seriesScopeAddress: member.policySeries,
-            eligibilityStatus: protocol.ELIGIBILITY_ELIGIBLE,
-            delegatedRightsMask: 0,
-            active: true,
-          }),
-          "Update member eligibility",
-          "plan",
-        ),
-      );
-    } else {
-      results.push(skip("Update member eligibility", "plan", "no member fixture"));
     }
 
     // Update plan controls
@@ -804,14 +727,9 @@ async function main(): Promise<void> {
           authority: signer.publicKey,
           healthPlanAddress: plan.address,
           recentBlockhash: blockhash,
-          sponsorOperator: plan.sponsorOperator,
-          claimsOperator: plan.claimsOperator,
-          oracleAuthority: plan.oracleAuthority ?? protocol.ZERO_PUBKEY,
-          membershipMode: membershipModeForPlan(protocol, plan),
-          membershipGateKind: membershipGateKindForPlan(protocol, plan),
-          membershipGateMint: plan.membershipGateMint ?? protocol.ZERO_PUBKEY,
-          membershipGateMinAmount: BigInt(plan.membershipGateMinAmount ?? 0),
-          membershipInviteAuthority: plan.membershipInviteAuthority ?? protocol.ZERO_PUBKEY,
+          sponsorOperator: publicKeyOrFallback(plan.sponsorOperator, signer.publicKey),
+          claimsOperator: publicKeyOrFallback(plan.claimsOperator, signer.publicKey),
+          oracleAuthority: publicKeyOrFallback(plan.oracleAuthority, protocol.ZERO_PUBKEY),
           allowedRailMask: 65535,
           defaultFundingPriority: fixtures.fundingLines[0]?.fundingPriority ?? 0,
           pauseFlags: 0,
@@ -945,17 +863,16 @@ async function main(): Promise<void> {
     const allPlanFlows = [
       "Fund sponsor budget",
       "Record premium payment",
+      "Deposit reserve capital",
+      "Return reserve capital",
+      "Record reserve earnings",
       "Open claim case",
-      "Attach claim evidence",
       "Adjudicate claim case",
       "Create obligation",
       "Reserve obligation",
       "Release reserve",
       "Settle obligation",
       "Settle claim case",
-      "Mark impairment",
-      "Open member position",
-      "Update member eligibility",
       "Update plan controls",
       "Update reserve domain controls",
       "Create policy series",

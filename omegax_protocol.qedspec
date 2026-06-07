@@ -78,6 +78,10 @@ type DeallocateCapitalArgs = {
   amount : U64
 }
 
+type DepositReserveCapitalArgs = {
+  amount : U64
+}
+
 type DepositIntoCapitalClassArgs = {
   amount : U64,
   shares : U64
@@ -127,6 +131,10 @@ type RecordPremiumPaymentArgs = {
   amount : U64
 }
 
+type RecordReserveEarningsArgs = {
+  amount : U64
+}
+
 type RegisterOracleArgs = {}
 
 type RegisterOutcomeSchemaArgs = {}
@@ -140,6 +148,10 @@ type RequestRedemptionArgs = {
 }
 
 type ReserveObligationArgs = {
+  amount : U64
+}
+
+type ReturnReserveCapitalArgs = {
   amount : U64
 }
 
@@ -459,111 +471,23 @@ type Error
 property abstract_state_progress_nonnegative : audit_nonce >= 0
   preserved_by all
 
-// Initial proof targets. These are intentionally first-order until the next
-// pass models exact per-account right-hand sides, token transfers, and CPI effects.
-property protocol_fee_bps_bounded : protocol_fee_bps <= MAX_CONFIGURED_FEE_BPS
-  preserved_by [initialize_protocol_governance]
-
 property claim_payment_bounded : paid_amount <= approved_amount
-  preserved_by [adjudicate_claim_case, settle_claim_case, settle_claim_case_selected_asset]
+  preserved_by [adjudicate_claim_case, settle_claim_case, settle_obligation]
 
-property fee_withdrawals_bounded : withdrawn_fees <= accrued_fees
-  preserved_by [withdraw_protocol_fee_spl, withdraw_protocol_fee_sol, withdraw_pool_treasury_spl, withdraw_pool_treasury_sol, withdraw_pool_oracle_fee_spl, withdraw_pool_oracle_fee_sol]
-
-property allocation_cap_bounded : allocated_amount <= cap_amount
-  preserved_by [create_allocation_position, update_allocation_caps, allocate_capital, deallocate_capital]
-
-cover governance_setup_path [initialize_protocol_governance, create_reserve_domain, create_health_plan]
+cover domain_plan_setup_path [create_reserve_domain, create_health_plan]
 cover direct_claim_settlement_path [open_claim_case, adjudicate_claim_case, settle_claim_case]
 cover obligation_claim_settlement_path [create_obligation, reserve_obligation, settle_obligation]
 
 /// `initialize_protocol_governance` - Anchor facade forwarder.
 /// Implementation: `crate::governance::initialize_protocol_governance`; accounts context: `InitializeProtocolGovernance`.
-handler initialize_protocol_governance (args : InitializeProtocolGovernanceArgs) : State.Uninitialized -> State.Live {
-  auth governance_authority
-
-  accounts {
-    governance_authority : signer, writable
-    protocol_governance  : writable
-    system_program       : program
-  }
-
-  requires args.protocol_fee_bps <= MAX_CONFIGURED_FEE_BPS else InvalidBps
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    protocol_fee_bps := args.protocol_fee_bps
-    emergency_pause := args.emergency_pause
-    audit_nonce := 0
-  }
-}
-
 /// `set_protocol_emergency_pause` - Anchor facade forwarder.
 /// Implementation: `crate::governance::set_protocol_emergency_pause`; accounts context: `SetProtocolEmergencyPause`.
-handler set_protocol_emergency_pause (args : SetProtocolEmergencyPauseArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    emergency_pause := args.emergency_pause
-    audit_nonce +=! 1
-  }
-}
-
 /// `rotate_protocol_governance_authority` - Anchor facade forwarder.
 /// Implementation: `crate::governance::rotate_protocol_governance_authority`; accounts context: `RotateProtocolGovernanceAuthority`.
-handler rotate_protocol_governance_authority (args : RotateProtocolGovernanceAuthorityArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    audit_nonce +=! 1
-  }
-}
-
 /// `accept_protocol_governance_authority` - Anchor facade forwarder.
 /// Implementation: `crate::governance::accept_protocol_governance_authority`; accounts context: `AcceptProtocolGovernanceAuthority`.
-handler accept_protocol_governance_authority : State.Live -> State.Live {
-  auth pending_authority
-
-  accounts {
-    pending_authority   : signer
-    protocol_governance : writable
-  }
-
-  // SPEC-REFINE: pending-governance fields are abstracted in this state model.
-  effect {
-    governance_authority := pending_authority
-    audit_nonce +=! 1
-  }
-}
-
 /// `cancel_protocol_governance_authority_transfer` - Anchor facade forwarder.
 /// Implementation: `crate::governance::cancel_protocol_governance_authority_transfer`; accounts context: `CancelProtocolGovernanceAuthorityTransfer`.
-handler cancel_protocol_governance_authority_transfer : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : writable
-  }
-
-  // SPEC-REFINE: pending-governance fields are abstracted in this state model.
-  effect {
-    audit_nonce +=! 1
-  }
-}
-
 /// `create_reserve_domain` - Anchor facade forwarder.
 /// Implementation: `crate::reserve_custody::create_reserve_domain`; accounts context: `CreateReserveDomain`.
 handler create_reserve_domain (args : CreateReserveDomainArgs) : State.Live -> State.Live {
@@ -629,130 +553,14 @@ handler create_domain_asset_vault (args : CreateDomainAssetVaultArgs) : State.Li
 
 /// `configure_reserve_asset_rail` - Anchor facade forwarder.
 /// Implementation: `crate::reserve_waterfall::configure_reserve_asset_rail`; accounts context: `ConfigureReserveAssetRail`.
-handler configure_reserve_asset_rail (args : ConfigureReserveAssetRailArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    reserve_domain      : readonly
-    reserve_asset_rail  : writable
-    system_program      : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.max_staleness_seconds > 0 else ReserveAssetPriceInvalid
-  requires args.max_confidence_bps > 0 else ReserveAssetPriceInvalid
-  requires args.max_confidence_bps <= BASIS_POINTS_DENOMINATOR else InvalidBps
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    max_confidence_bps := args.max_confidence_bps
-    max_staleness_seconds := args.max_staleness_seconds
-    payout_enabled := args.payout_enabled
-    capacity_enabled := args.capacity_enabled
-    audit_nonce +=! 1
-  }
-}
-
 /// `publish_reserve_asset_rail_price` - Anchor facade forwarder.
 /// Implementation: `crate::reserve_waterfall::publish_reserve_asset_rail_price`; accounts context: `PublishReserveAssetRailPrice`.
-handler publish_reserve_asset_rail_price (args : PublishReserveAssetRailPriceArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    reserve_asset_rail  : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires active == true else ReserveAssetRailInactive
-  requires args.price_usd_1e8 > 0 else AmountMustBePositive
-  requires args.published_at_ts > 0 else ReserveAssetPriceStale
-  requires max_confidence_bps > 0 else ReserveAssetPriceInvalid
-  requires args.confidence_bps <= max_confidence_bps else ReserveAssetPriceConfidenceTooWide
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    last_price_usd_1e8 := args.price_usd_1e8
-    last_price_confidence_bps := args.confidence_bps
-    last_price_published_at_ts := args.published_at_ts
-    audit_nonce +=! 1
-  }
-}
-
 /// `init_protocol_fee_vault` - Anchor facade forwarder.
 /// Implementation: `crate::fees::init_protocol_fee_vault`; accounts context: `InitProtocolFeeVault`.
-handler init_protocol_fee_vault (args : InitProtocolFeeVaultArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    reserve_domain      : readonly
-    domain_asset_vault  : readonly
-    protocol_fee_vault  : writable
-    system_program      : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    accrued_fees := 0
-    withdrawn_fees := 0
-    bump +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `init_pool_treasury_vault` - Anchor facade forwarder.
 /// Implementation: `crate::fees::init_pool_treasury_vault`; accounts context: `InitPoolTreasuryVault`.
-handler init_pool_treasury_vault (args : InitPoolTreasuryVaultArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    domain_asset_vault  : readonly
-    pool_treasury_vault : writable
-    system_program      : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    accrued_fees := 0
-    withdrawn_fees := 0
-    bump +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `init_pool_oracle_fee_vault` - Anchor facade forwarder.
 /// Implementation: `crate::fees::init_pool_oracle_fee_vault`; accounts context: `InitPoolOracleFeeVault`.
-handler init_pool_oracle_fee_vault (args : InitPoolOracleFeeVaultArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority             : signer, writable
-    protocol_governance   : readonly
-    liquidity_pool        : readonly
-    oracle_profile        : readonly
-    pool_oracle_approval  : readonly
-    domain_asset_vault    : readonly
-    pool_oracle_fee_vault : writable
-    system_program        : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    accrued_fees := 0
-    withdrawn_fees := 0
-    bump +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `create_health_plan` - Anchor facade forwarder.
 /// Implementation: `crate::plans_membership::create_health_plan`; accounts context: `CreateHealthPlan`.
 handler create_health_plan (args : CreateHealthPlanArgs) : State.Live -> State.Live {
@@ -812,25 +620,6 @@ handler create_policy_series (args : CreatePolicySeriesArgs) : State.Live -> Sta
 
 /// `initialize_series_reserve_ledger` - Anchor facade forwarder.
 /// Implementation: `crate::plans_membership::initialize_series_reserve_ledger`; accounts context: `InitializeSeriesReserveLedger`.
-handler initialize_series_reserve_ledger (args : InitializeSeriesReserveLedgerArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority             : signer, writable
-    protocol_governance   : readonly
-    health_plan           : readonly
-    policy_series         : readonly
-    series_reserve_ledger : writable
-    system_program        : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    bump +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `version_policy_series` - Anchor facade forwarder.
 /// Implementation: `crate::plans_membership::version_policy_series`; accounts context: `VersionPolicySeries`.
 handler version_policy_series (args : VersionPolicySeriesArgs) : State.Live -> State.Live {
@@ -854,53 +643,8 @@ handler version_policy_series (args : VersionPolicySeriesArgs) : State.Live -> S
 
 /// `open_member_position` - Anchor facade forwarder.
 /// Implementation: `crate::plans_membership::open_member_position`; accounts context: `OpenMemberPosition`.
-handler open_member_position (args : OpenMemberPositionArgs) : State.Live -> State.Live {
-  auth wallet
-
-  accounts {
-    wallet                 : signer, writable
-    protocol_governance    : readonly
-    health_plan            : readonly
-    member_position        : writable
-    membership_anchor_seat : writable
-    token_gate_account     : readonly
-    invite_authority       : signer
-    system_program         : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires active == true else HealthPlanInactive
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    eligibility_status := args.eligibility_status
-    delegated_rights := args.delegated_rights
-    audit_nonce +=! 1
-  }
-}
-
 /// `update_member_eligibility` - Anchor facade forwarder.
 /// Implementation: `crate::plans_membership::update_member_eligibility`; accounts context: `UpdateMemberEligibility`.
-handler update_member_eligibility (args : UpdateMemberEligibilityArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority              : signer
-    protocol_governance    : readonly
-    health_plan            : readonly
-    member_position        : writable
-    membership_anchor_seat : readonly
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    eligibility_status := args.eligibility_status
-    delegated_rights := args.delegated_rights
-    active := args.active
-    audit_nonce +=! 1
-  }
-}
-
 /// `open_funding_line` - Anchor facade forwarder.
 /// Implementation: `crate::funding_obligations::open_funding_line`; accounts context: `OpenFundingLine`.
 handler open_funding_line (args : OpenFundingLineArgs) : State.Live -> State.Live {
@@ -992,6 +736,107 @@ handler record_premium_payment (args : RecordPremiumPaymentArgs) : State.Live ->
   }
 
   // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
+  effect {
+    funded_amount +=! 1
+    audit_nonce +=! 1
+  }
+}
+
+/// `deposit_reserve_capital` - Anchor facade forwarder.
+/// Implementation: `crate::funding_obligations::deposit_reserve_capital`; accounts context: `DepositReserveCapital`.
+handler deposit_reserve_capital (args : DepositReserveCapitalArgs) : State.Live -> State.Live {
+  permissionless
+
+  accounts {
+    contributor           : signer
+    health_plan           : readonly
+    domain_asset_vault    : writable
+    domain_asset_ledger   : writable
+    funding_line          : writable
+    funding_line_ledger   : writable
+    plan_reserve_ledger   : writable
+    capital_contribution  : writable
+    source_token_account  : writable
+    asset_mint            : readonly
+    vault_token_account   : writable
+    token_program         : program
+  }
+
+  requires emergency_pause == false else ProtocolEmergencyPaused
+  requires args.amount > 0 else AmountMustBePositive
+
+  // SPEC-CPI: reserve capital is paid into the configured domain vault.
+  transfers {
+    from source_token_account to vault_token_account amount args.amount authority contributor
+  }
+
+  effect {
+    funded_amount +=! 1
+    audit_nonce +=! 1
+  }
+}
+
+/// `return_reserve_capital` - Anchor facade forwarder.
+/// Implementation: `crate::funding_obligations::return_reserve_capital`; accounts context: `ReturnReserveCapital`.
+handler return_reserve_capital (args : ReturnReserveCapitalArgs) : State.Live -> State.Live {
+  auth authority
+
+  accounts {
+    authority               : signer
+    health_plan             : readonly
+    domain_asset_vault      : writable
+    domain_asset_ledger     : writable
+    funding_line            : writable
+    funding_line_ledger     : writable
+    plan_reserve_ledger     : writable
+    capital_contribution    : writable
+    asset_mint              : readonly
+    vault_token_account     : writable
+    recipient_token_account : writable
+    token_program           : program
+  }
+
+  requires emergency_pause == false else ProtocolEmergencyPaused
+  requires args.amount > 0 else AmountMustBePositive
+
+  // SPEC-CPI: capital returns leave the domain vault for the contributor token account.
+  transfers {
+    from vault_token_account to recipient_token_account amount args.amount authority domain_asset_vault
+  }
+
+  effect {
+    funded_amount +=! 1
+    audit_nonce +=! 1
+  }
+}
+
+/// `record_reserve_earnings` - Anchor facade forwarder.
+/// Implementation: `crate::funding_obligations::record_reserve_earnings`; accounts context: `RecordReserveEarnings`.
+handler record_reserve_earnings (args : RecordReserveEarningsArgs) : State.Live -> State.Live {
+  auth authority
+
+  accounts {
+    authority             : signer
+    health_plan           : readonly
+    domain_asset_vault    : writable
+    domain_asset_ledger   : writable
+    funding_line          : writable
+    funding_line_ledger   : writable
+    plan_reserve_ledger   : writable
+    source_token_account  : writable
+    asset_mint            : readonly
+    vault_token_account   : writable
+    token_program         : program
+  }
+
+  requires emergency_pause == false else ProtocolEmergencyPaused
+  requires args.amount > 0 else AmountMustBePositive
+
+  // SPEC-CPI: realized reserve earnings are paid back into the domain vault.
+  transfers {
+    from source_token_account to vault_token_account amount args.amount authority authority
+  }
+
   effect {
     funded_amount +=! 1
     audit_nonce +=! 1
@@ -1194,25 +1039,6 @@ handler authorize_claim_recipient (args : AuthorizeClaimRecipientArgs) : State.L
 
 /// `attach_claim_evidence_ref` - Anchor facade forwarder.
 /// Implementation: `crate::claims::attach_claim_evidence_ref`; accounts context: `AttachClaimEvidenceRef`.
-handler attach_claim_evidence_ref (args : AttachClaimEvidenceRefArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    health_plan         : readonly
-    claim_case          : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    updated_at +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `adjudicate_claim_case` - Anchor facade forwarder.
 /// Implementation: `crate::claims::adjudicate_claim_case`; accounts context: `AdjudicateClaimCase`.
 handler adjudicate_claim_case (args : AdjudicateClaimCaseArgs) : State.Live -> State.Live {
@@ -1297,788 +1123,61 @@ handler settle_claim_case (args : SettleClaimCaseArgs) : State.Live -> State.Liv
 
 /// `settle_claim_case_selected_asset` - Anchor facade forwarder.
 /// Implementation: `crate::claims::settle_claim_case_selected_asset`; accounts context: `SettleClaimCaseSelectedAsset`.
-handler settle_claim_case_selected_asset (args : SettleClaimCaseSelectedAssetArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority                    : signer
-    protocol_governance          : readonly
-    health_plan                  : readonly
-    claim_asset_rail             : readonly
-    payout_asset_rail            : readonly
-    payout_domain_asset_vault    : writable
-    payout_domain_asset_ledger   : writable
-    payout_funding_line          : writable
-    payout_funding_line_ledger   : writable
-    payout_plan_reserve_ledger   : writable
-    payout_series_reserve_ledger : writable
-    claim_case                   : writable
-    member_position              : readonly
-    claim_asset_mint             : readonly
-    payout_asset_mint            : readonly
-    payout_vault_token_account   : writable
-    recipient_token_account      : writable
-    token_program                : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.claim_credit_amount > 0 else AmountMustBePositive
-  requires args.payout_amount > 0 else AmountMustBePositive
-  requires args.max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS else SelectedAssetOverpayBpsTooHigh
-  requires paid_amount + args.claim_credit_amount <= approved_amount else AmountExceedsApprovedClaim
-  // The implementation checks the claim rail for activity/fresh pricing and the payout rail for
-  // activity, payout enablement, and fresh pricing before value comparison.
-  requires args.claim_rail_active == true else ReserveAssetRailInactive
-  requires args.claim_rail_price_usd_1e8 > 0 else ReserveAssetPriceInvalid
-  requires args.claim_rail_max_staleness_seconds > 0 else ReserveAssetPriceInvalid
-  requires args.claim_rail_max_confidence_bps > 0 else ReserveAssetPriceInvalid
-  requires args.claim_rail_last_price_confidence_bps <= args.claim_rail_max_confidence_bps else ReserveAssetPriceConfidenceTooWide
-  requires args.claim_rail_last_price_published_at_ts > 0 else ReserveAssetPriceStale
-  requires args.payout_rail_active == true else ReserveAssetRailInactive
-  requires args.payout_rail_payout_enabled == true else ReserveAssetRailPayoutDisabled
-  requires args.payout_rail_price_usd_1e8 > 0 else ReserveAssetPriceInvalid
-  requires args.payout_rail_max_staleness_seconds > 0 else ReserveAssetPriceInvalid
-  requires args.payout_rail_max_confidence_bps > 0 else ReserveAssetPriceInvalid
-  requires args.payout_rail_last_price_confidence_bps <= args.payout_rail_max_confidence_bps else ReserveAssetPriceConfidenceTooWide
-  requires args.payout_rail_last_price_published_at_ts > 0 else ReserveAssetPriceStale
-
-  // SPEC-CPI: selected-asset claims pay the requested payout asset amount.
-  transfers {
-    from payout_vault_token_account to recipient_token_account amount args.payout_amount authority payout_domain_asset_vault
-  }
-
-  // SPEC-REFINE: bind payment RHS to remaining approved claim and fee-vault deltas.
-  effect {
-    paid_amount +=! 1
-    updated_at +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `create_liquidity_pool` - Anchor facade forwarder.
 /// Implementation: `crate::capital::create_liquidity_pool`; accounts context: `CreateLiquidityPool`.
-handler create_liquidity_pool (args : CreateLiquidityPoolArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    reserve_domain      : readonly
-    domain_asset_vault  : readonly
-    liquidity_pool      : writable
-    system_program      : program
-  }
-
-  requires args.fee_bps <= MAX_CONFIGURED_FEE_BPS else InvalidBps
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    audit_nonce +=! 1
-  }
-}
-
 /// `create_capital_class` - Anchor facade forwarder.
 /// Implementation: `crate::capital::create_capital_class`; accounts context: `CreateCapitalClass`.
-handler create_capital_class (args : CreateCapitalClassArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    capital_class       : writable
-    pool_class_ledger   : writable
-    system_program      : program
-  }
-
-  requires args.fee_bps <= MAX_CONFIGURED_FEE_BPS else InvalidBps
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    audit_nonce +=! 1
-  }
-}
-
 /// `update_capital_class_controls` - Anchor facade forwarder.
 /// Implementation: `crate::capital::update_capital_class_controls`; accounts context: `UpdateCapitalClassControls`.
-handler update_capital_class_controls (args : UpdateCapitalClassControlsArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    capital_class       : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    pause_flags := args.pause_flags
-    queue_only_redemptions := args.queue_only_redemptions
-    active := args.active
-    audit_nonce +=! 1
-  }
-}
-
 /// `update_lp_position_credentialing` - Anchor facade forwarder.
 /// Implementation: `crate::capital::update_lp_position_credentialing`; accounts context: `UpdateLpPositionCredentialing`.
-handler update_lp_position_credentialing (args : UpdateLpPositionCredentialingArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    capital_class       : readonly
-    lp_position         : writable
-    system_program      : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    credentialed := args.credentialed
-    audit_nonce +=! 1
-  }
-}
-
 /// `deposit_into_capital_class` - Anchor facade forwarder.
 /// Implementation: `crate::capital::deposit_into_capital_class`; accounts context: `DepositIntoCapitalClass`.
-handler deposit_into_capital_class (args : DepositIntoCapitalClassArgs) : State.Live -> State.Live {
-  auth owner
-
-  accounts {
-    owner                : signer, writable
-    protocol_governance  : readonly
-    domain_asset_vault   : writable
-    domain_asset_ledger  : writable
-    liquidity_pool       : writable
-    capital_class        : writable
-    pool_class_ledger    : writable
-    lp_position          : writable
-    pool_treasury_vault  : writable
-    source_token_account : writable
-    asset_mint           : readonly
-    vault_token_account  : writable
-    token_program        : program
-    system_program       : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.amount > 0 else AmountMustBePositive
-  requires active == true else CapitalClassInactive
-
-  // SPEC-CPI: LP subscription deposits SPL assets into the domain vault.
-  transfers {
-    from source_token_account to vault_token_account amount args.amount authority owner
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    total_assets +=! 1
-    total_shares +=! 1
-    nav_assets +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `request_redemption` - Anchor facade forwarder.
 /// Implementation: `crate::capital::request_redemption`; accounts context: `RequestRedemption`.
-handler request_redemption (args : RequestRedemptionArgs) : State.Live -> State.Live {
-  auth owner
-
-  accounts {
-    owner               : signer
-    protocol_governance : readonly
-    liquidity_pool      : writable
-    capital_class       : writable
-    pool_class_ledger   : writable
-    domain_asset_ledger : writable
-    lp_position         : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.shares > 0 else AmountMustBePositive
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    pending_redemption_shares +=! 1
-    pending_redemption_assets +=! 1
-    pending_redemptions +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `process_redemption_queue` - Anchor facade forwarder.
 /// Implementation: `crate::capital::process_redemption_queue`; accounts context: `ProcessRedemptionQueue`.
-handler process_redemption_queue (args : ProcessRedemptionQueueArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority               : signer
-    protocol_governance     : readonly
-    domain_asset_vault      : writable
-    domain_asset_ledger     : writable
-    liquidity_pool          : writable
-    capital_class           : writable
-    pool_class_ledger       : writable
-    lp_position             : writable
-    pool_treasury_vault     : writable
-    asset_mint              : readonly
-    vault_token_account     : writable
-    recipient_token_account : writable
-    token_program           : program
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.shares > 0 else AmountMustBePositive
-
-  // SPEC-CPI: redemption pays the LP net amount after pool-treasury fees.
-  transfers {
-    from vault_token_account to recipient_token_account amount redemption_net_payout_amount authority domain_asset_vault
-  }
-
-  // SPEC-REFINE: bind processed shares to pending queue shares and net payout after fees.
-  effect {
-    pending_redemption_shares -=! 1
-    total_assets -=! 1
-    withdrawn_fees +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `withdraw_protocol_fee_spl` - Anchor facade forwarder.
 /// Implementation: `crate::fees::withdraw_protocol_fee_spl`; accounts context: `WithdrawProtocolFeeSpl`.
-handler withdraw_protocol_fee_spl (args : WithdrawArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority               : signer
-    protocol_governance     : readonly
-    reserve_domain          : readonly
-    protocol_fee_vault      : writable
-    domain_asset_vault      : writable
-    domain_asset_ledger     : writable
-    asset_mint              : readonly
-    vault_token_account     : writable
-    recipient_token_account : writable
-    token_program           : program
-  }
-
-  requires args.amount > 0 else AmountMustBePositive
-  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
-
-  // SPEC-CPI: protocol SPL fee withdrawal from the domain vault PDA.
-  transfers {
-    from vault_token_account to recipient_token_account amount args.amount authority domain_asset_vault
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    withdrawn_fees +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `withdraw_protocol_fee_sol` - Anchor facade forwarder.
 /// Implementation: `crate::fees::withdraw_protocol_fee_sol`; accounts context: `WithdrawProtocolFeeSol`.
-handler withdraw_protocol_fee_sol (args : WithdrawArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    reserve_domain      : readonly
-    protocol_fee_vault  : writable
-    recipient           : writable
-    system_program      : program
-  }
-
-  requires args.amount > 0 else AmountMustBePositive
-  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    withdrawn_fees +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `withdraw_pool_treasury_spl` - Anchor facade forwarder.
 /// Implementation: `crate::fees::withdraw_pool_treasury_spl`; accounts context: `WithdrawPoolTreasurySpl`.
-handler withdraw_pool_treasury_spl (args : WithdrawArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority               : signer
-    protocol_governance     : readonly
-    liquidity_pool          : readonly
-    pool_treasury_vault     : writable
-    domain_asset_vault      : writable
-    domain_asset_ledger     : writable
-    asset_mint              : readonly
-    vault_token_account     : writable
-    recipient_token_account : writable
-    token_program           : program
-  }
-
-  requires args.amount > 0 else AmountMustBePositive
-  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
-
-  // SPEC-CPI: pool treasury SPL fee withdrawal from the domain vault PDA.
-  transfers {
-    from vault_token_account to recipient_token_account amount args.amount authority domain_asset_vault
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    withdrawn_fees +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `withdraw_pool_treasury_sol` - Anchor facade forwarder.
 /// Implementation: `crate::fees::withdraw_pool_treasury_sol`; accounts context: `WithdrawPoolTreasurySol`.
-handler withdraw_pool_treasury_sol (args : WithdrawArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    pool_treasury_vault : writable
-    recipient           : writable
-    system_program      : program
-  }
-
-  requires args.amount > 0 else AmountMustBePositive
-  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    withdrawn_fees +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `withdraw_pool_oracle_fee_spl` - Anchor facade forwarder.
 /// Implementation: `crate::fees::withdraw_pool_oracle_fee_spl`; accounts context: `WithdrawPoolOracleFeeSpl`.
-handler withdraw_pool_oracle_fee_spl (args : WithdrawArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority               : signer
-    protocol_governance     : readonly
-    liquidity_pool          : readonly
-    oracle_profile          : readonly
-    pool_oracle_fee_vault   : writable
-    domain_asset_vault      : writable
-    domain_asset_ledger     : writable
-    asset_mint              : readonly
-    vault_token_account     : writable
-    recipient_token_account : writable
-    token_program           : program
-  }
-
-  requires args.amount > 0 else AmountMustBePositive
-  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
-
-  // SPEC-CPI: pool oracle SPL fee withdrawal from the domain vault PDA.
-  transfers {
-    from vault_token_account to recipient_token_account amount args.amount authority domain_asset_vault
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    withdrawn_fees +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `withdraw_pool_oracle_fee_sol` - Anchor facade forwarder.
 /// Implementation: `crate::fees::withdraw_pool_oracle_fee_sol`; accounts context: `WithdrawPoolOracleFeeSol`.
-handler withdraw_pool_oracle_fee_sol (args : WithdrawArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority             : signer
-    protocol_governance   : readonly
-    liquidity_pool        : readonly
-    oracle_profile        : readonly
-    pool_oracle_fee_vault : writable
-    recipient             : writable
-    system_program        : program
-  }
-
-  requires args.amount > 0 else AmountMustBePositive
-  requires withdrawn_fees + args.amount <= accrued_fees else FeeVaultInsufficientBalance
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    withdrawn_fees +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `create_allocation_position` - Anchor facade forwarder.
 /// Implementation: `crate::capital::create_allocation_position`; accounts context: `CreateAllocationPosition`.
-handler create_allocation_position (args : CreateAllocationPositionArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    capital_class       : readonly
-    health_plan         : readonly
-    funding_line        : readonly
-    allocation_position : writable
-    allocation_ledger   : writable
-    system_program      : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    cap_amount := args.cap_amount
-    weight_bps := args.weight_bps
-    audit_nonce +=! 1
-  }
-}
-
 /// `update_allocation_caps` - Anchor facade forwarder.
 /// Implementation: `crate::capital::update_allocation_caps`; accounts context: `UpdateAllocationCaps`.
-handler update_allocation_caps (args : UpdateAllocationCapsArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    allocation_position : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    cap_amount := args.cap_amount
-    weight_bps := args.weight_bps
-    audit_nonce +=! 1
-  }
-}
-
 /// `allocate_capital` - Anchor facade forwarder.
 /// Implementation: `crate::capital::allocate_capital`; accounts context: `AllocateCapital`.
-handler allocate_capital (args : AllocateCapitalArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    liquidity_pool      : writable
-    capital_class       : writable
-    pool_class_ledger   : writable
-    funding_line        : readonly
-    allocation_position : writable
-    allocation_ledger   : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.amount > 0 else AmountMustBePositive
-
-  // SPEC-REFINE: bind allocation capacity deltas to free reserve/class capacity.
-  effect {
-    allocated_amount +=! 1
-    allocated_assets +=! 1
-    total_allocated +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `deallocate_capital` - Anchor facade forwarder.
 /// Implementation: `crate::capital::deallocate_capital`; accounts context: `DeallocateCapital`.
-handler deallocate_capital (args : DeallocateCapitalArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    liquidity_pool      : writable
-    capital_class       : writable
-    pool_class_ledger   : writable
-    funding_line        : readonly
-    allocation_position : writable
-    allocation_ledger   : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.amount > 0 else AmountMustBePositive
-
-  // SPEC-REFINE: bind allocation capacity deltas to free reserve/class capacity.
-  effect {
-    allocated_amount -=! 1
-    allocated_assets -=! 1
-    total_allocated -=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `mark_impairment` - Anchor facade forwarder.
 /// Implementation: `crate::capital::mark_impairment`; accounts context: `MarkImpairment`.
-handler mark_impairment (args : MarkImpairmentArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority             : signer
-    protocol_governance   : readonly
-    health_plan           : readonly
-    domain_asset_ledger   : writable
-    funding_line          : writable
-    funding_line_ledger   : writable
-    plan_reserve_ledger   : writable
-    series_reserve_ledger : writable
-    pool_class_ledger     : writable
-    allocation_position   : writable
-    allocation_ledger     : writable
-    obligation            : writable
-  }
-
-  requires emergency_pause == false else ProtocolEmergencyPaused
-  requires args.amount > 0 else AmountMustBePositive
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    updated_at +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `register_oracle` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::register_oracle`; accounts context: `RegisterOracle`.
-handler register_oracle (args : RegisterOracleArgs) : State.Live -> State.Live {
-  auth admin
-
-  accounts {
-    admin          : signer, writable
-    oracle_profile : writable
-    system_program : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    supported_schema_count +=! 1
-    active := true
-    audit_nonce +=! 1
-  }
-}
-
 /// `claim_oracle` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::claim_oracle`; accounts context: `ClaimOracle`.
-handler claim_oracle : State.Live -> State.Live {
-  auth oracle
-
-  accounts {
-    oracle         : signer
-    oracle_profile : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    claimed := true
-    updated_at_ts +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `update_oracle_profile` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::update_oracle_profile`; accounts context: `UpdateOracleProfile`.
-handler update_oracle_profile (args : UpdateOracleProfileArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer
-    protocol_governance : readonly
-    oracle_profile      : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    supported_schema_count +=! 1
-    updated_at_ts +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `set_pool_oracle` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::set_pool_oracle`; accounts context: `SetPoolOracle`.
-handler set_pool_oracle (args : SetPoolOracleArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority            : signer, writable
-    protocol_governance  : readonly
-    liquidity_pool       : readonly
-    oracle_profile       : readonly
-    pool_oracle_approval : writable
-    system_program       : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    active := args.active
-    updated_at_ts +=! 1
-    bump +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `set_pool_oracle_permissions` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::set_pool_oracle_permissions`; accounts context: `SetPoolOraclePermissions`.
-handler set_pool_oracle_permissions (args : SetPoolOraclePermissionsArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority                  : signer, writable
-    protocol_governance        : readonly
-    liquidity_pool             : readonly
-    oracle_profile             : readonly
-    pool_oracle_approval       : readonly
-    pool_oracle_permission_set : writable
-    system_program             : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    updated_at_ts +=! 1
-    bump +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `set_pool_oracle_policy` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::set_pool_oracle_policy`; accounts context: `SetPoolOraclePolicy`.
-handler set_pool_oracle_policy (args : SetPoolOraclePolicyArgs) : State.Live -> State.Live {
-  auth authority
-
-  accounts {
-    authority           : signer, writable
-    protocol_governance : readonly
-    liquidity_pool      : readonly
-    pool_oracle_policy  : writable
-    system_program      : program
-  }
-
-  requires args.oracle_fee_bps <= MAX_CONFIGURED_FEE_BPS else InvalidBps
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    quorum_m := args.quorum_m
-    quorum_n := args.quorum_n
-    audit_nonce +=! 1
-  }
-}
-
 /// `register_outcome_schema` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::register_outcome_schema`; accounts context: `RegisterOutcomeSchema`.
-handler register_outcome_schema (args : RegisterOutcomeSchemaArgs) : State.Live -> State.Live {
-  auth publisher
-
-  accounts {
-    publisher                : signer, writable
-    outcome_schema           : writable
-    schema_dependency_ledger : writable
-    system_program           : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    audit_nonce +=! 1
-  }
-}
-
 /// `verify_outcome_schema` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::verify_outcome_schema`; accounts context: `VerifyOutcomeSchema`.
-handler verify_outcome_schema (args : VerifyOutcomeSchemaArgs) : State.Live -> State.Live {
-  auth governance_authority
-
-  accounts {
-    governance_authority : signer
-    protocol_governance  : readonly
-    outcome_schema       : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    verified := args.verified
-    updated_at_ts +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `backfill_schema_dependency_ledger` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::backfill_schema_dependency_ledger`; accounts context: `BackfillSchemaDependencyLedger`.
-handler backfill_schema_dependency_ledger (args : BackfillSchemaDependencyLedgerArgs) : State.Live -> State.Live {
-  auth governance_authority
-
-  accounts {
-    governance_authority     : signer, writable
-    protocol_governance      : readonly
-    outcome_schema           : readonly
-    schema_dependency_ledger : writable
-    system_program           : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    updated_at_ts +=! 1
-    bump +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `close_outcome_schema` - Anchor facade forwarder.
 /// Implementation: `crate::oracle_schema::close_outcome_schema`; accounts context: `CloseOutcomeSchema`.
-handler close_outcome_schema : State.Live -> State.Live {
-  auth governance_authority
-
-  accounts {
-    governance_authority     : signer
-    protocol_governance      : readonly
-    outcome_schema           : writable
-    schema_dependency_ledger : writable
-    recipient_system_account : writable
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    closed_outcome_schema_count +=! 1
-    audit_nonce +=! 1
-  }
-}
-
 /// `attest_claim_case` - Anchor facade forwarder.
 /// Implementation: `crate::claims::attest_claim_case`; accounts context: `AttestClaimCase`.
-handler attest_claim_case (args : AttestClaimCaseArgs) : State.Live -> State.Live {
-  auth oracle
-
-  accounts {
-    oracle                     : signer, writable
-    protocol_governance        : readonly
-    health_plan                : readonly
-    oracle_profile             : readonly
-    claim_case                 : writable
-    funding_line               : readonly
-    outcome_schema             : readonly
-    liquidity_pool             : readonly
-    capital_class              : readonly
-    allocation_position        : readonly
-    pool_oracle_approval       : readonly
-    pool_oracle_permission_set : readonly
-    pool_oracle_policy         : readonly
-    claim_attestation          : writable
-    system_program             : program
-  }
-
-  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
-  effect {
-    created_at_ts +=! 1
-    audit_nonce +=! 1
-  }
-}

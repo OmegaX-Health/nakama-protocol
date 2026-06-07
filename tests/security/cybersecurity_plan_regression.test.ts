@@ -76,7 +76,15 @@ test("[ALMANAX-c46c7b81/5a8f554b] nonzero policy series must be canonical for cl
 test("[QEDGEN-2026-05-07] inactive plans reject fresh intake before exposure", () => {
   assert.match(
     extractRustFunctionBody("open_claim_case"),
-    /require_health_plan_active\(&ctx\.accounts\.health_plan\)\?/,
+    /require_claim_intake_open\(&ctx\.accounts\.health_plan\)\?/,
+  );
+  assert.match(
+    extractRustFunctionBody("require_claim_intake_open"),
+    /require_plan_operations_open\(plan\)\?/,
+  );
+  assert.match(
+    extractRustFunctionBody("require_plan_operations_open"),
+    /require_health_plan_active\(plan\)\?/,
   );
 
   const errorNames = new Set((idl.errors ?? []).map((error) => error.name));

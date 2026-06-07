@@ -16,6 +16,11 @@ pub(crate) fn settle_obligation(
     let now_ts = Clock::get()?.unix_timestamp;
     let obligation = &mut ctx.accounts.obligation;
     let obligation_key = obligation.key();
+    if obligation_has_linked_claim_case(obligation) {
+        require_claim_finality_open(&ctx.accounts.health_plan)?;
+    } else {
+        require_reserve_rails_open(&ctx.accounts.health_plan)?;
+    }
     require_obligation_settlement_control(
         &ctx.accounts.authority.key(),
         &ctx.accounts.health_plan,
@@ -343,6 +348,55 @@ fn require_quasar_obligation_settlement_control(
 }
 
 #[cfg(feature = "quasar")]
+fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require!(plan.active.get(), OmegaXProtocolError::HealthPlanInactive);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_plan_pause_flags_clear(
+    plan: &HealthPlanAccountData<'_>,
+    flags: u32,
+    error: OmegaXProtocolError,
+) -> Result<()> {
+    if plan.pause_flags.get() & flags == 0 {
+        Ok(())
+    } else {
+        Err(error.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_health_plan_active(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_reserve_rails_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_plan_operations_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_DOMAIN_RAILS | PAUSE_FLAG_ALLOCATION_FREEZE,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_claim_finality_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_reserve_rails_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_ORACLE_FINALITY_HOLD,
+        OmegaXProtocolError::OracleFinalityHeld,
+    )
+}
+
+#[cfg(feature = "quasar")]
 fn require_quasar_full_obligation_transition_amount(
     next_status: u8,
     amount: u64,
@@ -456,6 +510,11 @@ pub(crate) fn settle_obligation<'info>(
     let authority = *ctx.accounts.authority.address();
     let obligation_key = *ctx.accounts.obligation.address();
     let health_plan_key = *ctx.accounts.health_plan.address();
+    if ctx.accounts.obligation.claim_case != ZERO_PUBKEY {
+        require_quasar_claim_finality_open(&ctx.accounts.health_plan)?;
+    } else {
+        require_quasar_reserve_rails_open(&ctx.accounts.health_plan)?;
+    }
     require_quasar_obligation_settlement_control(
         &authority,
         &ctx.accounts.health_plan,

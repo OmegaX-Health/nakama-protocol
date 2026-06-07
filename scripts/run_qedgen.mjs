@@ -85,6 +85,7 @@ function argsFor(commandName) {
     case 'check':
       return [
         'check',
+        '--frozen',
         '--spec',
         SPEC,
         '--anchor-project',
@@ -190,6 +191,14 @@ function isProgramInstructionNotInSpec(doc) {
   );
 }
 
+function isSpecHandlerNotInProgram(doc) {
+  return (
+    doc?.handler_coverage?.kind === 'SpecHandlerNotInProgram' ||
+    doc?.kind === 'SpecHandlerNotInProgram' ||
+    doc?.rule === 'SpecHandlerNotInProgram'
+  );
+}
+
 function isAcceptedNonzeroStatusDoc(doc) {
   if (doc?.rule && doc?.severity) return true;
   if (Array.isArray(doc?.effect_coverage) && Array.isArray(doc?.handler_coverage)) return true;
@@ -215,7 +224,9 @@ function runCheck(qedgen) {
 
   const docs = parseJsonObjects(result.stdout ?? '');
   const findings = docs.filter((doc) => doc.rule && doc.severity);
-  const handlerCoverageDrift = docs.filter(isProgramInstructionNotInSpec);
+  const handlerCoverageDrift = docs.filter(
+    (doc) => isProgramInstructionNotInSpec(doc) || isSpecHandlerNotInProgram(doc),
+  );
   const counts = findings.reduce((acc, finding) => {
     acc[finding.severity] = (acc[finding.severity] ?? 0) + 1;
     return acc;

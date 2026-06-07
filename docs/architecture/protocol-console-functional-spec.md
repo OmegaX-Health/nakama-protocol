@@ -299,16 +299,16 @@ Required page sections:
 1. Hero with route narrative
 2. Route snapshot rail
 3. Pool context selector
-4. Capital panels
-5. Pool register rail
+4. Capital archive panels
+5. Pool/register rail when historical or fixture data exists
 
 #### `/capital` route-level controls
 
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
-| Liquidity pool selector | Searchable selector | Choose the active `LiquidityPool` context. | Reads/writes `pool` in the URL. |
+| Liquidity pool selector | Searchable selector | Choose the active historical `LiquidityPool` context when present. | Reads/writes `pool` in the URL, but must not imply live LP transaction support. |
 | Pool filter input | Text input | Filter pools by display name, id, address, or thesis. | Empty-match message required. |
-| Panel tabs | Segment buttons | Switch between `Capital classes`, `Direct liquidity`, and `Queue state`. | Reads/writes `panel` in the URL. |
+| Panel tabs | Segment buttons | Switch between archive views for `Capital classes`, `Direct liquidity`, and `Queue state`. | Reads/writes `panel` in the URL. |
 | Operator posture card | Read-only card | Show wallet state, mapped role, and the currently shareable canonical route. | Observer mode must still expose route string. |
 | Pool signal card | Read-only card | Show deposit rail, class count, allocation-link count, queue state, and strategy thesis. | Must update when pool changes. |
 | Cross-route buttons | Link buttons | Open `Claims`, `Members`, and `Oracle policy` for the active pool. | Preserve pool context. |
@@ -317,21 +317,17 @@ Required page sections:
 
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
-| Capital class card | Data card | Show class id, address, restriction, allocation-link count, LP-position count, and queue posture. | One card per class. |
+| Capital class card | Data card | Show class id, address, restriction, allocation-link count, LP-position count, and queue posture when historical data exists. | One card per class; read-only. |
 | Restriction badge | Status/meta | Show open, restricted, wrapper, or other class restriction clearly. | Must not be inferred from color alone. |
 | `View class details` | Secondary button | Open an expanded or modal detail surface for class rights, waterfall, redemption policy, and wrapper semantics. | Target-state requirement even if not yet implemented. |
-| `Subscribe` amount input | Numeric input | Capture subscription size for the selected class. | Connected and authorized wallets only. |
-| `Subscribe` | Primary button | Mint LP exposure into the selected class. | Must disclose funding rail, slippage/fees if applicable, and resulting class. |
-| `Redeem` amount input | Numeric input | Capture shares or value to redeem. | Input mode should be explicit. |
-| `Redeem now` / `Queue redemption` | Primary/secondary action | If policy is open, redeem directly; if queue-only, submit to queue instead. | Action label must follow class redemption policy. |
+| Retired action notice | Inline notice | Explain that public LP subscribe and redemption actions were removed from the base protocol. | Must point operators to plan funding lines for reserve-capital deposits and returns. |
 
 #### `/capital` panel: Direct liquidity
 
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
 | Allocation position card | Data card | Show funding line, capital class, weight basis points, and linked pool. | One card per allocation position. |
-| `Edit allocation` | Secondary button | For authorized operators, modify weights or open a proposal path to change them. | Must route through governance if direct editing is not allowed. |
-| `Add allocation` | Primary button | Create a new allocation link between class and funding line. | Only for authorized pool/plan operators. |
+| Allocation action notice | Inline notice | Explain that direct allocation mutation is retired from the base protocol. | Must not mount allocation transaction builders. |
 | Exposure summary | Summary strip | Show total funded weight, unused capacity, and any over-allocation warning. | Target-state requirement. |
 
 #### `/capital` panel: Queue state
@@ -341,8 +337,7 @@ Required page sections:
 | Queue operator note | Inline note | Explain why queue-only redemptions matter and what users are seeing. | Always visible at top of panel. |
 | LP position row/card | Data card | Show owner, class, share balance, pending redemption amount, and queue status. | Must distinguish `clear`, `pending`, and `processed`. |
 | Queue filter | Optional filter | Filter queue by class, owner, or status. | Target-state requirement. |
-| `Cancel request` | Secondary button | Cancel a pending redemption request when policy allows it. | Must be disabled with explanation when cancellation is blocked. |
-| `Process queue` | Primary operator action | Advance eligible queue items when an operator is authorized to do so. | Must show impacted positions before signature. |
+| Queue action notice | Inline notice | Explain that LP queue processing is retired from the base protocol. | Must not mount queue transaction builders. |
 | Impairment / pause banner | Alert | Explain when queue processing is blocked by impairment, pause, or governance controls. | Required when route-level blocking state exists. |
 
 #### Planned `/capital` panel: Reserve productivity
@@ -361,7 +356,7 @@ external yield deployment is active protocol behavior.
 | `Deploy free reserve` | Operator action | Move eligible free reserve into a registered adapter. | Disabled until live protocol instructions, adapter review, cap checks, and liquidity-floor checks all pass. |
 | `Harvest yield` | Operator action | Reconcile realized same-mint yield back into the domain vault and ledgers. | Must verify vault reconciliation before showing success. |
 | `Recall principal` | Operator action | Pull strategy principal back to the domain vault. | Must remain available during strategy pause or emergency recall mode. |
-| `Mark impairment` | Operator action | Record strategy loss against the correct reserve, allocation, and class waterfall. | Must show affected ledgers and reason hash before signature. |
+| Strategy loss recording | Future operator action | Record strategy loss against the correct reserve context after a strategy-adapter surface exists. | Disabled until live protocol instructions, adapter review, and reserve-accounting rules exist. |
 | Premium surplus release drawer | Operator action | Recognize underwriting surplus after risk window and claim runoff. | Must be visually separate from strategy yield. |
 
 ### 3.4 `/claims`
@@ -391,7 +386,7 @@ Required page sections:
 | --- | --- | --- | --- |
 | Plan selector | Searchable selector | Select the active `HealthPlan` in the current pool context. | Must react to `pool` filtering when present. |
 | Series selector | Searchable selector | Select the active `PolicySeries` for the selected plan. | Reset when plan changes. |
-| Operator panel tabs | Segment buttons | Switch the operator workspace between `Intake`, `Adjudication`, `Reserve`, and `Impairment`. | Reads/writes `panel` in the URL without hiding the selected claim context. |
+| Operator panel tabs | Segment buttons | Switch the operator workspace between `Intake`, `Adjudication`, and `Reserve`. | Reads/writes `panel` in the URL without hiding the selected claim context. |
 | Claimant posture card | Read-only card | Show wallet, recognized role, and current participation count. | Observer mode must remain useful. |
 | Context card | Read-only card | Show pool filter, canonical route, and cross-link to member rights. | Pool filter should say `all pools` when unset. |
 
@@ -400,12 +395,10 @@ Required page sections:
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
 | Claim case id | Text input | Capture the canonical `ClaimCase` id seed. | Required before final submission; may be preseeded locally for convenience. |
-| Claimant field | Read-only field | Show the selected member position wallet that will own the submission. | Always derived from the selected member position; operator flows must not override claimant. |
-| Member position selector | Select | Choose one enrolled `MemberPosition` record for the selected plan context. | Must show an empty state when no member position exists for the selected plan context. |
+| Claimant field | Text input | Capture the claimant wallet that will own the submission. | Claims now bind directly to a claimant wallet because `MemberPosition` accounts are retired from the base protocol. |
 | Funding line selector | Select | Choose the plan-side `FundingLine` the claim should open against. | Must be drawn from the selected plan context. |
 | Initial evidence reference | Text input | Capture a public pointer such as `ipfs://...`, URI, CID, or digest seed. | Must reject raw file uploads to chain-bound state. |
-| Eligibility notice | Inline notice | Explain when the connected wallet cannot submit because no eligible member position exists. | Must remain visible before the primary action. |
-| `Open claim case` | Primary button | Create the claim on-chain with the selected plan, member position, funding line, derived claimant, and evidence reference. | Must be blocked until wallet, eligible member position, derived member-wallet claimant, and open funding line are all present; member self-submit and plan/operator submit must keep claimant equal to the selected member wallet. |
+| `Open claim case` | Primary button | Create the claim on-chain with the selected plan, funding line, claimant wallet, and evidence reference fingerprint. | Must be blocked until wallet, claimant wallet, and funding line are all present. Raw evidence stays off-chain; only the fingerprint is serialized. |
 
 #### `/claims` panel: Operator liability workspace
 
@@ -415,15 +408,14 @@ Required page sections:
 | Obligation card | Data card | Show obligation id, status, health plan, policy series, and linked claim case when present. | One card per filtered obligation. |
 | Claim selection control | Selectable row | Drive the active operator subform from the selected claim case. | Must preserve route state in the URL when possible. |
 | Intake form | Operator action form | Attach evidence references and set intake review posture. | Must support controlled review-state changes before adjudication. |
-| Adjudication form | Operator action form | Approve or deny amounts and create the linked obligation when warranted. | Must surface the beneficiary, obligation id, and delivery mode before signature. |
+| Adjudication form | Operator action form | Approve or deny amounts and create the linked obligation when warranted. | Any approval or reserve amount must carry both evidence and decision-support fingerprints before signature. |
 | Reserve and settlement form | Operator action form | Reserve liabilities, release reserve, settle claim cases, and settle obligations. | Must make irreversible economic actions explicit before signature and keep linked-claim reserve/release oracle-scoped while linked-claim obligation settlement remains claims-operator scoped. |
-| Impairment form | Operator action form | Mark impairment against the selected funding-line or obligation context. | Must stay claim-operator scoped and explain the linked liability consequence. |
 
 ### 3.5 `/members`
 
 Purpose:
 
-- Member-rights route for operator-mediated enrollment, active rights, and eligibility review.
+- Read-only archive for historical member-position context. Member enrollment, eligibility review, and delegated-right transactions are retired from the trimmed base protocol.
 
 Primary users:
 
@@ -434,11 +426,9 @@ Primary users:
 
 Required page sections:
 
-1. Hero with route narrative
-2. Route snapshot rail
-3. Operator-mediated enrollment workspace
-4. Member review and eligibility workspace
-5. Rights posture rail
+1. Route snapshot rail
+2. Historical member-position register when decoded or fixture data exists
+3. Notice that claims now bind directly to claimant wallets
 
 #### `/members` route-level controls
 
@@ -447,25 +437,17 @@ Required page sections:
 | Plan selector | Searchable selector | Choose the active `HealthPlan` context. | Respect optional pool filter. |
 | Series selector | Searchable selector | Choose the active `PolicySeries`. | Reset when plan changes. |
 | Member posture card | Read-only card | Show wallet, role, and current participation count. | Observer mode supported. |
-| Selected member control | Route state | Focus the operator review workspace on one `MemberPosition` when applicable. | Reads/writes `member` and supporting panel state in the URL. |
+| Selected member control | Route state | Focus historical member-position context when applicable. | Must not expose new member-position or eligibility transactions. |
 | Cross-route card | Action card | Link to `Claims` and `Capital context` for the same pool when applicable. | Must explain that pool context does not own member rights. |
 
-#### `/members` panel: Enrollment
+#### `/members` panel: Archive
 
 | Element | Type | Required functionality | Required states / rules |
 | --- | --- | --- | --- |
-| Connected wallet | Read-only field | Show the wallet that will own the member position. | Required for audit clarity. |
-| Series scope | Read-only/meta field | Show the selected lane or `plan root` when no series is selected. | Must match the plan/series context used by the transaction. |
-| Membership model | Read-only/meta field | Show the selected plan's enrollment rule. | Must match plan configuration. |
-| Existing position field | Read-only field | Show whether the enrollment already exists. | Distinguish new draft vs existing position. |
-| Enrollment proof mode | Read-only/meta field | Show whether the current enrollment posture resolves to `open`, `token_gate`, or `invite_permit`. | Must stay aligned with the selected plan configuration and the proof accounts required by the protocol surface. |
-| Subject commitment | Text input | Capture an optional subject commitment or digest seed for the new position. | Optional; must normalize digest input before send. |
-| Token-gate evidence fields | Conditional inputs | Capture token-account and observed balance context when the selected plan is token-gated. | Visible only for token-gated membership models. |
-| Invite fields | Conditional inputs | Capture invite reference and expiry when the selected plan is invite-gated. | Visible only for invite-only membership models. |
-| Delegated-rights posture | Status chips / register field | Show any delegated rights already recorded on existing member positions. | Read-only on this route for the current canonical model. |
-| `Open member position` | Primary button | Create the member position when the wallet and enrollment rule allow it. | Disabled with reason when blocked by token gate, invite-only authority mismatch, missing wallet, or duplicate member position. |
+| Member-position archive | Register | Show historical or fixture member-position rows when present. | Read-only; no enrollment, eligibility, or delegation transaction builders may be mounted. |
+| Claim handoff | Link/action | Send operators to claim intake with a claimant wallet. | Must explain that claim intake now uses the claimant wallet directly. |
 
-Standalone grant/revoke delegation is not part of the current mounted route because the live canonical program does not expose that as a separate member-facing transaction surface.
+Standalone grant/revoke delegation and member enrollment are not part of the current mounted route because the live canonical program does not expose member-position transaction accounts.
 
 ### 3.6 `/governance`
 

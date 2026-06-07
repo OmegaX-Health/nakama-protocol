@@ -58,6 +58,35 @@ fn require_quasar_plan_control(authority: &Pubkey, plan: &HealthPlanAccountData<
 }
 
 #[cfg(feature = "quasar")]
+fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require!(plan.active.get(), OmegaXProtocolError::HealthPlanInactive);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_plan_pause_flags_clear(
+    plan: &HealthPlanAccountData<'_>,
+    flags: u32,
+    error: OmegaXProtocolError,
+) -> Result<()> {
+    if plan.pause_flags.get() & flags == 0 {
+        Ok(())
+    } else {
+        Err(error.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_health_plan_active(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
 #[inline(always)]
 fn require_quasar_positive_amount(amount: u64) -> Result<()> {
     require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
@@ -112,6 +141,7 @@ pub(crate) fn create_obligation<'info>(
     let authority = *ctx.accounts.authority.address();
     let health_plan_key = *ctx.accounts.health_plan.address();
     require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
+    require_quasar_plan_operations_open(&ctx.accounts.health_plan)?;
     require_keys_eq!(
         ctx.accounts.funding_line.health_plan,
         health_plan_key,
@@ -206,6 +236,7 @@ pub(crate) fn create_obligation(
 ) -> Result<()> {
     require_id(&args.obligation_id)?;
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
+    require_plan_operations_open(&ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.funding_line.health_plan == ctx.accounts.health_plan.key(),
         OmegaXProtocolError::HealthPlanMismatch

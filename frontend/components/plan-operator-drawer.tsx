@@ -13,37 +13,28 @@ import {
   buildAdjudicateClaimCaseTx,
   buildCreateObligationTx,
   buildCreatePolicySeriesTx,
+  buildDepositReserveCapitalTx,
   buildFundSponsorBudgetTx,
-  buildMarkImpairmentTx,
   buildOpenClaimCaseTx,
   buildOpenFundingLineTx,
-  buildOpenMemberPositionTx,
   buildRecordPremiumPaymentTx,
+  buildRecordReserveEarningsTx,
   buildReleaseReserveTx,
   buildReserveObligationTx,
+  buildReturnReserveCapitalTx,
   buildSettleClaimCaseTx,
   buildSettleObligationTx,
   buildUpdateHealthPlanControlsTx,
-  buildUpdateMemberEligibilityTx,
   buildUpdateReserveDomainControlsTx,
   buildVersionPolicySeriesTx,
   CLAIM_INTAKE_APPROVED,
   CLAIM_INTAKE_DENIED,
   CLAIM_INTAKE_UNDER_REVIEW,
-  ELIGIBILITY_ELIGIBLE,
-  ELIGIBILITY_PENDING,
   FUNDING_LINE_TYPE_BACKSTOP,
   FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
   FUNDING_LINE_TYPE_PREMIUM_INCOME,
   FUNDING_LINE_TYPE_SPONSOR_BUDGET,
   FUNDING_LINE_TYPE_SUBSIDY,
-  MEMBER_DELEGATED_RIGHT_FLAGS,
-  MEMBERSHIP_GATE_KIND_INVITE_ONLY,
-  MEMBERSHIP_GATE_KIND_OPEN,
-  MEMBERSHIP_MODE_INVITE_ONLY,
-  MEMBERSHIP_MODE_OPEN,
-  MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
-  MEMBERSHIP_PROOF_MODE_OPEN,
   OBLIGATION_DELIVERY_MODE_CLAIMABLE,
   OBLIGATION_STATUS_CANCELED,
   OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
@@ -104,17 +95,17 @@ const SECTIONS: Array<{ id: PlanOperatorSection; label: string; blurb: string }>
   {
     id: "funding",
     label: "Funding flows",
-    blurb: "Fund sponsor budgets and record premium inflows.",
+    blurb: "Fund sponsor budgets, premiums, and reserve capital.",
   },
   {
     id: "claims",
     label: "Claims",
-    blurb: "Open cases, adjudicate, reserve, settle, and mark impairment.",
+    blurb: "Open cases, adjudicate, reserve, and settle.",
   },
   {
     id: "members",
     label: "Members",
-    blurb: "Enroll members and review eligibility or delegation.",
+    blurb: "Retired member-position controls and historical snapshots.",
   },
   {
     id: "controls",
@@ -127,15 +118,8 @@ const CLAIM_SUB_TABS = [
   { id: "intake", label: "Intake" },
   { id: "adjudication", label: "Adjudicate" },
   { id: "reserve", label: "Reserve & settle" },
-  { id: "impairment", label: "Impairment" },
 ] as const;
 type ClaimSubTab = (typeof CLAIM_SUB_TABS)[number]["id"];
-
-const MEMBER_SUB_TABS = [
-  { id: "enroll", label: "Enroll" },
-  { id: "review", label: "Review" },
-] as const;
-type MemberSubTab = (typeof MEMBER_SUB_TABS)[number]["id"];
 
 const CONTROLS_SUB_TABS = [
   { id: "plan", label: "Plan" },
@@ -144,18 +128,6 @@ const CONTROLS_SUB_TABS = [
   { id: "line", label: "Funding line" },
 ] as const;
 type ControlsSubTab = (typeof CONTROLS_SUB_TABS)[number]["id"];
-
-const DELEGATED_RIGHT_COPY: Record<string, string> = {
-  delegate_claim_filing: "Delegate claim filing",
-  delegate_evidence_upload: "Delegate evidence upload",
-  delegate_premium_payment: "Delegate premium payment",
-  delegate_benefit_receipt: "Delegate benefit receipt",
-  delegate_governance_vote: "Delegate governance vote",
-};
-
-function delegatedRightLabel(flag: string): string {
-  return DELEGATED_RIGHT_COPY[flag] ?? flag.replace(/_/g, " ");
-}
 
 function parseBigIntInput(value: string): bigint {
   const normalized = value.trim().replace(/[_ ,]/g, "");
@@ -173,33 +145,6 @@ async function hashReason(value: string): Promise<string> {
   const normalized = trimmed.toLowerCase().replace(/^0x/, "");
   if (/^[0-9a-f]{64}$/.test(normalized)) return normalized;
   return hashStringTo32Hex(trimmed);
-}
-
-function normalizedMembershipLabel(value?: string | null): string {
-  return (value ?? "").trim().toLowerCase().replace(/[-\s]+/g, "_");
-}
-
-function membershipModeForPlan(plan: HealthPlanSnapshot): number {
-  if (typeof plan.membershipModeValue === "number") return plan.membershipModeValue;
-  const label = normalizedMembershipLabel(plan.membershipModel);
-  if (label.includes("invite")) return MEMBERSHIP_MODE_INVITE_ONLY;
-  return MEMBERSHIP_MODE_OPEN;
-}
-
-function membershipGateKindForPlan(plan: HealthPlanSnapshot): number {
-  if (typeof plan.membershipGateKindValue === "number") return plan.membershipGateKindValue;
-  const gateLabel = normalizedMembershipLabel(plan.membershipGateKind);
-  if (gateLabel.includes("invite")) return MEMBERSHIP_GATE_KIND_INVITE_ONLY;
-
-  const mode = membershipModeForPlan(plan);
-  if (mode === MEMBERSHIP_MODE_INVITE_ONLY) return MEMBERSHIP_GATE_KIND_INVITE_ONLY;
-  return MEMBERSHIP_GATE_KIND_OPEN;
-}
-
-function proofModeForPlan(plan: HealthPlanSnapshot): number {
-  const mode = membershipModeForPlan(plan);
-  if (mode === MEMBERSHIP_MODE_INVITE_ONLY) return MEMBERSHIP_PROOF_MODE_INVITE_PERMIT;
-  return MEMBERSHIP_PROOF_MODE_OPEN;
 }
 
 export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
@@ -221,12 +166,13 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
   const [flowAmount, setFlowAmount] = useState("0");
   const [sourceTokenAccount, setSourceTokenAccount] = useState("");
   const [vaultTokenAccount, setVaultTokenAccount] = useState("");
+  const [fundingReference, setFundingReference] = useState("");
 
   // Claims state
   const [claimSubTab, setClaimSubTab] = useState<ClaimSubTab>("intake");
   const [selectedClaimAddress, setSelectedClaimAddress] = useState("");
   const [selectedObligationAddress, setSelectedObligationAddress] = useState("");
-  const [selectedMemberAddress, setSelectedMemberAddress] = useState("");
+  const [claimantAddress, setClaimantAddress] = useState("");
   const [selectedFundingLineForClaim, setSelectedFundingLineForClaim] = useState("");
   const [claimId, setClaimId] = useState("");
   const [evidenceRef, setEvidenceRef] = useState("");
@@ -244,22 +190,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
   const [settleObligationAmount, setSettleObligationAmount] = useState("0");
   const [settleObligationStatus, setSettleObligationStatus] = useState(String(OBLIGATION_STATUS_CLAIMABLE_PAYABLE));
   const [recipientTokenAccount, setRecipientTokenAccount] = useState("");
-  const [impairmentAmount, setImpairmentAmount] = useState("0");
-  const [impairmentReason, setImpairmentReason] = useState("");
-
-  // Members state
-  const [memberSubTab, setMemberSubTab] = useState<MemberSubTab>("enroll");
-  const [memberSelectedAddress, setMemberSelectedAddress] = useState("");
-  const [walletAddress, setWalletAddress] = useState("");
-  const [subjectCommitment, setSubjectCommitment] = useState("");
-  const [eligibilityStatus, setEligibilityStatus] = useState(String(ELIGIBILITY_PENDING));
-  const [proofMode, setProofMode] = useState("0");
-  const [inviteId, setInviteId] = useState("");
-  const [inviteAuthorityAddress, setInviteAuthorityAddress] = useState("");
-  const [inviteExpiresAt, setInviteExpiresAt] = useState("0");
-  const [delegatedRights, setDelegatedRights] = useState<string[]>([]);
-  const [memberActive, setMemberActive] = useState(true);
-
   // Controls state
   const [controlsSubTab, setControlsSubTab] = useState<ControlsSubTab>("plan");
   const [planAllowedRailMask, setPlanAllowedRailMask] = useState("0");
@@ -304,34 +234,15 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
   }, [props.obligations]);
 
   useEffect(() => {
-    setSelectedMemberAddress(props.members[0]?.address ?? "");
-    setMemberSelectedAddress(props.members[0]?.address ?? "");
-  }, [props.members]);
-
-  useEffect(() => {
-    if (publicKey && !walletAddress) setWalletAddress(publicKey.toBase58());
-  }, [publicKey, walletAddress]);
-
-  useEffect(() => {
-    const member = props.members.find((entry) => entry.address === memberSelectedAddress);
-    if (member) {
-      setEligibilityStatus(String(member.eligibilityStatus));
-      setDelegatedRights(member.delegatedRights);
-      setMemberActive(member.active);
-    }
-  }, [memberSelectedAddress, props.members]);
+    const connected = publicKey?.toBase58() ?? "";
+    if (connected && !claimantAddress) setClaimantAddress(connected);
+  }, [claimantAddress, publicKey]);
 
   useEffect(() => {
     if (!props.plan) return;
     setPlanAllowedRailMask("0");
     setPlanPauseFlags(String(props.plan.pauseFlags ?? 0));
     setPlanActive(props.plan.active);
-    setProofMode(String(proofModeForPlan(props.plan)));
-    setInviteAuthorityAddress(
-      props.plan.membershipInviteAuthority && props.plan.membershipInviteAuthority !== ZERO_PUBKEY
-        ? props.plan.membershipInviteAuthority
-        : "",
-    );
   }, [props.plan]);
 
   useEffect(() => {
@@ -377,15 +288,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
     () => props.obligations.find((obligation) => obligation.address === selectedObligationAddress) ?? null,
     [props.obligations, selectedObligationAddress],
   );
-  const selectedObligationClaim = useMemo(
-    () => props.claimCases.find((claim) => claim.address === selectedObligation?.claimCase) ?? null,
-    [props.claimCases, selectedObligation?.claimCase],
-  );
-  const selectedMemberForClaim = useMemo(
-    () => props.members.find((member) => member.address === selectedMemberAddress) ?? null,
-    [props.members, selectedMemberAddress],
-  );
-  const claimIntakeClaimantAddress = selectedMemberForClaim?.wallet ?? "";
   const selectedClaimFundingLineAddress = selectedClaim?.fundingLine ?? null;
   const selectedObligationFundingLineAddress = selectedObligation?.fundingLine ?? null;
   const selectedClaimFundingLine = useMemo(
@@ -425,14 +327,9 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
     selectedFundingLineForClaim,
     selectedObligationFundingLineAddress,
   ]);
-  const selectedMember = useMemo(
-    () => props.members.find((member) => member.address === memberSelectedAddress) ?? null,
-    [props.members, memberSelectedAddress],
-  );
   const createObligationFundingLine = selectedClaimFundingLine ?? selectedFundingLineForClaimResolved;
   const obligationFlowFundingLine = selectedObligationFundingLine;
   const settleClaimFundingLine = selectedClaimFundingLine;
-  const impairmentFundingLine = selectedObligationFundingLine ?? selectedFundingLineForClaimResolved;
   const settleClaimAssetMint = settleClaimFundingLine?.assetMint ?? null;
   const settleObligationAssetMint = selectedObligation?.assetMint ?? obligationFlowFundingLine?.assetMint ?? null;
   const selectedClaimSettlementVault = useMemo(
@@ -453,24 +350,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
       ) ?? null,
     [props.domainAssetVaults, props.plan?.reserveDomain, settleObligationAssetMint],
   );
-  const allocationFundingLineAddress =
-    section === "funding"
-      ? selectedFundingLine?.address
-      : (obligationFlowFundingLine ?? settleClaimFundingLine ?? selectedFundingLineForClaimResolved)?.address;
-  const selectedAllocation = useMemo(
-    () =>
-      props.allocations.find((entry) => entry.fundingLine === allocationFundingLineAddress) ??
-      null,
-    [allocationFundingLineAddress, props.allocations],
-  );
-  const selectedClass = useMemo(
-    () => props.classes.find((capitalClass) => capitalClass.address === selectedAllocation?.capitalClass) ?? null,
-    [props.classes, selectedAllocation?.capitalClass],
-  );
-  const selectedPool = useMemo(
-    () => props.pools.find((pool) => pool.address === selectedAllocation?.liquidityPool) ?? null,
-    [props.pools, selectedAllocation?.liquidityPool],
-  );
   const selectedFundingVault = useMemo(
     () =>
       props.domainAssetVaults.find(
@@ -489,24 +368,13 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
     [props.seriesOptions, newFundingLinePolicySeriesAddress],
   );
 
-  const delegatedRightsMask = delegatedRights.reduce((mask, right) => {
-    const index = MEMBER_DELEGATED_RIGHT_FLAGS.indexOf(right as (typeof MEMBER_DELEGATED_RIGHT_FLAGS)[number]);
-    return index >= 0 ? mask | (1 << index) : mask;
-  }, 0);
-  const connectedWalletAddress = publicKey?.toBase58() ?? "";
-  const normalizedMemberWalletAddress = walletAddress.trim();
-  const normalizedInviteAuthorityAddress = inviteAuthorityAddress.trim();
-  const activeMembershipMode = props.plan ? membershipModeForPlan(props.plan) : MEMBERSHIP_MODE_OPEN;
-  const inviteAuthorityRequired = activeMembershipMode === MEMBERSHIP_MODE_INVITE_ONLY;
-  const memberWalletMatchesSigner =
-    Boolean(connectedWalletAddress) &&
-    (normalizedMemberWalletAddress || connectedWalletAddress) === connectedWalletAddress;
-  const inviteAuthorityMatchesSigner =
-    !inviteAuthorityRequired ||
-    (Boolean(normalizedInviteAuthorityAddress) &&
-      normalizedInviteAuthorityAddress === connectedWalletAddress);
-  const memberProofReady =
-    (!inviteAuthorityRequired || Boolean(normalizedInviteAuthorityAddress));
+  const reserveCapitalLineSelected =
+    selectedFundingLine?.lineType === FUNDING_LINE_TYPE_BACKSTOP;
+  const reserveEarningsLineSelected =
+    selectedFundingLine?.lineType === FUNDING_LINE_TYPE_BACKSTOP ||
+    selectedFundingLine?.lineType === FUNDING_LINE_TYPE_SUBSIDY;
+  const adjudicationRequiresProof =
+    parseBigIntInput(approvedAmount) > 0n || parseBigIntInput(reserveAmount) > 0n;
 
   async function run(label: string, factory: () => Promise<Transaction>) {
     if (!publicKey || !sendTransaction || !props.plan) return;
@@ -650,7 +518,7 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                     </div>
                     <div className="plans-wizard-row">
                       <TextField
-                        label="Source token account"
+                        label="Source / recipient token account"
                         value={sourceTokenAccount}
                         onChange={setSourceTokenAccount}
                       />
@@ -660,6 +528,12 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                         onChange={setVaultTokenAccount}
                       />
                     </div>
+                    <TextField
+                      label="Reference hash seed"
+                      value={fundingReference}
+                      onChange={setFundingReference}
+                      placeholder="Terms, return reason, or earnings reference"
+                    />
                     <p className="operator-drawer-hint">
                       Funding now moves tokens into the registered vault before reserve ledgers
                       increase.
@@ -721,13 +595,110 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               recentBlockhash: blockhash,
                               amount: parseBigIntInput(flowAmount),
                               policySeriesAddress: selectedFundingLine!.policySeries ?? null,
-                              capitalClassAddress: selectedClass?.address ?? null,
-                              poolAssetMint: selectedPool?.depositAssetMint ?? null,
                             });
                           })
                         }
                       >
                         Record premium
+                      </button>
+                      <button
+                        type="button"
+                        className="plans-secondary-cta"
+                        disabled={
+                          !canAct ||
+                          !selectedFundingLine ||
+                          !sourceTokenAccount.trim() ||
+                          !vaultTokenAccount.trim() ||
+                          !reserveCapitalLineSelected ||
+                          busyOn("Deposit reserve capital")
+                        }
+                        onClick={() =>
+                          run("Deposit reserve capital", async () => {
+                            const { blockhash } = await connection.getLatestBlockhash("confirmed");
+                            return buildDepositReserveCapitalTx({
+                              contributor: publicKey!,
+                              healthPlanAddress: props.plan!.address,
+                              reserveDomainAddress: props.plan!.reserveDomain,
+                              fundingLineAddress: selectedFundingLine!.address,
+                              assetMint: selectedFundingLine!.assetMint,
+                              sourceTokenAccountAddress: sourceTokenAccount.trim(),
+                              vaultTokenAccountAddress: vaultTokenAccount.trim(),
+                              recentBlockhash: blockhash,
+                              amount: parseBigIntInput(flowAmount),
+                              termsHashHex: await hashReason(
+                                fundingReference || selectedFundingLine!.lineId,
+                              ),
+                            });
+                          })
+                        }
+                      >
+                        Deposit reserve capital
+                      </button>
+                      <button
+                        type="button"
+                        className="plans-secondary-cta"
+                        disabled={
+                          !canAct ||
+                          !selectedFundingLine ||
+                          !sourceTokenAccount.trim() ||
+                          !vaultTokenAccount.trim() ||
+                          !reserveCapitalLineSelected ||
+                          busyOn("Return reserve capital")
+                        }
+                        onClick={() =>
+                          run("Return reserve capital", async () => {
+                            const { blockhash } = await connection.getLatestBlockhash("confirmed");
+                            return buildReturnReserveCapitalTx({
+                              authority: publicKey!,
+                              contributorAddress: publicKey!,
+                              healthPlanAddress: props.plan!.address,
+                              reserveDomainAddress: props.plan!.reserveDomain,
+                              fundingLineAddress: selectedFundingLine!.address,
+                              assetMint: selectedFundingLine!.assetMint,
+                              vaultTokenAccountAddress: vaultTokenAccount.trim(),
+                              recipientTokenAccountAddress: sourceTokenAccount.trim(),
+                              recentBlockhash: blockhash,
+                              amount: parseBigIntInput(flowAmount),
+                              reasonHashHex: await hashReason(
+                                fundingReference || selectedFundingLine!.lineId,
+                              ),
+                            });
+                          })
+                        }
+                      >
+                        Return reserve capital
+                      </button>
+                      <button
+                        type="button"
+                        className="plans-secondary-cta"
+                        disabled={
+                          !canAct ||
+                          !selectedFundingLine ||
+                          !sourceTokenAccount.trim() ||
+                          !vaultTokenAccount.trim() ||
+                          !fundingReference.trim() ||
+                          !reserveEarningsLineSelected ||
+                          busyOn("Record reserve earnings")
+                        }
+                        onClick={() =>
+                          run("Record reserve earnings", async () => {
+                            const { blockhash } = await connection.getLatestBlockhash("confirmed");
+                            return buildRecordReserveEarningsTx({
+                              authority: publicKey!,
+                              healthPlanAddress: props.plan!.address,
+                              reserveDomainAddress: props.plan!.reserveDomain,
+                              fundingLineAddress: selectedFundingLine!.address,
+                              assetMint: selectedFundingLine!.assetMint,
+                              sourceTokenAccountAddress: sourceTokenAccount.trim(),
+                              vaultTokenAccountAddress: vaultTokenAccount.trim(),
+                              recentBlockhash: blockhash,
+                              amount: parseBigIntInput(flowAmount),
+                              earningsRefHashHex: await hashReason(fundingReference),
+                            });
+                          })
+                        }
+                      >
+                        Record reserve earnings
                       </button>
                     </div>
                   </>
@@ -778,24 +749,11 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                     <TextField label="Claim ID" value={claimId} onChange={setClaimId} />
                     <TextField
                       label="Claimant"
-                      value={claimIntakeClaimantAddress}
-                      onChange={() => {}}
-                      readOnly
+                      value={claimantAddress}
+                      onChange={setClaimantAddress}
                     />
                   </div>
                   <div className="plans-wizard-row">
-                    <SelectField
-                      label="Member position"
-                      value={selectedMemberAddress}
-                      onChange={setSelectedMemberAddress}
-                    >
-                      {props.members.length === 0 ? <option value="">No members</option> : null}
-                      {props.members.map((member) => (
-                        <option key={member.address} value={member.address}>
-                          {member.wallet.slice(0, 8)}
-                        </option>
-                      ))}
-                    </SelectField>
                     <SelectField
                       label="Funding line"
                       value={selectedFundingLineForClaim}
@@ -820,8 +778,7 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                       className="plans-primary-cta"
                       disabled={
                         !canAct ||
-                        !selectedMemberForClaim ||
-                        !claimIntakeClaimantAddress ||
+                        !claimantAddress.trim() ||
                         !selectedFundingLineForClaimResolved ||
                         busyOn("Open claim case")
                       }
@@ -831,7 +788,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                           return buildOpenClaimCaseTx({
                             authority: publicKey!,
                             healthPlanAddress: props.plan!.address,
-                            memberPositionAddress: selectedMemberForClaim!.address,
                             fundingLineAddress: selectedFundingLineForClaimResolved!.address,
                             recentBlockhash: blockhash,
                             claimId,
@@ -839,7 +795,8 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               props.series?.address ??
                               selectedFundingLineForClaimResolved!.policySeries ??
                               null,
-                            claimantAddress: claimIntakeClaimantAddress,
+                            claimantAddress: claimantAddress.trim(),
+                            evidenceRefHashHex: await hashReason(evidenceRef),
                           });
                         })
                       }
@@ -873,7 +830,15 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                     <button
                       type="button"
                       className="plans-primary-cta"
-                      disabled={!canAct || !selectedClaim || busyOn("Adjudicate claim")}
+                      disabled={
+                        !canAct ||
+                        !selectedClaim ||
+                        (
+                          adjudicationRequiresProof &&
+                          (!evidenceRef.trim() || !decisionSupport.trim())
+                        ) ||
+                        busyOn("Adjudicate claim")
+                      }
                       onClick={() =>
                         run("Adjudicate claim", async () => {
                           const { blockhash } = await connection.getLatestBlockhash("confirmed");
@@ -886,6 +851,8 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                             approvedAmount: parseBigIntInput(approvedAmount),
                             deniedAmount: parseBigIntInput(deniedAmount),
                             reserveAmount: parseBigIntInput(reserveAmount),
+                            evidenceRefHashHex: await hashReason(evidenceRef),
+                            decisionSupportHashHex: await hashReason(decisionSupport),
                             obligationAddress: selectedObligation?.address ?? null,
                           });
                         })
@@ -937,19 +904,15 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                                 createObligationFundingLine!.policySeries ??
                                 null,
                               memberWalletAddress:
-                                selectedMemberForClaim?.wallet ?? selectedClaim?.claimant ?? null,
+                                claimantAddress.trim() || selectedClaim?.claimant || null,
                               beneficiaryAddress: beneficiary || publicKey!,
                               claimCaseAddress: selectedClaim?.address ?? null,
-                              liquidityPoolAddress: selectedPool?.address ?? null,
-                              capitalClassAddress: selectedClass?.address ?? null,
-                              allocationPositionAddress: selectedAllocation?.address ?? null,
                               deliveryMode:
                                 Number.parseInt(deliveryMode, 10) || OBLIGATION_DELIVERY_MODE_CLAIMABLE,
                               amount: parseBigIntInput(obligationAmount),
                               creationReasonHashHex: await hashReason(
                                 `${claimId}:${decisionSupport || evidenceRef || obligationId}`,
                               ),
-                              poolAssetMint: selectedPool?.depositAssetMint ?? null,
                             });
                           })
                         }
@@ -1019,9 +982,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               amount: parseBigIntInput(reserveFlowAmount),
                               claimCaseAddress: selectedObligation!.claimCase ?? null,
                               policySeriesAddress: selectedObligation!.policySeries ?? null,
-                              capitalClassAddress: selectedObligation!.capitalClass ?? null,
-                              allocationPositionAddress: selectedObligation!.allocationPosition ?? null,
-                              poolAssetMint: selectedPool?.depositAssetMint ?? null,
                             });
                           })
                         }
@@ -1051,9 +1011,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               amount: parseBigIntInput(reserveFlowAmount),
                               claimCaseAddress: selectedObligation!.claimCase ?? null,
                               policySeriesAddress: selectedObligation!.policySeries ?? null,
-                              capitalClassAddress: selectedObligation!.capitalClass ?? null,
-                              allocationPositionAddress: selectedObligation!.allocationPosition ?? null,
-                              poolAssetMint: selectedPool?.depositAssetMint ?? null,
                             });
                           })
                         }
@@ -1067,7 +1024,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                           !canAct ||
                           !selectedClaim ||
                           !settleClaimFundingLine ||
-                          !selectedClaim.memberPosition ||
                           !selectedClaimSettlementVault?.vaultTokenAccount ||
                           !recipientTokenAccount.trim() ||
                           busyOn("Settle claim")
@@ -1086,10 +1042,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               amount: parseBigIntInput(settleClaimAmount),
                               policySeriesAddress: selectedClaim!.policySeries ?? null,
                               obligationAddress: selectedObligation?.address ?? null,
-                              capitalClassAddress: selectedObligation?.capitalClass ?? null,
-                              allocationPositionAddress: selectedObligation?.allocationPosition ?? null,
-                              poolAssetMint: selectedPool?.depositAssetMint ?? null,
-                              memberPositionAddress: selectedClaim!.memberPosition,
                               vaultTokenAccountAddress: selectedClaimSettlementVault!.vaultTokenAccount,
                               recipientTokenAccountAddress: recipientTokenAccount.trim(),
                             });
@@ -1109,7 +1061,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                             selectedObligation.claimCase &&
                             (Number.parseInt(settleObligationStatus, 10) || OBLIGATION_STATUS_CLAIMABLE_PAYABLE) === OBLIGATION_STATUS_SETTLED &&
                             (
-                              !selectedObligationClaim?.memberPosition ||
                               !selectedObligationSettlementVault?.vaultTokenAccount ||
                               !recipientTokenAccount.trim()
                             )
@@ -1135,10 +1086,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                               ),
                               claimCaseAddress: selectedObligation!.claimCase ?? null,
                               policySeriesAddress: selectedObligation!.policySeries ?? null,
-                              capitalClassAddress: selectedObligation!.capitalClass ?? null,
-                              allocationPositionAddress: selectedObligation!.allocationPosition ?? null,
-                              poolAssetMint: selectedPool?.depositAssetMint ?? null,
-                              memberPositionAddress: selectedObligationClaim?.memberPosition ?? null,
                               vaultTokenAccountAddress: selectedObligationSettlementVault?.vaultTokenAccount ?? null,
                               recipientTokenAccountAddress: recipientTokenAccount.trim() || null,
                             });
@@ -1151,261 +1098,20 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                   </fieldset>
                 </>
               ) : null}
-
-              {claimSubTab === "impairment" ? (
-                <fieldset className="operator-drawer-fieldset">
-                  <legend className="operator-drawer-legend">Mark impairment</legend>
-                  <div className="plans-wizard-row">
-                    <TextField
-                      label="Impairment amount"
-                      value={impairmentAmount}
-                      onChange={setImpairmentAmount}
-                    />
-                    <TextField
-                      label="Impairment reason"
-                      value={impairmentReason}
-                      onChange={setImpairmentReason}
-                      placeholder="Reason seed or 32-byte hex"
-                    />
-                  </div>
-                  <div className="operator-drawer-actions">
-                    <button
-                      type="button"
-                      className="plans-primary-cta"
-                      disabled={
-                        !canAct ||
-                        !impairmentFundingLine ||
-                        busyOn("Mark impairment")
-                      }
-                      onClick={() =>
-                        run("Mark impairment", async () => {
-                          const { blockhash } = await connection.getLatestBlockhash("confirmed");
-                          return buildMarkImpairmentTx({
-                            authority: publicKey!,
-                            healthPlanAddress: props.plan!.address,
-                            reserveDomainAddress: props.plan!.reserveDomain,
-                            fundingLineAddress: impairmentFundingLine!.address,
-                            assetMint:
-                              selectedObligation?.assetMint ??
-                              impairmentFundingLine!.assetMint,
-                            recentBlockhash: blockhash,
-                            amount: parseBigIntInput(impairmentAmount),
-                            reasonHashHex: await hashReason(impairmentReason),
-                            policySeriesAddress:
-                              selectedObligation?.policySeries ??
-                              impairmentFundingLine!.policySeries ??
-                              null,
-                            capitalClassAddress:
-                              selectedObligation?.capitalClass ?? selectedClass?.address ?? null,
-                            allocationPositionAddress:
-                              selectedObligation?.allocationPosition ?? selectedAllocation?.address ?? null,
-                            obligationAddress: selectedObligation?.address ?? null,
-                            poolAssetMint: selectedPool?.depositAssetMint ?? null,
-                          });
-                        })
-                      }
-                    >
-                      Mark impairment
-                    </button>
-                  </div>
-                </fieldset>
-              ) : null}
             </div>
           ) : null}
 
           {/* ── MEMBERS ─────────────────────── */}
           {section === "members" ? (
             <div className="operator-drawer-section">
-              <SubTabs
-                tabs={MEMBER_SUB_TABS}
-                active={memberSubTab}
-                onChange={(next) => setMemberSubTab(next as MemberSubTab)}
-              />
-
-              {memberSubTab === "enroll" ? (
-                <fieldset className="operator-drawer-fieldset">
-                  <legend className="operator-drawer-legend">Enroll a member</legend>
-                  {!memberWalletMatchesSigner ? (
-                    <p className="operator-drawer-hint">
-                      The member wallet must match the connected signer for this on-chain enrollment.
-                    </p>
-                  ) : null}
-                  {!inviteAuthorityMatchesSigner ? (
-                    <p className="operator-drawer-hint">
-                      Invite-only enrollment also needs the configured invite authority to sign.
-                    </p>
-                  ) : null}
-                  <div className="plans-wizard-row">
-                    <TextField label="Wallet" value={walletAddress} onChange={setWalletAddress} />
-                    <TextField
-                      label="Subject commitment"
-                      value={subjectCommitment}
-                      onChange={setSubjectCommitment}
-                      placeholder="Hash seed or 32-byte hex"
-                    />
-                  </div>
-                  <div className="plans-wizard-row">
-                    <SelectField
-                      label="Eligibility"
-                      value={eligibilityStatus}
-                      onChange={setEligibilityStatus}
-                    >
-                      <option value={String(ELIGIBILITY_PENDING)}>Pending</option>
-                      <option value={String(ELIGIBILITY_ELIGIBLE)}>Eligible</option>
-                    </SelectField>
-	                    <SelectField label="Proof mode" value={proofMode} onChange={setProofMode}>
-	                      <option value="0">Open</option>
-	                      <option value="2">Invite permit</option>
-	                    </SelectField>
-	                  </div>
-	                  {inviteAuthorityRequired ? (
-                    <>
-                      <div className="plans-wizard-row">
-                        <TextField
-                          label="Invite authority"
-                          value={inviteAuthorityAddress}
-                          onChange={setInviteAuthorityAddress}
-                        />
-                        <TextField label="Invite ID" value={inviteId} onChange={setInviteId} />
-                      </div>
-                      <TextField
-                        label="Invite expires at (unix seconds)"
-                        value={inviteExpiresAt}
-                        onChange={setInviteExpiresAt}
-                      />
-                    </>
-                  ) : null}
-                  <div className="operator-drawer-rights">
-                    {MEMBER_DELEGATED_RIGHT_FLAGS.map((right) => (
-                      <Toggle
-                        key={right}
-                        label={delegatedRightLabel(right)}
-                        checked={delegatedRights.includes(right)}
-                        onChange={(checked) =>
-                          setDelegatedRights((current) =>
-                            checked
-                              ? [...new Set([...current, right])]
-                              : current.filter((entry) => entry !== right),
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
-                  <div className="operator-drawer-actions">
-                    <button
-                      type="button"
-                      className="plans-primary-cta"
-                      disabled={
-                        !canAct ||
-                        !memberWalletMatchesSigner ||
-                        !inviteAuthorityMatchesSigner ||
-                        !memberProofReady ||
-                        busyOn("Open member position")
-                      }
-                      onClick={() =>
-                        run("Open member position", async () => {
-                          const { blockhash } = await connection.getLatestBlockhash("confirmed");
-                          return buildOpenMemberPositionTx({
-                            wallet: normalizedMemberWalletAddress || publicKey!,
-                            healthPlanAddress: props.plan!.address,
-                            recentBlockhash: blockhash,
-                            seriesScopeAddress: props.series?.address ?? ZERO_PUBKEY,
-                            subjectCommitmentHashHex: await hashReason(subjectCommitment),
-	                            eligibilityStatus:
-	                              Number.parseInt(eligibilityStatus, 10) || ELIGIBILITY_PENDING,
-	                            delegatedRightsMask,
-	                            proofMode: Number.parseInt(proofMode, 10) || 0,
-	                            inviteIdHashHex: await hashReason(inviteId),
-	                            inviteExpiresAt: parseBigIntInput(inviteExpiresAt),
-	                            inviteAuthorityAddress: inviteAuthorityRequired
-	                              ? normalizedInviteAuthorityAddress
-                              : undefined,
-                          });
-                        })
-                      }
-                    >
-                      Open member position
-                    </button>
-                  </div>
-                </fieldset>
-              ) : null}
-
-              {memberSubTab === "review" ? (
-                <fieldset className="operator-drawer-fieldset">
-                  <legend className="operator-drawer-legend">Review eligibility</legend>
-                  <SelectField
-                    label="Selected member"
-                    value={memberSelectedAddress}
-                    onChange={setMemberSelectedAddress}
-                  >
-                    {props.members.length === 0 ? <option value="">No members</option> : null}
-                    {props.members.map((member) => (
-                      <option key={member.address} value={member.address}>
-                        {member.wallet.slice(0, 8)}
-                      </option>
-                    ))}
-                  </SelectField>
-                  <div className="plans-wizard-row">
-                    <SelectField
-                      label="Eligibility"
-                      value={eligibilityStatus}
-                      onChange={setEligibilityStatus}
-                    >
-                      <option value={String(ELIGIBILITY_PENDING)}>Pending</option>
-                      <option value={String(ELIGIBILITY_ELIGIBLE)}>Eligible</option>
-                      <option value="2">Paused</option>
-                      <option value="3">Closed</option>
-                    </SelectField>
-                    <Toggle
-                      label="Member active"
-                      description="Disable to suspend this member's position."
-                      checked={memberActive}
-                      onChange={setMemberActive}
-                    />
-                  </div>
-                  <div className="operator-drawer-rights">
-                    {MEMBER_DELEGATED_RIGHT_FLAGS.map((right) => (
-                      <Toggle
-                        key={right}
-                        label={delegatedRightLabel(right)}
-                        checked={delegatedRights.includes(right)}
-                        onChange={(checked) =>
-                          setDelegatedRights((current) =>
-                            checked
-                              ? [...new Set([...current, right])]
-                              : current.filter((entry) => entry !== right),
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
-                  <div className="operator-drawer-actions">
-                    <button
-                      type="button"
-                      className="plans-primary-cta"
-                      disabled={!canAct || !selectedMember || busyOn("Update member eligibility")}
-                      onClick={() =>
-                        run("Update member eligibility", async () => {
-                          const { blockhash } = await connection.getLatestBlockhash("confirmed");
-                          return buildUpdateMemberEligibilityTx({
-                            authority: publicKey!,
-                            healthPlanAddress: props.plan!.address,
-                            walletAddress: selectedMember!.wallet,
-                            recentBlockhash: blockhash,
-                            seriesScopeAddress: selectedMember!.policySeries,
-                            eligibilityStatus:
-                              Number.parseInt(eligibilityStatus, 10) || ELIGIBILITY_PENDING,
-                            delegatedRightsMask,
-                            active: memberActive,
-                          });
-                        })
-                      }
-                    >
-                      Update eligibility
-                    </button>
-                  </div>
-                </fieldset>
-              ) : null}
+              <fieldset className="operator-drawer-fieldset">
+                <legend className="operator-drawer-legend">Member positions retired</legend>
+                <p className="operator-drawer-hint">
+                  Claims now bind directly to the claimant wallet. Historical member snapshots remain
+                  visible for context, but new member-position and eligibility transactions are not
+                  part of the base protocol.
+                </p>
+              </fieldset>
             </div>
           ) : null}
 
@@ -1454,12 +1160,6 @@ export function PlanOperatorDrawer(props: PlanOperatorDrawerProps) {
                             sponsorOperator: props.plan!.sponsorOperator,
                             claimsOperator: props.plan!.claimsOperator,
                             oracleAuthority: props.plan!.oracleAuthority ?? ZERO_PUBKEY,
-                            membershipMode: membershipModeForPlan(props.plan!),
-                            membershipGateKind: membershipGateKindForPlan(props.plan!),
-                            membershipGateMint: props.plan!.membershipGateMint ?? ZERO_PUBKEY,
-                            membershipGateMinAmount: BigInt(props.plan!.membershipGateMinAmount ?? 0),
-                            membershipInviteAuthority:
-                              props.plan!.membershipInviteAuthority ?? ZERO_PUBKEY,
                             allowedRailMask: Number.parseInt(planAllowedRailMask, 10) || 0,
                             defaultFundingPriority: props.fundingLines[0]?.fundingPriority ?? 0,
                             pauseFlags: Number.parseInt(planPauseFlags, 10) || 0,

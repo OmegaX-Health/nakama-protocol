@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-// Defense regression for the operator claim-intake UX: the chain requires
-// args.claimant == member_position.wallet for both member and operator submits,
-// so the operator drawer must derive claimant from the selected member position
-// instead of accepting an arbitrary signer/operator override.
+// Defense regression for the trimmed operator claim-intake UX: member-position
+// accounts were retired, so the operator drawer must bind claims directly to a
+// claimant wallet and carry the evidence fingerprint into the transaction.
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -20,33 +19,38 @@ const functionalSpec = readFileSync(
   "utf8",
 );
 
-test("[PT-04 defense] operator claim drawer derives claimant from selected member wallet", () => {
+test("[PT-04 defense] operator claim drawer uses direct claimant wallet input", () => {
   assert.match(
     drawerSource,
-    /const\s+claimIntakeClaimantAddress\s*=\s*selectedMemberForClaim\?\.wallet\s*\?\?\s*""/,
-    "operator claim intake must derive claimant from the selected member wallet",
+    /const\s+\[claimantAddress,\s*setClaimantAddress\]\s*=\s*useState\(""\)/,
+    "operator claim intake must keep an explicit claimant wallet field",
   );
   assert.match(
     drawerSource,
-    /claimantAddress:\s*claimIntakeClaimantAddress/,
-    "open-claim transaction must submit the derived member-wallet claimant",
+    /claimantAddress:\s*claimantAddress\.trim\(\)/,
+    "open-claim transaction must submit the normalized claimant wallet",
+  );
+  assert.match(
+    drawerSource,
+    /evidenceRefHashHex:\s*await\s+hashReason\(evidenceRef\)/,
+    "open-claim transaction must carry the evidence reference fingerprint",
   );
   assert.doesNotMatch(
     drawerSource,
-    /setClaimant|value=\{claimant\}|claimantAddress:\s*claimant/,
-    "operator claim intake must not keep a free-form claimant override",
+    /selectedMemberForClaim|claimIntakeClaimantAddress|memberPositionAddress:\s*selected/,
+    "operator claim intake must not depend on retired member-position state",
   );
 });
 
-test("[PT-04 defense] functional spec forbids operator claimant override", () => {
+test("[PT-04 defense] functional spec reflects direct claimant claim intake", () => {
   assert.match(
     functionalSpec,
-    /operator flows must not override claimant/,
-    "claim-intake spec must forbid operator claimant override",
+    /Claims now bind directly to a claimant wallet/,
+    "claim-intake spec must describe the direct claimant-wallet model",
   );
   assert.doesNotMatch(
     functionalSpec,
-    /operator flow explicitly allows claimant override|operator flows may explicitly override claimant/,
-    "claim-intake spec must not preserve stale operator override language",
+    /operator flow explicitly allows claimant override|operator flows may explicitly override claimant|selected member position wallet/,
+    "claim-intake spec must not preserve stale member-position claimant language",
   );
 });

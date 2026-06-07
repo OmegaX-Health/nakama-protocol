@@ -37,10 +37,9 @@ Completed setup:
   remaining Quasar compile output focuses on facade, context, and POD layout
   work.
 - The root instruction facade is split by feature flag. The Anchor path keeps
-  forwarding to the existing handlers, while the Quasar path declares all 62
-  public instructions with literal Quasar discriminator bytes and fail-closed
-  handler bodies until their account contexts and instruction arguments are
-  fully ported.
+  forwarding to the existing handlers, while the Quasar path declares the
+  current 21 public instructions with literal Quasar discriminator bytes and
+  forwards the active canonical handlers.
 - Anchor-only generated `__client_accounts_*` reexports are gated off the
   Quasar path, and the Quasar platform seam now preserves the existing
   `Result<T>` spelling as `core::result::Result<T, ProgramError>`.
@@ -49,25 +48,17 @@ Completed setup:
   structs, while Quasar resolves them to the borrowed dynamic account views,
   letting shared helpers and most account wrappers carry the required lifetime
   without changing default-path behavior.
-- Capital-market account contexts now have feature-gated Quasar reference
-  wrappers across liquidity pools, classes, allocations, impairments, LP
-  positions, and redemptions. Their existing Anchor handler bodies are gated to
-  the Anchor path until the Quasar facade ports real handlers, and the Quasar
-  SPL seam maps the existing `TokenAccount` spelling to the zero-copy
-  `quasar-spl` token marker.
 - Claim lifecycle account contexts now have the same feature-gated Quasar
   wrapper shape across intake, recipient authorization, adjudication, and direct
   settlement. Evidence attachment and oracle attestation are no longer part of
   the base protocol surface.
-- Fee-vault and funding-obligation account contexts now use the same Quasar
-  reference-wrapper shape across protocol/pool/oracle fee rails, funding-line
-  opening, sponsor and premium inflows, obligation creation, reserve release,
-  and settlement. Their Anchor handler bodies remain on the Anchor path while
-  the Quasar facade remains fail-closed.
-- Governance, oracle/schema, plan/membership, reserve-custody, and
-  reserve-waterfall account contexts now also use feature-gated Quasar
-  reference wrappers and account-data aliases. The account-context dynamic
-  lifetime bucket is cleared across the current public surface.
+- Funding-obligation account contexts now use the same Quasar reference-wrapper
+  shape across funding-line opening, sponsor and premium inflows, reserve
+  capital, obligations, reserve release, and settlement.
+- Plan/membership and reserve-custody account contexts now also use
+  feature-gated Quasar reference wrappers and account-data aliases. The
+  account-context dynamic lifetime bucket is cleared across the current public
+  surface.
 
 The active Quasar compile inventory is:
 
@@ -75,60 +66,21 @@ The active Quasar compile inventory is:
 npm run quasar:check
 ```
 
-As of the latest migration checkpoint, that command reaches `omegax_protocol`
-under Rust 1.89 and then fails on source-port work with 640 compiler errors
-and 97 warnings. The dynamic account lifetime bucket is reduced from 189
-diagnostics to 0 by moving shared helpers, Quasar-only reference fields, and
-all current public account-context domains onto account-data aliases. The
-Quasar PDA seed-expression bucket is also reduced across the current public
-account-context surface by moving dynamic seeds into explicit Quasar-only PDA
-constraints and by using canonical PDA verification where Anchor previously
-generated a bump for token-account init. The remaining cross-repo failure
-buckets are:
-
-- instruction handlers: the Quasar facade is declared and dispatches fail
-  closed, but each public handler still needs its real body ported from Anchor
-  `Context<T>` plus args structs into Quasar `Ctx<T>` plus POD/dynamic
-  instruction parameters.
-- account contexts: Quasar account fields use reference-shaped wrappers such as
-  `&'info Signer`, `&'info mut Account<T>`, `&'info Program<System>`, and
-  `&'info InterfaceAccount<T>`, not Anchor `Signer<'info>`,
-  `Account<'info, T>`, `Program<'info, T>`, or `Box<Account<'info, T>>`.
-  The current public account-context surface is converted for this wrapper
-  shape; remaining account-context work is seed-expression and instruction-arg
-  syntax, not missing dynamic account lifetimes.
-- instruction args: Quasar account-context `#[instruction(...)]` attributes
-  expect field lists such as `#[instruction(domain_id: String<u32, 32>, ...)]`,
-  not Anchor's `#[instruction(args: CreateReserveDomainArgs)]`. The public
-  handlers likewise need Quasar `#[instruction(discriminator = [...])]`
-  wrappers and direct POD/dynamic parameters. This is now the leading compiler
-  bucket: Anchor arg structs are not valid Quasar zero-copy instruction
-  snapshots, and dynamic string/vector args need direct Quasar parameters or a
-  deliberate manual parsing path.
-- SPL seams: remaining Quasar account contexts and helper paths must
-  consistently use `quasar-spl` `Mint`, `TokenAccount`, and `TokenInterface`
-  marker types, while Anchor CPI helper bodies stay on the Anchor-only path
-  until the Quasar CPI port lands.
-- account state follow-up: ledger accounts that embed `ReserveBalanceSheet`
-  still need a Quasar POD layout instead of a nested native-`u64` helper before
-  the zero-copy companion alignment check can pass.
-- events: Quasar `#[event]` requires explicit discriminators and only supports
-  primitive integer, bool, and `Address` fields without padding.
-- args and IDs: Quasar uses `Address` and POD/dynamic instruction parameters;
-  Anchor `AnchorSerialize`, `AnchorDeserialize`, `InitSpace`, `#[max_len]`, and
-  `Pubkey` references need framework-specific replacements or removal from the
-  Quasar path.
-- sysvars and CPI helpers: `Clock::get`, SPL token helpers, and PDA bump access
-  must use Quasar imports and `ctx.bumps` from `Ctx<T>`.
+As of the latest migration checkpoint, that command compiles the
+`omegax_protocol` library under the Quasar feature path. The Quasar surface is
+therefore a release-chain input, not a fail-closed placeholder, and
+`npm run quasar:check` is part of the public release gate. Remaining work is
+runtime parity and adversarial coverage for Quasar money paths, especially
+claims, reserve capital returns, settlement, and pause behavior.
 
 ## Port Order
 
-1. Port the Quasar facade handlers from fail-closed placeholders to real
-   implementations after each account-context and instruction-argument family
-   has been converted.
-2. Rewrite `#[derive(Accounts)]` contexts by domain module, preserving PDA
-   seeds, constraints, and writability exactly. Start with governance and
-   reserve custody because they exercise init, update, and token-custody paths.
+1. Add Quasar runtime parity tests for the active money-path handlers: claims,
+   obligations, reserve-capital return, and pause behavior.
+2. Rewrite any remaining `#[derive(Accounts)]` contexts by domain module, preserving PDA
+   seeds, constraints, and writability exactly. Start with reserve custody,
+   plans, funding, and claims because they exercise init, update,
+   token-custody, and settlement paths.
 3. Convert account state structs to Quasar account layouts with explicit
    account discriminators from `quasar_discriminators::account`. Preserve the
    public wire shape where possible; any layout break requires regenerated IDL,
