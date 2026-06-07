@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateHealthPlan, CreateHealthPlanArgs};
 
 impl<'info> CreateHealthPlan<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_health_plan", hash = "674c95c5afd30de1", spec_hash = "bb359e11543a729c")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_health_plan", hash = "674c95c5afd30de1", spec_hash = "3d660935d1f01e25")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateHealthPlanArgs) -> Result<()> {
         guards::create_health_plan(self, args)?;

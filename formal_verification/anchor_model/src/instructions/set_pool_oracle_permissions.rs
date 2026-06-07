@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{SetPoolOraclePermissions, SetPoolOraclePermissionsArgs};
 
 impl<'info> SetPoolOraclePermissions<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "set_pool_oracle_permissions", hash = "d71ef7b35d177edd", spec_hash = "8e5e6548a72fb8e2")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "set_pool_oracle_permissions", hash = "d71ef7b35d177edd", spec_hash = "39bf2905cd8107f7")]
     #[inline(always)]
     pub fn handler(&mut self, args: SetPoolOraclePermissionsArgs) -> Result<()> {
         guards::set_pool_oracle_permissions(self, args)?;

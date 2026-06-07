@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{OpenMemberPosition, OpenMemberPositionArgs};
 
 impl<'info> OpenMemberPosition<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "open_member_position", hash = "9caf4e68852f7e0c", spec_hash = "7d6799e9149aeab0")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "open_member_position", hash = "9caf4e68852f7e0c", spec_hash = "800683b298813a9e")]
     #[inline(always)]
     pub fn handler(&mut self, args: OpenMemberPositionArgs) -> Result<()> {
         guards::open_member_position(self, args)?;
