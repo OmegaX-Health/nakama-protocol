@@ -155,6 +155,14 @@ instance : Inhabited DeallocateCapitalArgs := ⟨{
   amount := 0,
 }⟩
 
+structure DepositReserveCapitalArgs where
+  amount : Nat
+  deriving Repr, DecidableEq, BEq
+
+instance : Inhabited DepositReserveCapitalArgs := ⟨{
+  amount := 0,
+}⟩
+
 structure DepositIntoCapitalClassArgs where
   amount : Nat
   shares : Nat
@@ -265,6 +273,14 @@ instance : Inhabited RecordPremiumPaymentArgs := ⟨{
   amount := 0,
 }⟩
 
+structure RecordReserveEarningsArgs where
+  amount : Nat
+  deriving Repr, DecidableEq, BEq
+
+instance : Inhabited RecordReserveEarningsArgs := ⟨{
+  amount := 0,
+}⟩
+
 structure RegisterOracleArgs where
   deriving Repr, DecidableEq, BEq
 
@@ -298,6 +314,14 @@ structure ReserveObligationArgs where
   deriving Repr, DecidableEq, BEq
 
 instance : Inhabited ReserveObligationArgs := ⟨{
+  amount := 0,
+}⟩
+
+structure ReturnReserveCapitalArgs where
+  amount : Nat
+  deriving Repr, DecidableEq, BEq
+
+instance : Inhabited ReturnReserveCapitalArgs := ⟨{
   amount := 0,
 }⟩
 
@@ -605,31 +629,6 @@ structure State where
   bump : Nat
   status : Status
 
-def initialize_protocol_governanceTransition (s : State) (signer : Pubkey) (args : InitializeProtocolGovernanceArgs) : Option State :=
-  if signer = s.governance_authority ∧ s.status = .Uninitialized ∧ (args.protocol_fee_bps ≤ 9999) then
-    some { s with protocol_fee_bps := args.protocol_fee_bps, emergency_pause := args.emergency_pause, audit_nonce := 0, status := .Live }
-  else none
-
-def set_protocol_emergency_pauseTransition (s : State) (signer : Pubkey) (args : SetProtocolEmergencyPauseArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with emergency_pause := args.emergency_pause, status := .Live }
-  else none
-
-def rotate_protocol_governance_authorityTransition (s : State) (signer : Pubkey) (args : RotateProtocolGovernanceAuthorityArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
-def accept_protocol_governance_authorityTransition (s : State) (signer : Pubkey) : Option State :=
-  if signer = s.pending_authority ∧ s.status = .Live then
-    some { s with governance_authority := s.pending_authority, status := .Live }
-  else none
-
-def cancel_protocol_governance_authority_transferTransition (s : State) (signer : Pubkey) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
 def create_reserve_domainTransition (s : State) (signer : Pubkey) (args : CreateReserveDomainArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
     some { s with status := .Live }
@@ -643,31 +642,6 @@ def update_reserve_domain_controlsTransition (s : State) (signer : Pubkey) (args
 def create_domain_asset_vaultTransition (s : State) (signer : Pubkey) (args : CreateDomainAssetVaultArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
     some { s with total_assets := 0, status := .Live }
-  else none
-
-def configure_reserve_asset_railTransition (s : State) (signer : Pubkey) (args : ConfigureReserveAssetRailArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.max_staleness_seconds > 0) ∧ (args.max_confidence_bps > 0) ∧ (args.max_confidence_bps ≤ 10000) then
-    some { s with max_confidence_bps := args.max_confidence_bps, max_staleness_seconds := args.max_staleness_seconds, payout_enabled := args.payout_enabled, capacity_enabled := args.capacity_enabled, status := .Live }
-  else none
-
-def publish_reserve_asset_rail_priceTransition (s : State) (signer : Pubkey) (args : PublishReserveAssetRailPriceArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (s.active = true) ∧ (args.price_usd_1e8 > 0) ∧ (args.published_at_ts > 0) ∧ (s.max_confidence_bps > 0) ∧ (args.confidence_bps ≤ s.max_confidence_bps) then
-    some { s with last_price_usd_1e8 := args.price_usd_1e8, last_price_confidence_bps := args.confidence_bps, last_price_published_at_ts := args.published_at_ts, status := .Live }
-  else none
-
-def init_protocol_fee_vaultTransition (s : State) (signer : Pubkey) (args : InitProtocolFeeVaultArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with accrued_fees := 0, withdrawn_fees := 0, status := .Live }
-  else none
-
-def init_pool_treasury_vaultTransition (s : State) (signer : Pubkey) (args : InitPoolTreasuryVaultArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with accrued_fees := 0, withdrawn_fees := 0, status := .Live }
-  else none
-
-def init_pool_oracle_fee_vaultTransition (s : State) (signer : Pubkey) (args : InitPoolOracleFeeVaultArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with accrued_fees := 0, withdrawn_fees := 0, status := .Live }
   else none
 
 def create_health_planTransition (s : State) (signer : Pubkey) (args : CreateHealthPlanArgs) : Option State :=
@@ -685,24 +659,9 @@ def create_policy_seriesTransition (s : State) (signer : Pubkey) (args : CreateP
     some { s with status := .Live }
   else none
 
-def initialize_series_reserve_ledgerTransition (s : State) (signer : Pubkey) (args : InitializeSeriesReserveLedgerArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
 def version_policy_seriesTransition (s : State) (signer : Pubkey) (args : VersionPolicySeriesArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live then
     some { s with status := .Live }
-  else none
-
-def open_member_positionTransition (s : State) (signer : Pubkey) (args : OpenMemberPositionArgs) : Option State :=
-  if signer = s.wallet ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (s.active = true) then
-    some { s with eligibility_status := args.eligibility_status, delegated_rights := args.delegated_rights, status := .Live }
-  else none
-
-def update_member_eligibilityTransition (s : State) (signer : Pubkey) (args : UpdateMemberEligibilityArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with eligibility_status := args.eligibility_status, delegated_rights := args.delegated_rights, active := args.active, status := .Live }
   else none
 
 def open_funding_lineTransition (s : State) (signer : Pubkey) (args : OpenFundingLineArgs) : Option State :=
@@ -716,6 +675,21 @@ def fund_sponsor_budgetTransition (s : State) (signer : Pubkey) (args : FundSpon
   else none
 
 def record_premium_paymentTransition (s : State) (signer : Pubkey) (args : RecordPremiumPaymentArgs) : Option State :=
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
+    some { s with status := .Live }
+  else none
+
+def deposit_reserve_capitalTransition (s : State) (signer : Pubkey) (args : DepositReserveCapitalArgs) : Option State :=
+  if s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
+    some { s with status := .Live }
+  else none
+
+def return_reserve_capitalTransition (s : State) (signer : Pubkey) (args : ReturnReserveCapitalArgs) : Option State :=
+  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
+    some { s with status := .Live }
+  else none
+
+def record_reserve_earningsTransition (s : State) (signer : Pubkey) (args : RecordReserveEarningsArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
     some { s with status := .Live }
   else none
@@ -750,11 +724,6 @@ def authorize_claim_recipientTransition (s : State) (signer : Pubkey) (args : Au
     some { s with status := .Live }
   else none
 
-def attach_claim_evidence_refTransition (s : State) (signer : Pubkey) (args : AttachClaimEvidenceRefArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) then
-    some { s with status := .Live }
-  else none
-
 def adjudicate_claim_caseTransition (s : State) (signer : Pubkey) (args : AdjudicateClaimCaseArgs) : Option State :=
   if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.reserve_amount ≤ args.approved_amount) then
     some { s with review_state := args.review_state, approved_amount := args.approved_amount, denied_amount := args.denied_amount, status := .Live }
@@ -765,302 +734,58 @@ def settle_claim_caseTransition (s : State) (signer : Pubkey) (args : SettleClai
     some { s with status := .Live }
   else none
 
-def settle_claim_case_selected_assetTransition (s : State) (signer : Pubkey) (args : SettleClaimCaseSelectedAssetArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.claim_credit_amount > 0) ∧ (args.payout_amount > 0) ∧ (args.max_overpay_bps ≤ 50) ∧ (s.paid_amount + args.claim_credit_amount ≤ s.approved_amount) ∧ (args.claim_rail_active = true) ∧ (args.claim_rail_price_usd_1e8 > 0) ∧ (args.claim_rail_max_staleness_seconds > 0) ∧ (args.claim_rail_max_confidence_bps > 0) ∧ (args.claim_rail_last_price_confidence_bps ≤ args.claim_rail_max_confidence_bps) ∧ (args.claim_rail_last_price_published_at_ts > 0) ∧ (args.payout_rail_active = true) ∧ (args.payout_rail_payout_enabled = true) ∧ (args.payout_rail_price_usd_1e8 > 0) ∧ (args.payout_rail_max_staleness_seconds > 0) ∧ (args.payout_rail_max_confidence_bps > 0) ∧ (args.payout_rail_last_price_confidence_bps ≤ args.payout_rail_max_confidence_bps) ∧ (args.payout_rail_last_price_published_at_ts > 0) then
-    some { s with status := .Live }
-  else none
-
-def create_liquidity_poolTransition (s : State) (signer : Pubkey) (args : CreateLiquidityPoolArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.fee_bps ≤ 9999) then
-    some { s with status := .Live }
-  else none
-
-def create_capital_classTransition (s : State) (signer : Pubkey) (args : CreateCapitalClassArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.fee_bps ≤ 9999) then
-    some { s with status := .Live }
-  else none
-
-def update_capital_class_controlsTransition (s : State) (signer : Pubkey) (args : UpdateCapitalClassControlsArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with pause_flags := args.pause_flags, queue_only_redemptions := args.queue_only_redemptions, active := args.active, status := .Live }
-  else none
-
-def update_lp_position_credentialingTransition (s : State) (signer : Pubkey) (args : UpdateLpPositionCredentialingArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with credentialed := args.credentialed, status := .Live }
-  else none
-
-def deposit_into_capital_classTransition (s : State) (signer : Pubkey) (args : DepositIntoCapitalClassArgs) : Option State :=
-  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) ∧ (s.active = true) then
-    some { s with status := .Live }
-  else none
-
-def request_redemptionTransition (s : State) (signer : Pubkey) (args : RequestRedemptionArgs) : Option State :=
-  if signer = s.owner ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.shares > 0) then
-    some { s with status := .Live }
-  else none
-
-def process_redemption_queueTransition (s : State) (signer : Pubkey) (args : ProcessRedemptionQueueArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.shares > 0) then
-    some { s with status := .Live }
-  else none
-
-def withdraw_protocol_fee_splTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
-    some { s with status := .Live }
-  else none
-
-def withdraw_protocol_fee_solTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
-    some { s with status := .Live }
-  else none
-
-def withdraw_pool_treasury_splTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
-    some { s with status := .Live }
-  else none
-
-def withdraw_pool_treasury_solTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
-    some { s with status := .Live }
-  else none
-
-def withdraw_pool_oracle_fee_splTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
-    some { s with status := .Live }
-  else none
-
-def withdraw_pool_oracle_fee_solTransition (s : State) (signer : Pubkey) (args : WithdrawArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.amount > 0) ∧ (s.withdrawn_fees + args.amount ≤ s.accrued_fees) then
-    some { s with status := .Live }
-  else none
-
-def create_allocation_positionTransition (s : State) (signer : Pubkey) (args : CreateAllocationPositionArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with cap_amount := args.cap_amount, weight_bps := args.weight_bps, status := .Live }
-  else none
-
-def update_allocation_capsTransition (s : State) (signer : Pubkey) (args : UpdateAllocationCapsArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with cap_amount := args.cap_amount, weight_bps := args.weight_bps, status := .Live }
-  else none
-
-def allocate_capitalTransition (s : State) (signer : Pubkey) (args : AllocateCapitalArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
-    some { s with status := .Live }
-  else none
-
-def deallocate_capitalTransition (s : State) (signer : Pubkey) (args : DeallocateCapitalArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
-    some { s with status := .Live }
-  else none
-
-def mark_impairmentTransition (s : State) (signer : Pubkey) (args : MarkImpairmentArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (s.emergency_pause = false) ∧ (args.amount > 0) then
-    some { s with status := .Live }
-  else none
-
-def register_oracleTransition (s : State) (signer : Pubkey) (args : RegisterOracleArgs) : Option State :=
-  if signer = s.admin ∧ s.status = .Live then
-    some { s with active := true, status := .Live }
-  else none
-
-def claim_oracleTransition (s : State) (signer : Pubkey) : Option State :=
-  if signer = s.oracle ∧ s.status = .Live then
-    some { s with claimed := true, status := .Live }
-  else none
-
-def update_oracle_profileTransition (s : State) (signer : Pubkey) (args : UpdateOracleProfileArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
-def set_pool_oracleTransition (s : State) (signer : Pubkey) (args : SetPoolOracleArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with active := args.active, status := .Live }
-  else none
-
-def set_pool_oracle_permissionsTransition (s : State) (signer : Pubkey) (args : SetPoolOraclePermissionsArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
-def set_pool_oracle_policyTransition (s : State) (signer : Pubkey) (args : SetPoolOraclePolicyArgs) : Option State :=
-  if signer = s.authority ∧ s.status = .Live ∧ (args.oracle_fee_bps ≤ 9999) then
-    some { s with quorum_m := args.quorum_m, quorum_n := args.quorum_n, status := .Live }
-  else none
-
-def register_outcome_schemaTransition (s : State) (signer : Pubkey) (args : RegisterOutcomeSchemaArgs) : Option State :=
-  if signer = s.publisher ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
-def verify_outcome_schemaTransition (s : State) (signer : Pubkey) (args : VerifyOutcomeSchemaArgs) : Option State :=
-  if signer = s.governance_authority ∧ s.status = .Live then
-    some { s with verified := args.verified, status := .Live }
-  else none
-
-def backfill_schema_dependency_ledgerTransition (s : State) (signer : Pubkey) (args : BackfillSchemaDependencyLedgerArgs) : Option State :=
-  if signer = s.governance_authority ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
-def close_outcome_schemaTransition (s : State) (signer : Pubkey) : Option State :=
-  if signer = s.governance_authority ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
-def attest_claim_caseTransition (s : State) (signer : Pubkey) (args : AttestClaimCaseArgs) : Option State :=
-  if signer = s.oracle ∧ s.status = .Live then
-    some { s with status := .Live }
-  else none
-
 inductive Operation where
-  | initialize_protocol_governance (args : InitializeProtocolGovernanceArgs)
-  | set_protocol_emergency_pause (args : SetProtocolEmergencyPauseArgs)
-  | rotate_protocol_governance_authority (args : RotateProtocolGovernanceAuthorityArgs)
-  | accept_protocol_governance_authority
-  | cancel_protocol_governance_authority_transfer
   | create_reserve_domain (args : CreateReserveDomainArgs)
   | update_reserve_domain_controls (args : UpdateReserveDomainControlsArgs)
   | create_domain_asset_vault (args : CreateDomainAssetVaultArgs)
-  | configure_reserve_asset_rail (args : ConfigureReserveAssetRailArgs)
-  | publish_reserve_asset_rail_price (args : PublishReserveAssetRailPriceArgs)
-  | init_protocol_fee_vault (args : InitProtocolFeeVaultArgs)
-  | init_pool_treasury_vault (args : InitPoolTreasuryVaultArgs)
-  | init_pool_oracle_fee_vault (args : InitPoolOracleFeeVaultArgs)
   | create_health_plan (args : CreateHealthPlanArgs)
   | update_health_plan_controls (args : UpdateHealthPlanControlsArgs)
   | create_policy_series (args : CreatePolicySeriesArgs)
-  | initialize_series_reserve_ledger (args : InitializeSeriesReserveLedgerArgs)
   | version_policy_series (args : VersionPolicySeriesArgs)
-  | open_member_position (args : OpenMemberPositionArgs)
-  | update_member_eligibility (args : UpdateMemberEligibilityArgs)
   | open_funding_line (args : OpenFundingLineArgs)
   | fund_sponsor_budget (args : FundSponsorBudgetArgs)
   | record_premium_payment (args : RecordPremiumPaymentArgs)
+  | deposit_reserve_capital (args : DepositReserveCapitalArgs)
+  | return_reserve_capital (args : ReturnReserveCapitalArgs)
+  | record_reserve_earnings (args : RecordReserveEarningsArgs)
   | create_obligation (args : CreateObligationArgs)
   | reserve_obligation (args : ReserveObligationArgs)
   | settle_obligation (args : SettleObligationArgs)
   | release_reserve (args : ReleaseReserveArgs)
   | open_claim_case (args : OpenClaimCaseArgs)
   | authorize_claim_recipient (args : AuthorizeClaimRecipientArgs)
-  | attach_claim_evidence_ref (args : AttachClaimEvidenceRefArgs)
   | adjudicate_claim_case (args : AdjudicateClaimCaseArgs)
   | settle_claim_case (args : SettleClaimCaseArgs)
-  | settle_claim_case_selected_asset (args : SettleClaimCaseSelectedAssetArgs)
-  | create_liquidity_pool (args : CreateLiquidityPoolArgs)
-  | create_capital_class (args : CreateCapitalClassArgs)
-  | update_capital_class_controls (args : UpdateCapitalClassControlsArgs)
-  | update_lp_position_credentialing (args : UpdateLpPositionCredentialingArgs)
-  | deposit_into_capital_class (args : DepositIntoCapitalClassArgs)
-  | request_redemption (args : RequestRedemptionArgs)
-  | process_redemption_queue (args : ProcessRedemptionQueueArgs)
-  | withdraw_protocol_fee_spl (args : WithdrawArgs)
-  | withdraw_protocol_fee_sol (args : WithdrawArgs)
-  | withdraw_pool_treasury_spl (args : WithdrawArgs)
-  | withdraw_pool_treasury_sol (args : WithdrawArgs)
-  | withdraw_pool_oracle_fee_spl (args : WithdrawArgs)
-  | withdraw_pool_oracle_fee_sol (args : WithdrawArgs)
-  | create_allocation_position (args : CreateAllocationPositionArgs)
-  | update_allocation_caps (args : UpdateAllocationCapsArgs)
-  | allocate_capital (args : AllocateCapitalArgs)
-  | deallocate_capital (args : DeallocateCapitalArgs)
-  | mark_impairment (args : MarkImpairmentArgs)
-  | register_oracle (args : RegisterOracleArgs)
-  | claim_oracle
-  | update_oracle_profile (args : UpdateOracleProfileArgs)
-  | set_pool_oracle (args : SetPoolOracleArgs)
-  | set_pool_oracle_permissions (args : SetPoolOraclePermissionsArgs)
-  | set_pool_oracle_policy (args : SetPoolOraclePolicyArgs)
-  | register_outcome_schema (args : RegisterOutcomeSchemaArgs)
-  | verify_outcome_schema (args : VerifyOutcomeSchemaArgs)
-  | backfill_schema_dependency_ledger (args : BackfillSchemaDependencyLedgerArgs)
-  | close_outcome_schema
-  | attest_claim_case (args : AttestClaimCaseArgs)
 
 def applyOp (s : State) (signer : Pubkey) : Operation → Option State
-  | .initialize_protocol_governance args => initialize_protocol_governanceTransition s signer args
-  | .set_protocol_emergency_pause args => set_protocol_emergency_pauseTransition s signer args
-  | .rotate_protocol_governance_authority args => rotate_protocol_governance_authorityTransition s signer args
-  | .accept_protocol_governance_authority => accept_protocol_governance_authorityTransition s signer
-  | .cancel_protocol_governance_authority_transfer => cancel_protocol_governance_authority_transferTransition s signer
   | .create_reserve_domain args => create_reserve_domainTransition s signer args
   | .update_reserve_domain_controls args => update_reserve_domain_controlsTransition s signer args
   | .create_domain_asset_vault args => create_domain_asset_vaultTransition s signer args
-  | .configure_reserve_asset_rail args => configure_reserve_asset_railTransition s signer args
-  | .publish_reserve_asset_rail_price args => publish_reserve_asset_rail_priceTransition s signer args
-  | .init_protocol_fee_vault args => init_protocol_fee_vaultTransition s signer args
-  | .init_pool_treasury_vault args => init_pool_treasury_vaultTransition s signer args
-  | .init_pool_oracle_fee_vault args => init_pool_oracle_fee_vaultTransition s signer args
   | .create_health_plan args => create_health_planTransition s signer args
   | .update_health_plan_controls args => update_health_plan_controlsTransition s signer args
   | .create_policy_series args => create_policy_seriesTransition s signer args
-  | .initialize_series_reserve_ledger args => initialize_series_reserve_ledgerTransition s signer args
   | .version_policy_series args => version_policy_seriesTransition s signer args
-  | .open_member_position args => open_member_positionTransition s signer args
-  | .update_member_eligibility args => update_member_eligibilityTransition s signer args
   | .open_funding_line args => open_funding_lineTransition s signer args
   | .fund_sponsor_budget args => fund_sponsor_budgetTransition s signer args
   | .record_premium_payment args => record_premium_paymentTransition s signer args
+  | .deposit_reserve_capital args => deposit_reserve_capitalTransition s signer args
+  | .return_reserve_capital args => return_reserve_capitalTransition s signer args
+  | .record_reserve_earnings args => record_reserve_earningsTransition s signer args
   | .create_obligation args => create_obligationTransition s signer args
   | .reserve_obligation args => reserve_obligationTransition s signer args
   | .settle_obligation args => settle_obligationTransition s signer args
   | .release_reserve args => release_reserveTransition s signer args
   | .open_claim_case args => open_claim_caseTransition s signer args
   | .authorize_claim_recipient args => authorize_claim_recipientTransition s signer args
-  | .attach_claim_evidence_ref args => attach_claim_evidence_refTransition s signer args
   | .adjudicate_claim_case args => adjudicate_claim_caseTransition s signer args
   | .settle_claim_case args => settle_claim_caseTransition s signer args
-  | .settle_claim_case_selected_asset args => settle_claim_case_selected_assetTransition s signer args
-  | .create_liquidity_pool args => create_liquidity_poolTransition s signer args
-  | .create_capital_class args => create_capital_classTransition s signer args
-  | .update_capital_class_controls args => update_capital_class_controlsTransition s signer args
-  | .update_lp_position_credentialing args => update_lp_position_credentialingTransition s signer args
-  | .deposit_into_capital_class args => deposit_into_capital_classTransition s signer args
-  | .request_redemption args => request_redemptionTransition s signer args
-  | .process_redemption_queue args => process_redemption_queueTransition s signer args
-  | .withdraw_protocol_fee_spl args => withdraw_protocol_fee_splTransition s signer args
-  | .withdraw_protocol_fee_sol args => withdraw_protocol_fee_solTransition s signer args
-  | .withdraw_pool_treasury_spl args => withdraw_pool_treasury_splTransition s signer args
-  | .withdraw_pool_treasury_sol args => withdraw_pool_treasury_solTransition s signer args
-  | .withdraw_pool_oracle_fee_spl args => withdraw_pool_oracle_fee_splTransition s signer args
-  | .withdraw_pool_oracle_fee_sol args => withdraw_pool_oracle_fee_solTransition s signer args
-  | .create_allocation_position args => create_allocation_positionTransition s signer args
-  | .update_allocation_caps args => update_allocation_capsTransition s signer args
-  | .allocate_capital args => allocate_capitalTransition s signer args
-  | .deallocate_capital args => deallocate_capitalTransition s signer args
-  | .mark_impairment args => mark_impairmentTransition s signer args
-  | .register_oracle args => register_oracleTransition s signer args
-  | .claim_oracle => claim_oracleTransition s signer
-  | .update_oracle_profile args => update_oracle_profileTransition s signer args
-  | .set_pool_oracle args => set_pool_oracleTransition s signer args
-  | .set_pool_oracle_permissions args => set_pool_oracle_permissionsTransition s signer args
-  | .set_pool_oracle_policy args => set_pool_oracle_policyTransition s signer args
-  | .register_outcome_schema args => register_outcome_schemaTransition s signer args
-  | .verify_outcome_schema args => verify_outcome_schemaTransition s signer args
-  | .backfill_schema_dependency_ledger args => backfill_schema_dependency_ledgerTransition s signer args
-  | .close_outcome_schema => close_outcome_schemaTransition s signer
-  | .attest_claim_case args => attest_claim_caseTransition s signer args
 
 /-- Property: abstract_state_progress_nonnegative. -/
 def abstract_state_progress_nonnegative (s : State) : Prop :=
   s.audit_nonce ≥ 0
 
-/-- Property: protocol_fee_bps_bounded. -/
-def protocol_fee_bps_bounded (s : State) : Prop :=
-  s.protocol_fee_bps ≤ 9999
-
 /-- Property: claim_payment_bounded. -/
 def claim_payment_bounded (s : State) : Prop :=
   s.paid_amount ≤ s.approved_amount
-
-/-- Property: fee_withdrawals_bounded. -/
-def fee_withdrawals_bounded (s : State) : Prop :=
-  s.withdrawn_fees ≤ s.accrued_fees
-
-/-- Property: allocation_cap_bounded. -/
-def allocation_cap_bounded (s : State) : Prop :=
-  s.allocated_amount ≤ s.cap_amount
 
 end OmegaxProtocol

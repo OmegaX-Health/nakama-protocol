@@ -33,11 +33,76 @@ fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result
 }
 
 #[cfg(feature = "quasar")]
+fn require_quasar_plan_pause_flags_clear(
+    plan: &HealthPlanAccountData<'_>,
+    flags: u32,
+    error: OmegaXProtocolError,
+) -> Result<()> {
+    if plan.pause_flags.get() & flags == 0 {
+        Ok(())
+    } else {
+        Err(error.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_health_plan_active(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_reserve_rails_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_plan_operations_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_DOMAIN_RAILS | PAUSE_FLAG_ALLOCATION_FREEZE,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_claim_intake_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_plan_operations_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_CLAIM_INTAKE,
+        OmegaXProtocolError::ClaimIntakePaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_claim_finality_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_reserve_rails_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_ORACLE_FINALITY_HOLD,
+        OmegaXProtocolError::OracleFinalityHeld,
+    )
+}
+
+#[cfg(feature = "quasar")]
 fn require_quasar_claim_operator(
     authority: &Pubkey,
     plan: &HealthPlanAccountData<'_>,
 ) -> Result<()> {
     if *authority == plan.claims_operator || *authority == plan.plan_admin {
+        Ok(())
+    } else {
+        Err(OmegaXProtocolError::Unauthorized.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_direct_claim_settlement_control(
+    authority: &Pubkey,
+    plan: &HealthPlanAccountData<'_>,
+) -> Result<()> {
+    if *authority == plan.plan_admin {
         Ok(())
     } else {
         Err(OmegaXProtocolError::Unauthorized.into())
@@ -247,11 +312,7 @@ fn book_quasar_direct_claim_payout(
 #[cfg(not(feature = "quasar"))]
 pub(crate) fn open_claim_case(ctx: Context<OpenClaimCase>, args: OpenClaimCaseArgs) -> Result<()> {
     require_id(&args.claim_id)?;
-    require_health_plan_active(&ctx.accounts.health_plan)?;
-    require!(
-        ctx.accounts.health_plan.pause_flags & PAUSE_FLAG_CLAIM_INTAKE == 0,
-        OmegaXProtocolError::ClaimIntakePaused
-    );
+    require_claim_intake_open(&ctx.accounts.health_plan)?;
     require_claim_intake_submitter(
         &ctx.accounts.authority.key(),
         &ctx.accounts.health_plan,
@@ -302,11 +363,7 @@ pub(crate) fn open_claim_case<'info>(
     claim_id: &str,
 ) -> Result<()> {
     require_quasar_id(claim_id)?;
-    require_quasar_health_plan_active(&ctx.accounts.health_plan)?;
-    require!(
-        ctx.accounts.health_plan.pause_flags.get() & PAUSE_FLAG_CLAIM_INTAKE == 0,
-        OmegaXProtocolError::ClaimIntakePaused
-    );
+    require_quasar_claim_intake_open(&ctx.accounts.health_plan)?;
     let authority = *ctx.accounts.authority.address();
     require_quasar_claim_intake_submitter(&authority, &ctx.accounts.health_plan, claimant)?;
 
@@ -434,6 +491,11 @@ pub(crate) fn adjudicate_claim_case(
     args: AdjudicateClaimCaseArgs,
 ) -> Result<()> {
     require_claim_operator(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
+    if args.approved_amount > 0 || args.reserve_amount > 0 {
+        require_claim_finality_open(&ctx.accounts.health_plan)?;
+    } else {
+        require_plan_operations_open(&ctx.accounts.health_plan)?;
+    }
     require!(
         args.reserve_amount <= args.approved_amount,
         OmegaXProtocolError::AmountExceedsApprovedClaim
@@ -565,6 +627,11 @@ pub(crate) fn adjudicate_claim_case<'info>(
 ) -> Result<()> {
     let authority = *ctx.accounts.authority.address();
     require_quasar_claim_operator(&authority, &ctx.accounts.health_plan)?;
+    if approved_amount > 0 || reserve_amount > 0 {
+        require_quasar_claim_finality_open(&ctx.accounts.health_plan)?;
+    } else {
+        require_quasar_plan_operations_open(&ctx.accounts.health_plan)?;
+    }
     require!(
         reserve_amount <= approved_amount,
         OmegaXProtocolError::AmountExceedsApprovedClaim
@@ -738,7 +805,11 @@ pub(crate) fn settle_claim_case(
     ctx: Context<SettleClaimCase>,
     args: SettleClaimCaseArgs,
 ) -> Result<()> {
-    require_claim_operator(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
+    require_direct_claim_settlement_control(
+        &ctx.accounts.authority.key(),
+        &ctx.accounts.health_plan,
+    )?;
+    require_claim_finality_open(&ctx.accounts.health_plan)?;
     require_direct_claim_case_settlement(&ctx.accounts.claim_case)?;
     require!(
         args.amount <= remaining_claim_amount(&ctx.accounts.claim_case),
@@ -823,7 +894,8 @@ pub(crate) fn settle_claim_case<'info>(
 ) -> Result<()> {
     let authority = *ctx.accounts.authority.address();
     let funding_line_key = *ctx.accounts.funding_line.address();
-    require_quasar_claim_operator(&authority, &ctx.accounts.health_plan)?;
+    require_quasar_direct_claim_settlement_control(&authority, &ctx.accounts.health_plan)?;
+    require_quasar_claim_finality_open(&ctx.accounts.health_plan)?;
     require_quasar_direct_claim_case_settlement(&ctx.accounts.claim_case)?;
     let now_ts = Clock::get()?.unix_timestamp.get();
     require!(

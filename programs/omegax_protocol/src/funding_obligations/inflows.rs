@@ -10,6 +10,7 @@ pub(crate) fn fund_sponsor_budget(
     args: FundSponsorBudgetArgs,
 ) -> Result<()> {
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
+    require_reserve_rails_open(&ctx.accounts.health_plan)?;
     require_positive_amount(args.amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_SPONSOR_BUDGET,
@@ -47,6 +48,7 @@ pub(crate) fn record_premium_payment(
     args: RecordPremiumPaymentArgs,
 ) -> Result<()> {
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
+    require_reserve_rails_open(&ctx.accounts.health_plan)?;
     require_positive_amount(args.amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_PREMIUM_INCOME,
@@ -145,6 +147,7 @@ pub(crate) fn deposit_reserve_capital(
     args: DepositReserveCapitalArgs,
 ) -> Result<()> {
     require_positive_amount(args.amount)?;
+    require_capital_subscriptions_open(&ctx.accounts.health_plan)?;
     require_reserve_capital_line(&ctx.accounts.funding_line)?;
     transfer_to_domain_vault(
         args.amount,
@@ -221,6 +224,7 @@ pub(crate) fn return_reserve_capital(
     args: ReturnReserveCapitalArgs,
 ) -> Result<()> {
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
+    require_reserve_redemptions_open(&ctx.accounts.health_plan)?;
     require_positive_amount(args.amount)?;
     require_reserve_capital_line(&ctx.accounts.funding_line)?;
     let contribution_available = checked_sub(
@@ -275,6 +279,7 @@ pub(crate) fn record_reserve_earnings(
     args: RecordReserveEarningsArgs,
 ) -> Result<()> {
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
+    require_reserve_rails_open(&ctx.accounts.health_plan)?;
     require_positive_amount(args.amount)?;
     require_nonzero_hash(
         &args.earnings_ref_hash,
@@ -341,6 +346,65 @@ fn require_quasar_plan_control(authority: &Pubkey, plan: &HealthPlanAccountData<
     } else {
         err!(OmegaXProtocolError::Unauthorized)
     }
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require!(plan.active.get(), OmegaXProtocolError::HealthPlanInactive);
+    Ok(())
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_plan_pause_flags_clear(
+    plan: &HealthPlanAccountData<'_>,
+    flags: u32,
+    error: OmegaXProtocolError,
+) -> Result<()> {
+    if plan.pause_flags.get() & flags == 0 {
+        Ok(())
+    } else {
+        Err(error.into())
+    }
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_health_plan_active(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_reserve_rails_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_plan_operations_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_DOMAIN_RAILS | PAUSE_FLAG_ALLOCATION_FREEZE,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_capital_subscriptions_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_reserve_rails_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+#[cfg(feature = "quasar")]
+fn require_quasar_reserve_redemptions_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_quasar_reserve_rails_open(plan)?;
+    require_quasar_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_REDEMPTION_QUEUE_ONLY,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
 }
 
 #[cfg(feature = "quasar")]
@@ -426,6 +490,7 @@ pub(crate) fn fund_sponsor_budget<'info>(
 ) -> Result<()> {
     let authority = *ctx.accounts.authority.address();
     require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
+    require_quasar_reserve_rails_open(&ctx.accounts.health_plan)?;
     require_quasar_positive_amount(amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_SPONSOR_BUDGET,
@@ -529,6 +594,7 @@ pub(crate) fn record_premium_payment<'info>(
 ) -> Result<()> {
     let authority = *ctx.accounts.authority.address();
     require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
+    require_quasar_reserve_rails_open(&ctx.accounts.health_plan)?;
     require_quasar_positive_amount(amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_PREMIUM_INCOME,
@@ -632,6 +698,7 @@ pub(crate) fn deposit_reserve_capital<'info>(
     terms_hash: [u8; 32],
 ) -> Result<()> {
     require_quasar_positive_amount(amount)?;
+    require_quasar_capital_subscriptions_open(&ctx.accounts.health_plan)?;
     require_quasar_reserve_capital_line(&ctx.accounts.funding_line)?;
     transfer_to_domain_vault(
         amount,
@@ -800,6 +867,7 @@ pub(crate) fn return_reserve_capital<'info>(
 ) -> Result<()> {
     let authority = *ctx.accounts.authority.address();
     require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
+    require_quasar_reserve_redemptions_open(&ctx.accounts.health_plan)?;
     require_quasar_positive_amount(amount)?;
     require_quasar_reserve_capital_line(&ctx.accounts.funding_line)?;
     let contribution_available = quasar_checked_sub(
@@ -939,6 +1007,7 @@ pub(crate) fn record_reserve_earnings<'info>(
 ) -> Result<()> {
     let authority = *ctx.accounts.authority.address();
     require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
+    require_quasar_reserve_rails_open(&ctx.accounts.health_plan)?;
     require_quasar_positive_amount(amount)?;
     require_quasar_nonzero_hash(
         &earnings_ref_hash,

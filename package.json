@@ -76,7 +76,7 @@
     "license:audit": "node scripts/check_dependency_licenses.mjs",
     "security:audit:deps": "node scripts/check_dependency_advisories.mjs",
     "security:sbom": "node scripts/generate_sbom.mjs",
-    "ci:public": "npm run rust:fmt:check && npm run rust:test && npm run rust:lint && npm run idl:freshness:check && npm run protocol:contract:check && npm run test:node && npm run frontend:build && npm run semantic:readiness:check && npm run public:hygiene:check",
+    "ci:public": "npm run rust:fmt:check && npm run rust:test && npm run rust:lint && npm run quasar:check && npm run idl:freshness:check && npm run protocol:contract:check && npm run test:node && npm run frontend:build && npm run semantic:readiness:check && npm run public:hygiene:check",
     "verify:public": "npm run ci:public && npm run license:audit && npm run security:audit:deps && npm run security:sbom",
     "doctor": "node scripts/doctor.mjs",
     "verify": "npm run doctor && npm run ci:public"

@@ -7,13 +7,13 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::{FundSponsorBudget, FundSponsorBudgetArgs};
+use crate::{RecordReserveEarnings, RecordReserveEarningsArgs};
 
-impl<'info> FundSponsorBudget<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "fund_sponsor_budget", hash = "19172b59ab0e63bc", spec_hash = "bfc871b3e8e745b8")]
+impl<'info> RecordReserveEarnings<'info> {
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "record_reserve_earnings", hash = "c3dd874b90d109f0", spec_hash = "264ef3256e76dde0")]
     #[inline(always)]
-    pub fn handler(&mut self, args: FundSponsorBudgetArgs) -> Result<()> {
-        guards::fund_sponsor_budget(self, args)?;
+    pub fn handler(&mut self, args: RecordReserveEarningsArgs) -> Result<()> {
+        guards::record_reserve_earnings(self, args)?;
         // Spec effect (needs fill): funded_amount add_sat 1
         // Spec effect (needs fill): audit_nonce add_sat 1
         // Spec transfer: source_token_account -> vault_token_account amount=args.amount

@@ -21,6 +21,7 @@ This gate covers:
 - Rust formatting
 - Solana program unit tests
 - Anchor-compatible Rust linting
+- Quasar feature-path compile check
 - generated protocol contract parity
 - Node-based protocol and frontend API tests
 - frontend production build
@@ -73,6 +74,7 @@ Before merging a release candidate to `main`, confirm:
 - `npm run anchor:idl`
 - `npm run protocol:contract`
 - `npm run verify:public`
+- `npm run quasar:check`
 - `npm run devnet:operator:drawer:sim`
 - `npm run test:e2e:localnet`
 - `npm run security:audit:deps`

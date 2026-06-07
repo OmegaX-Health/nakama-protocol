@@ -37,8 +37,6 @@ import {
   GENESIS_PROTECT_ACUTE_PLAN_ID,
   GENESIS_PROTECT_ACUTE_PLAN_METADATA_URI,
   GENESIS_PROTECT_ACUTE_POOL_DISPLAY_NAME,
-  GENESIS_PROTECT_ACUTE_POOL_ID,
-  GENESIS_PROTECT_ACUTE_POOL_STRATEGY_THESIS,
 } from "@/lib/genesis-protect-acute";
 import {
   buildLaunchAddressPreview,
@@ -71,11 +69,6 @@ import {
 } from "@/lib/genesis-phase0-launch-profile";
 import { executeProtocolTransactionWithToast } from "@/lib/protocol-action-toast";
 import {
-  buildCreateAllocationPositionTx,
-  buildCreateCapitalClassTx,
-  buildCreateLiquidityPoolTx,
-  buildUpdateCapitalClassControlsTx,
-  CAPITAL_CLASS_RESTRICTION_OPEN,
   deriveFundingLinePda,
   deriveHealthPlanPda,
   deriveLiquidityPoolPda,
@@ -83,7 +76,6 @@ import {
   FUNDING_LINE_TYPE_PREMIUM_INCOME,
   FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
   FUNDING_LINE_TYPE_SPONSOR_BUDGET,
-  REDEMPTION_POLICY_QUEUE_ONLY,
   SERIES_MODE_PROTECTION,
   SERIES_MODE_REWARD,
   SERIES_STATUS_ACTIVE,
@@ -1473,7 +1465,6 @@ export function PlanCreationWizard() {
       if (genesisTemplateMode) {
         const genesisArtifacts = buildGenesisProtectAcuteArtifactAddresses(reserveDomainPk.toBase58());
         const genesisPlanPk = new PublicKey(genesisArtifacts.healthPlanAddress);
-        const genesisPoolPk = new PublicKey(genesisArtifacts.poolAddress);
         const genesisSeriesDefinitions = [
           GENESIS_PROTECT_ACUTE_FAST_DEMO_SKU,
           GENESIS_PROTECT_ACUTE_PRIMARY_SKU,
@@ -1485,15 +1476,6 @@ export function PlanCreationWizard() {
         const genesisFundingLineDefinitions = genesisProtectAcuteBootstrapFundingLines();
         const genesisFundingLineById = Object.fromEntries(
           Object.entries(genesisArtifacts.fundingLineAddresses).map(([lineId, address]) => [lineId, new PublicKey(address)]),
-        ) as Record<string, PublicKey>;
-        const genesisClassDefinitions = genesisProtectAcuteBootstrapCapitalClasses();
-        const genesisClassById = {
-          [genesisClassDefinitions[0]!.classId]: new PublicKey(genesisArtifacts.classAddresses.senior),
-          [genesisClassDefinitions[1]!.classId]: new PublicKey(genesisArtifacts.classAddresses.junior),
-        } as Record<string, PublicKey>;
-        const genesisAllocationDefinitions = genesisProtectAcuteBootstrapAllocations();
-        const genesisAllocationByKey = Object.fromEntries(
-          Object.entries(genesisArtifacts.allocationAddresses).map(([key, address]) => [key, new PublicKey(address)]),
         ) as Record<string, PublicKey>;
         const genesisDocuments = Object.fromEntries(
           await Promise.all(
@@ -1527,11 +1509,8 @@ export function PlanCreationWizard() {
 
         const genesisArtifactTargets = [
           genesisPlanPk,
-          genesisPoolPk,
           ...Object.values(genesisSeriesBySku),
           ...Object.values(genesisFundingLineById),
-          ...Object.values(genesisClassById),
-          ...Object.values(genesisAllocationByKey),
         ];
         const genesisArtifactInfos = await connection.getMultipleAccountsInfo(genesisArtifactTargets, "confirmed");
         const genesisArtifactExists = new Map<string, boolean>();
@@ -1715,120 +1694,10 @@ export function PlanCreationWizard() {
           }
         }
 
-        if (!genesisArtifactExists.get(genesisPoolPk.toBase58())) {
-          await createBuiltTransaction(
-            "Create Genesis liquidity pool",
-            buildCreateLiquidityPoolTx({
-              authority: publicKey,
-              reserveDomainAddress: reserveDomainPk,
-              recentBlockhash: await nextRecentBlockhash(),
-              poolId: GENESIS_PROTECT_ACUTE_POOL_ID,
-              displayName: GENESIS_PROTECT_ACUTE_POOL_DISPLAY_NAME,
-              curator: publicKey,
-              allocator: publicKey,
-              sentinel: publicKey,
-              depositAssetMint: assetMintPk,
-              strategyHashHex: await stableSha256Hex({
-                template: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-                strategyThesis: GENESIS_PROTECT_ACUTE_POOL_STRATEGY_THESIS,
-              }),
-              allowedExposureHashHex: await stableSha256Hex({
-                template: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-                policy: "event7-travel30-only",
-                seriesIds: genesisSeriesDefinitions.map((definition) => definition.seriesId),
-                allocationKeys: genesisAllocationDefinitions.map((definition) => definition.key),
-              }),
-              externalYieldAdapterHashHex: await stableSha256Hex({
-                template: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-                adapter: "none",
-                launchTruth: "no-external-yield-adapter",
-              }),
-              redemptionPolicy: REDEMPTION_POLICY_QUEUE_ONLY,
-              pauseFlags: 0,
-            }),
-          );
-        } else {
-          addActionLog({
-            action: "Create Genesis liquidity pool",
-            message: "Skipped because the Genesis liquidity pool PDA already exists.",
-          });
-        }
-
-        for (const classDefinition of genesisClassDefinitions) {
-          const capitalClassPk = genesisClassById[classDefinition.classId]!;
-          if (genesisArtifactExists.get(capitalClassPk.toBase58())) {
-            addActionLog({
-              action: `Create ${classDefinition.displayName}`,
-              message: "Skipped because the Genesis capital class PDA already exists.",
-            });
-            continue;
-          }
-          await createBuiltTransaction(
-            `Create ${classDefinition.displayName}`,
-            buildCreateCapitalClassTx({
-              authority: publicKey,
-              poolAddress: genesisPoolPk,
-              poolDepositAssetMint: assetMintPk,
-              recentBlockhash: await nextRecentBlockhash(),
-              classId: classDefinition.classId,
-              displayName: classDefinition.displayName,
-              priority: classDefinition.priority,
-              impairmentRank: classDefinition.impairmentRank,
-              restrictionMode: CAPITAL_CLASS_RESTRICTION_OPEN,
-              redemptionTermsMode: 0,
-              minLockupSeconds: classDefinition.minLockupSeconds,
-              pauseFlags: 0,
-            }),
-          );
-          await createBuiltTransaction(
-            `Configure ${classDefinition.displayName} controls`,
-            buildUpdateCapitalClassControlsTx({
-              authority: publicKey,
-              poolAddress: genesisPoolPk,
-              capitalClassAddress: capitalClassPk,
-              recentBlockhash: await nextRecentBlockhash(),
-              pauseFlags: 0,
-              queueOnlyRedemptions: classDefinition.queueOnlyRedemptions,
-              active: true,
-              reasonHashHex: await stableSha256Hex({
-                template: GENESIS_PROTECT_ACUTE_TEMPLATE_KEY,
-                classId: classDefinition.classId,
-                queueOnlyRedemptions: classDefinition.queueOnlyRedemptions,
-              }),
-            }),
-          );
-        }
-
-        for (const allocation of genesisAllocationDefinitions) {
-          const allocationPk = genesisAllocationByKey[allocation.key]!;
-          if (genesisArtifactExists.get(allocationPk.toBase58())) {
-            addActionLog({
-              action: `Create ${allocation.key} allocation`,
-              message: "Skipped because the Genesis allocation position PDA already exists.",
-            });
-            continue;
-          }
-          const allocationSeriesPk = allocation.policySeriesId === GENESIS_PROTECT_ACUTE_FAST_DEMO_SKU.seriesId
-            ? genesisSeriesBySku.event7
-            : genesisSeriesBySku.travel30;
-          await createBuiltTransaction(
-            `Create ${allocation.key} allocation`,
-            buildCreateAllocationPositionTx({
-              authority: publicKey,
-              poolAddress: genesisPoolPk,
-              capitalClassAddress: genesisClassById[allocation.classId]!,
-              healthPlanAddress: genesisPlanPk,
-              fundingLineAddress: genesisFundingLineById[allocation.fundingLineId]!,
-              fundingLineAssetMint: assetMintPk,
-              recentBlockhash: await nextRecentBlockhash(),
-              policySeriesAddress: allocationSeriesPk,
-              capAmount: allocation.capAmount,
-              weightBps: allocation.weightBps,
-              allocationMode: 0,
-              deallocationOnly: false,
-            }),
-          );
-        }
+        addActionLog({
+          action: "Genesis capital-market artifacts",
+          message: "Skipped because liquidity pools, capital classes, and allocation positions are retired from the trimmed base protocol.",
+        });
 
         const nextArtifacts: CreatedArtifacts = {
           healthPlanAddress: genesisPlanPk.toBase58(),
@@ -1836,9 +1705,9 @@ export function PlanCreationWizard() {
           protectionSeriesAddress: genesisSeriesBySku.travel30.toBase58(),
           rewardFundingLineAddress: null,
           protectionFundingLineAddress: genesisFundingLineById[GENESIS_PROTECT_ACUTE_PRIMARY_SKU.fundingLineIds.premium]!.toBase58(),
-          poolAddress: genesisPoolPk.toBase58(),
-          capitalClassAddresses: Object.values(genesisClassById).map((entry) => entry.toBase58()),
-          allocationAddresses: Object.values(genesisAllocationByKey).map((entry) => entry.toBase58()),
+          poolAddress: null,
+          capitalClassAddresses: [],
+          allocationAddresses: [],
           extraSeriesAddresses: Object.values(genesisSeriesBySku).map((entry) => entry.toBase58()),
           extraFundingLineAddresses: Object.values(genesisFundingLineById).map((entry) => entry.toBase58()),
         };

@@ -136,8 +136,9 @@ test("Phase 0 UI keeps public LP self-service separate from hidden admin drawers
   assert.match(capitalWorkbench, /executionClusterVerified/);
   assert.match(planCreationWizard, /executionClusterVerified/);
   assert.match(plansWorkbench, /executionClusterVerified/);
-  assert.match(lpPanel, /buildDepositIntoCapitalClassTx/);
-  assert.match(lpPanel, /buildRequestRedemptionTx/);
+  assert.match(lpPanel, /LP self-service <em>retired<\/em>/);
+  assert.doesNotMatch(lpPanel, /buildDepositIntoCapitalClassTx/);
+  assert.doesNotMatch(lpPanel, /buildRequestRedemptionTx/);
   assert.doesNotMatch(lpPanel, /buildProcessRedemptionQueueTx/);
 });
 

@@ -21,6 +21,72 @@ pub(crate) fn require_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Re
     Ok(())
 }
 
+pub(crate) fn require_plan_pause_flags_clear(
+    plan: &HealthPlanAccountData<'_>,
+    flags: u32,
+    error: OmegaXProtocolError,
+) -> Result<()> {
+    if plan.pause_flags & flags == 0 {
+        Ok(())
+    } else {
+        Err(error.into())
+    }
+}
+
+pub(crate) fn require_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_health_plan_active(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+pub(crate) fn require_reserve_rails_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_plan_operations_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_DOMAIN_RAILS | PAUSE_FLAG_ALLOCATION_FREEZE,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+pub(crate) fn require_capital_subscriptions_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_reserve_rails_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+pub(crate) fn require_reserve_redemptions_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_reserve_rails_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_REDEMPTION_QUEUE_ONLY,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+pub(crate) fn require_claim_intake_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_plan_operations_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_CLAIM_INTAKE,
+        OmegaXProtocolError::ClaimIntakePaused,
+    )
+}
+
+pub(crate) fn require_claim_finality_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_reserve_rails_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_ORACLE_FINALITY_HOLD,
+        OmegaXProtocolError::OracleFinalityHeld,
+    )
+}
+
 pub(crate) fn require_positive_amount(amount: u64) -> Result<()> {
     require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
     Ok(())
@@ -133,6 +199,17 @@ pub(crate) fn require_claim_operator(
     plan: &HealthPlanAccountData<'_>,
 ) -> Result<()> {
     if *authority == plan.claims_operator || *authority == plan.plan_admin {
+        Ok(())
+    } else {
+        err!(OmegaXProtocolError::Unauthorized)
+    }
+}
+
+pub(crate) fn require_direct_claim_settlement_control(
+    authority: &Pubkey,
+    plan: &HealthPlanAccountData<'_>,
+) -> Result<()> {
+    if *authority == plan.plan_admin {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)
