@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{SettleObligation, SettleObligationArgs};
 
 impl<'info> SettleObligation<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "settle_obligation", hash = "b10f615cb4a4318a", spec_hash = "5fdda83cd7f0abad")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "settle_obligation", hash = "b10f615cb4a4318a", spec_hash = "539d6950619187ab")]
     #[inline(always)]
     pub fn handler(&mut self, args: SettleObligationArgs) -> Result<()> {
         guards::settle_obligation(self, args)?;

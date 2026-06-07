@@ -479,7 +479,7 @@ function guardStatePrelude(ctxType, body, contexts) {
   const fields = contexts.get(ctxType) ?? [];
   const lines = [];
   if (/\bemergency_pause\b/.test(body)) {
-    const source = firstExistingField(fields, ['protocol_governance']);
+    const source = firstExistingField(fields, ['protocol_governance', 'health_plan']);
     if (source) {
       lines.push(`    let emergency_pause = account_emergency_pause(&ctx.${source}.to_account_info())?;`);
     }
@@ -554,7 +554,7 @@ function postprocessGuards(guards) {
 
   const contexts = parseContextFields();
   text = text.replace(
-    /(pub fn \w+<'info>\(ctx: &mut (\w+)<'info>(?:, args: \w+)?\) -> Result<\(\)> \{)\n([\s\S]*?)(?=\n\}\n(?:\n\/\/\/ Guards for|$))/g,
+    /(pub fn \w+<'info>\(ctx: &mut (\w+)<'info>(?:, args: \w+)?\) -> Result<\(\)> \{)\n([\s\S]*?)(?=\n\}\n(?:\n\/\/\/ Guards for|\n\/\/ ---- END GENERATED ----|$))/g,
     (_match, header, ctxType, body) => {
       const withoutExistingPrelude = body
         .replace(/    let emergency_pause = account_emergency_pause\(&ctx\.\w+\.to_account_info\(\)\)\?;\n/g, '')

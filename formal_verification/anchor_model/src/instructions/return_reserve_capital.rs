@@ -7,16 +7,16 @@
 use anchor_lang::prelude::*;
 use crate::guards;
 use qedgen_macros::qed;
-use crate::{FundSponsorBudget, FundSponsorBudgetArgs};
+use crate::{ReturnReserveCapital, ReturnReserveCapitalArgs};
 
-impl<'info> FundSponsorBudget<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "fund_sponsor_budget", hash = "19172b59ab0e63bc", spec_hash = "bfc871b3e8e745b8")]
+impl<'info> ReturnReserveCapital<'info> {
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "return_reserve_capital", hash = "ffd8ac7b5096437d", spec_hash = "3e36c39cf4e233a0")]
     #[inline(always)]
-    pub fn handler(&mut self, args: FundSponsorBudgetArgs) -> Result<()> {
-        guards::fund_sponsor_budget(self, args)?;
+    pub fn handler(&mut self, args: ReturnReserveCapitalArgs) -> Result<()> {
+        guards::return_reserve_capital(self, args)?;
         // Spec effect (needs fill): funded_amount add_sat 1
         // Spec effect (needs fill): audit_nonce add_sat 1
-        // Spec transfer: source_token_account -> vault_token_account amount=args.amount
+        // Spec transfer: vault_token_account -> recipient_token_account amount=args.amount
         todo!("fill non-mechanical effects, events, transfers, calls")
     }
 }
