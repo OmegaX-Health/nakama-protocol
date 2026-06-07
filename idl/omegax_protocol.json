@@ -5369,6 +5369,15 @@
           {
             "name": "flow_kind",
             "type": "u8"
+          },
+          {
+            "name": "reference_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           }
         ]
       }

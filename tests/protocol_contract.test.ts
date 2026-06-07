@@ -29,6 +29,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   const depositReserveCapitalArgs = idl.types.find((entry) => entry.name === "DepositReserveCapitalArgs");
   const returnReserveCapitalArgs = idl.types.find((entry) => entry.name === "ReturnReserveCapitalArgs");
   const recordReserveEarningsArgs = idl.types.find((entry) => entry.name === "RecordReserveEarningsArgs");
+  const fundingFlowRecordedEvent = idl.types.find((entry) => entry.name === "FundingFlowRecordedEvent");
 
   assert(!instructionNames.includes("initialize_protocol_governance"));
   assert(!instructionNames.includes("set_protocol_emergency_pause"));
@@ -200,6 +201,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   assert(depositReserveCapitalArgs?.type.fields?.some((field) => field.name === "terms_hash"));
   assert(returnReserveCapitalArgs?.type.fields?.some((field) => field.name === "reason_hash"));
   assert(recordReserveEarningsArgs?.type.fields?.some((field) => field.name === "earnings_ref_hash"));
+  assert(fundingFlowRecordedEvent?.type.fields?.some((field) => field.name === "reference_hash"));
   for (const removedClaimField of ["attestation_count"]) {
     assert(!claimCaseAccount?.type.fields?.some((field) => field.name === removedClaimField));
   }

@@ -135,8 +135,9 @@ future automated benefit.
 
 Realized reserve earnings can be recorded only after same-mint tokens are
 transferred back into the domain vault, and each recording carries a nonzero
-reference hash. Deployed principal, unrealized APY, and adapter-reported rewards
-do not count as free claims-paying reserve.
+reference hash. Funding-flow events also expose the relevant proof fingerprint
+for reserve-capital deposits and returns. Deployed principal, unrealized APY,
+and adapter-reported rewards do not count as free claims-paying reserve.
 
 ## Claim Privacy And Auditability
 

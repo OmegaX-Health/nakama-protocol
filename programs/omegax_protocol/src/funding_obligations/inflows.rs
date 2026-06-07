@@ -36,6 +36,7 @@ pub(crate) fn fund_sponsor_budget(
         funding_line: funding_line.key(),
         amount,
         flow_kind: FundingFlowKind::SponsorBudgetFunded as u8,
+        reference_hash: [0u8; 32],
     });
 
     Ok(())
@@ -74,6 +75,7 @@ pub(crate) fn record_premium_payment(
         funding_line: funding_line_key,
         amount,
         flow_kind: FundingFlowKind::PremiumRecorded as u8,
+        reference_hash: [0u8; 32],
     });
 
     Ok(())
@@ -207,6 +209,7 @@ pub(crate) fn deposit_reserve_capital(
         funding_line: ctx.accounts.funding_line.key(),
         amount,
         flow_kind: FundingFlowKind::ReserveCapitalContributed as u8,
+        reference_hash: args.terms_hash,
     });
 
     Ok(())
@@ -217,7 +220,6 @@ pub(crate) fn return_reserve_capital(
     ctx: Context<ReturnReserveCapital>,
     args: ReturnReserveCapitalArgs,
 ) -> Result<()> {
-    let _ = args.reason_hash;
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
     require_positive_amount(args.amount)?;
     require_reserve_capital_line(&ctx.accounts.funding_line)?;
@@ -261,6 +263,7 @@ pub(crate) fn return_reserve_capital(
         funding_line: ctx.accounts.funding_line.key(),
         amount,
         flow_kind: FundingFlowKind::ReserveCapitalReturned as u8,
+        reference_hash: args.reason_hash,
     });
 
     Ok(())
@@ -303,6 +306,7 @@ pub(crate) fn record_reserve_earnings(
         funding_line: ctx.accounts.funding_line.key(),
         amount,
         flow_kind: FundingFlowKind::ReserveEarningsRecorded as u8,
+        reference_hash: args.earnings_ref_hash,
     });
 
     Ok(())

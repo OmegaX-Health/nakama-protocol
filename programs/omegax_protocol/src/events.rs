@@ -96,6 +96,7 @@ pub struct FundingFlowRecordedEvent {
     pub funding_line: Pubkey,
     pub amount: u64,
     pub flow_kind: u8,
+    pub reference_hash: [u8; 32],
 }
 
 #[cfg(feature = "quasar")]
@@ -104,6 +105,7 @@ pub struct FundingFlowRecordedEvent {
     pub funding_line: Address,
     pub amount: u64,
     pub flow_kind: u8,
+    pub reference_hash: Address,
 }
 
 #[cfg(not(feature = "quasar"))]

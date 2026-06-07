@@ -34,6 +34,11 @@ lets the quote oracle or operator systems know who supplied backstop capital and
 how much has been returned, while pricing, discounts, and manual reward policy
 stay off-chain for this version.
 
+`FundingFlowRecordedEvent.reference_hash` carries the relevant off-chain proof
+fingerprint when one exists: contribution terms for reserve-capital deposits,
+return reasons for capital returns, and earnings references for realized
+reserve earnings. Sponsor-budget and premium inflows use a zero reference hash.
+
 ## Obligations and Claims
 
 | Instruction | Primary purpose |
