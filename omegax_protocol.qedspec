@@ -3,7 +3,7 @@
 
 spec OmegaxProtocol
 
-program_id "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B"
+program_id "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM"
 
 const BASIS_POINTS_DENOMINATOR = 10000
 const MAX_CONFIGURED_FEE_BPS = 9999

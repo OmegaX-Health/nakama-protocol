@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: a983a4a4dbd93a04f8ea2a2a25d90c8bd67c0dc96008455f8822c9b911d74936
+// contract_sha256: 9c7eb5d1484f21c064e560d7ecd80060b61f564496565fb28036e074952bb9fc
 
 export type ProtocolInstructionName =
   | "adjudicate_claim_case"
@@ -39,7 +39,7 @@ export type ProtocolInstructionAccount = {
   pdaSeeds?: Array<{ kind: string; path?: string; value?: number[] }>;
 };
 
-export const PROTOCOL_PROGRAM_ID = "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B" as const;
+export const PROTOCOL_PROGRAM_ID = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM" as const;
 
 export const PROTOCOL_INSTRUCTION_DISCRIMINATORS: Record<ProtocolInstructionName, Uint8Array> = {
   "adjudicate_claim_case": Uint8Array.from([146, 99, 255, 26, 223, 88, 235, 114]),

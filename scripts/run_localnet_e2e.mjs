@@ -10,7 +10,7 @@ import { Keypair } from "@solana/web3.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
-const programId = "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B";
+const programId = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM";
 const programSoPath = resolve(repoRoot, "target/deploy/omegax_protocol.so");
 const keepArtifacts = process.env.OMEGAX_E2E_KEEP_ARTIFACTS === "1";
 const skipBuild = process.env.OMEGAX_E2E_SKIP_BUILD === "1";

@@ -65,6 +65,7 @@ const domainAssetVault = protocol.deriveDomainAssetVaultPda({ reserveDomain, ass
 const domainAssetLedger = protocol.deriveDomainAssetLedgerPda({ reserveDomain, assetMint });
 const fundingLineLedger = protocol.deriveFundingLineLedgerPda({ fundingLine, assetMint });
 const planReserveLedger = protocol.derivePlanReserveLedgerPda({ healthPlan, assetMint });
+const capitalContribution = protocol.deriveCapitalContributionPda({ fundingLine, contributor: attacker });
 const vaultTokenAccount = protocol.deriveDomainAssetVaultTokenAccountPda({ reserveDomain, assetMint });
 const attackerAta = getAssociatedTokenAddressSync(assetMint, attacker, true, TOKEN_PROGRAM_ID);
 const memberAta = getAssociatedTokenAddressSync(assetMint, member, true, TOKEN_PROGRAM_ID);
@@ -358,6 +359,96 @@ const matrixRows: MatrixRow[] = [
     ],
   },
   {
+    area: "reserve-capital",
+    instruction: "deposit_reserve_capital",
+    attack: "attacker tries to backstop an unbound or spoofed reserve line",
+    expectedGuard: "backstop funding-line type, contributor PDA, source token owner, and reserve vault binding",
+    tx: protocol.buildDepositReserveCapitalTx({
+      contributor: attacker,
+      healthPlanAddress: healthPlan,
+      reserveDomainAddress: reserveDomain,
+      fundingLineAddress: fundingLine,
+      assetMint,
+      sourceTokenAccountAddress: attackerAta,
+      vaultTokenAccountAddress: vaultTokenAccount,
+      tokenProgramId: TOKEN_PROGRAM_ID,
+      amount: 1n,
+      termsHashHex: SAMPLE_HASH_HEX,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [
+      domainAssetVault,
+      domainAssetLedger,
+      fundingLine,
+      capitalContribution,
+      fundingLineLedger,
+      planReserveLedger,
+      attackerAta,
+      vaultTokenAccount,
+      TOKEN_PROGRAM_ID,
+    ],
+  },
+  {
+    area: "reserve-capital",
+    instruction: "return_reserve_capital",
+    attack: "wrong operator returns contributor principal to an attacker recipient",
+    expectedGuard: "plan-control authority, contribution PDA, free-capital accounting, and vault outflow binding",
+    tx: protocol.buildReturnReserveCapitalTx({
+      authority: attacker,
+      contributorAddress: attacker,
+      healthPlanAddress: healthPlan,
+      reserveDomainAddress: reserveDomain,
+      fundingLineAddress: fundingLine,
+      assetMint,
+      vaultTokenAccountAddress: vaultTokenAccount,
+      recipientTokenAccountAddress: attackerAta,
+      tokenProgramId: TOKEN_PROGRAM_ID,
+      amount: 1n,
+      reasonHashHex: SAMPLE_HASH_HEX,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [
+      domainAssetVault,
+      domainAssetLedger,
+      fundingLine,
+      capitalContribution,
+      fundingLineLedger,
+      planReserveLedger,
+      vaultTokenAccount,
+      attackerAta,
+      TOKEN_PROGRAM_ID,
+    ],
+  },
+  {
+    area: "reserve-capital",
+    instruction: "record_reserve_earnings",
+    attack: "wrong operator records fake realized earnings from attacker source account",
+    expectedGuard: "backstop/subsidy funding-line type, nonzero reference hash, source token owner, and reserve vault binding",
+    tx: protocol.buildRecordReserveEarningsTx({
+      authority: attacker,
+      healthPlanAddress: healthPlan,
+      reserveDomainAddress: reserveDomain,
+      fundingLineAddress: fundingLine,
+      assetMint,
+      sourceTokenAccountAddress: attackerAta,
+      vaultTokenAccountAddress: vaultTokenAccount,
+      tokenProgramId: TOKEN_PROGRAM_ID,
+      amount: 1n,
+      earningsRefHashHex: SAMPLE_HASH_HEX,
+      recentBlockhash: STATIC_BLOCKHASH,
+    }),
+    mustInclude: [
+      domainAssetVault,
+      domainAssetLedger,
+      fundingLine,
+      fundingLineLedger,
+      planReserveLedger,
+      attackerAta,
+      vaultTokenAccount,
+      TOKEN_PROGRAM_ID,
+    ],
+  },
+  {
     area: "obligation-reserve",
     instruction: "reserve_obligation",
     attack: "wrong operator reserves a linked claim obligation",
@@ -460,7 +551,7 @@ test("adversarial matrix owns all live instructions through the surface manifest
   assert.deepEqual(duplicateOwnedInstructions(), []);
   assert.deepEqual(blankInstructionExceptionReasons(), []);
   assert.deepEqual(missing, []);
-  assert.equal(live.length, 18);
+  assert.equal(live.length, 21);
 });
 
 test("money and control paths include adversarial signer and account-binding probes", () => {
@@ -469,6 +560,7 @@ test("money and control paths include adversarial signer and account-binding pro
     "plan-control",
     "sponsor-funding",
     "premium-inflow",
+    "reserve-capital",
     "obligation-reserve",
     "claim-settlement",
     "obligation-settlement",

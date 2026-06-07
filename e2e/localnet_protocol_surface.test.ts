@@ -25,7 +25,9 @@ const {
   CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY,
   CLAIM_INTAKE_APPROVED,
   CLAIM_INTAKE_SETTLED,
+  FUNDING_LINE_TYPE_BACKSTOP,
   FUNDING_LINE_TYPE_PREMIUM_INCOME,
+  FUNDING_LINE_TYPE_SUBSIDY,
   FUNDING_LINE_TYPE_SPONSOR_BUDGET,
   NATIVE_SOL_MINT,
   OBLIGATION_STATUS_CANCELED,
@@ -34,6 +36,9 @@ const {
   OBLIGATION_STATUS_SETTLED,
   SERIES_MODE_PROTECTION,
   SERIES_MODE_REWARD,
+  buildDepositReserveCapitalTx,
+  buildRecordReserveEarningsTx,
+  buildReturnReserveCapitalTx,
   buildAdjudicateClaimCaseTx,
   buildCreateObligationTx,
   buildBackfillSchemaDependencyLedgerTx,
@@ -742,6 +747,78 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     );
     assert(seekerSponsorModel.fundedSponsorBudget > 0n);
     assert(seekerSponsorModel.remainingSponsorBudget > 0n);
+  },
+  reserve_capital_lifecycle: () => {
+    const healthPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
+    const reserveDomain = DEVNET_PROTOCOL_FIXTURE_STATE.reserveDomains[0]!;
+    const contributor = DEVNET_PROTOCOL_FIXTURE_STATE.wallets.find((wallet) => wallet.role === "lp_provider")!;
+    const authority = DEVNET_PROTOCOL_FIXTURE_STATE.wallets.find((wallet) => wallet.role === "plan_admin")!;
+    const backstopLine = deriveFundingLinePda({
+      healthPlan: healthPlan.address,
+      lineId: "surface-backstop",
+    }).toBase58();
+    const subsidyLine = deriveFundingLinePda({
+      healthPlan: healthPlan.address,
+      lineId: "surface-subsidy",
+    }).toBase58();
+    const vaultTokenAccount = deriveDomainAssetVaultTokenAccountPda({
+      reserveDomain: reserveDomain.address,
+      assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+    }).toBase58();
+
+    assert.equal(FUNDING_LINE_TYPE_BACKSTOP, 3);
+    assert.equal(FUNDING_LINE_TYPE_SUBSIDY, 4);
+
+    const depositIx = assertProtocolTxInstruction(
+      buildDepositReserveCapitalTx({
+        contributor: contributor.address,
+        healthPlanAddress: healthPlan.address,
+        reserveDomainAddress: reserveDomain.address,
+        fundingLineAddress: backstopLine,
+        assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+        sourceTokenAccountAddress: contributor.address,
+        vaultTokenAccountAddress: vaultTokenAccount,
+        amount: 10n,
+        termsHashHex: SAMPLE_REASON_HASH_HEX,
+        recentBlockhash: STATIC_BLOCKHASH,
+      }),
+      "deposit_reserve_capital",
+    );
+    const returnIx = assertProtocolTxInstruction(
+      buildReturnReserveCapitalTx({
+        authority: authority.address,
+        contributorAddress: contributor.address,
+        healthPlanAddress: healthPlan.address,
+        reserveDomainAddress: reserveDomain.address,
+        fundingLineAddress: backstopLine,
+        assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+        vaultTokenAccountAddress: vaultTokenAccount,
+        recipientTokenAccountAddress: contributor.address,
+        amount: 4n,
+        reasonHashHex: SAMPLE_REASON_HASH_HEX,
+        recentBlockhash: STATIC_BLOCKHASH,
+      }),
+      "return_reserve_capital",
+    );
+    const earningsIx = assertProtocolTxInstruction(
+      buildRecordReserveEarningsTx({
+        authority: authority.address,
+        healthPlanAddress: healthPlan.address,
+        reserveDomainAddress: reserveDomain.address,
+        fundingLineAddress: subsidyLine,
+        assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+        sourceTokenAccountAddress: authority.address,
+        vaultTokenAccountAddress: vaultTokenAccount,
+        amount: 2n,
+        earningsRefHashHex: SAMPLE_EVIDENCE_HASH_HEX,
+        recentBlockhash: STATIC_BLOCKHASH,
+      }),
+      "record_reserve_earnings",
+    );
+
+    assert(depositIx.keys.some((key) => key.isSigner && key.pubkey.toBase58() === contributor.address));
+    assert(returnIx.keys.some((key) => key.pubkey.toBase58() === contributor.address));
+    assert(earningsIx.keys.some((key) => key.pubkey.toBase58() === subsidyLine));
   },
   reward_obligation_lifecycle: () => {
     const rewardSeriesAddresses = new Set(

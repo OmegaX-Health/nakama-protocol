@@ -6,7 +6,7 @@ pub mod platform;
 
 use crate::platform::*;
 
-declare_id!("Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B");
+declare_id!("6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM");
 
 pub mod args;
 #[cfg(feature = "certora")]

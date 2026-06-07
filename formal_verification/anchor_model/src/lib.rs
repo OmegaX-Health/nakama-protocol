@@ -8,7 +8,7 @@ pub mod errors;
 pub mod state;
 pub mod guards;
 
-declare_id!("Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B");
+declare_id!("6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM");
 
 #[program]
 pub mod omegaxprotocol {

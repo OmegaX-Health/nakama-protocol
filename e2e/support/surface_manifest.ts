@@ -4,6 +4,7 @@ export const SCENARIO_ORDER = [
   "governance_and_scoped_controls",
   "reserve_domain_and_vault_setup",
   "sponsor_funded_plan_lifecycle",
+  "reserve_capital_lifecycle",
   "reward_obligation_lifecycle",
   "protection_claim_lifecycle",
 ] as const;
@@ -42,6 +43,15 @@ export const SCENARIO_DEFINITIONS: Record<ScenarioName, ScenarioDefinition> = {
       "version_policy_series",
       "open_funding_line",
       "fund_sponsor_budget",
+    ],
+  },
+  reserve_capital_lifecycle: {
+    title: "Reserve Capital Lifecycle",
+    focus: "Backstop contributors can deposit capital, authorized operators can return free capital, and realized earnings are recorded with proof fingerprints.",
+    instructions: [
+      "deposit_reserve_capital",
+      "return_reserve_capital",
+      "record_reserve_earnings",
     ],
   },
   reward_obligation_lifecycle: {
