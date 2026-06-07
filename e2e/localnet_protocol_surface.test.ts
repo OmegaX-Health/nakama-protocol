@@ -25,24 +25,21 @@ const {
   CAPITAL_CLASS_RESTRICTION_WRAPPER_ONLY,
   CLAIM_INTAKE_APPROVED,
   CLAIM_INTAKE_SETTLED,
-  ELIGIBILITY_ELIGIBLE,
+  FUNDING_LINE_TYPE_BACKSTOP,
   FUNDING_LINE_TYPE_PREMIUM_INCOME,
+  FUNDING_LINE_TYPE_SUBSIDY,
   FUNDING_LINE_TYPE_SPONSOR_BUDGET,
   NATIVE_SOL_MINT,
   OBLIGATION_STATUS_CANCELED,
   OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
   OBLIGATION_STATUS_RESERVED,
   OBLIGATION_STATUS_SETTLED,
-  RESERVE_ASSET_ROLE_PRIMARY_STABLE,
-  RESERVE_ASSET_ROLE_SECONDARY_STABLE,
-  RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT,
-  RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL,
-  RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM,
   SERIES_MODE_PROTECTION,
   SERIES_MODE_REWARD,
+  buildDepositReserveCapitalTx,
+  buildRecordReserveEarningsTx,
+  buildReturnReserveCapitalTx,
   buildAdjudicateClaimCaseTx,
-  buildAttestClaimCaseTx,
-  buildConfigureReserveAssetRailTx,
   buildCreateObligationTx,
   buildBackfillSchemaDependencyLedgerTx,
   buildClaimOracleTx,
@@ -54,12 +51,10 @@ const {
   buildMarkImpairmentTx,
   buildOpenClaimCaseTx,
   buildOpenFundingLineTx,
-  buildOpenMemberPositionTx,
   buildRegisterOracleTx,
   buildReleaseReserveTx,
   buildReserveObligationTx,
   buildRegisterOutcomeSchemaTx,
-  buildPublishReserveAssetRailPriceTx,
   buildSetPoolOraclePermissionsTx,
   buildSetPoolOraclePolicyTx,
   buildSetPoolOracleTx,
@@ -68,7 +63,6 @@ const {
   buildUpdateOracleProfileTx,
   buildVerifyOutcomeSchemaTx,
   deriveAllocationLedgerPda,
-  deriveClaimAttestationPda,
   deriveDomainAssetLedgerPda,
   deriveDomainAssetVaultPda,
   deriveDomainAssetVaultTokenAccountPda,
@@ -85,10 +79,8 @@ const {
   derivePoolOracleApprovalPda,
   derivePoolOraclePermissionSetPda,
   derivePoolOraclePolicyPda,
-  deriveReserveAssetRailPda,
   deriveReserveDomainPda,
   deriveSchemaDependencyLedgerPda,
-  deriveSeriesReserveLedgerPda,
   getProgramId,
   recomputeReserveBalanceSheet,
 } = protocolModule as typeof import("../frontend/lib/protocol.ts");
@@ -495,41 +487,14 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       committedAmount: 250_000n,
       capsHashHex: SAMPLE_REASON_HASH_HEX,
     });
-    const openMemberPositionTx = buildOpenMemberPositionTx({
-      wallet: protectionMember.wallet,
-      healthPlanAddress: plan.address,
-      recentBlockhash: STATIC_BLOCKHASH,
-      seriesScopeAddress: protectionSeries.address,
-      eligibilityStatus: ELIGIBILITY_ELIGIBLE,
-      delegatedRightsMask: 0,
-      proofMode: 0,
-      tokenGateAmountSnapshot: 0n,
-      inviteExpiresAt: 0n,
-    });
     const openClaimCaseTx = buildOpenClaimCaseTx({
       authority: protectionClaim.claimant,
       healthPlanAddress: plan.address,
-      memberPositionAddress: protectionMember.address,
       fundingLineAddress: protectionLine.address,
       recentBlockhash: STATIC_BLOCKHASH,
       claimId: protectionClaim.claimId,
       policySeriesAddress: protectionSeries.address,
       claimantAddress: protectionClaim.claimant,
-      evidenceRefHashHex: SAMPLE_EVIDENCE_HASH_HEX,
-    });
-    const attestClaimCaseTx = buildAttestClaimCaseTx({
-      oracle: oracleWallet.address,
-      healthPlanAddress: plan.address,
-      claimCaseAddress: protectionClaim.address,
-      fundingLineAddress: protectionLine.address,
-      recentBlockhash: STATIC_BLOCKHASH,
-      decision: 0,
-      attestationHashHex: SAMPLE_REASON_HASH_HEX,
-      attestationRefHashHex: SAMPLE_EVIDENCE_HASH_HEX,
-      schemaKeyHashHex: SAMPLE_SCHEMA_KEY_HASH_HEX,
-      liquidityPoolAddress: pool.address,
-      capitalClassAddress: openClass.address,
-      allocationPositionAddress: impairedAllocation.address,
     });
     const createObligationTx = buildCreateObligationTx({
       authority: claimsOperatorWallet.address,
@@ -560,7 +525,6 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       approvedAmount: protectionClaim.approvedAmount,
       deniedAmount: protectionClaim.deniedAmount,
       reserveAmount: linkedObligation.outstandingAmount,
-      decisionSupportHashHex: SAMPLE_REASON_HASH_HEX,
       obligationAddress: linkedObligation.address,
     });
     const reserveObligationTx = buildReserveObligationTx({
@@ -673,54 +637,37 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     assert.equal(setPoolOraclePolicyTx.instructions[0]!.keys[3]!.pubkey.toBase58(), derivePoolOraclePolicyPda({
       liquidityPool: pool.address,
     }).toBase58());
-    assert.equal(createPolicySeriesTx.instructions[0]!.keys[3]!.pubkey.toBase58(), derivePolicySeriesPda({
+    assert.equal(createPolicySeriesTx.instructions[0]!.keys[2]!.pubkey.toBase58(), derivePolicySeriesPda({
       healthPlan: plan.address,
       seriesId: protectionSeries.seriesId,
     }).toBase58());
-    assert.equal(createPolicySeriesTx.instructions[0]!.keys[4]!.pubkey.toBase58(), deriveSeriesReserveLedgerPda({
-      policySeries: protectionSeries.address,
-      assetMint: protectionSeries.assetMint,
-    }).toBase58());
-    assert.equal(openFundingLineTx.instructions[0]!.keys[3]!.pubkey.toBase58(), deriveDomainAssetVaultPda({
+    assert.equal(openFundingLineTx.instructions[0]!.keys[2]!.pubkey.toBase58(), deriveDomainAssetVaultPda({
       reserveDomain: plan.reserveDomain,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(openFundingLineTx.instructions[0]!.keys[5]!.pubkey.toBase58(), deriveFundingLinePda({
+    assert.equal(openFundingLineTx.instructions[0]!.keys[4]!.pubkey.toBase58(), deriveFundingLinePda({
       healthPlan: plan.address,
       lineId: protectionLine.lineId,
     }).toBase58());
-    assert.equal(openFundingLineTx.instructions[0]!.keys[6]!.pubkey.toBase58(), deriveFundingLineLedgerPda({
+    assert.equal(openFundingLineTx.instructions[0]!.keys[5]!.pubkey.toBase58(), deriveFundingLineLedgerPda({
       fundingLine: protectionLine.address,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(openFundingLineTx.instructions[0]!.keys[7]!.pubkey.toBase58(), derivePlanReserveLedgerPda({
+    assert.equal(openFundingLineTx.instructions[0]!.keys[6]!.pubkey.toBase58(), derivePlanReserveLedgerPda({
       healthPlan: plan.address,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(openFundingLineTx.instructions[0]!.keys[8]!.pubkey.toBase58(), protectionSeries.address);
-    assert.equal(openFundingLineTx.instructions[0]!.keys[9]!.pubkey.toBase58(), deriveSeriesReserveLedgerPda({
-      policySeries: protectionSeries.address,
-      assetMint: protectionLine.assetMint,
-    }).toBase58());
-    assert.equal(openMemberPositionTx.instructions[0]!.keys[4]!.pubkey.toBase58(), protectionMember.address);
-    assert.equal(openClaimCaseTx.instructions[0]!.keys[5]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(attestClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(
-      attestClaimCaseTx.instructions[0]!.keys[13]!.pubkey.toBase58(),
-      deriveClaimAttestationPda({
-        claimCase: protectionClaim.address,
-        oracle: oracleWallet.address,
-      }).toBase58(),
-    );
+    assert.equal(openFundingLineTx.instructions[0]!.keys[7]!.pubkey.toBase58(), protectionSeries.address);
+    assert.equal(openClaimCaseTx.instructions[0]!.keys[3]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(adjudicateClaimCaseTx.instructions[0]!.keys[4]!.pubkey.toBase58(), linkedObligation.address);
     assert.equal(reserveObligationTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(releaseReserveTx.instructions[0]!.keys[12]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[3]!.pubkey.toBase58(), deriveReserveAssetRailPda({
+    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[2]!.pubkey.toBase58(), deriveDomainAssetVaultPda({
       reserveDomain: plan.reserveDomain,
       assetMint: protectionLine.assetMint,
     }).toBase58());
-    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
-    assert.equal(settleObligationFinalTx.instructions[0]!.keys[14]!.pubkey.toBase58(), protectionClaim.address);
+    assert.equal(settleObligationToDeliveryTx.instructions[0]!.keys[13]!.pubkey.toBase58(), protectionClaim.address);
+    assert.equal(settleObligationFinalTx.instructions[0]!.keys[13]!.pubkey.toBase58(), protectionClaim.address);
     assert.equal(createObligationTx.instructions[0]!.keys[8]!.pubkey.toBase58(), pool.address);
     assert.equal(createObligationTx.instructions[0]!.keys[9]!.pubkey.toBase58(), openClass.address);
     assert.equal(createObligationTx.instructions[0]!.keys[10]!.pubkey.toBase58(), derivePoolClassLedgerPda({
@@ -765,7 +712,6 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
       healthPlan: plan.address,
       lineId: protectionLine.lineId,
     }).toBase58());
-    assert.equal(protectionMember.address, protectionClaim.memberPosition);
     assert.equal(linkedObligation.fundingLine, protectionLine.address);
     assert.equal(linkedObligation.allocationPosition, impairedAllocation.address);
     assert.equal(linkedObligation.capitalClass, openClass.address);
@@ -789,10 +735,8 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
   sponsor_funded_plan_lifecycle: () => {
     const seekerPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans.find((plan) => plan.planId === "nexus-seeker-rewards")!;
     const seekerPlanLines = DEVNET_PROTOCOL_FIXTURE_STATE.fundingLines.filter((line) => line.healthPlan === seekerPlan.address);
-    const seekerMembers = DEVNET_PROTOCOL_FIXTURE_STATE.memberPositions.filter((position) => position.healthPlan === seekerPlan.address);
     const seekerSponsorModel = consoleState.sponsors.find((model) => model.planId === seekerPlan.planId)!;
 
-    assert(seekerMembers.length > 0);
     assert.equal(seekerPlanLines.length, 1);
     assert.equal(seekerPlanLines[0]!.lineType, FUNDING_LINE_TYPE_SPONSOR_BUDGET);
     assert.equal(
@@ -803,6 +747,78 @@ const scenarioAssertions: Record<ScenarioName, () => void> = {
     );
     assert(seekerSponsorModel.fundedSponsorBudget > 0n);
     assert(seekerSponsorModel.remainingSponsorBudget > 0n);
+  },
+  reserve_capital_lifecycle: () => {
+    const healthPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
+    const reserveDomain = DEVNET_PROTOCOL_FIXTURE_STATE.reserveDomains[0]!;
+    const contributor = DEVNET_PROTOCOL_FIXTURE_STATE.wallets.find((wallet) => wallet.role === "lp_provider")!;
+    const authority = DEVNET_PROTOCOL_FIXTURE_STATE.wallets.find((wallet) => wallet.role === "plan_admin")!;
+    const backstopLine = deriveFundingLinePda({
+      healthPlan: healthPlan.address,
+      lineId: "surface-backstop",
+    }).toBase58();
+    const subsidyLine = deriveFundingLinePda({
+      healthPlan: healthPlan.address,
+      lineId: "surface-subsidy",
+    }).toBase58();
+    const vaultTokenAccount = deriveDomainAssetVaultTokenAccountPda({
+      reserveDomain: reserveDomain.address,
+      assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+    }).toBase58();
+
+    assert.equal(FUNDING_LINE_TYPE_BACKSTOP, 3);
+    assert.equal(FUNDING_LINE_TYPE_SUBSIDY, 4);
+
+    const depositIx = assertProtocolTxInstruction(
+      buildDepositReserveCapitalTx({
+        contributor: contributor.address,
+        healthPlanAddress: healthPlan.address,
+        reserveDomainAddress: reserveDomain.address,
+        fundingLineAddress: backstopLine,
+        assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+        sourceTokenAccountAddress: contributor.address,
+        vaultTokenAccountAddress: vaultTokenAccount,
+        amount: 10n,
+        termsHashHex: SAMPLE_REASON_HASH_HEX,
+        recentBlockhash: STATIC_BLOCKHASH,
+      }),
+      "deposit_reserve_capital",
+    );
+    const returnIx = assertProtocolTxInstruction(
+      buildReturnReserveCapitalTx({
+        authority: authority.address,
+        contributorAddress: contributor.address,
+        healthPlanAddress: healthPlan.address,
+        reserveDomainAddress: reserveDomain.address,
+        fundingLineAddress: backstopLine,
+        assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+        vaultTokenAccountAddress: vaultTokenAccount,
+        recipientTokenAccountAddress: contributor.address,
+        amount: 4n,
+        reasonHashHex: SAMPLE_REASON_HASH_HEX,
+        recentBlockhash: STATIC_BLOCKHASH,
+      }),
+      "return_reserve_capital",
+    );
+    const earningsIx = assertProtocolTxInstruction(
+      buildRecordReserveEarningsTx({
+        authority: authority.address,
+        healthPlanAddress: healthPlan.address,
+        reserveDomainAddress: reserveDomain.address,
+        fundingLineAddress: subsidyLine,
+        assetMint: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
+        sourceTokenAccountAddress: authority.address,
+        vaultTokenAccountAddress: vaultTokenAccount,
+        amount: 2n,
+        earningsRefHashHex: SAMPLE_EVIDENCE_HASH_HEX,
+        recentBlockhash: STATIC_BLOCKHASH,
+      }),
+      "record_reserve_earnings",
+    );
+
+    assert(depositIx.keys.some((key) => key.isSigner && key.pubkey.toBase58() === contributor.address));
+    assert(returnIx.keys.some((key) => key.pubkey.toBase58() === contributor.address));
+    assert(earningsIx.keys.some((key) => key.pubkey.toBase58() === subsidyLine));
   },
   reward_obligation_lifecycle: () => {
     const rewardSeriesAddresses = new Set(

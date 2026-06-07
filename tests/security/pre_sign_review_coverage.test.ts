@@ -72,7 +72,7 @@ function scanCallsites(): Callsite[] {
 
 test("[PT-06] Pre-sign review coverage map across executeProtocolTransaction callsites", () => {
   const callsites = scanCallsites();
-  assert.ok(callsites.length >= 25, `expected ≥25 callsites; got ${callsites.length}`);
+  assert.ok(callsites.length >= 15, `expected ≥15 callsites; got ${callsites.length}`);
 
   const withReviewGate = callsites.filter((c) => c.hasReviewGate);
   const withoutReviewGate = callsites.filter((c) => !c.hasReviewGate);

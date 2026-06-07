@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{UpdateHealthPlanControls, UpdateHealthPlanControlsArgs};
 
 impl<'info> UpdateHealthPlanControls<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_health_plan_controls", hash = "ca396cb82d562708", spec_hash = "f6af179c0d8c67f3")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "update_health_plan_controls", hash = "ca396cb82d562708", spec_hash = "4860d2245550f81c")]
     #[inline(always)]
     pub fn handler(&mut self, args: UpdateHealthPlanControlsArgs) -> Result<()> {
         guards::update_health_plan_controls(self, args)?;

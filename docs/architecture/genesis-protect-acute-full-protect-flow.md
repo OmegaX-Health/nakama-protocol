@@ -35,7 +35,7 @@ with exact cap, terms hash, reserve snapshot, waiting periods, exclusions, and q
 ```
 MEMBER JOURNEY                    OPERATOR / ORACLE WORKFLOW               ONCHAIN EVENTS
 ──────────────                    ──────────────────────────               ──────────────
-1. Onboarding & policy mint  ───► Policy series check + premium           PolicySeries, MemberPosition,
+1. Onboarding & activation   ───► Policy series check + premium           PolicySeries,
    (wallet + USDC payment)         confirmation                             record_premium_payment
 
 2. Incident occurs           ───► [no operator action at this stage]       —
@@ -52,22 +52,19 @@ MEMBER JOURNEY                    OPERATOR / ORACLE WORKFLOW               ONCHA
 6. Human review trigger      ───► Operator receives flagged or              —  (offchain)
                                    standard review item in queue
 
-7. Evidence hash attachment  ───► Operator attaches hash of                 attach_claim_evidence_ref
-                                   reviewed evidence packet
+7. Evidence review          ───► Offchain or adjunct review artifact        —
+   (standard or MagicBlock)        supports the operator decision
 
-8. Oracle attestation        ───► Oracle signs the evidence hash            attest_claim_case
-   (standard or MagicBlock)        Standard path or TEE private path        (+ ClaimAttestation PDA)
-
-9. Adjudication              ───► Operator approves/denies +                adjudicate_claim_case
+8. Adjudication              ───► Operator approves/denies +                adjudicate_claim_case
                                    tier classification                       obligation → reserved
 
-10. Reserve booking          ───► Obligation reserved against               reserve_obligation
+9. Reserve booking           ───► Obligation reserved against               reserve_obligation
                                    FundingLine
 
-11. Payout / Settlement      ───► Asset rail selected → USDC                settle_claim_case /
+10. Payout / Settlement      ───► Asset rail selected → USDC                settle_claim_case /
                                    (or fallback) transferred                  settle_obligation
 
-12. Provider settlement      ───► Direct provider payment workflow           —  (Phase 1 target)
+11. Provider settlement      ───► Direct provider payment workflow           —  (Phase 1 target)
     (Phase 0: member wallet)       (Phase 0: member receives funds)
 ```
 
@@ -82,7 +79,7 @@ MEMBER JOURNEY                    OPERATOR / ORACLE WORKFLOW               ONCHA
 3. Member reviews coverage terms and exclusion schedule (Phase 0: mandatory pre-sign review via
    `protocol-transaction-review` frontend component).
 4. Member pays premium in USDC — the `record_premium_payment` instruction is executed.
-5. A `MemberPosition` PDA is created on Solana, wallet-linked, with an active coverage window.
+5. OmegaX Health records the activated coverage window offchain and keeps the claimant wallet bound to the issued terms.
 
 ### 2.2 Operator checks at onboarding
 
@@ -95,7 +92,7 @@ MEMBER JOURNEY                    OPERATOR / ORACLE WORKFLOW               ONCHA
 
 ### 2.3 What the member receives
 
-- Solana wallet confirmation with `MemberPosition` address
+- Solana wallet confirmation for the premium-payment transaction
 - Coverage window start and end dates
 - Summary of benefit schedule and exclusion categories
 - Link to oracle portal for claim submission
@@ -111,7 +108,7 @@ and seeks care at any licensed facility.
 
 ### 3.1 What the member should do immediately
 
-1. Seek care — coverage is in effect the moment the `MemberPosition` is active.
+1. Seek care — coverage is in effect once the offchain activation record is active.
 2. Request an **itemized invoice** from the facility (not a summary bill).
 3. Request a **discharge summary or doctor note** before leaving the facility.
 4. Keep all receipts and payment proofs.
@@ -139,8 +136,8 @@ Evidence submitted via email, social media, or any other channel is not accepted
 
 | Step | Member action | System action |
 |---|---|---|
-| 1 | Logs in to oracle portal with claim wallet | Session verified against MemberPosition |
-| 2 | Selects "Submit new claim" | Pulls active MemberPosition details |
+| 1 | Logs in to oracle portal with claim wallet | Session verified against the offchain activation record |
+| 2 | Selects "Submit new claim" | Pulls active coverage details |
 | 3 | Uploads mandatory documents (see §5 of claims spec) | Auto-format check: PDF/image, min resolution, file size limit |
 | 4 | Fills in basic claim form: incident date, facility name, country, type of care | Pre-populates from uploaded document OCR (AI-assisted, human-verified) |
 | 5 | Confirms submission | Claim record created in operator queue; member receives confirmation |
@@ -187,9 +184,9 @@ by a human operator before any adjudication decision is made.
 At the moment `open_claim_case` is submitted, the Solana program checks:
 
 - Protocol emergency pause is clear
-- MemberPosition is active and wallet matches claimant
+- Claimant wallet is nonzero and authorized, and offchain coverage is active for the selected policy window
 - FundingLine is open
-- No duplicate ClaimCase for the same MemberPosition and policy window
+- No duplicate ClaimCase for the same claimant and policy window
 
 If any check fails, the instruction reverts — no ClaimCase is created.
 
@@ -211,7 +208,7 @@ After intake, the claim enters the automated review pipeline before any human op
 
 | Check | Input | Output |
 |---|---|---|
-| **Eligibility gate** | Incident date vs MemberPosition activation date, coverage window | Pass / Fail with reason |
+| **Eligibility gate** | Incident date vs activation date and coverage window | Pass / Fail with reason |
 | **Waiting period check** | Illness onset date vs enrollment date | Pass / Fail |
 | **Tier classification suggestion** | Clinical summary + invoice | Suggested tier (T1/T2/T3) with confidence score |
 | **UCR benchmark** (Travel 30 only) | Invoice line items vs UCR database for care country | Line-item UCR flags |
@@ -246,7 +243,7 @@ The operator works through the checklist (see §6 of claims spec). If all items 
 1. Operator confirms the evidence packet is complete and accurate
 2. System assembles the **evidence packet** (all documents + AI review log + operator checklist)
 3. System computes SHA-256 hash of the full packet
-4. Operator reviews the hash and calls `attach_claim_evidence_ref` onchain
+4. Operator reviews the hash and records the evidence-review result in the offchain claim manifest
 
 ### 7.2 MagicBlock private review path (optional — Phase 0 demo)
 
@@ -260,7 +257,7 @@ For high-sensitivity claims or when TEE-verified AI processing is required:
 6. `record_private_review` records only hashes and status — only the registered reviewer can write
 7. `record_private_payment_ref` stores the private payment reference hash (if reimbursement applies)
 8. `commit_and_close_review_session` commits and undelegates back to base Solana
-9. The committed review artifact hash feeds into `attest_claim_case` via the normal path
+9. The committed review artifact supports the operator/oracle decision handoff before base-program adjudication
 
 **Phase 0 status**: Demo-grade. The reserve kernel (obligation, settlement) is not routed through
 this path in Phase 0. It demonstrates the privacy architecture for investor/partner audiences.
@@ -280,34 +277,30 @@ If the operator discovers an issue that was not caught by the AI:
 
 ---
 
-## 8. Stage 7 — Oracle Attestation
+## 8. Stage 7 — Oracle / Operator Decision Handoff
 
-After the operator attaches the evidence hash (`attach_claim_evidence_ref`), the oracle authority
-signs the attestation via `attest_claim_case`.
+After evidence review, the oracle/operator workflow produces a decision artifact for internal audit
+and hands the decision to the base-program adjudication path. The base `omegax_protocol` program no
+longer stores `ClaimAttestation` accounts; it stores only evidence and decision proof fingerprints
+on the claim case.
 
-### 8.1 Oracle attestation requirements (protocol-enforced)
+### 8.1 Decision-handoff requirements
 
 | Requirement | Enforcement |
 |---|---|
-| Oracle profile is active and claimed | Protocol check on `OracleProfile.status` |
-| Schema is governance-verified | `attestation_ref_hash` must reference `genesis-protect-acute-claim` v1 schema |
-| Evidence hash matches | `attestation_ref_hash == claim_case.evidence_ref_hash` |
-| No oracle-finality hold on the plan | `HealthPlan.oracle_finality_hold == false` |
-| Correct oracle authority for funding source | Premium/sponsor claims: plan's `oracle_authority`; LP-backed claims: pool oracle approval + `POOL_ORACLE_PERMISSION_ATTEST_CLAIM` |
+| Evidence packet reviewed against the published schema | Offchain OmegaX Health/oracle workflow |
+| MagicBlock receipt verified when the adjunct path is used | Offchain consumer verifies registry, reviewer, expected hashes, payment reference, and committed ownership |
+| Correct plan-level operator signs adjudication | `adjudicate_claim_case` requires the plan's claims operator or plan admin |
+| Reserve and settlement remain base-program controlled | `reserve_obligation`, `settle_claim_case`, and `settle_obligation` enforce reserve-domain custody |
 
-### 8.2 What the oracle attestation records onchain
+### 8.2 What the decision handoff records onchain
 
-A `ClaimAttestation` PDA is created containing:
-- Attestation hash
-- Evidence ref hash (must match `ClaimCase.evidence_ref_hash`)
-- Decision support hash
-- Schema hash and version
-- Oracle profile reference
-- LP pool / allocation reference (if applicable)
-- Slot timestamp
+The base program records only:
+- the claim decision and reason hash on `ClaimCase`
+- reserve booking on `Obligation` / `FundingLine`
+- payout through the reserve-domain vault when the claim settles
 
-**Once attested, evidence is immutable.** If the member needs to submit new evidence (e.g., after
-receiving more-info-needed notification), a **new ClaimCase** must be opened. The original attested
+If the member needs to submit materially new evidence after a decision, a **new ClaimCase** should be opened. The original decided
 claim is not modified.
 
 ---
@@ -363,21 +356,19 @@ public protocol console moves up. No USDC has moved yet.
 
 ### 10.2 Payout settlement (`settle_claim_case` / `settle_obligation`)
 
-The settlement router selects the payout asset from the approved waterfall:
+The settlement path pays the approved liability in the same configured asset:
 
 ```
 Preferred: USDC
-Fallback (if USDC rail fails freshness/confidence check): PUSD → USDT → SOL → WBTC → WETH
+Fallback assets: operator rebalancing only; not direct cross-asset payout
 ```
 
-For each candidate asset, the Solana program checks (in order):
-1. `ReserveAssetRail` bound to same domain + asset mint ✓
-2. Rail active + payout enabled ✓
-3. Oracle price fresh (within freshness window) ✓
-4. Oracle confidence ≤ `max_confidence_bps` ✓
+For each settlement, the Solana program checks the domain vault, domain asset
+ledger, funding line, funding-line ledger, plan ledger, optional series ledger,
+and SPL outflow accounts all bind to the same reserve domain and asset mint.
 
-The first asset that passes all checks is used. If no asset passes, settlement is deferred and
-the Plan Admin is notified immediately.
+If the matching same-asset settlement path is unavailable, settlement is
+deferred and the Plan Admin is notified immediately.
 
 Settlement transfers atomically via `transfer_from_domain_vault`:
 - Net payout to member wallet (or `delegate_recipient` if set)
@@ -479,9 +470,8 @@ oracle service that signs through the managed key boundary.
 
 | What lives on Solana | What lives offchain |
 |---|---|
-| PolicySeries, MemberPosition (policy state) | Raw member identity documents |
-| ClaimCase PDA (claim identity, state, hashes) | Raw medical evidence (PHI) |
-| ClaimAttestation PDA (oracle signature, schema hash) | Operator review checklist |
+| PolicySeries and premium/payment record | Raw member identity documents and activation records |
+| ClaimCase PDA (claim identity and state) | Raw medical evidence (PHI) |
 | Obligation PDA (reserve amount, FundingLine reference) | AI pre-screening logs |
 | Settlement transaction (vault delta, recipient, fees) | Fraud investigation notes |
 | Fee vault accruals | Member communications |

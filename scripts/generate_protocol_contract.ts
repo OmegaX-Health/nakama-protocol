@@ -76,38 +76,18 @@ const FRONTEND_GENERATED_PATH = resolve(REPO_ROOT, 'frontend/lib/generated/proto
 const FRONTEND_GENERATED_JS_PATH = resolve(REPO_ROOT, 'frontend/lib/generated/protocol-contract.js');
 
 const PDA_SEEDS: Record<string, string[]> = {
-  protocol_governance: ['protocol_governance'],
   reserve_domain: ['reserve_domain', '<domain_id>'],
   domain_asset_vault: ['domain_asset_vault', '<reserve_domain>', '<asset_mint>'],
   domain_asset_vault_token: ['domain_asset_vault_token', '<reserve_domain>', '<asset_mint>'],
   domain_asset_ledger: ['domain_asset_ledger', '<reserve_domain>', '<asset_mint>'],
-  reserve_asset_rail: ['reserve_asset_rail', '<reserve_domain>', '<asset_mint>'],
-  protocol_fee_vault: ['protocol_fee_vault', '<reserve_domain>', '<asset_mint>'],
-  pool_treasury_vault: ['pool_treasury_vault', '<liquidity_pool>', '<asset_mint>'],
-  pool_oracle_fee_vault: ['pool_oracle_fee_vault', '<liquidity_pool>', '<oracle>', '<asset_mint>'],
   health_plan: ['health_plan', '<reserve_domain>', '<plan_id>'],
   plan_reserve_ledger: ['plan_reserve_ledger', '<health_plan>', '<asset_mint>'],
   policy_series: ['policy_series', '<health_plan>', '<series_id>'],
-  series_reserve_ledger: ['series_reserve_ledger', '<policy_series>', '<asset_mint>'],
-  member_position: ['member_position', '<health_plan>', '<wallet>', '<series_scope>'],
-  membership_anchor_seat: ['membership_anchor_seat', '<health_plan>', '<anchor_ref>'],
   funding_line: ['funding_line', '<health_plan>', '<line_id>'],
   funding_line_ledger: ['funding_line_ledger', '<funding_line>', '<asset_mint>'],
   claim_case: ['claim_case', '<health_plan>', '<claim_id>'],
   obligation: ['obligation', '<funding_line>', '<obligation_id>'],
-  liquidity_pool: ['liquidity_pool', '<reserve_domain>', '<pool_id>'],
-  capital_class: ['capital_class', '<liquidity_pool>', '<class_id>'],
-  pool_class_ledger: ['pool_class_ledger', '<capital_class>', '<asset_mint>'],
-  lp_position: ['lp_position', '<capital_class>', '<owner>'],
-  allocation_position: ['allocation_position', '<capital_class>', '<funding_line>'],
-  allocation_ledger: ['allocation_ledger', '<allocation_position>', '<asset_mint>'],
   oracle_profile: ['oracle_profile', '<oracle>'],
-  pool_oracle_approval: ['pool_oracle_approval', '<liquidity_pool>', '<oracle>'],
-  pool_oracle_policy: ['pool_oracle_policy', '<liquidity_pool>'],
-  pool_oracle_permission_set: ['pool_oracle_permission_set', '<liquidity_pool>', '<oracle>'],
-  outcome_schema: ['outcome_schema', '<schema_key_hash>'],
-  schema_dependency_ledger: ['schema_dependency_ledger', '<schema_key_hash>'],
-  claim_attestation: ['claim_attestation', '<claim_case>', '<oracle>'],
 };
 
 function canonicalDiscriminator(name: string): number[] {

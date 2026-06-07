@@ -1638,22 +1638,12 @@ export function PlanCreationWizard() {
           });
 
           if (!genesisArtifactExists.get(seriesPk.toBase58())) {
-            const leadFundingLine = genesisFundingLineDefinitions.find((line) => line.skuKey === definition.key)!;
-            const seriesLedgers = deriveLaunchLedgerAddresses({
-              reserveDomain: reserveDomainPk,
-              healthPlan: genesisPlanPk,
-              assetMint: assetMintPk,
-              policySeries: seriesPk,
-              fundingLine: genesisFundingLineById[leadFundingLine.lineId]!,
-            });
-
             await createTransaction(
               `Create ${definition.displayName}`,
               buildCreatePolicySeriesInstruction({
                 authority: publicKey,
                 healthPlan: genesisPlanPk,
                 policySeries: seriesPk,
-                seriesReserveLedger: seriesLedgers.seriesReserveLedger,
                 args: {
                   seriesId: definition.seriesId,
                   displayName: definition.displayName,
@@ -1666,7 +1656,6 @@ export function PlanCreationWizard() {
                   pricingHashHex: protectionPricingHashHex,
                   payoutHashHex: protectionPayoutHashHex,
                   reserveModelHashHex: protectionReserveModelHashHex,
-                  evidenceRequirementsHashHex: protectionEvidenceHashHex,
                   comparabilityHashHex: protectionComparabilityHashHex,
                   policyOverridesHashHex: protectionPolicyOverridesHashHex,
                   cycleSeconds: BigInt(definition.coverWindowDays * 86_400),
@@ -1708,7 +1697,6 @@ export function PlanCreationWizard() {
                 fundingLine: fundingLinePk,
                 fundingLineLedger: ledgers.fundingLineLedger,
                 planReserveLedger: ledgers.planReserveLedger,
-                seriesReserveLedger: ledgers.seriesReserveLedger,
                 args: {
                   lineId: fundingLine.lineId,
                   policySeries: seriesPk,
@@ -1755,7 +1743,6 @@ export function PlanCreationWizard() {
                 adapter: "none",
                 launchTruth: "no-external-yield-adapter",
               }),
-              feeBps: 0,
               redemptionPolicy: REDEMPTION_POLICY_QUEUE_ONLY,
               pauseFlags: 0,
             }),
@@ -1789,7 +1776,6 @@ export function PlanCreationWizard() {
               impairmentRank: classDefinition.impairmentRank,
               restrictionMode: CAPITAL_CLASS_RESTRICTION_OPEN,
               redemptionTermsMode: 0,
-              feeBps: 0,
               minLockupSeconds: classDefinition.minLockupSeconds,
               pauseFlags: 0,
             }),
@@ -1975,7 +1961,6 @@ export function PlanCreationWizard() {
               authority: publicKey,
               healthPlan: healthPlanPk,
               policySeries: rewardSeriesPk,
-              seriesReserveLedger: rewardLedgers.seriesReserveLedger,
               args: {
                 seriesId: normalizedRewardSeriesId,
                 displayName: normalize(rewardSeriesDisplayName),
@@ -1988,7 +1973,6 @@ export function PlanCreationWizard() {
                 pricingHashHex: rewardPricingHashHex,
                 payoutHashHex: rewardPayoutHashHex,
                 reserveModelHashHex: rewardReserveModelHashHex,
-                evidenceRequirementsHashHex: rewardEvidenceHashHex,
                 comparabilityHashHex: rewardComparabilityHashHex,
                 policyOverridesHashHex: rewardPolicyOverridesHashHex,
                 cycleSeconds: BigInt(30 * 86_400),
@@ -2015,7 +1999,6 @@ export function PlanCreationWizard() {
               fundingLine: rewardFundingLinePk,
               fundingLineLedger: rewardLedgers.fundingLineLedger,
               planReserveLedger: rewardLedgers.planReserveLedger,
-              seriesReserveLedger: rewardLedgers.seriesReserveLedger,
               args: {
                 lineId: normalizedRewardFundingLineId,
                 policySeries: rewardSeriesPk,
@@ -2087,7 +2070,6 @@ export function PlanCreationWizard() {
               authority: publicKey,
               healthPlan: healthPlanPk,
               policySeries: protectionSeriesPk,
-              seriesReserveLedger: protectionLedgers.seriesReserveLedger,
               args: {
                 seriesId: normalizedProtectionSeriesId,
                 displayName: normalize(protectionSeriesDisplayName),
@@ -2100,7 +2082,6 @@ export function PlanCreationWizard() {
                 pricingHashHex: protectionPricingHashHex,
                 payoutHashHex: protectionPayoutHashHex,
                 reserveModelHashHex: protectionReserveModelHashHex,
-                evidenceRequirementsHashHex: protectionEvidenceHashHex,
                 comparabilityHashHex: protectionComparabilityHashHex,
                 policyOverridesHashHex: protectionPolicyOverridesHashHex,
                 cycleSeconds: BigInt(toPositiveInt(protectionCadenceDays) * 86_400),
@@ -2127,7 +2108,6 @@ export function PlanCreationWizard() {
               fundingLine: protectionFundingLinePk,
               fundingLineLedger: protectionLedgers.fundingLineLedger,
               planReserveLedger: protectionLedgers.planReserveLedger,
-              seriesReserveLedger: protectionLedgers.seriesReserveLedger,
               args: {
                 lineId: normalizedProtectionFundingLineId,
                 policySeries: protectionSeriesPk,

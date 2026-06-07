@@ -62,7 +62,6 @@ const RIGHT_CLAIM_REWARD = 1 << 0;
 const RIGHT_VIEW_PAYOUT_HISTORY = 1 << 1;
 const RIGHT_OPEN_CLAIM_CASE = 1 << 2;
 const RIGHT_APPOINT_DELEGATE = 1 << 3;
-const STANDARD_SCHEMA_KEY_HASH_BYTES = [...Buffer.from(STANDARD_OUTCOMES_SCHEMA_KEY_HASH_HEX, "hex")];
 
 function expandHome(path: string): string {
   return path.replace(/^~(?=\/|$)/, homedir());
@@ -98,14 +97,6 @@ function configuredGovernanceControlAddress(): string | null {
   } catch {
     throw new Error(`Invalid governance config address: ${normalized}`);
   }
-}
-
-async function directProtocolGovernanceAuthority(
-  protocol: ProtocolModule,
-  connection: Connection,
-): Promise<string | null> {
-  const protocolConfig = await protocol.fetchProtocolConfig({ connection });
-  return protocolConfig?.governanceAuthority ?? null;
 }
 
 function upsertEnvFile(path: string, updates: Record<string, string>): void {
@@ -276,7 +267,6 @@ function currentValue(
     poolOraclePolicy: snapshot.poolOraclePolicies.find((row) => row.address === address),
     poolOracleApproval: snapshot.poolOracleApprovals.find((row) => row.address === address),
     poolOraclePermissionSet: snapshot.poolOraclePermissionSets.find((row) => row.address === address),
-    schema: snapshot.outcomeSchemas.find((row) => row.address === address),
   };
 }
 
@@ -560,12 +550,6 @@ async function main() {
     fundingLine: blendedPremiumLine.address,
     obligationId: "protection-obligation-002",
   }).toBase58();
-  const standardSchemaAddress = protocol.deriveOutcomeSchemaPda({
-    schemaKeyHashHex: STANDARD_OUTCOMES_SCHEMA_KEY_HASH_HEX,
-  }).toBase58();
-  const standardSchemaDependencyLedger = protocol.deriveSchemaDependencyLedgerPda({
-    schemaKeyHashHex: STANDARD_OUTCOMES_SCHEMA_KEY_HASH_HEX,
-  }).toBase58();
   const oracleProfileAddress = protocol.deriveOracleProfilePda({
     oracle: roleWallets.oracle.publicKey,
   }).toBase58();
@@ -699,127 +683,6 @@ async function main() {
     });
   }
 
-  const ensureReserveAssetRail = async (params: {
-    label: string;
-    reserveDomain: string;
-    assetMint: string;
-    assetSymbol: string;
-    role: number;
-    payoutPriority: number;
-    priceUsd1e8: bigint;
-    maxConfidenceBps: number;
-    depositEnabled: boolean;
-    payoutEnabled: boolean;
-    capacityEnabled: boolean;
-  }) => {
-    const nowTs = BigInt(Math.floor(Date.now() / 1000));
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: `configure_reserve_asset_rail:${params.label}`,
-      instructionName: "configure_reserve_asset_rail",
-      args: {
-        asset_mint: new PublicKey(params.assetMint),
-        oracle_authority: governance.publicKey,
-        asset_symbol: params.assetSymbol,
-        role: params.role,
-        payout_priority: params.payoutPriority,
-        oracle_source: protocol.RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED,
-        oracle_feed_id: sha256Bytes(`devnet-reserve-rail:${params.label}:feed`),
-        max_staleness_seconds: 86_400n,
-        max_confidence_bps: params.maxConfidenceBps,
-        haircut_bps: 0,
-        max_exposure_bps: 10_000,
-        deposit_enabled: params.depositEnabled,
-        payout_enabled: params.payoutEnabled,
-        capacity_enabled: params.capacityEnabled,
-        active: true,
-        reason_hash: sha256Bytes(`devnet-reserve-rail:${params.label}:configure`),
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: governanceAddress },
-        { pubkey: params.reserveDomain },
-        {
-          pubkey: protocol.deriveReserveAssetRailPda({
-            reserveDomain: params.reserveDomain,
-            assetMint: params.assetMint,
-          }),
-          isWritable: true,
-        },
-        { pubkey: SystemProgram.programId },
-      ],
-    });
-    if (!params.capacityEnabled && !params.payoutEnabled) {
-      return;
-    }
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: `publish_reserve_asset_rail_price:${params.label}`,
-      instructionName: "publish_reserve_asset_rail_price",
-      args: {
-        price_usd_1e8: params.priceUsd1e8,
-        confidence_bps: Math.min(25, params.maxConfidenceBps),
-        published_at_ts: nowTs,
-        proof_hash: sha256Bytes(`devnet-reserve-rail:${params.label}:price:${nowTs}`),
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true },
-        { pubkey: governanceAddress },
-        {
-          pubkey: protocol.deriveReserveAssetRailPda({
-            reserveDomain: params.reserveDomain,
-            assetMint: params.assetMint,
-          }),
-          isWritable: true,
-        },
-      ],
-    });
-  };
-
-  await ensureReserveAssetRail({
-    label: "open-settlement",
-    reserveDomain: openReserveDomain.address,
-    assetMint: fixtureState.settlementMint,
-    assetSymbol: "USDC",
-    role: protocol.RESERVE_ASSET_ROLE_PRIMARY_STABLE,
-    payoutPriority: 0,
-    priceUsd1e8: 100_000_000n,
-    maxConfidenceBps: 50,
-    depositEnabled: true,
-    payoutEnabled: true,
-    capacityEnabled: true,
-  });
-  await ensureReserveAssetRail({
-    label: "open-reward",
-    reserveDomain: openReserveDomain.address,
-    assetMint: fixtureState.rewardMint,
-    assetSymbol: "REWARD",
-    role: protocol.RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT,
-    payoutPriority: 20,
-    priceUsd1e8: 100_000_000n,
-    maxConfidenceBps: 500,
-    depositEnabled: true,
-    payoutEnabled: false,
-    capacityEnabled: false,
-  });
-  await ensureReserveAssetRail({
-    label: "wrapper-settlement",
-    reserveDomain: wrapperReserveDomain.address,
-    assetMint: fixtureState.wrapperSettlementMint,
-    assetSymbol: "USDC",
-    role: protocol.RESERVE_ASSET_ROLE_PRIMARY_STABLE,
-    payoutPriority: 0,
-    priceUsd1e8: 100_000_000n,
-    maxConfidenceBps: 50,
-    depositEnabled: true,
-    payoutEnabled: true,
-    capacityEnabled: true,
-  });
-
   const planSpecs = [
     {
       fixture: seekerPlan,
@@ -869,11 +732,6 @@ async function main() {
         sponsor_operator: planSpec.sponsorOperator,
         claims_operator: planSpec.claimsOperator,
         oracle_authority: planSpec.oracleAuthority,
-        membership_mode: planSpec.membershipMode,
-        membership_gate_kind: planSpec.membershipGateKind,
-        membership_gate_mint: protocol.ZERO_PUBKEY_KEY,
-        membership_gate_min_amount: 0n,
-        membership_invite_authority: planSpec.membershipInviteAuthority,
         allowed_rail_mask: 0xffff,
         default_funding_priority: 0,
         oracle_policy_hash: sha256Bytes(`plan:${planSpec.fixture.planId}:oracle-policy`),
@@ -918,7 +776,6 @@ async function main() {
         pricing_hash: sha256Bytes(`series:${series.seriesId}:pricing`),
         payout_hash: sha256Bytes(`series:${series.seriesId}:payout`),
         reserve_model_hash: sha256Bytes(`series:${series.seriesId}:reserve-model`),
-        evidence_requirements_hash: sha256Bytes(`series:${series.seriesId}:evidence`),
         comparability_hash: sha256Bytes(`series:${series.seriesId}:${series.comparabilityKey}`),
         policy_overrides_hash: sha256Bytes(`series:${series.seriesId}:policy-overrides`),
         cycle_seconds: BigInt(series.cycleSeconds ?? 30 * 86_400),
@@ -929,7 +786,6 @@ async function main() {
         { pubkey: governanceAddress },
         { pubkey: series.healthPlan },
         { pubkey: series.address, isWritable: true },
-        { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: series.address, assetMint: series.assetMint }), isWritable: true },
         { pubkey: SystemProgram.programId },
       ],
     });
@@ -945,9 +801,6 @@ async function main() {
   ];
   for (const line of fundingLineSpecs) {
     if (await protocol.accountExists(connection, line.address)) continue;
-    const seriesLedger = line.policySeries
-      ? protocol.deriveSeriesReserveLedgerPda({ policySeries: line.policySeries, assetMint: line.assetMint })
-      : null;
     await sendProtocolInstruction({
       protocol,
       connection,
@@ -972,7 +825,6 @@ async function main() {
         { pubkey: line.address, isWritable: true },
         { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: line.address, assetMint: line.assetMint }), isWritable: true },
         { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: line.healthPlan, assetMint: line.assetMint }), isWritable: true },
-        { pubkey: seriesLedger, isWritable: true },
         { pubkey: SystemProgram.programId },
       ],
     });
@@ -1057,81 +909,6 @@ async function main() {
 
   let snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
 
-  const standardSchema = currentValue(snapshot, standardSchemaAddress).schema;
-  if (!standardSchema) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "register_outcome_schema:standard",
-      instructionName: "register_outcome_schema",
-      args: {
-        schema_key_hash: STANDARD_SCHEMA_KEY_HASH_BYTES,
-        schema_key: "standard.health.outcomes",
-        version: 1,
-        schema_hash: sha256Bytes("standard-health-outcomes-schema-v1"),
-        schema_family: protocol.SCHEMA_FAMILY_KERNEL,
-        visibility: protocol.SCHEMA_VISIBILITY_PUBLIC,
-        metadata_uri: "https://protocol.omegax.health/schemas/standard-health-outcomes-v1.json",
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: standardSchemaAddress, isWritable: true },
-        { pubkey: standardSchemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  const liveStandardSchema = currentValue(snapshot, standardSchemaAddress).schema;
-  if (!liveStandardSchema?.verified) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "verify_outcome_schema:standard",
-      instructionName: "verify_outcome_schema",
-      args: { verified: true },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true },
-        { pubkey: governanceAddress },
-        { pubkey: standardSchemaAddress, isWritable: true },
-      ],
-    });
-  }
-
-  const directGovernanceAuthority = await directProtocolGovernanceAuthority(protocol, connection);
-  if (directGovernanceAuthority === governance.publicKey.toBase58()) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "backfill_schema_dependency_ledger:standard",
-      instructionName: "backfill_schema_dependency_ledger",
-      args: {
-        schema_key_hash: STANDARD_SCHEMA_KEY_HASH_BYTES,
-        pool_rule_addresses: [new PublicKey(pool.address)],
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: governanceAddress },
-        { pubkey: standardSchemaAddress },
-        { pubkey: standardSchemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    }).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes("already in use")) {
-        throw error;
-      }
-    });
-  } else {
-    console.log(
-      `[bootstrap-live] skipping direct schema backfill because protocol governance authority is ${directGovernanceAuthority ?? "(unset)"} instead of ${governance.publicKey.toBase58()}; use governance proposal flow if a schema dependency backfill is still required.`,
-    );
-  }
-
   if (!currentValue(snapshot, oracleProfileAddress).oracleProfile) {
     await sendProtocolInstruction({
       protocol,
@@ -1184,7 +961,7 @@ async function main() {
       args: {
         quorum_m: 1,
         quorum_n: 1,
-        require_verified_schema: true,
+        require_verified_schema: false,
         oracle_fee_bps: 25,
         allow_delegate_claim: true,
         challenge_window_secs: 86_400,
@@ -1238,71 +1015,6 @@ async function main() {
     });
   }
 
-  const memberPositionSpecs = [
-    {
-      address: seekerMemberPosition,
-      wallet: roleWallets.member,
-      healthPlan: seekerPlan.address,
-      policySeries: seekerRewardSeries.address,
-      rights: RIGHT_CLAIM_REWARD | RIGHT_VIEW_PAYOUT_HISTORY,
-      proofMode: MEMBERSHIP_PROOF_MODE_INVITE_PERMIT,
-      inviteAuthority: governance,
-      inviteIdHash: sha256Bytes("invite:seeker:member"),
-    },
-    {
-      address: blendedRewardMemberPosition,
-      wallet: roleWallets.member,
-      healthPlan: blendedPlan.address,
-      policySeries: blendedRewardSeries.address,
-      rights: RIGHT_CLAIM_REWARD,
-      proofMode: MEMBERSHIP_PROOF_MODE_OPEN,
-      inviteAuthority: null,
-      inviteIdHash: Array(32).fill(0),
-    },
-    {
-      address: blendedProtectionMemberPosition,
-      wallet: roleWallets.secondMember,
-      healthPlan: blendedPlan.address,
-      policySeries: blendedProtectionSeries.address,
-      rights: RIGHT_OPEN_CLAIM_CASE | RIGHT_APPOINT_DELEGATE,
-      proofMode: MEMBERSHIP_PROOF_MODE_OPEN,
-      inviteAuthority: null,
-      inviteIdHash: Array(32).fill(0),
-    },
-  ];
-  for (const memberPosition of memberPositionSpecs) {
-    if (await protocol.accountExists(connection, memberPosition.address)) continue;
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: memberPosition.wallet,
-      signers: memberPosition.inviteAuthority ? [memberPosition.inviteAuthority] : [],
-      label: `open_member_position:${memberPosition.address.slice(0, 8)}`,
-      instructionName: "open_member_position",
-      args: {
-        series_scope: new PublicKey(memberPosition.policySeries),
-        subject_commitment: sha256Bytes(`member:${memberPosition.wallet.publicKey.toBase58()}`),
-        eligibility_status: protocol.ELIGIBILITY_ELIGIBLE,
-        delegated_rights: memberPosition.rights,
-        proof_mode: memberPosition.proofMode,
-        token_gate_amount_snapshot: 0n,
-        invite_id_hash: memberPosition.inviteIdHash,
-        invite_expires_at: 0n,
-        anchor_ref: protocol.ZERO_PUBKEY_KEY,
-      },
-      accounts: [
-        { pubkey: memberPosition.wallet.publicKey, isSigner: true, isWritable: true },
-        { pubkey: governanceAddress },
-        { pubkey: memberPosition.healthPlan },
-        { pubkey: memberPosition.address, isWritable: true },
-        { pubkey: null },
-        { pubkey: null },
-        { pubkey: memberPosition.inviteAuthority?.publicKey ?? null, isSigner: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    });
-  }
-
   snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
   const currentSeekerSponsorLine = currentValue(snapshot, seekerSponsorLine.address).fundingLine;
   const currentBlendedSponsorLine = currentValue(snapshot, blendedSponsorLine.address).fundingLine;
@@ -1327,7 +1039,6 @@ async function main() {
         { pubkey: seekerSponsorLine.address, isWritable: true },
         { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: seekerSponsorLine.address, assetMint: fixtureState.rewardMint }), isWritable: true },
         { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: seekerPlan.address, assetMint: fixtureState.rewardMint }), isWritable: true },
-        { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: seekerRewardSeries.address, assetMint: fixtureState.rewardMint }), isWritable: true },
         { pubkey: requiredPublicKeyEnv("OMEGAX_DEVNET_GOVERNANCE_REWARD_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
         { pubkey: fixtureState.rewardMint },
         { pubkey: openRewardVaultTokenAccount, isWritable: true },
@@ -1355,7 +1066,6 @@ async function main() {
         { pubkey: blendedSponsorLine.address, isWritable: true },
         { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: blendedSponsorLine.address, assetMint: fixtureState.rewardMint }), isWritable: true },
         { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: blendedPlan.address, assetMint: fixtureState.rewardMint }), isWritable: true },
-        { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: blendedRewardSeries.address, assetMint: fixtureState.rewardMint }), isWritable: true },
         { pubkey: requiredPublicKeyEnv("OMEGAX_DEVNET_GOVERNANCE_REWARD_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
         { pubkey: fixtureState.rewardMint },
         { pubkey: openRewardVaultTokenAccount, isWritable: true },
@@ -1406,7 +1116,6 @@ async function main() {
         { pubkey: blendedPremiumLine.address, isWritable: true },
         { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: blendedPremiumLine.address, assetMint: fixtureState.settlementMint }), isWritable: true },
         { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: blendedPlan.address, assetMint: fixtureState.settlementMint }), isWritable: true },
-        { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: blendedProtectionSeries.address, assetMint: fixtureState.settlementMint }), isWritable: true },
         { pubkey: openSettlementProtocolFeeVault, isWritable: true },
         { pubkey: requiredPublicKeyEnv("OMEGAX_DEVNET_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
         { pubkey: fixtureState.settlementMint },
@@ -1685,7 +1394,6 @@ async function main() {
           { pubkey: seekerSponsorLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: seekerSponsorLine.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: seekerPlan.address, assetMint: fixtureState.rewardMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: seekerRewardSeries.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: address, isWritable: true },
@@ -1715,7 +1423,6 @@ async function main() {
           { pubkey: seekerSponsorLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: seekerSponsorLine.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: seekerPlan.address, assetMint: fixtureState.rewardMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: seekerRewardSeries.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: null },
@@ -1743,18 +1450,11 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: seekerPlan.address },
-          {
-            pubkey: protocol.deriveReserveAssetRailPda({
-              reserveDomain: openReserveDomain.address,
-              assetMint: fixtureState.rewardMint,
-            }),
-          },
           { pubkey: openRewardDomainVault, isWritable: true },
           { pubkey: openRewardDomainLedger, isWritable: true },
           { pubkey: seekerSponsorLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: seekerSponsorLine.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: seekerPlan.address, assetMint: fixtureState.rewardMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: seekerRewardSeries.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: null },
@@ -1790,18 +1490,11 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: seekerPlan.address },
-          {
-            pubkey: protocol.deriveReserveAssetRailPda({
-              reserveDomain: openReserveDomain.address,
-              assetMint: fixtureState.rewardMint,
-            }),
-          },
           { pubkey: openRewardDomainVault, isWritable: true },
           { pubkey: openRewardDomainLedger, isWritable: true },
           { pubkey: seekerSponsorLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: seekerSponsorLine.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: seekerPlan.address, assetMint: fixtureState.rewardMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: seekerRewardSeries.address, assetMint: fixtureState.rewardMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: null },
@@ -1869,13 +1562,10 @@ async function main() {
           claim_id: claimSpec.claimId,
           policy_series: new PublicKey(blendedProtectionSeries.address),
           claimant: roleWallets.secondMember.publicKey,
-          evidence_ref_hash: sha256Bytes(`claim:${claimSpec.claimId}:evidence`),
         },
         accounts: [
           { pubkey: roleWallets.secondMember.publicKey, isSigner: true, isWritable: true },
-          { pubkey: governanceAddress },
           { pubkey: blendedPlan.address },
-          { pubkey: blendedProtectionMemberPosition },
           { pubkey: blendedPremiumLine.address },
           { pubkey: claimSpec.claimAddress, isWritable: true },
           { pubkey: SystemProgram.programId },
@@ -1912,7 +1602,6 @@ async function main() {
           { pubkey: blendedPremiumLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: blendedPremiumLine.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: blendedPlan.address, assetMint: fixtureState.settlementMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: blendedProtectionSeries.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: claimSpec.obligationAddress, isWritable: true },
@@ -1935,11 +1624,9 @@ async function main() {
           approved_amount: claimSpec.amount,
           denied_amount: 0n,
           reserve_amount: claimSpec.amount,
-          decision_support_hash: sha256Bytes(`claim:${claimSpec.claimId}:decision`),
         },
         accounts: [
           { pubkey: governance.publicKey, isSigner: true },
-          { pubkey: governanceAddress },
           { pubkey: blendedPlan.address },
           { pubkey: claimSpec.claimAddress, isWritable: true },
           { pubkey: claimSpec.obligationAddress, isWritable: true },
@@ -1965,7 +1652,6 @@ async function main() {
           { pubkey: blendedPremiumLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: blendedPremiumLine.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: blendedPlan.address, assetMint: fixtureState.settlementMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: blendedProtectionSeries.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: null },
@@ -1997,18 +1683,11 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: blendedPlan.address },
-          {
-            pubkey: protocol.deriveReserveAssetRailPda({
-              reserveDomain: openReserveDomain.address,
-              assetMint: fixtureState.settlementMint,
-            }),
-          },
           { pubkey: fixtureState.domainAssetVaults[0]!.address, isWritable: true },
           { pubkey: fixtureState.domainAssetLedgers[0]!.address, isWritable: true },
           { pubkey: blendedPremiumLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: blendedPremiumLine.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: blendedPlan.address, assetMint: fixtureState.settlementMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: blendedProtectionSeries.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: null },
@@ -2042,18 +1721,11 @@ async function main() {
           { pubkey: governance.publicKey, isSigner: true },
           { pubkey: governanceAddress },
           { pubkey: blendedPlan.address },
-          {
-            pubkey: protocol.deriveReserveAssetRailPda({
-              reserveDomain: openReserveDomain.address,
-              assetMint: fixtureState.settlementMint,
-            }),
-          },
           { pubkey: fixtureState.domainAssetVaults[0]!.address, isWritable: true },
           { pubkey: fixtureState.domainAssetLedgers[0]!.address, isWritable: true },
           { pubkey: blendedPremiumLine.address, isWritable: true },
           { pubkey: protocol.deriveFundingLineLedgerPda({ fundingLine: blendedPremiumLine.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: blendedPlan.address, assetMint: fixtureState.settlementMint }), isWritable: true },
-          { pubkey: protocol.deriveSeriesReserveLedgerPda({ policySeries: blendedProtectionSeries.address, assetMint: fixtureState.settlementMint }), isWritable: true },
           { pubkey: null },
           { pubkey: null },
           { pubkey: null },
@@ -2080,33 +1752,8 @@ async function main() {
       throw new Error("Protocol governance config could not be loaded after live bootstrap.");
     }
     if (protocolConfig.governanceAuthority !== configuredGovernanceControl) {
-      if (protocolConfig.governanceAuthority !== governance.publicKey.toBase58()) {
-        throw new Error(
-          `Protocol governance authority is ${protocolConfig.governanceAuthority}, but live bootstrap can only hand off from ${governance.publicKey.toBase58()} to ${configuredGovernanceControl}.`,
-        );
-      }
-      await sendProtocolInstruction({
-        protocol,
-        connection,
-        feePayer: governance,
-        label: "rotate_protocol_governance_authority:propose",
-        instructionName: "rotate_protocol_governance_authority",
-        args: {
-          new_governance_authority: new PublicKey(configuredGovernanceControl),
-        },
-        accounts: [
-          { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-          { pubkey: governanceAddress, isWritable: true },
-        ],
-      });
-      const pendingConfig = await protocol.fetchProtocolConfig({ connection });
-      if (pendingConfig?.pendingGovernanceAuthority !== configuredGovernanceControl) {
-        throw new Error(
-          `Protocol governance transfer proposal did not persist. Pending authority is ${pendingConfig?.pendingGovernanceAuthority ?? "unset"}.`,
-        );
-      }
-      console.log(
-        `[bootstrap] proposed protocol governance authority transfer to ${configuredGovernanceControl}; execute accept_protocol_governance_authority from that authority before treating the handoff as complete.`,
+      throw new Error(
+        `Protocol governance authority is ${protocolConfig.governanceAuthority}, but the configured governance control is ${configuredGovernanceControl}. In-program governance handoff has been removed; initialize the program with the intended authority or redeploy before running live bootstrap.`,
       );
     }
   }
@@ -2119,7 +1766,6 @@ async function main() {
     JSON.stringify(
       {
         protocolGovernance: finalSnapshot.protocolGovernance?.address ?? null,
-        pendingGovernanceAuthority: finalSnapshot.protocolGovernance?.pendingGovernanceAuthority ?? null,
         reserveDomains: finalSnapshot.reserveDomains.length,
         domainAssetLedgers: finalSnapshot.domainAssetLedgers.length,
         healthPlans: finalSnapshot.healthPlans.length,
@@ -2136,8 +1782,6 @@ async function main() {
         poolOracleApprovals: finalSnapshot.poolOracleApprovals.length,
         poolOraclePolicies: finalSnapshot.poolOraclePolicies.length,
         poolOraclePermissionSets: finalSnapshot.poolOraclePermissionSets.length,
-        outcomeSchemas: finalSnapshot.outcomeSchemas.length,
-        schemaDependencyLedgers: finalSnapshot.schemaDependencyLedgers.length,
       },
       null,
       2,

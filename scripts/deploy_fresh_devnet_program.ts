@@ -34,7 +34,7 @@ const ANCHOR_TOML_PATH = resolve(process.cwd(), "Anchor.toml");
 const PROGRAM_LIB_PATH = resolve(process.cwd(), "programs/omegax_protocol/src/lib.rs");
 const TARGET_PROGRAM_KEYPAIR_PATH = resolve(process.cwd(), "target/deploy/omegax_protocol-keypair.json");
 const PROGRAM_SO_PATH = resolve(process.cwd(), "target/deploy/omegax_protocol.so");
-const CANONICAL_PROGRAM_ID = "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B";
+const CANONICAL_PROGRAM_ID = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM";
 
 function nowStamp(): string {
   return new Date().toISOString().replace(/[:.]/g, "-");
@@ -301,7 +301,6 @@ async function main(): Promise<void> {
       label: "initialize_protocol_governance:fresh-devnet",
       tx: protocol.buildInitializeProtocolGovernanceTx({
         governanceAuthority: governance.publicKey,
-        protocolFeeBps: 50,
         emergencyPaused: false,
         recentBlockhash: "11111111111111111111111111111111",
       }),

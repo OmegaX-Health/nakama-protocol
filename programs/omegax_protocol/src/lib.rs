@@ -2,107 +2,57 @@
 
 //! Canonical OmegaX health capital markets program surface.
 
-use anchor_lang::prelude::*;
+pub mod platform;
 
-declare_id!("Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B");
+use crate::platform::*;
+
+declare_id!("6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM");
 
 pub mod args;
-pub mod capital;
 #[cfg(feature = "certora")]
 pub mod certora;
 pub mod claims;
+#[cfg(not(feature = "quasar"))]
+pub mod classic_token;
 pub mod constants;
 pub mod errors;
 pub mod events;
-pub mod fees;
 pub mod funding_obligations;
-pub mod governance;
 pub mod kernel;
-pub mod oracle_schema;
 pub mod plans_membership;
+pub mod quasar_discriminators;
 pub mod reserve_custody;
-pub mod reserve_waterfall;
 pub mod state;
 pub mod types;
 
 pub use args::*;
-pub use capital::*;
 pub use claims::*;
 pub use constants::*;
 pub use errors::*;
 pub use events::*;
-pub use fees::*;
 pub use funding_obligations::*;
-pub use governance::*;
 #[cfg(test)]
 pub(crate) use kernel::*;
-pub use oracle_schema::*;
 pub use plans_membership::*;
 pub use reserve_custody::*;
-pub use reserve_waterfall::*;
 pub use state::*;
 pub use types::*;
 
 // Anchor derives these hidden client-account modules next to each `Accounts`
-// context. Re-export them at crate root so `#[program]` sees the same names
-// after moving the contexts into child modules.
-pub(crate) use capital::{
-    __client_accounts_allocate_capital, __client_accounts_create_allocation_position,
-    __client_accounts_create_capital_class, __client_accounts_create_liquidity_pool,
-    __client_accounts_deallocate_capital, __client_accounts_deposit_into_capital_class,
-    __client_accounts_mark_impairment, __client_accounts_process_redemption_queue,
-    __client_accounts_request_redemption, __client_accounts_update_allocation_caps,
-    __client_accounts_update_capital_class_controls,
-    __client_accounts_update_lp_position_credentialing,
-};
-pub(crate) use claims::__client_accounts_settle_claim_case_selected_asset;
+// context. Re-export them at crate root so Anchor `#[program]` sees the same
+// names after moving the contexts into child modules.
+#[cfg(not(feature = "quasar"))]
 pub(crate) use funding_obligations::{
-    __client_accounts_create_obligation, __client_accounts_fund_sponsor_budget,
-    __client_accounts_open_funding_line, __client_accounts_record_premium_payment,
+    __client_accounts_create_obligation, __client_accounts_deposit_reserve_capital,
+    __client_accounts_fund_sponsor_budget, __client_accounts_open_funding_line,
+    __client_accounts_record_premium_payment, __client_accounts_record_reserve_earnings,
     __client_accounts_release_reserve, __client_accounts_reserve_obligation,
-    __client_accounts_settle_obligation,
+    __client_accounts_return_reserve_capital, __client_accounts_settle_obligation,
 };
-pub(crate) use reserve_waterfall::{
-    __client_accounts_configure_reserve_asset_rail,
-    __client_accounts_publish_reserve_asset_rail_price,
-};
-
+#[cfg(not(feature = "quasar"))]
 #[program]
 pub mod omegax_protocol {
     use super::*;
-
-    pub fn initialize_protocol_governance(
-        ctx: Context<InitializeProtocolGovernance>,
-        args: InitializeProtocolGovernanceArgs,
-    ) -> Result<()> {
-        crate::governance::initialize_protocol_governance(ctx, args)
-    }
-
-    pub fn set_protocol_emergency_pause(
-        ctx: Context<SetProtocolEmergencyPause>,
-        args: SetProtocolEmergencyPauseArgs,
-    ) -> Result<()> {
-        crate::governance::set_protocol_emergency_pause(ctx, args)
-    }
-
-    pub fn rotate_protocol_governance_authority(
-        ctx: Context<RotateProtocolGovernanceAuthority>,
-        args: RotateProtocolGovernanceAuthorityArgs,
-    ) -> Result<()> {
-        crate::governance::rotate_protocol_governance_authority(ctx, args)
-    }
-
-    pub fn accept_protocol_governance_authority(
-        ctx: Context<AcceptProtocolGovernanceAuthority>,
-    ) -> Result<()> {
-        crate::governance::accept_protocol_governance_authority(ctx)
-    }
-
-    pub fn cancel_protocol_governance_authority_transfer(
-        ctx: Context<CancelProtocolGovernanceAuthorityTransfer>,
-    ) -> Result<()> {
-        crate::governance::cancel_protocol_governance_authority_transfer(ctx)
-    }
 
     pub fn create_reserve_domain(
         ctx: Context<CreateReserveDomain>,
@@ -123,49 +73,6 @@ pub mod omegax_protocol {
         args: CreateDomainAssetVaultArgs,
     ) -> Result<()> {
         crate::reserve_custody::create_domain_asset_vault(ctx, args)
-    }
-
-    pub fn configure_reserve_asset_rail(
-        ctx: Context<ConfigureReserveAssetRail>,
-        args: ConfigureReserveAssetRailArgs,
-    ) -> Result<()> {
-        crate::reserve_waterfall::configure_reserve_asset_rail(ctx, args)
-    }
-
-    pub fn publish_reserve_asset_rail_price(
-        ctx: Context<PublishReserveAssetRailPrice>,
-        args: PublishReserveAssetRailPriceArgs,
-    ) -> Result<()> {
-        crate::reserve_waterfall::publish_reserve_asset_rail_price(ctx, args)
-    }
-
-    /// Phase 1.6 — Initialize the protocol-fee vault for a (reserve_domain, asset_mint)
-    /// rail. Governance-only; binds the rail to the asset mint at the program edge.
-    /// Withdrawal authority is governance (PR2). Accrual is wired in PR1 hooks.
-    pub fn init_protocol_fee_vault(
-        ctx: Context<InitProtocolFeeVault>,
-        args: InitProtocolFeeVaultArgs,
-    ) -> Result<()> {
-        crate::fees::init_protocol_fee_vault(ctx, args)
-    }
-
-    /// Phase 1.6 — Initialize the pool-treasury vault for a (liquidity_pool, asset_mint)
-    /// rail. Governance-only init; pool-admin signs withdrawals (PR2).
-    pub fn init_pool_treasury_vault(
-        ctx: Context<InitPoolTreasuryVault>,
-        args: InitPoolTreasuryVaultArgs,
-    ) -> Result<()> {
-        crate::fees::init_pool_treasury_vault(ctx, args)
-    }
-
-    /// Phase 1.6 — Initialize the pool-oracle fee vault for a (liquidity_pool,
-    /// oracle, asset_mint) rail. Governance-only init; the registered oracle
-    /// wallet (or oracle profile admin) signs withdrawals (PR2).
-    pub fn init_pool_oracle_fee_vault(
-        ctx: Context<InitPoolOracleFeeVault>,
-        args: InitPoolOracleFeeVaultArgs,
-    ) -> Result<()> {
-        crate::fees::init_pool_oracle_fee_vault(ctx, args)
     }
 
     pub fn create_health_plan(
@@ -189,32 +96,11 @@ pub mod omegax_protocol {
         crate::plans_membership::create_policy_series(ctx, args)
     }
 
-    pub fn initialize_series_reserve_ledger(
-        ctx: Context<InitializeSeriesReserveLedger>,
-        args: InitializeSeriesReserveLedgerArgs,
-    ) -> Result<()> {
-        crate::plans_membership::initialize_series_reserve_ledger(ctx, args)
-    }
-
     pub fn version_policy_series(
         ctx: Context<VersionPolicySeries>,
         args: VersionPolicySeriesArgs,
     ) -> Result<()> {
         crate::plans_membership::version_policy_series(ctx, args)
-    }
-
-    pub fn open_member_position(
-        ctx: Context<OpenMemberPosition>,
-        args: OpenMemberPositionArgs,
-    ) -> Result<()> {
-        crate::plans_membership::open_member_position(ctx, args)
-    }
-
-    pub fn update_member_eligibility(
-        ctx: Context<UpdateMemberEligibility>,
-        args: UpdateMemberEligibilityArgs,
-    ) -> Result<()> {
-        crate::plans_membership::update_member_eligibility(ctx, args)
     }
 
     pub fn open_funding_line(
@@ -236,6 +122,27 @@ pub mod omegax_protocol {
         args: RecordPremiumPaymentArgs,
     ) -> Result<()> {
         crate::funding_obligations::record_premium_payment(ctx, args)
+    }
+
+    pub fn deposit_reserve_capital(
+        ctx: Context<DepositReserveCapital>,
+        args: DepositReserveCapitalArgs,
+    ) -> Result<()> {
+        crate::funding_obligations::deposit_reserve_capital(ctx, args)
+    }
+
+    pub fn return_reserve_capital(
+        ctx: Context<ReturnReserveCapital>,
+        args: ReturnReserveCapitalArgs,
+    ) -> Result<()> {
+        crate::funding_obligations::return_reserve_capital(ctx, args)
+    }
+
+    pub fn record_reserve_earnings(
+        ctx: Context<RecordReserveEarnings>,
+        args: RecordReserveEarningsArgs,
+    ) -> Result<()> {
+        crate::funding_obligations::record_reserve_earnings(ctx, args)
     }
 
     pub fn create_obligation(
@@ -274,13 +181,6 @@ pub mod omegax_protocol {
         crate::claims::authorize_claim_recipient(ctx, args)
     }
 
-    pub fn attach_claim_evidence_ref(
-        ctx: Context<AttachClaimEvidenceRef>,
-        args: AttachClaimEvidenceRefArgs,
-    ) -> Result<()> {
-        crate::claims::attach_claim_evidence_ref(ctx, args)
-    }
-
     pub fn adjudicate_claim_case(
         ctx: Context<AdjudicateClaimCase>,
         args: AdjudicateClaimCaseArgs,
@@ -294,215 +194,368 @@ pub mod omegax_protocol {
     ) -> Result<()> {
         crate::claims::settle_claim_case(ctx, args)
     }
+}
 
-    pub fn settle_claim_case_selected_asset(
-        ctx: Context<SettleClaimCaseSelectedAsset>,
-        args: SettleClaimCaseSelectedAssetArgs,
+#[cfg(feature = "quasar")]
+#[program]
+pub mod omegax_protocol {
+    use super::*;
+    #[inline(always)]
+    fn quasar_handler_port_pending() -> Result<()> {
+        Err(ProgramError::InvalidInstructionData)
+    }
+
+    #[instruction(discriminator = [222, 2, 8, 218, 45, 157, 193, 246])]
+    pub fn create_reserve_domain(
+        ctx: Ctx<CreateReserveDomain>,
+        domain_admin: Pubkey,
+        settlement_mode: u8,
+        legal_structure_hash: [u8; 32],
+        compliance_baseline_hash: [u8; 32],
+        allowed_rail_mask: u16,
+        pause_flags: u32,
+        domain_id: String<u32, 32>,
+        display_name: String<u32, 64>,
     ) -> Result<()> {
-        crate::claims::settle_claim_case_selected_asset(ctx, args)
+        crate::reserve_custody::create_reserve_domain(
+            &mut ctx,
+            domain_admin,
+            settlement_mode,
+            legal_structure_hash,
+            compliance_baseline_hash,
+            allowed_rail_mask,
+            pause_flags,
+            domain_id,
+            display_name,
+        )
     }
 
-    pub fn create_liquidity_pool(
-        ctx: Context<CreateLiquidityPool>,
-        args: CreateLiquidityPoolArgs,
+    #[instruction(discriminator = [3, 60, 38, 233, 198, 167, 116, 197])]
+    pub fn update_reserve_domain_controls(
+        ctx: Ctx<UpdateReserveDomainControls>,
+        allowed_rail_mask: u16,
+        pause_flags: u32,
+        active: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        crate::capital::create_liquidity_pool(ctx, args)
+        let _ = &reason_hash;
+        crate::reserve_custody::update_reserve_domain_controls(
+            &mut ctx,
+            allowed_rail_mask,
+            pause_flags,
+            active,
+        )
     }
 
-    pub fn create_capital_class(
-        ctx: Context<CreateCapitalClass>,
-        args: CreateCapitalClassArgs,
+    #[instruction(discriminator = [31, 13, 112, 128, 23, 164, 26, 108])]
+    pub fn create_domain_asset_vault(
+        ctx: Ctx<CreateDomainAssetVault>,
+        asset_mint_key: Pubkey,
     ) -> Result<()> {
-        crate::capital::create_capital_class(ctx, args)
+        crate::reserve_custody::create_domain_asset_vault(&mut ctx, asset_mint_key)
     }
 
-    pub fn update_capital_class_controls(
-        ctx: Context<UpdateCapitalClassControls>,
-        args: UpdateCapitalClassControlsArgs,
+    #[instruction(discriminator = [136, 7, 197, 134, 241, 206, 83, 171])]
+    pub fn create_health_plan(
+        ctx: Ctx<CreateHealthPlan>,
+        sponsor: Pubkey,
+        sponsor_operator: Pubkey,
+        claims_operator: Pubkey,
+        oracle_authority: Pubkey,
+        allowed_rail_mask: u16,
+        default_funding_priority: u8,
+        oracle_policy_hash: [u8; 32],
+        schema_binding_hash: [u8; 32],
+        compliance_baseline_hash: [u8; 32],
+        pause_flags: u32,
+        plan_id: String<u32, 32>,
+        display_name: String<u32, 64>,
+        organization_ref: String<u32, 64>,
+        metadata_uri: String<u32, 160>,
     ) -> Result<()> {
-        crate::capital::update_capital_class_controls(ctx, args)
+        crate::plans_membership::create_health_plan(
+            &mut ctx,
+            sponsor,
+            sponsor_operator,
+            claims_operator,
+            oracle_authority,
+            allowed_rail_mask,
+            default_funding_priority,
+            oracle_policy_hash,
+            schema_binding_hash,
+            compliance_baseline_hash,
+            pause_flags,
+            plan_id,
+            display_name,
+            organization_ref,
+            metadata_uri,
+        )
     }
 
-    pub fn update_lp_position_credentialing(
-        ctx: Context<UpdateLpPositionCredentialing>,
-        args: UpdateLpPositionCredentialingArgs,
+    #[instruction(discriminator = [108, 11, 28, 140, 226, 164, 239, 113])]
+    pub fn update_health_plan_controls(
+        ctx: Ctx<UpdateHealthPlanControls>,
+        sponsor_operator: Pubkey,
+        claims_operator: Pubkey,
+        oracle_authority: Pubkey,
+        allowed_rail_mask: u16,
+        default_funding_priority: u8,
+        oracle_policy_hash: [u8; 32],
+        schema_binding_hash: [u8; 32],
+        compliance_baseline_hash: [u8; 32],
+        pause_flags: u32,
+        active: bool,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        crate::capital::update_lp_position_credentialing(ctx, args)
+        let _ = &reason_hash;
+        crate::plans_membership::update_health_plan_controls(
+            &mut ctx,
+            sponsor_operator,
+            claims_operator,
+            oracle_authority,
+            allowed_rail_mask,
+            default_funding_priority,
+            oracle_policy_hash,
+            schema_binding_hash,
+            compliance_baseline_hash,
+            pause_flags,
+            active,
+        )
     }
 
-    pub fn deposit_into_capital_class(
-        ctx: Context<DepositIntoCapitalClass>,
-        args: DepositIntoCapitalClassArgs,
+    #[instruction(discriminator = [70, 162, 231, 218, 211, 136, 110, 176])]
+    pub fn create_policy_series(
+        ctx: Ctx<CreatePolicySeries>,
+        asset_mint: Pubkey,
+        mode: u8,
+        status: u8,
+        adjudication_mode: u8,
+        terms_hash: [u8; 32],
+        pricing_hash: [u8; 32],
+        payout_hash: [u8; 32],
+        reserve_model_hash: [u8; 32],
+        comparability_hash: [u8; 32],
+        policy_overrides_hash: [u8; 32],
+        cycle_seconds: i64,
+        terms_version: u16,
+        series_id: String<u32, 32>,
+        display_name: String<u32, 64>,
+        metadata_uri: String<u32, 160>,
     ) -> Result<()> {
-        crate::capital::deposit_into_capital_class(ctx, args)
+        crate::plans_membership::create_policy_series(
+            &mut ctx,
+            asset_mint,
+            mode,
+            status,
+            adjudication_mode,
+            terms_hash,
+            pricing_hash,
+            payout_hash,
+            reserve_model_hash,
+            comparability_hash,
+            policy_overrides_hash,
+            cycle_seconds,
+            terms_version,
+            series_id,
+            display_name,
+            metadata_uri,
+        )
     }
 
-    pub fn request_redemption(
-        ctx: Context<RequestRedemption>,
-        args: RequestRedemptionArgs,
+    #[instruction(discriminator = [64, 76, 132, 253, 41, 220, 169, 146])]
+    pub fn version_policy_series(
+        ctx: Ctx<VersionPolicySeries>,
+        status: u8,
+        adjudication_mode: u8,
+        terms_hash: [u8; 32],
+        pricing_hash: [u8; 32],
+        payout_hash: [u8; 32],
+        reserve_model_hash: [u8; 32],
+        comparability_hash: [u8; 32],
+        policy_overrides_hash: [u8; 32],
+        cycle_seconds: i64,
+        series_id: String<u32, 32>,
+        display_name: String<u32, 64>,
+        metadata_uri: String<u32, 160>,
     ) -> Result<()> {
-        crate::capital::request_redemption(ctx, args)
+        crate::plans_membership::version_policy_series(
+            &mut ctx,
+            status,
+            adjudication_mode,
+            terms_hash,
+            pricing_hash,
+            payout_hash,
+            reserve_model_hash,
+            comparability_hash,
+            policy_overrides_hash,
+            cycle_seconds,
+            series_id,
+            display_name,
+            metadata_uri,
+        )
     }
 
-    pub fn process_redemption_queue(
-        ctx: Context<ProcessRedemptionQueue>,
-        args: ProcessRedemptionQueueArgs,
+    #[instruction(discriminator = [231, 140, 66, 127, 163, 1, 197, 9])]
+    pub fn open_funding_line(
+        ctx: Ctx<OpenFundingLine>,
+        policy_series_arg: Pubkey,
+        asset_mint: Pubkey,
+        line_type: u8,
+        funding_priority: u8,
+        committed_amount: u64,
+        caps_hash: [u8; 32],
+        line_id: String<u32, 32>,
     ) -> Result<()> {
-        crate::capital::process_redemption_queue(ctx, args)
+        crate::funding_obligations::open_funding_line(
+            &mut ctx,
+            policy_series_arg,
+            asset_mint,
+            line_type,
+            funding_priority,
+            committed_amount,
+            caps_hash,
+            &line_id,
+        )
     }
 
-    /// Sweep accrued protocol fees (SPL rail) to a recipient ATA.
-    /// Authority: governance only. Fees physically reside in the matching
-    /// DomainAssetVault.vault_token_account; the CPI is PDA-signed via
-    /// transfer_from_domain_vault.
-    pub fn withdraw_protocol_fee_spl(
-        ctx: Context<WithdrawProtocolFeeSpl>,
-        args: WithdrawArgs,
+    #[instruction(discriminator = [150, 210, 161, 31, 50, 12, 224, 32])]
+    pub fn fund_sponsor_budget(ctx: Ctx<FundSponsorBudget>, amount: u64) -> Result<()> {
+        crate::funding_obligations::fund_sponsor_budget(&mut ctx, amount)
+    }
+
+    #[instruction(discriminator = [196, 182, 182, 56, 146, 87, 170, 29])]
+    pub fn record_premium_payment(ctx: Ctx<RecordPremiumPayment>, amount: u64) -> Result<()> {
+        crate::funding_obligations::record_premium_payment(&mut ctx, amount)
+    }
+
+    #[instruction(discriminator = [131, 164, 249, 242, 239, 66, 61, 250])]
+    pub fn deposit_reserve_capital(
+        ctx: Ctx<DepositReserveCapital>,
+        amount: u64,
+        terms_hash: [u8; 32],
     ) -> Result<()> {
-        crate::fees::withdraw_protocol_fee_spl(ctx, args)
+        crate::funding_obligations::deposit_reserve_capital(&mut ctx, amount, terms_hash)
     }
 
-    /// Sweep accrued protocol fees (SOL rail) to a recipient system account.
-    /// Authority: governance only. Lamports come straight off the fee-vault
-    /// PDA; rent-exempt minimum is preserved.
-    pub fn withdraw_protocol_fee_sol(
-        ctx: Context<WithdrawProtocolFeeSol>,
-        args: WithdrawArgs,
+    #[instruction(discriminator = [184, 37, 251, 62, 82, 35, 174, 28])]
+    pub fn return_reserve_capital(
+        ctx: Ctx<ReturnReserveCapital>,
+        amount: u64,
+        reason_hash: [u8; 32],
     ) -> Result<()> {
-        crate::fees::withdraw_protocol_fee_sol(ctx, args)
+        crate::funding_obligations::return_reserve_capital(&mut ctx, amount, reason_hash)
     }
 
-    /// Sweep accrued pool-treasury fees (SPL rail).
-    /// Authority: pool curator OR governance.
-    pub fn withdraw_pool_treasury_spl(
-        ctx: Context<WithdrawPoolTreasurySpl>,
-        args: WithdrawArgs,
+    #[instruction(discriminator = [75, 139, 1, 155, 75, 113, 61, 166])]
+    pub fn record_reserve_earnings(
+        ctx: Ctx<RecordReserveEarnings>,
+        amount: u64,
+        earnings_ref_hash: [u8; 32],
     ) -> Result<()> {
-        crate::fees::withdraw_pool_treasury_spl(ctx, args)
+        crate::funding_obligations::record_reserve_earnings(&mut ctx, amount, earnings_ref_hash)
     }
 
-    /// Sweep accrued pool-treasury fees (SOL rail).
-    /// Authority: pool curator OR governance.
-    pub fn withdraw_pool_treasury_sol(
-        ctx: Context<WithdrawPoolTreasurySol>,
-        args: WithdrawArgs,
+    #[instruction(discriminator = [216, 144, 172, 223, 19, 106, 220, 54])]
+    pub fn create_obligation(
+        ctx: Ctx<CreateObligation>,
+        asset_mint: Pubkey,
+        policy_series: Pubkey,
+        member_wallet: Pubkey,
+        beneficiary: Pubkey,
+        claim_case: Pubkey,
+        delivery_mode: u8,
+        amount: u64,
+        creation_reason_hash: [u8; 32],
+        obligation_id: String<u32, 32>,
     ) -> Result<()> {
-        crate::fees::withdraw_pool_treasury_sol(ctx, args)
+        crate::funding_obligations::create_obligation(
+            &mut ctx,
+            asset_mint,
+            policy_series,
+            member_wallet,
+            beneficiary,
+            claim_case,
+            delivery_mode,
+            amount,
+            creation_reason_hash,
+            &obligation_id,
+        )
     }
 
-    /// Sweep accrued pool-oracle fees (SPL rail) to a recipient ATA.
-    /// Authority: registered oracle wallet OR oracle profile admin OR governance.
-    pub fn withdraw_pool_oracle_fee_spl(
-        ctx: Context<WithdrawPoolOracleFeeSpl>,
-        args: WithdrawArgs,
+    #[instruction(discriminator = [48, 113, 133, 225, 40, 36, 197, 86])]
+    pub fn reserve_obligation(ctx: Ctx<ReserveObligation>, amount: u64) -> Result<()> {
+        crate::funding_obligations::reserve_obligation(&mut ctx, amount)
+    }
+
+    #[instruction(discriminator = [209, 166, 218, 35, 147, 139, 238, 208])]
+    pub fn settle_obligation(
+        ctx: Ctx<SettleObligation>,
+        next_status: u8,
+        amount: u64,
+        settlement_reason_hash: [u8; 32],
     ) -> Result<()> {
-        crate::fees::withdraw_pool_oracle_fee_spl(ctx, args)
+        crate::funding_obligations::settle_obligation(
+            &mut ctx,
+            next_status,
+            amount,
+            settlement_reason_hash,
+        )
     }
 
-    /// Sweep accrued pool-oracle fees (SOL rail) to a recipient system account.
-    /// Authority: registered oracle wallet OR oracle profile admin OR governance.
-    pub fn withdraw_pool_oracle_fee_sol(
-        ctx: Context<WithdrawPoolOracleFeeSol>,
-        args: WithdrawArgs,
+    #[instruction(discriminator = [170, 102, 52, 144, 33, 176, 41, 60])]
+    pub fn release_reserve(ctx: Ctx<ReleaseReserve>, amount: u64) -> Result<()> {
+        crate::funding_obligations::release_reserve(&mut ctx, amount)
+    }
+
+    #[instruction(discriminator = [151, 125, 231, 211, 63, 132, 248, 184])]
+    pub fn open_claim_case(
+        ctx: Ctx<OpenClaimCase>,
+        policy_series: Pubkey,
+        claimant: Pubkey,
+        evidence_ref_hash: [u8; 32],
+        claim_id: String<u32, 32>,
     ) -> Result<()> {
-        crate::fees::withdraw_pool_oracle_fee_sol(ctx, args)
+        crate::claims::open_claim_case(
+            &mut ctx,
+            policy_series,
+            claimant,
+            evidence_ref_hash,
+            claim_id,
+        )
     }
 
-    pub fn create_allocation_position(
-        ctx: Context<CreateAllocationPosition>,
-        args: CreateAllocationPositionArgs,
+    #[instruction(discriminator = [112, 97, 129, 42, 125, 165, 226, 163])]
+    pub fn authorize_claim_recipient(
+        ctx: Ctx<AuthorizeClaimRecipient>,
+        delegate_recipient: Pubkey,
     ) -> Result<()> {
-        crate::capital::create_allocation_position(ctx, args)
+        crate::claims::authorize_claim_recipient(&mut ctx, delegate_recipient)
     }
 
-    pub fn update_allocation_caps(
-        ctx: Context<UpdateAllocationCaps>,
-        args: UpdateAllocationCapsArgs,
+    #[instruction(discriminator = [146, 99, 255, 26, 223, 88, 235, 114])]
+    pub fn adjudicate_claim_case(
+        ctx: Ctx<AdjudicateClaimCase>,
+        review_state: u8,
+        approved_amount: u64,
+        denied_amount: u64,
+        reserve_amount: u64,
+        evidence_ref_hash: [u8; 32],
+        decision_support_hash: [u8; 32],
     ) -> Result<()> {
-        crate::capital::update_allocation_caps(ctx, args)
+        crate::claims::adjudicate_claim_case(
+            &mut ctx,
+            review_state,
+            approved_amount,
+            denied_amount,
+            reserve_amount,
+            evidence_ref_hash,
+            decision_support_hash,
+        )
     }
 
-    pub fn allocate_capital(
-        ctx: Context<AllocateCapital>,
-        args: AllocateCapitalArgs,
-    ) -> Result<()> {
-        crate::capital::allocate_capital(ctx, args)
-    }
-
-    pub fn deallocate_capital(
-        ctx: Context<DeallocateCapital>,
-        args: DeallocateCapitalArgs,
-    ) -> Result<()> {
-        crate::capital::deallocate_capital(ctx, args)
-    }
-
-    pub fn mark_impairment(ctx: Context<MarkImpairment>, args: MarkImpairmentArgs) -> Result<()> {
-        crate::capital::mark_impairment(ctx, args)
-    }
-
-    pub fn register_oracle(ctx: Context<RegisterOracle>, args: RegisterOracleArgs) -> Result<()> {
-        crate::oracle_schema::register_oracle(ctx, args)
-    }
-
-    pub fn claim_oracle(ctx: Context<ClaimOracle>) -> Result<()> {
-        crate::oracle_schema::claim_oracle(ctx)
-    }
-
-    pub fn update_oracle_profile(
-        ctx: Context<UpdateOracleProfile>,
-        args: UpdateOracleProfileArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::update_oracle_profile(ctx, args)
-    }
-
-    pub fn set_pool_oracle(ctx: Context<SetPoolOracle>, args: SetPoolOracleArgs) -> Result<()> {
-        crate::oracle_schema::set_pool_oracle(ctx, args)
-    }
-
-    pub fn set_pool_oracle_permissions(
-        ctx: Context<SetPoolOraclePermissions>,
-        args: SetPoolOraclePermissionsArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::set_pool_oracle_permissions(ctx, args)
-    }
-
-    pub fn set_pool_oracle_policy(
-        ctx: Context<SetPoolOraclePolicy>,
-        args: SetPoolOraclePolicyArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::set_pool_oracle_policy(ctx, args)
-    }
-
-    pub fn register_outcome_schema(
-        ctx: Context<RegisterOutcomeSchema>,
-        args: RegisterOutcomeSchemaArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::register_outcome_schema(ctx, args)
-    }
-
-    pub fn verify_outcome_schema(
-        ctx: Context<VerifyOutcomeSchema>,
-        args: VerifyOutcomeSchemaArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::verify_outcome_schema(ctx, args)
-    }
-
-    pub fn backfill_schema_dependency_ledger(
-        ctx: Context<BackfillSchemaDependencyLedger>,
-        args: BackfillSchemaDependencyLedgerArgs,
-    ) -> Result<()> {
-        crate::oracle_schema::backfill_schema_dependency_ledger(ctx, args)
-    }
-
-    pub fn close_outcome_schema(ctx: Context<CloseOutcomeSchema>) -> Result<()> {
-        crate::oracle_schema::close_outcome_schema(ctx)
-    }
-
-    pub fn attest_claim_case(
-        ctx: Context<AttestClaimCase>,
-        args: AttestClaimCaseArgs,
-    ) -> Result<()> {
-        crate::claims::attest_claim_case(ctx, args)
+    #[instruction(discriminator = [178, 123, 229, 204, 50, 204, 91, 71])]
+    pub fn settle_claim_case(ctx: Ctx<SettleClaimCase>, amount: u64) -> Result<()> {
+        crate::claims::settle_claim_case(&mut ctx, amount)
     }
 }
 

@@ -4,12 +4,10 @@
 use omegaxprotocol::state::{
     InitializeProtocolGovernanceArgs,
     SettleClaimCaseArgs,
-    SettleClaimCaseSelectedAssetArgs,
     WithdrawArgs,
 };
 
 const MAX_CONFIGURED_FEE_BPS: u16 = 9999;
-const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS: u16 = 50;
 const SAFE_RAIL_CONFIDENCE_BPS: u16 = 25;
 const SAFE_RAIL_MAX_CONFIDENCE_BPS: u16 = 100;
 const SAFE_RAIL_PRICE_USD_1E8: u64 = 100_000_000;
@@ -26,31 +24,6 @@ fn safe_settle_claim_args(amount: u64) -> SettleClaimCaseArgs {
         rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
         rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
         rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
-    }
-}
-
-fn safe_selected_asset_args(
-    claim_credit_amount: u64,
-    payout_amount: u64,
-    max_overpay_bps: u16,
-) -> SettleClaimCaseSelectedAssetArgs {
-    SettleClaimCaseSelectedAssetArgs {
-        claim_credit_amount,
-        payout_amount,
-        max_overpay_bps,
-        claim_rail_active: true,
-        claim_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
-        claim_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
-        claim_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
-        claim_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
-        claim_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
-        payout_rail_active: true,
-        payout_rail_payout_enabled: true,
-        payout_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
-        payout_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
-        payout_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
-        payout_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
-        payout_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
     }
 }
 
@@ -72,24 +45,6 @@ fn claim_payment_guard_keeps_paid_within_approval() {
     let args = safe_settle_claim_args(amount);
     let approved_amount = paid_amount + args.amount;
     let next_paid = paid_amount + args.amount;
-    assert!(next_paid <= approved_amount);
-}
-
-#[kani::proof]
-fn selected_asset_guard_bounds_overpay_and_claim_credit() {
-    let paid_amount: u64 = kani::any();
-    let claim_credit_amount: u64 = kani::any();
-    let payout_amount: u64 = kani::any();
-    let max_overpay_bps: u16 = kani::any();
-    kani::assume(claim_credit_amount > 0);
-    kani::assume(payout_amount > 0);
-    kani::assume(max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS);
-    kani::assume(paid_amount <= u64::MAX - claim_credit_amount);
-    let args = safe_selected_asset_args(claim_credit_amount, payout_amount, max_overpay_bps);
-    let approved_amount = paid_amount + args.claim_credit_amount;
-    let next_paid = paid_amount + args.claim_credit_amount;
-    assert!(args.payout_amount > 0);
-    assert!(args.max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS);
     assert!(next_paid <= approved_amount);
 }
 

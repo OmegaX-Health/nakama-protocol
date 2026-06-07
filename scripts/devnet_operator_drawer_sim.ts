@@ -336,7 +336,6 @@ async function main(): Promise<void> {
       protocol.buildInitializeProtocolGovernanceTx({
         governanceAuthority: signer.publicKey,
         recentBlockhash: blockhash,
-        protocolFeeBps: 0,
         emergencyPaused: false,
       }),
       "Initialize protocol governance",
@@ -506,7 +505,6 @@ async function main(): Promise<void> {
             claimId: `sim-${randomBytes(4).toString("hex")}`,
             policySeriesAddress: series?.address ?? firstLine.policySeries ?? null,
             claimantAddress: signer.publicKey,
-            evidenceRefHashHex: hashReason("sim-evidence"),
           }),
           "Open claim case",
           "plan",
@@ -516,28 +514,7 @@ async function main(): Promise<void> {
       results.push(skip("Open claim case", "plan", "no member or funding line"));
     }
 
-    // Attach claim evidence
-    if (claim) {
-      results.push(
-        await simulate(
-          connection,
-          signer,
-          blockhash,
-          protocol.buildAttachClaimEvidenceRefTx({
-            authority: signer.publicKey,
-            healthPlanAddress: plan.address,
-            claimCaseAddress: claim.address,
-            recentBlockhash: blockhash,
-            evidenceRefHashHex: hashReason("sim-evidence"),
-            decisionSupportHashHex: hashReason("sim-decision"),
-          }),
-          "Attach claim evidence",
-          "plan",
-        ),
-      );
-    } else {
-      results.push(skip("Attach claim evidence", "plan", "no claim case fixture"));
-    }
+    results.push(skip("Attach claim evidence", "plan", "removed from the base protocol surface"));
 
     // Adjudicate claim case
     if (claim) {
@@ -555,7 +532,6 @@ async function main(): Promise<void> {
             approvedAmount: 0n,
             deniedAmount: 0n,
             reserveAmount: 0n,
-            decisionSupportHashHex: hashReason("sim-decision"),
             obligationAddress: obligation?.address ?? null,
           }),
           "Adjudicate claim case",
@@ -752,28 +728,20 @@ async function main(): Promise<void> {
     // of turning a guaranteed semantic rejection into "builder ok".
     const memberProofMode = proofModeForPlan(protocol, plan);
     const memberMode = membershipModeForPlan(protocol, plan);
-    const memberGateKind = membershipGateKindForPlan(protocol, plan);
     const tokenGateRequired = memberMode === protocol.MEMBERSHIP_MODE_TOKEN_GATE;
     const inviteRequired = memberMode === protocol.MEMBERSHIP_MODE_INVITE_ONLY;
     const inviteAuthority =
       plan.membershipInviteAuthority && plan.membershipInviteAuthority !== protocol.ZERO_PUBKEY
         ? plan.membershipInviteAuthority
         : "";
-    const tokenGateAccountAddress = process.env.OMEGAX_DEVNET_MEMBER_TOKEN_GATE_ACCOUNT?.trim() || "";
-    const anchorRefAddress =
-      memberGateKind === protocol.MEMBERSHIP_GATE_KIND_NFT_ANCHOR
-        ? plan.membershipGateMint ?? ""
-        : memberGateKind === protocol.MEMBERSHIP_GATE_KIND_STAKE_ANCHOR
-          ? tokenGateAccountAddress
-          : "";
 
     if (inviteRequired && inviteAuthority !== signerAddress) {
       results.push(
         skip("Open member position", "plan", "invite authority signer fixture missing"),
       );
-    } else if (tokenGateRequired && !tokenGateAccountAddress) {
+    } else if (tokenGateRequired) {
       results.push(
-        skip("Open member position", "plan", "token gate account fixture missing"),
+        skip("Open member position", "plan", "token-gated membership was removed from the program"),
       );
     } else {
       results.push(
@@ -790,11 +758,8 @@ async function main(): Promise<void> {
             eligibilityStatus: protocol.ELIGIBILITY_PENDING,
             delegatedRightsMask: 0,
             proofMode: memberProofMode,
-            tokenGateAmountSnapshot: BigInt(plan.membershipGateMinAmount ?? 0),
             inviteIdHashHex: inviteRequired ? hashReason("sim-invite") : "",
             inviteExpiresAt: 0n,
-            tokenGateAccountAddress: tokenGateRequired ? tokenGateAccountAddress : undefined,
-            anchorRefAddress: anchorRefAddress || undefined,
             inviteAuthorityAddress: inviteRequired ? inviteAuthority : undefined,
           }),
           "Open member position",

@@ -8,7 +8,7 @@ import {
   SEED_ALLOCATION_LEDGER,
   SEED_ALLOCATION_POSITION,
   SEED_CAPITAL_CLASS,
-  SEED_CLAIM_ATTESTATION,
+  SEED_CAPITAL_CONTRIBUTION,
   SEED_CLAIM_CASE,
   SEED_DOMAIN_ASSET_LEDGER,
   SEED_DOMAIN_ASSET_VAULT,
@@ -22,24 +22,14 @@ import {
   SEED_MEMBERSHIP_ANCHOR_SEAT,
   SEED_OBLIGATION,
   SEED_ORACLE_PROFILE,
-  SEED_OUTCOME_SCHEMA,
   SEED_PLAN_RESERVE_LEDGER,
   SEED_POLICY_SERIES,
   SEED_POOL_CLASS_LEDGER,
-  SEED_POOL_ORACLE_APPROVAL,
-  SEED_POOL_ORACLE_FEE_VAULT,
-  SEED_POOL_ORACLE_PERMISSION_SET,
-  SEED_POOL_ORACLE_POLICY,
-  SEED_POOL_TREASURY_VAULT,
-  SEED_PROTOCOL_FEE_VAULT,
   SEED_PROTOCOL_GOVERNANCE,
-  SEED_RESERVE_ASSET_RAIL,
   SEED_RESERVE_DOMAIN,
-  SEED_SCHEMA_DEPENDENCY_LEDGER,
-  SEED_SERIES_RESERVE_LEDGER,
   ZERO_PUBKEY_KEY,
 } from "./constants";
-import { assertSeedId, hexToFixedBytes, TEXT_ENCODER } from "./encoding";
+import { assertSeedId, TEXT_ENCODER } from "./encoding";
 import type { PublicKeyish } from "./types";
 
 function derivePda(seeds: Uint8Array[], programId = getProgramId()): PublicKey {
@@ -118,73 +108,6 @@ export function deriveDomainAssetLedgerPda(params: {
   );
 }
 
-export function deriveReserveAssetRailPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_RESERVE_ASSET_RAIL),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-// Phase 1.6/1.7 — Fee-vault PDA derivers. SPL rails pass `assetMint = the
-// SPL mint pubkey`; SOL rails pass `assetMint = NATIVE_SOL_MINT_KEY` (the
-// canonical wrapped-SOL mint). The on-chain seeds are identical for both
-// rails — the rail is selected at withdraw time by which asset_mint the
-// vault was initialized with.
-export function deriveProtocolFeeVaultPda(params: {
-  reserveDomain: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_PROTOCOL_FEE_VAULT),
-      toPublicKey(params.reserveDomain).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function derivePoolTreasuryVaultPda(params: {
-  liquidityPool: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_TREASURY_VAULT),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function derivePoolOracleFeeVaultPda(params: {
-  liquidityPool: PublicKeyish;
-  oracle: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_ORACLE_FEE_VAULT),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
 export function deriveHealthPlanPda(params: {
   reserveDomain: PublicKeyish;
   planId: string;
@@ -225,21 +148,6 @@ export function derivePolicySeriesPda(params: {
       TEXT_ENCODER.encode(SEED_POLICY_SERIES),
       toPublicKey(params.healthPlan).toBytes(),
       stringSeed(params.seriesId, "series id"),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveSeriesReserveLedgerPda(params: {
-  policySeries: PublicKeyish;
-  assetMint: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_SERIES_RESERVE_LEDGER),
-      toPublicKey(params.policySeries).toBytes(),
-      toPublicKey(params.assetMint).toBytes(),
     ],
     params.programId ?? getProgramId(),
   );
@@ -302,6 +210,21 @@ export function deriveFundingLineLedgerPda(params: {
       TEXT_ENCODER.encode(SEED_FUNDING_LINE_LEDGER),
       toPublicKey(params.fundingLine).toBytes(),
       toPublicKey(params.assetMint).toBytes(),
+    ],
+    params.programId ?? getProgramId(),
+  );
+}
+
+export function deriveCapitalContributionPda(params: {
+  fundingLine: PublicKeyish;
+  contributor: PublicKeyish;
+  programId?: PublicKey;
+}): PublicKey {
+  return derivePda(
+    [
+      TEXT_ENCODER.encode(SEED_CAPITAL_CONTRIBUTION),
+      toPublicKey(params.fundingLine).toBytes(),
+      toPublicKey(params.contributor).toBytes(),
     ],
     params.programId ?? getProgramId(),
   );
@@ -433,81 +356,6 @@ export function deriveOracleProfilePda(params: {
 }): PublicKey {
   return derivePda(
     [TEXT_ENCODER.encode(SEED_ORACLE_PROFILE), toPublicKey(params.oracle).toBytes()],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function derivePoolOracleApprovalPda(params: {
-  liquidityPool: PublicKeyish;
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_ORACLE_APPROVAL),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function derivePoolOraclePolicyPda(params: {
-  liquidityPool: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_POOL_ORACLE_POLICY), toPublicKey(params.liquidityPool).toBytes()],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function derivePoolOraclePermissionSetPda(params: {
-  liquidityPool: PublicKeyish;
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_POOL_ORACLE_PERMISSION_SET),
-      toPublicKey(params.liquidityPool).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-    ],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveOutcomeSchemaPda(params: {
-  schemaKeyHashHex: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_OUTCOME_SCHEMA), hexToFixedBytes(params.schemaKeyHashHex, 32)],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveSchemaDependencyLedgerPda(params: {
-  schemaKeyHashHex: string;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [TEXT_ENCODER.encode(SEED_SCHEMA_DEPENDENCY_LEDGER), hexToFixedBytes(params.schemaKeyHashHex, 32)],
-    params.programId ?? getProgramId(),
-  );
-}
-
-export function deriveClaimAttestationPda(params: {
-  claimCase: PublicKeyish;
-  oracle: PublicKeyish;
-  programId?: PublicKey;
-}): PublicKey {
-  return derivePda(
-    [
-      TEXT_ENCODER.encode(SEED_CLAIM_ATTESTATION),
-      toPublicKey(params.claimCase).toBytes(),
-      toPublicKey(params.oracle).toBytes(),
-    ],
     params.programId ?? getProgramId(),
   );
 }

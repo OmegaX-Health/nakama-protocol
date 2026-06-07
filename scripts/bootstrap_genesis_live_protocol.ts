@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
 import { Buffer } from "node:buffer";
-import { createHash } from "node:crypto";
 
 import {
   Connection,
@@ -19,7 +18,6 @@ import protocolModule from "../frontend/lib/protocol.ts";
 import { loadEnvFile } from "./support/load_env_file.ts";
 import {
   loadGenesisLiveBootstrapConfig,
-  stableStringify,
 } from "./support/genesis_live_bootstrap_config.ts";
 import { wrapConnectionWithRpcRetry } from "./support/rpc_retry.ts";
 import { keypairFromFile, requiredPublicKeyEnv, sha256Bytes } from "./support/script_helpers.ts";
@@ -35,7 +33,6 @@ type ProtocolInstructionAccountInput = {
 type CurrentValue = {
   fundingLine: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["fundingLines"][number] | undefined;
   allocationPosition: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["allocationPositions"][number] | undefined;
-  schema: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["outcomeSchemas"][number] | undefined;
   oracleProfile: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["oracleProfiles"][number] | undefined;
   poolOraclePolicy: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["poolOraclePolicies"][number] | undefined;
   poolOracleApproval: Awaited<ReturnType<ProtocolModule["loadProtocolConsoleSnapshot"]>>["poolOracleApprovals"][number] | undefined;
@@ -45,12 +42,6 @@ type CurrentValue = {
 
 const FRONTEND_ENV_PATH = resolve(process.cwd(), "frontend/.env.local");
 const DEFAULT_GOVERNANCE_KEYPAIR_PATH = resolve(homedir(), ".config/solana/id.json");
-
-function schemaMetadataHashHex(path: string): string {
-  const raw = readFileSync(path, "utf8");
-  const parsed = JSON.parse(raw);
-  return createHash("sha256").update(stableStringify(parsed)).digest("hex");
-}
 
 function parseArgs(argv: string[]): { planOnly: boolean } {
   return {
@@ -65,21 +56,12 @@ function currentValue(
   return {
     fundingLine: snapshot.fundingLines.find((row) => row.address === address),
     allocationPosition: snapshot.allocationPositions.find((row) => row.address === address),
-    schema: snapshot.outcomeSchemas.find((row) => row.address === address),
     oracleProfile: snapshot.oracleProfiles.find((row) => row.address === address),
     poolOraclePolicy: snapshot.poolOraclePolicies.find((row) => row.address === address),
     poolOracleApproval: snapshot.poolOracleApprovals.find((row) => row.address === address),
     poolOraclePermissionSet: snapshot.poolOraclePermissionSets.find((row) => row.address === address),
     lpPosition: snapshot.lpPositions.find((row) => row.address === address),
   };
-}
-
-async function directProtocolGovernanceAuthority(
-  protocol: ProtocolModule,
-  connection: Connection,
-): Promise<string | null> {
-  const protocolConfig = await protocol.fetchProtocolConfig({ connection });
-  return protocolConfig?.governanceAuthority ?? null;
 }
 
 async function sendProtocolInstruction(params: {
@@ -366,13 +348,6 @@ async function main() {
         sponsor_operator: new PublicKey(config.roles.sponsorOperator),
         claims_operator: new PublicKey(config.roles.claimsOperator),
         oracle_authority: new PublicKey(config.roles.oracleAuthority),
-        membership_mode: config.healthPlan.membershipMode,
-        membership_gate_kind: config.healthPlan.membershipGateKind,
-        membership_gate_mint: protocol.ZERO_PUBKEY_KEY,
-        membership_gate_min_amount: 0n,
-        membership_invite_authority: config.healthPlan.membershipInviteAuthority
-          ? new PublicKey(config.healthPlan.membershipInviteAuthority)
-          : protocol.ZERO_PUBKEY_KEY,
         allowed_rail_mask: 0xffff,
         default_funding_priority: 0,
         oracle_policy_hash: sha256Bytes(`plan:${config.healthPlan.planId}:oracle-policy`),
@@ -410,7 +385,6 @@ async function main() {
         pricing_hash: sha256Bytes(`series:${series.seriesId}:pricing`),
         payout_hash: sha256Bytes(`series:${series.seriesId}:payout`),
         reserve_model_hash: sha256Bytes(`series:${series.seriesId}:reserve-model`),
-        evidence_requirements_hash: sha256Bytes(`series:${series.seriesId}:evidence`),
         comparability_hash: sha256Bytes(`series:${series.seriesId}:${series.comparabilityKey}`),
         policy_overrides_hash: sha256Bytes(`series:${series.seriesId}:policy-overrides`),
         cycle_seconds: BigInt(30 * 86_400),
@@ -421,13 +395,6 @@ async function main() {
         { pubkey: governanceAddress },
         { pubkey: config.healthPlan.address },
         { pubkey: series.address, isWritable: true },
-        {
-          pubkey: protocol.deriveSeriesReserveLedgerPda({
-            policySeries: series.address,
-            assetMint: series.assetMint,
-          }),
-          isWritable: true,
-        },
         { pubkey: SystemProgram.programId },
       ],
     });
@@ -470,13 +437,6 @@ async function main() {
         {
           pubkey: protocol.derivePlanReserveLedgerPda({
             healthPlan: config.healthPlan.address,
-            assetMint: config.settlementMint,
-          }),
-          isWritable: true,
-        },
-        {
-          pubkey: protocol.deriveSeriesReserveLedgerPda({
-            policySeries,
             assetMint: config.settlementMint,
           }),
           isWritable: true,
@@ -557,87 +517,7 @@ async function main() {
     });
   }
 
-  const outcomeSchemaAddress = protocol.deriveOutcomeSchemaPda({
-    schemaKeyHashHex: config.schema.keyHashHex,
-  }).toBase58();
-  const schemaDependencyLedger = protocol.deriveSchemaDependencyLedgerPda({
-    schemaKeyHashHex: config.schema.keyHashHex,
-  }).toBase58();
-
   let snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!currentValue(snapshot, outcomeSchemaAddress).schema) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "register_outcome_schema:genesis",
-      instructionName: "register_outcome_schema",
-      args: {
-        schema_key_hash: [...Buffer.from(config.schema.keyHashHex, "hex")],
-        schema_key: config.schema.key,
-        version: config.schema.version,
-        schema_hash: [...Buffer.from(schemaMetadataHashHex(config.schema.metadataLocalPath), "hex")],
-        schema_family: protocol.SCHEMA_FAMILY_KERNEL,
-        visibility: protocol.SCHEMA_VISIBILITY_PUBLIC,
-        metadata_uri: config.schema.metadataUri,
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: outcomeSchemaAddress, isWritable: true },
-        { pubkey: schemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!currentValue(snapshot, outcomeSchemaAddress).schema?.verified) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "verify_outcome_schema:genesis",
-      instructionName: "verify_outcome_schema",
-      args: { verified: true },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true },
-        { pubkey: governanceAddress },
-        { pubkey: outcomeSchemaAddress, isWritable: true },
-      ],
-    });
-  }
-
-  const directGovernanceAuthority = await directProtocolGovernanceAuthority(protocol, connection);
-  if (directGovernanceAuthority === governance.publicKey.toBase58()) {
-    await sendProtocolInstruction({
-      protocol,
-      connection,
-      feePayer: governance,
-      label: "backfill_schema_dependency_ledger:genesis",
-      instructionName: "backfill_schema_dependency_ledger",
-      args: {
-        schema_key_hash: [...Buffer.from(config.schema.keyHashHex, "hex")],
-        pool_rule_addresses: [new PublicKey(config.liquidityPool.address)],
-      },
-      accounts: [
-        { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-        { pubkey: governanceAddress },
-        { pubkey: outcomeSchemaAddress },
-        { pubkey: schemaDependencyLedger, isWritable: true },
-        { pubkey: SystemProgram.programId },
-      ],
-    }).catch((error: unknown) => {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes("already in use")) {
-        throw error;
-      }
-    });
-  } else {
-    console.log(
-      `[genesis-live] skipping direct schema backfill because protocol governance authority is ${directGovernanceAuthority ?? "(unset)"} instead of ${governance.publicKey.toBase58()}; use governance proposal flow if a schema dependency backfill is still required.`,
-    );
-  }
-
   const oracleProfileAddress = protocol.deriveOracleProfilePda({
     oracle: config.roles.oracleAuthority,
   }).toBase58();
@@ -707,7 +587,7 @@ async function main() {
       args: {
         quorum_m: 1,
         quorum_n: 1,
-        require_verified_schema: true,
+        require_verified_schema: false,
         oracle_fee_bps: 25,
         allow_delegate_claim: true,
         challenge_window_secs: 86_400,
@@ -765,10 +645,6 @@ async function main() {
 
   const classLedgerFor = (capitalClassAddress: string) => protocol.derivePoolClassLedgerPda({
     capitalClass: capitalClassAddress,
-    assetMint: config.settlementMint,
-  }).toBase58();
-  const seriesReserveLedgerFor = (policySeriesAddress: string) => protocol.deriveSeriesReserveLedgerPda({
-    policySeries: policySeriesAddress,
     assetMint: config.settlementMint,
   }).toBase58();
   const fundingLineLedgerFor = (fundingLineAddress: string) => protocol.deriveFundingLineLedgerPda({
@@ -852,7 +728,6 @@ async function main() {
           { pubkey: config.fundingLines.event7Sponsor.address, isWritable: true },
           { pubkey: fundingLineLedgerFor(config.fundingLines.event7Sponsor.address), isWritable: true },
           { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: config.healthPlan.address, assetMint: config.settlementMint }), isWritable: true },
-          { pubkey: seriesReserveLedgerFor(config.policySeries.event7.address), isWritable: true },
           { pubkey: requiredPublicKeyEnv("OMEGAX_GENESIS_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
           { pubkey: config.settlementMint },
           { pubkey: vaultTokenAccountAddress, isWritable: true },
@@ -922,7 +797,6 @@ async function main() {
         { pubkey: premium.fundingLine, isWritable: true },
         { pubkey: fundingLineLedgerFor(premium.fundingLine), isWritable: true },
         { pubkey: protocol.derivePlanReserveLedgerPda({ healthPlan: config.healthPlan.address, assetMint: config.settlementMint }), isWritable: true },
-        { pubkey: seriesReserveLedgerFor(premium.policySeries), isWritable: true },
         { pubkey: protocolFeeVault, isWritable: true },
         { pubkey: requiredPublicKeyEnv("OMEGAX_GENESIS_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT"), isWritable: true },
         { pubkey: config.settlementMint },
@@ -1050,33 +924,8 @@ async function main() {
       throw new Error("Protocol governance config could not be loaded after Genesis live bootstrap.");
     }
     if (protocolConfig.governanceAuthority !== config.governanceConfigAddress) {
-      if (protocolConfig.governanceAuthority !== governance.publicKey.toBase58()) {
-        throw new Error(
-          `Protocol governance authority is ${protocolConfig.governanceAuthority}, but Genesis live bootstrap can only hand off from ${governance.publicKey.toBase58()} to ${config.governanceConfigAddress}.`,
-        );
-      }
-      await sendProtocolInstruction({
-        protocol,
-        connection,
-        feePayer: governance,
-        label: "rotate_protocol_governance_authority:propose",
-        instructionName: "rotate_protocol_governance_authority",
-        args: {
-          new_governance_authority: new PublicKey(config.governanceConfigAddress),
-        },
-        accounts: [
-          { pubkey: governance.publicKey, isSigner: true, isWritable: true },
-          { pubkey: governanceAddress, isWritable: true },
-        ],
-      });
-      const pendingConfig = await protocol.fetchProtocolConfig({ connection });
-      if (pendingConfig?.pendingGovernanceAuthority !== config.governanceConfigAddress) {
-        throw new Error(
-          `Protocol governance transfer proposal did not persist. Pending authority is ${pendingConfig?.pendingGovernanceAuthority ?? "unset"}.`,
-        );
-      }
-      console.log(
-        `[bootstrap] proposed protocol governance authority transfer to ${config.governanceConfigAddress}; execute accept_protocol_governance_authority from that authority before treating the handoff as complete.`,
+      throw new Error(
+        `Protocol governance authority is ${protocolConfig.governanceAuthority}, but the configured governance control is ${config.governanceConfigAddress}. In-program governance handoff has been removed; initialize the program with the intended authority or redeploy before running Genesis live bootstrap.`,
       );
     }
   }
@@ -1084,7 +933,6 @@ async function main() {
   const finalSnapshot = await protocol.loadProtocolConsoleSnapshot(connection);
   console.log(stringifyJson({
     protocolGovernance: finalSnapshot.protocolGovernance?.address ?? null,
-    pendingGovernanceAuthority: finalSnapshot.protocolGovernance?.pendingGovernanceAuthority ?? null,
     reserveDomain: config.reserveDomain.address,
     healthPlan: config.healthPlan.address,
     policySeries: [

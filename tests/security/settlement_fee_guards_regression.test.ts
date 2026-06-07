@@ -1,9 +1,4 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-//
-// CSO-2026-04-29 regressions for claim settlement:
-// - linked obligations cannot be marked settled without an SPL outflow
-// - settlement must carry the canonical protocol fee vault account
-// - public builders must keep optional account placeholders in order
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -12,19 +7,13 @@ import fixturesModule from "../../frontend/lib/devnet-fixtures.ts";
 import protocolModule from "../../frontend/lib/protocol.ts";
 import { extractRustFunctionBody, programSource } from "./program_source.ts";
 
-const {
-  DEVNET_PROTOCOL_FIXTURE_STATE,
-} = fixturesModule as typeof import("../../frontend/lib/devnet-fixtures.ts");
+const { DEVNET_PROTOCOL_FIXTURE_STATE } =
+  fixturesModule as typeof import("../../frontend/lib/devnet-fixtures.ts");
 
 const {
   OBLIGATION_STATUS_SETTLED,
   buildSettleClaimCaseTx,
-  buildSettleClaimCaseSelectedAssetTx,
   buildSettleObligationTx,
-  deriveDomainAssetLedgerPda,
-  deriveDomainAssetVaultPda,
-  deriveProtocolFeeVaultPda,
-  deriveReserveAssetRailPda,
   listProtocolInstructionAccounts,
 } = protocolModule as typeof import("../../frontend/lib/protocol.ts");
 
@@ -42,48 +31,26 @@ test("[CSO-2026-04-29] linked obligation settlement requires SPL outflow account
   const body = extractInstructionBody("settle_obligation");
 
   assert.match(body, /SettlementOutflowAccountsRequired/);
-  assert.match(body, /member_position\.is_some\(\)/);
   assert.match(body, /vault_token_account\.is_some\(\)/);
   assert.match(body, /recipient_token_account\.is_some\(\)/);
   assert.match(body, /token_program\.is_some\(\)/);
 });
 
-test("[CSO-2026-04-29] claim settlement removed fee-vault omission compatibility branches", () => {
-  const body = extractInstructionBody("settle_claim_case");
-
-  assert.doesNotMatch(body, /protocol_fee_bps\s*==\s*0/);
-  assert.doesNotMatch(body, /policy\.oracle_fee_bps\s*==\s*0/);
-  assert.match(body, /let protocol_fee_vault = &ctx\.accounts\.protocol_fee_vault/);
-  assert.match(body, /oracle_fee_attestation\.as_deref\(\)/);
-  assert.match(body, /vault\.oracle[\s\S]+attestation\.oracle/);
-  assert.doesNotMatch(body, /vault\.oracle[\s\S]+ctx\.accounts\.claim_case\.adjudicator/);
-  assert.match(body, /ClaimAttestationRequiredForOracleFee/);
-  assert.match(body, /\(None, Some\(_\), _\)[\s\S]+FeeVaultRequiredForConfiguredFee/);
-});
-
-test("[CSO-2026-05-04] claim settlement rejects zero-net fee outcomes", () => {
-  const body = extractInstructionBody("settle_claim_case");
-
-  assert.match(body, /let total_fee = checked_add\(protocol_fee, oracle_fee\)\?/);
-  assert.match(body, /total_fee < amount[\s\S]+FeeVaultBpsMisconfigured/);
-  assert.match(body, /let net_to_recipient = checked_sub\(amount, total_fee\)\?/);
-  assert.match(body, /require_positive_amount\(net_to_recipient\)\?/);
-});
-
-test("[CSO-2026-05-06] claim and obligation settlement require payout-enabled reserve rails", () => {
+test("[CSO-2026-05-06] claim and obligation settlement use vault-ledger settlement without reserve rails", () => {
   const claimBody = extractInstructionBody("settle_claim_case");
-  const selectedClaimBody = extractInstructionBody("settle_claim_case_selected_asset");
   const obligationBody = extractInstructionBody("settle_obligation");
 
-  assert.match(claimBody, /require_reserve_asset_rail_payout_enabled/);
-  assert.match(selectedClaimBody, /require_reserve_asset_rail_payout_enabled/);
-  assert.match(selectedClaimBody, /require_selected_asset_payout_value/);
-  assert.match(selectedClaimBody, /book_selected_asset_claim_payout/);
-  assert.match(selectedClaimBody, /SelectedAssetPayoutSameMint/);
-  assert.match(obligationBody, /require_reserve_asset_rail_payout_enabled/);
-  assert.match(programSource, /pub\(crate\) fn require_reserve_asset_rail_payout_enabled/);
-  assert.match(programSource, /ReserveAssetRailPayoutDisabled/);
-  assert.match(programSource, /require_fresh_reserve_asset_price/);
+  assert.match(claimBody, /recipient_token_account\.owner/);
+  assert.match(claimBody, /transfer_from_domain_vault/);
+  assert.match(obligationBody, /SettlementOutflowAccountsRequired/);
+  assert.match(obligationBody, /settle_delivery/);
+  assert.match(obligationBody, /transfer_from_domain_vault/);
+  assert.doesNotMatch(programSource, /require_reserve_asset_rail_payout_enabled/);
+  assert.doesNotMatch(programSource, /ReserveAssetRailPayoutDisabled/);
+  assert.doesNotMatch(programSource, /require_fresh_reserve_asset_price/);
+  assert.doesNotMatch(programSource, /settle_claim_case_selected_asset/);
+  assert.doesNotMatch(programSource, /require_selected_asset_payout_value/);
+  assert.doesNotMatch(programSource, /book_selected_asset_claim_payout/);
 });
 
 test("[CSO-2026-05-10] direct claim settlement consumes free reserve, not delivery buckets", () => {
@@ -95,76 +62,27 @@ test("[CSO-2026-05-10] direct claim settlement consumes free reserve, not delive
   assert.match(liabilityBody, /DirectClaimReserveUnsupported/);
 });
 
-test("[CSO-2026-05-06] payout-only rails can publish prices but zero staleness is rejected", () => {
-  const configureBody = extractInstructionBody("configure_reserve_asset_rail");
-  const publishBody = extractInstructionBody("publish_reserve_asset_rail_price");
-  const freshnessBody = extractInstructionBody("require_fresh_reserve_asset_price_at");
+test("[CSO-2026-06-04] settlement fee-vault surface is removed", () => {
+  const claimBody = extractInstructionBody("settle_claim_case");
+  const obligationBody = extractInstructionBody("settle_obligation");
 
-  assert.match(configureBody, /let price_required = args\.capacity_enabled \|\| args\.payout_enabled/);
-  assert.match(configureBody, /args\.max_staleness_seconds > 0/);
-  assert.match(configureBody, /args\.max_confidence_bps > 0/);
-  assert.match(publishBody, /args\.confidence_bps <= ctx\.accounts\.reserve_asset_rail\.max_confidence_bps/);
-  assert.match(publishBody, /capacity_enabled[\s\S]+\|\|[\s\S]+payout_enabled/);
-  assert.match(freshnessBody, /rail\.max_staleness_seconds > 0/);
-  assert.match(freshnessBody, /rail\.last_price_confidence_bps <= rail\.max_confidence_bps/);
+  for (const source of [claimBody, obligationBody, programSource]) {
+    assert.doesNotMatch(source, /protocol_fee_bps/);
+    assert.doesNotMatch(source, /oracle_fee_bps/);
+    assert.doesNotMatch(source, /pool_oracle_fee_vault/);
+    assert.doesNotMatch(source, /protocol_fee_vault/);
+    assert.doesNotMatch(source, /pool_treasury_vault/);
+    assert.doesNotMatch(source, /MAX_CONFIGURED_FEE_BPS/);
+  }
 });
 
-test("[CSO-2026-05-04] redemption settlement rejects zero-net LP payouts", () => {
-  const body = extractInstructionBody("process_redemption_queue");
-
-  assert.match(body, /let exit_fee = fee_share_from_bps\(asset_amount, class_fee_bps\)\?/);
-  assert.match(body, /exit_fee < asset_amount[\s\S]+FeeVaultBpsMisconfigured/);
-  assert.match(body, /let net_to_lp = checked_sub\(asset_amount, exit_fee\)\?/);
-  assert.match(body, /require_positive_amount\(net_to_lp\)\?/);
+test("[ALAMANX-509b8643] protocol governance init surface is removed", () => {
+  assert.doesNotMatch(programSource, /initialize_protocol_governance/);
+  assert.doesNotMatch(programSource, /set_protocol_emergency_pause/);
+  assert.doesNotMatch(programSource, /ProtocolGovernance/);
 });
 
-test("[ALMANAX-630dbd6a] claim settlement validates canonical oracle-fee PDAs", () => {
-  const settleBody = extractInstructionBody("settle_claim_case");
-  const helperBody = extractRustFunctionBody("require_oracle_fee_accounts_canonical");
-
-  assert.match(settleBody, /require_oracle_fee_accounts_canonical\(/);
-  assert.match(helperBody, /SEED_POOL_ORACLE_POLICY/);
-  assert.match(helperBody, /SEED_POOL_ORACLE_FEE_VAULT/);
-  assert.match(helperBody, /SEED_CLAIM_ATTESTATION/);
-  assert.match(helperBody, /policy\.key\(\)[\s\S]+expected_policy/);
-  assert.match(helperBody, /vault\.key\(\)[\s\S]+expected_vault/);
-  assert.match(helperBody, /attestation\.key\(\)[\s\S]+expected_attestation/);
-  assert.match(helperBody, /policy\.bump == expected_policy_bump/);
-  assert.match(helperBody, /vault\.bump == expected_vault_bump/);
-  assert.match(helperBody, /attestation\.bump == expected_attestation_bump/);
-});
-
-test("[ALMANAX-2026-05-06] obligation settlement validates canonical oracle-fee PDAs", () => {
-  assert.match(
-    programSource,
-    /fn resolve_obligation_oracle_fee[\s\S]+require_oracle_fee_accounts_canonical\([\s\S]+claim_case\.key\(\)[\s\S]+obligation\.asset_mint/,
-  );
-});
-
-test("[CSO-2026-05-04] configured fee bps cannot be 100 percent", () => {
-  assert.match(programSource, /pub const MAX_CONFIGURED_FEE_BPS: u16 = BASIS_POINTS_DENOMINATOR - 1;/);
-  assert.match(
-    extractInstructionBody("initialize_protocol_governance"),
-    /args\.protocol_fee_bps <= MAX_CONFIGURED_FEE_BPS/,
-  );
-  assert.match(extractInstructionBody("set_pool_oracle_policy"), /args\.oracle_fee_bps <= MAX_CONFIGURED_FEE_BPS/);
-  assert.match(extractInstructionBody("create_liquidity_pool"), /args\.fee_bps <= MAX_CONFIGURED_FEE_BPS/);
-  assert.match(extractInstructionBody("create_capital_class"), /args\.fee_bps <= MAX_CONFIGURED_FEE_BPS/);
-});
-
-test("[ALAMANX-509b8643] protocol governance init requires program upgrade authority", () => {
-  assert.match(programSource, /program\.programdata_address\(\)\? == Some\(program_data\.key\(\)\)/);
-  assert.match(
-    programSource,
-    /program_data\.upgrade_authority_address == Some\(governance_authority\.key\(\)\)/,
-  );
-  assert.deepEqual(
-    listProtocolInstructionAccounts("initialize_protocol_governance").map((account) => account.name),
-    ["governance_authority", "protocol_governance", "program", "program_data", "system_program"],
-  );
-});
-
-test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slots", () => {
+test("[CSO-2026-04-29] settlement builders preserve outflow account slots", () => {
   const claim = DEVNET_PROTOCOL_FIXTURE_STATE.claimCases.find((row) => row.linkedObligation)
     ?? DEVNET_PROTOCOL_FIXTURE_STATE.claimCases[0]!;
   const obligation = DEVNET_PROTOCOL_FIXTURE_STATE.obligations.find((row) => row.claimCase === claim.address)
@@ -188,31 +106,17 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
     amount: 1n,
     policySeriesAddress: claim.policySeries ?? null,
     obligationAddress: obligation.address,
-    capitalClassAddress: obligation.capitalClass ?? null,
-    allocationPositionAddress: obligation.allocationPosition ?? null,
-    poolAssetMint: fundingLine.assetMint,
-    memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
   });
   assertAccountCount("settle_claim_case", settleClaim.instructions[0]!.keys.length);
   assert.equal(
-    settleClaim.instructions[0]!.keys[3]!.pubkey.toBase58(),
-    deriveReserveAssetRailPda({
-      reserveDomain: claim.reserveDomain,
-      assetMint: fundingLine.assetMint,
-    }).toBase58(),
+    listProtocolInstructionAccounts("settle_claim_case").some((account) => account.name === "reserve_asset_rail"),
+    false,
   );
-  assert.equal(
-    settleClaim.instructions[0]!.keys[15]!.pubkey.toBase58(),
-    deriveProtocolFeeVaultPda({
-      reserveDomain: claim.reserveDomain,
-      assetMint: fundingLine.assetMint,
-    }).toBase58(),
-  );
-  assert.equal(settleClaim.instructions[0]!.keys[19]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(settleClaim.instructions[0]!.keys[21]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(settleClaim.instructions[0]!.keys[22]!.pubkey.toBase58(), recipientTokenAccount);
+  assert.equal(settleClaim.instructions[0]!.keys.at(-4)!.pubkey.toBase58(), fundingLine.assetMint);
+  assert.equal(settleClaim.instructions[0]!.keys.at(-3)!.pubkey.toBase58(), vaultTokenAccount);
+  assert.equal(settleClaim.instructions[0]!.keys.at(-2)!.pubkey.toBase58(), recipientTokenAccount);
 
   const settleObligation = buildSettleObligationTx({
     authority: DEVNET_PROTOCOL_FIXTURE_STATE.wallets[0]!.address,
@@ -226,74 +130,12 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
     amount: 1n,
     claimCaseAddress: claim.address,
     policySeriesAddress: obligation.policySeries ?? null,
-    capitalClassAddress: obligation.capitalClass ?? null,
-    allocationPositionAddress: obligation.allocationPosition ?? null,
-    poolAssetMint: fundingLine.assetMint,
-    memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
   });
   assertAccountCount("settle_obligation", settleObligation.instructions[0]!.keys.length);
-  assert.equal(
-    settleObligation.instructions[0]!.keys[3]!.pubkey.toBase58(),
-    deriveReserveAssetRailPda({
-      reserveDomain: obligation.reserveDomain,
-      assetMint: obligation.assetMint,
-    }).toBase58(),
-  );
-  assert.equal(settleObligation.instructions[0]!.keys[15]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(settleObligation.instructions[0]!.keys[17]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(settleObligation.instructions[0]!.keys[18]!.pubkey.toBase58(), recipientTokenAccount);
-
-  const payoutAssetMint = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[2]!.address;
-  const payoutFundingLine = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[3]!.address;
-  const selectedAssetSettlement = buildSettleClaimCaseSelectedAssetTx({
-    authority: DEVNET_PROTOCOL_FIXTURE_STATE.wallets[0]!.address,
-    healthPlanAddress: claim.healthPlan,
-    reserveDomainAddress: claim.reserveDomain,
-    payoutFundingLineAddress: payoutFundingLine,
-    claimAssetMint: fundingLine.assetMint,
-    payoutAssetMint,
-    claimCaseAddress: claim.address,
-    memberPositionAddress: claim.memberPosition,
-    payoutVaultTokenAccountAddress: vaultTokenAccount,
-    recipientTokenAccountAddress: recipientTokenAccount,
-    recentBlockhash,
-    claimCreditAmount: 1n,
-    payoutAmount: 1n,
-    policySeriesAddress: claim.policySeries ?? null,
-  });
-  assertAccountCount("settle_claim_case_selected_asset", selectedAssetSettlement.instructions[0]!.keys.length);
-  assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[3]!.pubkey.toBase58(),
-    deriveReserveAssetRailPda({
-      reserveDomain: claim.reserveDomain,
-      assetMint: fundingLine.assetMint,
-    }).toBase58(),
-  );
-  assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[4]!.pubkey.toBase58(),
-    deriveReserveAssetRailPda({
-      reserveDomain: claim.reserveDomain,
-      assetMint: payoutAssetMint,
-    }).toBase58(),
-  );
-  assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[5]!.pubkey.toBase58(),
-    deriveDomainAssetVaultPda({
-      reserveDomain: claim.reserveDomain,
-      assetMint: payoutAssetMint,
-    }).toBase58(),
-  );
-  assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[6]!.pubkey.toBase58(),
-    deriveDomainAssetLedgerPda({
-      reserveDomain: claim.reserveDomain,
-      assetMint: payoutAssetMint,
-    }).toBase58(),
-  );
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[11]!.pubkey.toBase58(), claim.address);
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[12]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[15]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[16]!.pubkey.toBase58(), recipientTokenAccount);
+  assert.equal(settleObligation.instructions[0]!.keys.at(-5)!.pubkey.toBase58(), claim.address);
+  assert.equal(settleObligation.instructions[0]!.keys.at(-4)!.pubkey.toBase58(), obligation.assetMint);
+  assert.equal(settleObligation.instructions[0]!.keys.at(-3)!.pubkey.toBase58(), vaultTokenAccount);
+  assert.equal(settleObligation.instructions[0]!.keys.at(-2)!.pubkey.toBase58(), recipientTokenAccount);
 });

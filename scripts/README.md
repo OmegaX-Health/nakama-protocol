@@ -33,7 +33,7 @@ This directory contains the repository's command-line helpers.
 
 - `bootstrap_governance_realms.ts` provisions governance state
 - `bootstrap_protocol.ts` writes the canonical hard-break devnet migration manifest and env exports
-- `bootstrap_devnet_live_protocol.ts` seeds the canonical shared-devnet plan/capital/oracle/schema graph, then proposes protocol-governance transfer to the configured governance PDA when one is present; that PDA must later execute `accept_protocol_governance_authority`
+- `bootstrap_devnet_live_protocol.ts` seeds the canonical shared-devnet plan/capital/oracle graph and advertises schema hashes through oracle profiles
 - `bootstrap_genesis_live_protocol.ts` seeds the real Genesis Protect Acute launch surface from explicit live inputs instead of the baked devnet fixture matrix
 - `bootstrap_devnet_frontend_parity.ts` syncs canonical fixture env values and writes `frontend/public/devnet-fixtures.json`
 - `devnet_beta_observability.ts` collects structured devnet observability output
@@ -43,7 +43,7 @@ This directory contains the repository's command-line helpers.
 - `devnet_operator_drawer_sim.ts` simulates the mounted operator drawer transactions against devnet and fails on real builder/wiring mismatches such as membership proof-mode or gate-configuration errors
 - `seed_devnet_treasury_canaries.ts` seeds devnet treasury pen-test canary state; with the local operator signer it creates a linked-claim obligation canary, and with `OMEGAX_DEVNET_PROTOCOL_GOVERNANCE_KEYPAIR_PATH` it can also seed governance-gated fee-vault and LP-redemption canaries
 - `deploy_devnet_beta.ts` runs the checked build, artifact parity, and canonical manifest/bootstrap preparation for the hard-break migration
-- `governance_schema_state_update.ts` updates governance-controlled schema state, including historical schema-dependency backfills when older accounts must be retired safely
+- `governance_schema_state_update.ts` exits with migration guidance because on-chain schema-state governance has been removed
 ## Usage guidance
 
 - Prefer package scripts from the repository root when they exist.

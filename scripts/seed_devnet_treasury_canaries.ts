@@ -348,7 +348,6 @@ async function seedLinkedClaimCanary(params: {
         claimId: CANARY_CLAIM_ID,
         policySeriesAddress: fundingLine.policySeries,
         claimantAddress: memberPosition.wallet,
-        evidenceRefHashHex: stableHash("treasury-canary:linked-claim:evidence"),
         recentBlockhash: ZERO_PUBKEY,
       }),
       signers: [memberSigner],
@@ -397,7 +396,6 @@ async function seedLinkedClaimCanary(params: {
         approvedAmount: CANARY_CLAIM_AMOUNT,
         deniedAmount: 0n,
         reserveAmount: CANARY_CLAIM_AMOUNT,
-        decisionSupportHashHex: stableHash("treasury-canary:linked-claim:decision"),
         obligationAddress: obligation,
         recentBlockhash: ZERO_PUBKEY,
       }),
@@ -444,7 +442,6 @@ async function ensureOracleCanary(params: {
   const approval = protocol.derivePoolOracleApprovalPda({ liquidityPool: pool, oracle: oracle.publicKey });
   const permissionSet = protocol.derivePoolOraclePermissionSetPda({ liquidityPool: pool, oracle: oracle.publicKey });
   const policy = protocol.derivePoolOraclePolicyPda({ liquidityPool: pool });
-  const outcomeSchema = protocol.deriveOutcomeSchemaPda({ schemaKeyHashHex: CANARY_SCHEMA_KEY_HASH_HEX });
 
   await sendLamportsIfNeeded({
     connection,
@@ -455,43 +452,6 @@ async function ensureOracleCanary(params: {
   });
 
   let snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!snapshot.outcomeSchemas.find((row) => row.address === outcomeSchema.toBase58())) {
-    await sendTransaction({
-      connection,
-      feePayer: governance,
-      label: "register_outcome_schema:treasury-canary",
-      tx: protocol.buildRegisterOutcomeSchemaTx({
-        publisher: governance.publicKey,
-        schemaKeyHashHex: CANARY_SCHEMA_KEY_HASH_HEX,
-        schemaKey: "omegax.treasury.canary.claim.v1",
-        version: 1,
-        schemaHashHex: stableHash("treasury-canary:oracle-schema:body"),
-        schemaFamily: protocol.SCHEMA_FAMILY_CLAIMS_CODING,
-        visibility: protocol.SCHEMA_VISIBILITY_PUBLIC,
-        metadataUri: "ipfs://omegax-devnet-treasury-canary",
-        recentBlockhash: ZERO_PUBKEY,
-      }),
-      signers: [governance],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!snapshot.outcomeSchemas.find((row) => row.address === outcomeSchema.toBase58() && row.verified)) {
-    await sendTransaction({
-      connection,
-      feePayer: governance,
-      label: "verify_outcome_schema:treasury-canary",
-      tx: protocol.buildVerifyOutcomeSchemaTx({
-        governanceAuthority: governance.publicKey,
-        schemaKeyHashHex: CANARY_SCHEMA_KEY_HASH_HEX,
-        verified: true,
-        recentBlockhash: ZERO_PUBKEY,
-      }),
-      signers: [governance],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
   const liveProfile = snapshot.oracleProfiles.find((row) => row.address === oracleProfile.toBase58());
   if (!liveProfile) {
     await sendTransaction({
@@ -675,10 +635,6 @@ async function seedPoolOracleFeeAccrualCanary(params: {
     healthPlan: fundingLine.healthPlan,
     claimId: CANARY_ORACLE_FEE_CLAIM_ID,
   });
-  const attestation = protocol.deriveClaimAttestationPda({
-    claimCase,
-    oracle: oracle.publicKey,
-  });
   const obligation = protocol.deriveObligationPda({
     fundingLine: fundingLine.address,
     obligationId: CANARY_ORACLE_FEE_OBLIGATION_ID,
@@ -699,7 +655,6 @@ async function seedPoolOracleFeeAccrualCanary(params: {
         claimId: CANARY_ORACLE_FEE_CLAIM_ID,
         policySeriesAddress: fundingLine.policySeries,
         claimantAddress: memberPosition.wallet,
-        evidenceRefHashHex: stableHash("treasury-canary:oracle-fee:evidence"),
         recentBlockhash: ZERO_PUBKEY,
       }),
       signers: [memberSigner],
@@ -737,33 +692,6 @@ async function seedPoolOracleFeeAccrualCanary(params: {
   }
 
   snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
-  if (!snapshot.claimAttestations.find((row) => row.address === attestation.toBase58())) {
-    await sendTransaction({
-      connection,
-      feePayer: oracle,
-      label: `attest_claim_case:${CANARY_ORACLE_FEE_CLAIM_ID}`,
-      tx: protocol.buildAttestClaimCaseTx({
-        oracle: oracle.publicKey,
-        healthPlanAddress: fundingLine.healthPlan,
-        claimCaseAddress: claimCase,
-        fundingLineAddress: fundingLine.address,
-        decision: protocol.CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
-        attestationHashHex: stableHash("treasury-canary:oracle-fee:attestation"),
-        attestationRefHashHex: stableHash("treasury-canary:oracle-fee:evidence"),
-        schemaKeyHashHex: CANARY_SCHEMA_KEY_HASH_HEX,
-        liquidityPoolAddress: pool,
-        capitalClassAddress: capitalClass,
-        allocationPositionAddress: allocationPosition,
-        poolOracleApprovalAddress: protocol.derivePoolOracleApprovalPda({ liquidityPool: pool, oracle: oracle.publicKey }),
-        poolOraclePermissionSetAddress: protocol.derivePoolOraclePermissionSetPda({ liquidityPool: pool, oracle: oracle.publicKey }),
-        poolOraclePolicyAddress: policy,
-        recentBlockhash: ZERO_PUBKEY,
-      }),
-      signers: [oracle],
-    });
-  }
-
-  snapshot = await protocol.loadProtocolConsoleSnapshot(connection);
   const liveClaim = snapshot.claimCases.find((row) => row.address === claimCase.toBase58());
   if (liveClaim && liveClaim.intakeStatus < protocol.CLAIM_INTAKE_APPROVED) {
     await sendTransaction({
@@ -778,7 +706,6 @@ async function seedPoolOracleFeeAccrualCanary(params: {
         approvedAmount: CANARY_ORACLE_FEE_CLAIM_AMOUNT,
         deniedAmount: 0n,
         reserveAmount: CANARY_ORACLE_FEE_CLAIM_AMOUNT,
-        decisionSupportHashHex: stableHash("treasury-canary:oracle-fee:decision"),
         obligationAddress: obligation,
         recentBlockhash: ZERO_PUBKEY,
       }),

@@ -30,7 +30,7 @@ If the launch window requires a rehearsal deployment, run the same sequence agai
 3. Upgrade the canonical shared-devnet program id explicitly with the checked `target/deploy/omegax_protocol.so`.
    Use the canonical program id from `Anchor.toml` / `frontend/lib/protocol.ts`, not the raw `target/deploy/omegax_protocol-keypair.json` address if those ever drift.
    The helper now prints the exact canonical command:
-   `solana program deploy --program-id Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B --upgrade-authority ~/.config/solana/id.json target/deploy/omegax_protocol.so`
+   `solana program deploy --program-id 6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM --upgrade-authority ~/.config/solana/id.json target/deploy/omegax_protocol.so`
 4. Run `npm run protocol:bootstrap:devnet-live` to seed or refresh the canonical plan/capital/oracle/schema graph on shared devnet. Funding and LP seed deposits require real SPL token custody inputs:
    `OMEGAX_DEVNET_OPEN_SETTLEMENT_VAULT_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_OPEN_REWARD_VAULT_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_WRAPPER_SETTLEMENT_VAULT_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_GOVERNANCE_REWARD_SOURCE_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_LP_PROVIDER_SETTLEMENT_SOURCE_TOKEN_ACCOUNT`, and `OMEGAX_DEVNET_WRAPPER_PROVIDER_SETTLEMENT_SOURCE_TOKEN_ACCOUNT`.
 5. Run `npm run devnet:frontend:bootstrap` and `npm run devnet:frontend:signoff` so the mounted console is validated against the refreshed shared-devnet fixture/env set.
@@ -70,7 +70,7 @@ Trigger: governance authority cannot execute required safety actions.
 
 Steps:
 1. Confirm the current protocol governance PDA, expected Realms governance address, and the signer currently capable of creating or executing proposals.
-2. If authority rotation is required, execute `rotate_protocol_governance_authority` from the current authority to create a pending transfer, then have the new authority sign `accept_protocol_governance_authority` before the 7-day expiry. Use `cancel_protocol_governance_authority_transfer` if the proposed key is wrong or abandoned.
+2. If authority rotation is required, the current trimmed protocol surface does not expose an in-program handoff. Initialize or redeploy the program with the intended governance authority before treating the environment as usable.
 3. If the required safety action is an emergency stop, use the current `set_protocol_emergency_pause` path through the authorized governance signer or approved proposal flow.
 4. Validate the resulting authority and pause state through on-chain readback plus the readonly governance UI.
 5. Execute a low-risk follow-up governance action before resuming normal operations.

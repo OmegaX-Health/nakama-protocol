@@ -3,19 +3,18 @@
 //! Small internal enum-like discriminants used by events and helpers.
 
 pub enum ScopeKind {
-    ProtocolGovernance = 0,
-    ReserveDomain = 1,
-    DomainAssetVault = 2,
-    HealthPlan = 3,
-    PolicySeries = 4,
-    FundingLine = 5,
-    LiquidityPool = 6,
-    CapitalClass = 7,
-    AllocationPosition = 8,
+    ReserveDomain = 0,
+    DomainAssetVault = 1,
+    HealthPlan = 2,
+    PolicySeries = 3,
+    FundingLine = 4,
 }
 
 #[derive(Clone, Copy)]
 pub enum FundingFlowKind {
     SponsorBudgetFunded = 0,
     PremiumRecorded = 1,
+    ReserveCapitalContributed = 2,
+    ReserveCapitalReturned = 3,
+    ReserveEarningsRecorded = 4,
 }

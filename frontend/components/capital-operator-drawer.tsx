@@ -31,7 +31,6 @@ import {
   type HealthPlanSnapshot,
   type LiquidityPoolSnapshot,
   type LPPositionSnapshot,
-  type PoolTreasuryVaultSnapshot,
   type ReserveDomainSnapshot,
 } from "@/lib/protocol";
 import { cn } from "@/lib/cn";
@@ -57,7 +56,6 @@ type CapitalOperatorDrawerProps = {
   plans: HealthPlanSnapshot[];
   fundingLines: FundingLineSnapshot[];
   domainAssetVaults: DomainAssetVaultSnapshot[];
-  poolTreasuryVaults: PoolTreasuryVaultSnapshot[];
 };
 
 const SECTIONS: Array<{ id: CapitalOperatorSection; label: string; blurb: string }> = [
@@ -187,16 +185,6 @@ export function CapitalOperatorDrawer(props: CapitalOperatorDrawerProps) {
       ) ?? null,
     [props.domainAssetVaults, props.selectedPool?.depositAssetMint, props.selectedPool?.reserveDomain],
   );
-  const selectedPoolTreasuryVault = useMemo(
-    () =>
-      props.poolTreasuryVaults.find(
-        (vault) =>
-          vault.liquidityPool === props.selectedPool?.address &&
-          vault.assetMint === props.selectedPool?.depositAssetMint,
-      ) ?? null,
-    [props.poolTreasuryVaults, props.selectedPool?.address, props.selectedPool?.depositAssetMint],
-  );
-
   async function run(label: string, factory: () => Promise<Transaction>) {
     if (!publicKey || !sendTransaction) return;
     setBusy(label);
@@ -375,7 +363,6 @@ export function CapitalOperatorDrawer(props: CapitalOperatorDrawerProps) {
                             props.fundingLines[0]?.assetMint ??
                             ZERO_PUBKEY,
                           redemptionPolicy: REDEMPTION_POLICY_OPEN,
-                          feeBps: 0,
                           pauseFlags: 0,
                         });
                       })
@@ -431,7 +418,6 @@ export function CapitalOperatorDrawer(props: CapitalOperatorDrawerProps) {
                           impairmentRank: 1,
                           restrictionMode: CAPITAL_CLASS_RESTRICTION_OPEN,
                           redemptionTermsMode: 0,
-                          feeBps: 0,
                           minLockupSeconds: 0n,
                           pauseFlags: 0,
                         });
@@ -737,7 +723,6 @@ export function CapitalOperatorDrawer(props: CapitalOperatorDrawerProps) {
                           !canAct ||
                           !lpOwner ||
                           !selectedPoolAssetVault?.vaultTokenAccount ||
-                          !selectedPoolTreasuryVault ||
                           !redemptionRecipientTokenAccount.trim() ||
                           busyOn("Process redemption queue")
                         }

@@ -9,36 +9,21 @@ export const BPF_UPGRADEABLE_LOADER_PROGRAM_ID = new PublicKey(
 export const ZERO_PUBKEY = "11111111111111111111111111111111";
 export const ZERO_PUBKEY_KEY = new PublicKey(ZERO_PUBKEY);
 
-// Phase 1.7 — wrapped-SOL mint sentinel mirrors the on-chain `NATIVE_SOL_MINT`
-// constant in `programs/omegax_protocol/src/lib.rs`. SOL-rail fee vaults use
-// this as their `asset_mint` so the on-chain seeds and rail-mismatch guards
-// can distinguish lamport accounting from SPL accounting. The pool-treasury
-// panel UI surfaces SOL rails as `paymentMint === ZERO_PUBKEY` (a UI-friendly
-// sentinel that doesn't depend on the WSOL mint magic string); listers map
-// `vault.asset_mint == NATIVE_SOL_MINT` to `paymentMint = ZERO_PUBKEY` in the
-// returned summaries.
-export const NATIVE_SOL_MINT = "So11111111111111111111111111111111111111112";
-export const NATIVE_SOL_MINT_KEY = new PublicKey(NATIVE_SOL_MINT);
 export const MAX_ID_SEED_BYTES = 32;
-export const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS = 50;
 
 export const SEED_PROTOCOL_GOVERNANCE = "protocol_governance";
 export const SEED_RESERVE_DOMAIN = "reserve_domain";
 export const SEED_DOMAIN_ASSET_VAULT = "domain_asset_vault";
 export const SEED_DOMAIN_ASSET_VAULT_TOKEN = "domain_asset_vault_token";
 export const SEED_DOMAIN_ASSET_LEDGER = "domain_asset_ledger";
-export const SEED_RESERVE_ASSET_RAIL = "reserve_asset_rail";
-export const SEED_PROTOCOL_FEE_VAULT = "protocol_fee_vault";
-export const SEED_POOL_TREASURY_VAULT = "pool_treasury_vault";
-export const SEED_POOL_ORACLE_FEE_VAULT = "pool_oracle_fee_vault";
 export const SEED_HEALTH_PLAN = "health_plan";
 export const SEED_PLAN_RESERVE_LEDGER = "plan_reserve_ledger";
 export const SEED_POLICY_SERIES = "policy_series";
-export const SEED_SERIES_RESERVE_LEDGER = "series_reserve_ledger";
 export const SEED_MEMBER_POSITION = "member_position";
 export const SEED_MEMBERSHIP_ANCHOR_SEAT = "membership_anchor_seat";
 export const SEED_FUNDING_LINE = "funding_line";
 export const SEED_FUNDING_LINE_LEDGER = "funding_line_ledger";
+export const SEED_CAPITAL_CONTRIBUTION = "capital_contribution";
 export const SEED_CLAIM_CASE = "claim_case";
 export const SEED_OBLIGATION = "obligation";
 export const SEED_LIQUIDITY_POOL = "liquidity_pool";
@@ -48,18 +33,11 @@ export const SEED_LP_POSITION = "lp_position";
 export const SEED_ALLOCATION_POSITION = "allocation_position";
 export const SEED_ALLOCATION_LEDGER = "allocation_ledger";
 export const SEED_ORACLE_PROFILE = "oracle_profile";
-export const SEED_POOL_ORACLE_APPROVAL = "pool_oracle_approval";
-export const SEED_POOL_ORACLE_POLICY = "pool_oracle_policy";
-export const SEED_POOL_ORACLE_PERMISSION_SET = "pool_oracle_permission_set";
-export const SEED_OUTCOME_SCHEMA = "outcome_schema";
-export const SEED_SCHEMA_DEPENDENCY_LEDGER = "schema_dependency_ledger";
-export const SEED_CLAIM_ATTESTATION = "claim_attestation";
 
 export const CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE = 0;
 export const CLAIM_ATTESTATION_DECISION_SUPPORT_DENY = 1;
 export const CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW = 2;
 export const CLAIM_ATTESTATION_DECISION_ABSTAIN = 3;
-export const POOL_ORACLE_PERMISSION_ATTEST_CLAIM = 1 << 0;
 
 export const MEMBERSHIP_MODE_OPEN = 0;
 export const MEMBERSHIP_MODE_TOKEN_GATE = 1;
@@ -74,16 +52,6 @@ export const MEMBERSHIP_GATE_KIND_FUNGIBLE_SNAPSHOT = 4;
 export const MEMBERSHIP_PROOF_MODE_OPEN = 0;
 export const MEMBERSHIP_PROOF_MODE_TOKEN_GATE = 1;
 export const MEMBERSHIP_PROOF_MODE_INVITE_PERMIT = 2;
-
-export const RESERVE_ASSET_ROLE_PRIMARY_STABLE = 0;
-export const RESERVE_ASSET_ROLE_SECONDARY_STABLE = 1;
-export const RESERVE_ASSET_ROLE_VOLATILE_COLLATERAL = 2;
-export const RESERVE_ASSET_ROLE_TREASURY_LAST_RESORT = 3;
-
-export const RESERVE_ORACLE_SOURCE_NONE = 0;
-export const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_STREAM = 1;
-export const RESERVE_ORACLE_SOURCE_CHAINLINK_DATA_FEED = 2;
-export const RESERVE_ORACLE_SOURCE_GOVERNANCE_ATTESTED = 3;
 
 export const SERIES_MODE_REWARD = 0;
 export const SERIES_MODE_PROTECTION = 1;

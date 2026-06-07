@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{InitPoolOracleFeeVault, InitPoolOracleFeeVaultArgs};
 
 impl<'info> InitPoolOracleFeeVault<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "init_pool_oracle_fee_vault", hash = "7083cf4bf52947d0", spec_hash = "5f29579f1c0cf195")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "init_pool_oracle_fee_vault", hash = "7083cf4bf52947d0", spec_hash = "7f8996544f8275e4")]
     #[inline(always)]
     pub fn handler(&mut self, args: InitPoolOracleFeeVaultArgs) -> Result<()> {
         guards::init_pool_oracle_fee_vault(self, args)?;

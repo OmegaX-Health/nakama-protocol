@@ -257,7 +257,6 @@ test("description payload round-trip: protocol-config (full payload)", () => {
     emergencyPaused: true,
     minOracleStake: 1_500_000_000n,
     newGovernanceAuthority: "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw",
-    protocolFeeBps: 250,
     template: "protocol-config",
   };
 
@@ -281,7 +280,6 @@ test("description payload round-trip: protocol-config without optional newGovern
     emergencyPaused: false,
     minOracleStake: 0n,
     newGovernanceAuthority: null,
-    protocolFeeBps: 0,
     template: "protocol-config",
   };
 

@@ -77,40 +77,6 @@ export type ReserveAssetRailSnapshot = {
   bump: number;
 };
 
-// Phase 1.6/1.7 — Fee-vault snapshot types. The panel surfaces SOL rails
-// as `paymentMint === ZERO_PUBKEY`; the listers below translate
-// `assetMint === NATIVE_SOL_MINT` to that UI sentinel.
-export type ProtocolFeeVaultSnapshot = {
-  address: string;
-  reserveDomain: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
-export type PoolTreasuryVaultSnapshot = {
-  address: string;
-  liquidityPool: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
-export type PoolOracleFeeVaultSnapshot = {
-  address: string;
-  liquidityPool: string;
-  oracle: string;
-  assetMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  bump: number;
-};
-
 export type HealthPlanSnapshot = {
   address: string;
   reserveDomain: string;
@@ -176,6 +142,18 @@ export type FundingLineSnapshot = {
   sheet?: PartialReserveBalanceSheet;
 };
 
+export type CapitalContributionSnapshot = {
+  address: string;
+  reserveDomain: string;
+  healthPlan: string;
+  fundingLine: string;
+  contributor: string;
+  assetMint: string;
+  contributedAmount: BigNumberish;
+  returnedAmount: BigNumberish;
+  termsHashHex: string;
+};
+
 export type ClaimCaseSnapshot = {
   address: string;
   reserveDomain: string;
@@ -186,12 +164,13 @@ export type ClaimCaseSnapshot = {
   claimant: string;
   adjudicator?: string | null;
   claimId: string;
+  evidenceRefHashHex?: string;
+  decisionSupportHashHex?: string;
   intakeStatus: number;
   approvedAmount: BigNumberish;
   deniedAmount?: BigNumberish;
   paidAmount?: BigNumberish;
   reservedAmount?: BigNumberish;
-  attestationCount?: number;
   linkedObligation?: string | null;
 };
 
@@ -251,7 +230,6 @@ export type CapitalClassSnapshot = {
   displayName: string;
   priority: number;
   restrictionMode: number;
-  feeBps?: number;
   totalShares: BigNumberish;
   navAssets: BigNumberish;
   allocatedAssets?: BigNumberish;
@@ -320,10 +298,6 @@ export type AllocationLedgerSnapshot = {
 export type ProtocolGovernanceSnapshot = {
   address: string;
   governanceAuthority: string;
-  pendingGovernanceAuthority: string;
-  pendingGovernanceProposedAt: number;
-  pendingGovernanceExpiresAt: number;
-  protocolFeeBps: number;
   emergencyPause: boolean;
   auditNonce: BigNumberish;
 };
@@ -344,37 +318,6 @@ export type OracleProfileSnapshot = {
   active: boolean;
   claimed: boolean;
   createdAtTs: number;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type PoolOracleApprovalSnapshot = {
-  address: string;
-  liquidityPool: string;
-  oracle: string;
-  active: boolean;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type PoolOraclePolicySnapshot = {
-  address: string;
-  liquidityPool: string;
-  quorumM: number;
-  quorumN: number;
-  requireVerifiedSchema: boolean;
-  oracleFeeBps: number;
-  allowDelegateClaim: boolean;
-  challengeWindowSecs: number;
-  updatedAtTs: number;
-  bump: number;
-};
-
-export type PoolOraclePermissionSetSnapshot = {
-  address: string;
-  liquidityPool: string;
-  oracle: string;
-  permissions: number;
   updatedAtTs: number;
   bump: number;
 };
@@ -418,8 +361,6 @@ export type ClaimAttestationSnapshot = {
   schemaKeyHashHex: string;
   schemaHashHex?: string;
   schemaVersion?: number;
-  liquidityPool?: string | null;
-  allocationPosition?: string | null;
   createdAtTs: number;
   updatedAtTs: number;
   bump: number;
@@ -435,6 +376,7 @@ export type ProtocolConsoleSnapshot = {
   policySeries: PolicySeriesSnapshot[];
   memberPositions: MemberPositionSnapshot[];
   fundingLines: FundingLineSnapshot[];
+  capitalContributions: CapitalContributionSnapshot[];
   claimCases: ClaimCaseSnapshot[];
   obligations: ObligationSnapshot[];
   liquidityPools: LiquidityPoolSnapshot[];
@@ -448,15 +390,9 @@ export type ProtocolConsoleSnapshot = {
   allocationLedgers: AllocationLedgerSnapshot[];
   outcomesBySeries: Record<string, bigint>;
   oracleProfiles: OracleProfileSnapshot[];
-  poolOracleApprovals: PoolOracleApprovalSnapshot[];
-  poolOraclePolicies: PoolOraclePolicySnapshot[];
-  poolOraclePermissionSets: PoolOraclePermissionSetSnapshot[];
   outcomeSchemas: OutcomeSchemaSnapshot[];
   schemaDependencyLedgers: SchemaDependencyLedgerSnapshot[];
   claimAttestations: ClaimAttestationSnapshot[];
-  protocolFeeVaults: ProtocolFeeVaultSnapshot[];
-  poolTreasuryVaults: PoolTreasuryVaultSnapshot[];
-  poolOracleFeeVaults: PoolOracleFeeVaultSnapshot[];
 };
 
 export type SponsorReadModel = {
@@ -558,7 +494,6 @@ export type ClaimFundingReadinessOtherReserveAsset = {
   haircutBps: number;
   estimatedValueUsd1e8: bigint | null;
   haircutAdjustedValueUsd1e8: bigint | null;
-  selectedForPayout: boolean;
   immediatelySettleable: false;
   warnings: string[];
 };
@@ -575,8 +510,6 @@ export type ClaimFundingReadiness = {
   queuedRedemptionsAmount: bigint;
   availableLpAllocationCapacityAmount: bigint;
   otherReserveAssets: ClaimFundingReadinessOtherReserveAsset[];
-  selectedPayoutAsset: ClaimFundingReadinessOtherReserveAsset | null;
-  estimatedSelectedPayoutAmountRaw: bigint | null;
   readiness: ClaimFundingReadinessState;
   warnings: string[];
 };
@@ -637,79 +570,6 @@ export type OracleSummary = {
 
 export type OracleWithProfileSummary = OracleSummary;
 
-export type PoolOracleApprovalSummary = PoolOracleApprovalSnapshot;
-
-export type PoolOraclePolicySummary = PoolOraclePolicySnapshot;
-
-export type PoolOraclePermissionSetSummary = PoolOraclePermissionSetSnapshot;
-
-// Phase 1.6/1.7 — Fee-vault summaries surfaced to the pool-treasury panel.
-//
-// `paymentMint` is the panel's UI sentinel: SOL rails expose
-// `paymentMint === ZERO_PUBKEY` (the all-zeros system program key, not the
-// real wrapped-SOL mint). Listers translate the on-chain
-// `assetMint === NATIVE_SOL_MINT` to that sentinel so the panel's
-// `paymentMint === ZERO_PUBKEY ? sol : spl` switching code can stay simple.
-//
-// `availableFees = accruedFees - withdrawnFees` is the safe withdrawable
-// headroom; computed via saturating subtraction so a misordered chain read
-// (e.g., withdrawn briefly leading accrued during indexing) doesn't surface
-// as a bigint underflow in the UI.
-
-export type ProtocolFeeVaultSummary = {
-  address: string;
-  reserveDomain: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  bump: number;
-};
-
-export type PoolTreasuryReserveSummary = {
-  address: string;
-  /** Pool the treasury vault is scoped to. */
-  pool: string;
-  reserveDomain: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  // Display-only ledger counters surfaced by the panel. The on-chain
-  // PoolTreasuryVault tracks only accrued/withdrawn fees — these aliases
-  // are populated by joining DomainAssetLedger / PolicySeries / Obligation
-  // sums in a follow-up. PR3 ships them as 0n placeholders so the panel
-  // renders zeros without crashing; they are NOT used for any withdrawal
-  // safety check (only `availableFees` gates the panel).
-  reservedRewardAmount: bigint;
-  reservedCoverageClaimAmount: bigint;
-  paidCoverageClaimAmount: bigint;
-  impairedAmount: bigint;
-  bump: number;
-};
-
-export type PoolOracleFeeVaultSummary = {
-  address: string;
-  /** Pool the oracle-fee vault is scoped to. */
-  pool: string;
-  /** Reserve domain (joined via the pool's `liquidityPool.reserveDomain`).
-   *  Required by SPL withdraw builders to derive the matching DomainAssetVault. */
-  reserveDomain: string;
-  /** Registered oracle wallet receiving the fee accruals. */
-  oracle: string;
-  /** ZERO_PUBKEY for SOL rails, the real SPL mint otherwise. */
-  paymentMint: string;
-  feeRecipient: string;
-  accruedFees: bigint;
-  withdrawnFees: bigint;
-  availableFees: bigint;
-  bump: number;
-};
-
 export type SchemaSummary = OutcomeSchemaSnapshot;
 
 export type SchemaDependencyLedgerSummary = SchemaDependencyLedgerSnapshot;
@@ -718,11 +578,8 @@ export type ProtocolConfigSummary = {
   address: string;
   admin: string;
   governanceAuthority: string;
-  pendingGovernanceAuthority?: string | null;
-  pendingGovernanceExpiresAt?: number;
   governanceRealm: string;
   governanceConfig: string;
-  protocolFeeBps: number;
   defaultStakeMint: string;
   minOracleStake: bigint;
   emergencyPaused: boolean;
