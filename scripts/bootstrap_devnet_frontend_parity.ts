@@ -7,6 +7,8 @@ import { loadEnvFile } from "./support/load_env_file.ts";
 
 const FRONTEND_ENV_PATH = resolve(process.cwd(), "frontend/.env.local");
 const FRONTEND_FIXTURE_JSON_PATH = resolve(process.cwd(), "frontend/public/devnet-fixtures.json");
+const DEVNET_MANIFEST_ENV_PATH = resolve(process.cwd(), "devnet/health-capital-markets.env");
+const PROTOCOL_CONTRACT_PATH = resolve(process.cwd(), "shared/protocol_contract.json");
 
 function upsertEnvFile(path: string, updates: Record<string, string>): void {
   const existing = new Map<string, string>();
@@ -47,24 +49,28 @@ function stringify(value: unknown): string {
   );
 }
 
+function checkedInProgramId(): string {
+  const contract = JSON.parse(readFileSync(PROTOCOL_CONTRACT_PATH, "utf8")) as { programId?: string };
+  if (!contract.programId) {
+    throw new Error("shared/protocol_contract.json is missing programId.");
+  }
+  return contract.programId;
+}
+
 function updates(): Record<string, string> {
   const {
     DEVNET_PROTOCOL_FIXTURE_STATE,
     DEFAULT_HEALTH_PLAN_ADDRESS,
-    DEFAULT_LIQUIDITY_POOL_ADDRESS,
   } = fixturesModule;
   const primaryPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
-  const primaryPool = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools[0]!;
   return {
     NEXT_PUBLIC_PROTOCOL_PROGRAM_ID: protocolModule.getProgramId().toBase58(),
     NEXT_PUBLIC_DEFAULT_HEALTH_PLAN_ADDRESS: DEFAULT_HEALTH_PLAN_ADDRESS,
-    NEXT_PUBLIC_DEFAULT_LIQUIDITY_POOL_ADDRESS: DEFAULT_LIQUIDITY_POOL_ADDRESS,
     NEXT_PUBLIC_DEVNET_SETTLEMENT_MINT: DEVNET_PROTOCOL_FIXTURE_STATE.settlementMint,
     NEXT_PUBLIC_DEVNET_REWARD_MINT: DEVNET_PROTOCOL_FIXTURE_STATE.rewardMint,
     NEXT_PUBLIC_DEVNET_WRAPPER_SETTLEMENT_MINT: DEVNET_PROTOCOL_FIXTURE_STATE.wrapperSettlementMint,
     NEXT_PUBLIC_PRIMARY_RESERVE_DOMAIN: DEVNET_PROTOCOL_FIXTURE_STATE.reserveDomains[0]!.address,
     NEXT_PUBLIC_PRIMARY_HEALTH_PLAN_ID: primaryPlan.planId,
-    NEXT_PUBLIC_PRIMARY_LIQUIDITY_POOL_ID: primaryPool.poolId,
   };
 }
 
@@ -72,7 +78,11 @@ let fixturesModule: typeof import("../frontend/lib/devnet-fixtures.ts");
 let protocolModule: typeof import("../frontend/lib/protocol.ts");
 
 async function main() {
+  loadEnvFile(DEVNET_MANIFEST_ENV_PATH);
   loadEnvFile(FRONTEND_ENV_PATH);
+  const canonicalProgramId = checkedInProgramId();
+  process.env.NEXT_PUBLIC_PROTOCOL_PROGRAM_ID = canonicalProgramId;
+  process.env.PROTOCOL_PROGRAM_ID = canonicalProgramId;
   fixturesModule = await import("../frontend/lib/devnet-fixtures.ts");
   protocolModule = await import("../frontend/lib/protocol.ts");
 

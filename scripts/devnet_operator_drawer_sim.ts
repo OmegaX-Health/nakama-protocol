@@ -17,6 +17,7 @@
 
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
 
@@ -34,8 +35,11 @@ import { loadEnvFile } from "./support/load_env_file.ts";
 
 type ProtocolModule = typeof import("../frontend/lib/protocol.ts");
 type FixturesModule = typeof import("../frontend/lib/devnet-fixtures.ts");
+type ModuleWithDefault<T> = T & { default?: T };
 
 const FRONTEND_ENV_PATH = resolve(process.cwd(), "frontend/.env.local");
+const DEVNET_MANIFEST_ENV_PATH = resolve(process.cwd(), "devnet/health-capital-markets.env");
+const PROTOCOL_CONTRACT_PATH = resolve(process.cwd(), "shared/protocol_contract.json");
 const DEFAULT_KEYPAIR_PATH = resolve(homedir(), ".config/solana/id.json");
 const DEFAULT_RPC_URL = "https://api.devnet.solana.com";
 
@@ -53,7 +57,7 @@ function configuredGovernanceKeypairPath(): string {
 
 type FlowResult = {
   name: string;
-  section: "governance" | "plan";
+  section: "reserve" | "plan";
   // PASS               — simulate succeeded cleanly
   // EXPECTED_COLLISION — account already bootstrapped (idempotent collision)
   // BUILDER_OK         — instruction decoded + accounts loaded + reached
@@ -64,6 +68,19 @@ type FlowResult = {
   status: "PASS" | "EXPECTED_COLLISION" | "BUILDER_OK" | "FAIL" | "SKIP";
   note?: string;
 };
+
+function checkedInProgramId(): string {
+  const contract = JSON.parse(readFileSync(PROTOCOL_CONTRACT_PATH, "utf8")) as { programId?: string };
+  if (!contract.programId) {
+    throw new Error("shared/protocol_contract.json is missing programId.");
+  }
+  return contract.programId;
+}
+
+async function importRuntimeModule<T>(path: string): Promise<T> {
+  const module = await import(path) as ModuleWithDefault<T>;
+  return (module.default ?? module) as T;
+}
 
 function hashStringTo32HexLocal(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -147,7 +164,7 @@ async function simulate(
   blockhash: string,
   foreignTx: { instructions: readonly unknown[] },
   name: string,
-  section: "governance" | "plan",
+  section: "reserve" | "plan",
   isBootstrap = false,
 ): Promise<FlowResult> {
   try {
@@ -184,7 +201,11 @@ async function simulate(
 }
 
 async function main(): Promise<void> {
+  loadEnvFile(DEVNET_MANIFEST_ENV_PATH);
   loadEnvFile(FRONTEND_ENV_PATH);
+  const canonicalProgramId = checkedInProgramId();
+  process.env.NEXT_PUBLIC_PROTOCOL_PROGRAM_ID = canonicalProgramId;
+  process.env.PROTOCOL_PROGRAM_ID = canonicalProgramId;
 
   const keypairPath = configuredGovernanceKeypairPath();
   const signer = keypairFromFile(keypairPath);
@@ -207,8 +228,8 @@ async function main(): Promise<void> {
   console.log(`Blockhash: ${blockhash}`);
   console.log("");
 
-  const protocol = (await import("../frontend/lib/protocol.ts")) as ProtocolModule;
-  const fixturesModule = (await import("../frontend/lib/devnet-fixtures.ts")) as FixturesModule;
+  const protocol = await importRuntimeModule<ProtocolModule>("../frontend/lib/protocol.ts");
+  const fixturesModule = await importRuntimeModule<FixturesModule>("../frontend/lib/devnet-fixtures.ts");
   const fixtures = fixturesModule.DEVNET_PROTOCOL_FIXTURE_STATE;
 
   const plan =
@@ -280,7 +301,7 @@ async function main(): Promise<void> {
 
   const results: FlowResult[] = [];
 
-  const skip = (name: string, section: "governance" | "plan", reason: string): FlowResult => ({
+  const skip = (name: string, section: "reserve" | "plan", reason: string): FlowResult => ({
     name,
     section,
     status: "SKIP",
@@ -309,12 +330,12 @@ async function main(): Promise<void> {
         pauseFlags: 0,
       }),
       "Create reserve domain",
-      "governance",
+      "reserve",
     ),
   );
 
   if (!reserveDomain) {
-    results.push(skip("Create domain asset vault", "governance", "no reserve domain fixture"));
+    results.push(skip("Create domain asset vault", "reserve", "no reserve domain fixture"));
   } else {
     // Use the protocol's own settlement mint; simulation will collide if the
     // vault is already bootstrapped for this (domain, mint) pair — that is the
@@ -324,7 +345,7 @@ async function main(): Promise<void> {
       process.env.NEXT_PUBLIC_DEFAULT_INSURANCE_PAYOUT_MINT ||
       "";
     if (!assetMint) {
-      results.push(skip("Create domain asset vault", "governance", "no settlement mint configured"));
+      results.push(skip("Create domain asset vault", "reserve", "no settlement mint configured"));
     } else {
       // PT-2026-04-27-01/02 fix: vault token account is now PDA-owned and
       // initialized by the program inline, so the OMEGAX_DEVNET_OPEN_SETTLEMENT_VAULT_TOKEN_ACCOUNT
@@ -342,7 +363,7 @@ async function main(): Promise<void> {
             recentBlockhash: blockhash,
           }),
           "Create domain asset vault",
-          "governance",
+          "reserve",
           true,
         ),
       );

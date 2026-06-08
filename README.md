@@ -114,7 +114,7 @@ This patch hardens the first publishable canonical OmegaX reserve, obligation, a
 - backstop contributors can deposit into open backstop funding lines; the program tracks contributed and returned amounts for quote-oracle discounts or manual credits off-chain
 - realized reserve earnings can be recorded only after same-mint tokens are transferred back into the domain vault with a nonzero earnings reference hash
 - the canonical console now mounts `/plans`, `/claims`, `/members`, `/oracles`, and `/schemas` against live snapshot-backed protocol reads
-- `/plans/new` now launches from live reserve-domain, vault, oracle, and schema registry data rather than fixture-only defaults
+- `/plans/new` now launches from live reserve-domain, asset-vault, policy-series, and funding-line data rather than fixture-only defaults
 - `/plans/new?template=genesis-protect-acute` now bootstraps the canonical Genesis Protect Acute shell in place using the frozen Event 7 and Travel 30 launch truth
 - `/plans?...&setup=genesis-protect-acute` now exposes the Genesis setup checklist, issuance posture, and reserve-warning view inside the mounted sponsor/operator workspace
 - the mounted Genesis claims tab now behaves as an operator claim queue with summary cards, queue filters, selected-case detail, and contextual handoff into adjudication, reserve, and oracle follow-through
@@ -230,9 +230,9 @@ These helpers are for repo maintainers and shared-devnet operators rather than f
   - writes `devnet/health-capital-markets.env`
   - emits stable canonical fixture ids for the new model
 - `npm run protocol:bootstrap:devnet-live`
-  - seeds the canonical reserve, plan, funding-line, oracle, and claim graph onto shared devnet using the configured signer
-  - requires real SPL source/vault token accounts for funding seed transactions
-  - provisions reusable local role wallets under `$HOME/.config/solana/omegax-devnet/`
+  - seeds the current reserve-domain, asset-vault, plan, policy-series, funding-line, and proof-claim graph onto shared devnet using the configured signer
+  - does not create retired in-program governance, member-seat, oracle-registry, liquidity-pool, capital-class, or allocation accounts
+  - skips custody-moving funding deposits; use the explicit funding builders or treasury scripts when you intend to move SPL assets
   - syncs canonical public role addresses back into `frontend/.env.local`
 - `npm run devnet:frontend:bootstrap`
   - syncs canonical fixture env values into `frontend/.env.local`

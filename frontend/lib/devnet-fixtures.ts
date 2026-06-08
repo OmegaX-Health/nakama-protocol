@@ -25,6 +25,7 @@ import {
   type AllocationLedgerSnapshot,
   type AllocationPositionSnapshot,
   type CapitalClassSnapshot,
+  type CapitalContributionSnapshot,
   type ClaimCaseSnapshot,
   type FundingLineSnapshot,
   type HealthPlanSnapshot,
@@ -131,6 +132,7 @@ export type DevnetProtocolFixtureState = {
   planReserveLedgers: ReserveScopedSnapshot[];
   seriesReserveLedgers: ReserveScopedSnapshot[];
   fundingLineLedgers: ReserveScopedSnapshot[];
+  capitalContributions: CapitalContributionSnapshot[];
   claimCases: ClaimCaseSnapshot[];
   obligations: ObligationSnapshot[];
   liquidityPools: LiquidityPoolSnapshot[];
@@ -1075,6 +1077,7 @@ export const DEVNET_PROTOCOL_FIXTURE_STATE: DevnetProtocolFixtureState = {
       };
     }),
   ],
+  capitalContributions: [],
   claimCases: [
     {
       address: claimCaseReserveAddress,
@@ -1661,20 +1664,20 @@ export const DEVNET_PROTOCOL_FIXTURE_STATE: DevnetProtocolFixtureState = {
     { label: "Wrapper settlement mint", mint: wrapperSettlementMint, envVar: "NEXT_PUBLIC_DEVNET_WRAPPER_SETTLEMENT_MINT" },
   ],
   roleMatrix: [
-    { role: "observer", actions: ["view reserve truth", "inspect obligations", "review pool-class NAV"] },
-    { role: "protocol_governance", actions: ["protocol emergency pause", "protocol fee policy", "upgrade coordination"] },
-    { role: "domain_admin", actions: ["domain rails", "wrapper controls", "hard custody segregation"] },
+    { role: "observer", actions: ["view reserve truth", "inspect obligations", "review proof fingerprints"] },
+    { role: "protocol_governance", actions: ["deploy coordination", "release evidence", "off-chain multisig policy"] },
+    { role: "domain_admin", actions: ["domain controls", "vault wiring", "hard custody segregation"] },
     { role: "plan_admin", actions: ["create plans", "version policy series", "set plan controls"] },
     { role: "sponsor_operator", actions: ["fund sponsor budgets", "record premiums", "review outcome spend"] },
-    { role: "claims_operator", actions: ["open claims", "attach evidence refs", "adjudicate and settle claims"] },
-    { role: "oracle_operator", actions: ["publish attestations", "supply evidence refs", "hold finality when needed"] },
-    { role: "pool_curator", actions: ["define exposure thesis", "create capital classes", "set redemption policy"] },
-    { role: "pool_allocator", actions: ["allocate capital", "deallocate capital", "update allocation caps"] },
-    { role: "pool_sentinel", actions: ["queue-only mode", "allocation freeze", "impairment escalation"] },
-    { role: "member", actions: ["hold plan rights", "claim rewards", "review payout history"] },
-    { role: "member_delegate", actions: ["submit claims", "receive delegated rights", "coordinate appeals"] },
-    { role: "lp_provider", actions: ["deposit capital", "request redemption", "monitor exposure mix"] },
-    { role: "wrapper_provider", actions: ["hold restricted class", "follow wrapper redemption rules", "monitor ring-fenced exposure"] },
+    { role: "claims_operator", actions: ["open claims", "supply proof fingerprints", "adjudicate and settle claims"] },
+    { role: "oracle_operator", actions: ["review evidence off-chain", "supply decision packages", "hold finality when needed"] },
+    { role: "pool_curator", actions: ["retired fixture-only role", "review historical pool views", "no live base-program writes"] },
+    { role: "pool_allocator", actions: ["retired fixture-only role", "review historical allocations", "no live base-program writes"] },
+    { role: "pool_sentinel", actions: ["retired fixture-only role", "monitor historical exposure views", "no live base-program writes"] },
+    { role: "member", actions: ["receive off-chain cover status", "submit claims through operator", "review payout history"] },
+    { role: "member_delegate", actions: ["coordinate claim submission", "receive delegated off-chain rights", "coordinate appeals"] },
+    { role: "lp_provider", actions: ["deposit reserve capital", "track contributions", "receive off-chain credits"] },
+    { role: "wrapper_provider", actions: ["provide ring-fenced capital", "track contribution terms", "monitor reserve exposure"] },
   ],
   legacyArtifactsRetired: [
     "legacy pool accounts are no longer the sponsor/member/liability root",
