@@ -1,6 +1,6 @@
 # Devnet Beta Runbook
 
-This runbook covers shared-devnet rollout for the current canonical OmegaX protocol surface, including the mounted console, governance smoke, oracle/schema registry visibility, and observability sign-off.
+This runbook covers shared-devnet rollout for the current canonical OmegaX protocol surface, including the mounted console, frontend parity, operator drawer simulation, and observability sign-off.
 
 ## Go / No-Go Gate
 
@@ -17,9 +17,8 @@ All of the following should be green before a public devnet beta event:
 - `npm run protocol:bootstrap:devnet-live`
 - `npm run devnet:frontend:bootstrap`
 - `npm run devnet:frontend:signoff`
+- `npm run devnet:operator:drawer:sim`
 - `npm run devnet:beta:observe` with no unexplained high-severity failures
-- `npm run devnet:governance:smoke:create-vote`, then `npm run devnet:governance:smoke:execute` after the shared DAO voting and hold-up windows expire
-- `npm run devnet:governance:ui:readonly` against the resulting proposal address
 
 If the launch window requires a rehearsal deployment, run the same sequence against the rehearsal program id before upgrading the canonical shared devnet.
 
@@ -31,14 +30,11 @@ If the launch window requires a rehearsal deployment, run the same sequence agai
    Use the canonical program id from `Anchor.toml` / `frontend/lib/protocol.ts`, not the raw `target/deploy/omegax_protocol-keypair.json` address if those ever drift.
    The helper now prints the exact canonical command:
    `solana program deploy --program-id 6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM --upgrade-authority ~/.config/solana/id.json target/deploy/omegax_protocol.so`
-4. Run `npm run protocol:bootstrap:devnet-live` to seed or refresh the canonical plan/capital/oracle/schema graph on shared devnet. Funding and LP seed deposits require real SPL token custody inputs:
-   `OMEGAX_DEVNET_OPEN_SETTLEMENT_VAULT_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_OPEN_REWARD_VAULT_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_WRAPPER_SETTLEMENT_VAULT_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_GOVERNANCE_SETTLEMENT_SOURCE_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_GOVERNANCE_REWARD_SOURCE_TOKEN_ACCOUNT`, `OMEGAX_DEVNET_LP_PROVIDER_SETTLEMENT_SOURCE_TOKEN_ACCOUNT`, and `OMEGAX_DEVNET_WRAPPER_PROVIDER_SETTLEMENT_SOURCE_TOKEN_ACCOUNT`.
+4. Run `npm run protocol:bootstrap:devnet-live` to seed or refresh the canonical reserve-domain, asset-vault, plan, policy-series, funding-line, and proof-claim graph on shared devnet. This bootstrap does not create retired governance, member-seat, oracle-registry, liquidity-pool, capital-class, or allocation accounts, and it does not move SPL custody balances.
 5. Run `npm run devnet:frontend:bootstrap` and `npm run devnet:frontend:signoff` so the mounted console is validated against the refreshed shared-devnet fixture/env set.
-6. Run `npm run devnet:governance:smoke:create-vote` and record the resulting proposal address.
-7. After the DAO voting and hold-up windows expire, run `npm run devnet:governance:smoke:execute`.
-8. Run `npm run devnet:governance:ui:readonly` against the created proposal.
-9. Capture observability with `OBSERVABILITY_OUTPUT_JSON=artifacts/devnet_observability.json npm run devnet:beta:observe` and archive the output with the rollout notes.
-10. Keep a structured monitoring window for the first 24 hours after rollout.
+6. Run `npm run devnet:operator:drawer:sim` to prove current reserve, plan, funding, obligation, claim, and control builders still reach the deployed program without mutating state.
+7. Capture observability with `OBSERVABILITY_OUTPUT_JSON=artifacts/devnet_observability.json npm run devnet:beta:observe` and archive the output with the rollout notes.
+8. Keep a structured monitoring window for the first 24 hours after rollout.
 
 ## Observability
 
@@ -58,49 +54,48 @@ OBSERVABILITY_OUTPUT_JSON=artifacts/devnet_observability.json npm run devnet:bet
 
 - instruction success and failure counts
 - dominant failure reasons from program logs
-- governance proposal state distribution
 - missing or zeroed canonical fixture addresses after shared-devnet bootstrap
-- readonly governance route failures or frontend parity regressions
+- operator drawer simulation failures or frontend parity regressions
 
 ## Incident Runbooks
 
-### Governance authority recovery
+### Control authority recovery
 
-Trigger: governance authority cannot execute required safety actions.
+Trigger: reserve-domain, plan, sponsor, or claims control authority cannot execute required safety actions.
 
 Steps:
-1. Confirm the current protocol governance PDA, expected Realms governance address, and the signer currently capable of creating or executing proposals.
-2. If authority rotation is required, the current trimmed protocol surface does not expose an in-program handoff. Initialize or redeploy the program with the intended governance authority before treating the environment as usable.
-3. If the required safety action is an emergency stop, use the current `set_protocol_emergency_pause` path through the authorized governance signer or approved proposal flow.
-4. Validate the resulting authority and pause state through on-chain readback plus the readonly governance UI.
-5. Execute a low-risk follow-up governance action before resuming normal operations.
-6. Resume only after authority checks, pause posture, and proposal execution are green.
+1. Confirm the deployed program id, current reserve-domain admin, plan admin/sponsor operator, claims operator, and the signer or multisig expected to control each role.
+2. If a role cannot be recovered through the existing configured authority, initialize a replacement devnet environment or redeploy with the intended authority before treating the environment as usable.
+3. If the required safety action is a stop, set the relevant reserve-domain or health-plan `pause_flags` through the authorized update-control path.
+4. Validate the resulting authority and pause state through on-chain readback plus frontend signoff.
+5. Execute a low-risk follow-up drawer simulation before resuming normal operations.
+6. Resume only after authority checks, pause posture, and builder simulation are green.
 
 ### Emergency pause
 
 Trigger: abnormal claim settlement failures, replay anomalies, or governance compromise suspicion.
 
 Steps:
-1. Execute `set_protocol_emergency_pause` through the authorized governance path.
+1. Set the relevant reserve-domain or health-plan pause flags through the authorized update-control path.
 2. Announce the pause and investigation window in operator channels.
 3. Run an observability snapshot and collect affected signatures.
 4. Validate the remediation on a dry-run wallet set.
-5. Unpause only through an approved governance action.
+5. Unpause only through the same approved authority path after the fix is verified.
 
-### Failed proposal remediation
+### Failed bootstrap remediation
 
-Trigger: proposal execution fails or remains stuck in a non-final state.
+Trigger: live bootstrap fails or leaves the shared-devnet fixture graph partially refreshed.
 
 Steps:
-1. Inspect proposal state in Realms and transaction logs.
-2. If the failure was caused by invalid instructions or accounts, create a replacement proposal with corrected payloads.
-3. If quorum was not met, re-propose with an updated communication and voting window.
-4. If a proposal partially executed, verify on-chain idempotency before retrying.
-5. Capture the root cause and update the proposal checklist.
+1. Inspect the failing signature, program logs, and the final JSON summary from `protocol:bootstrap:devnet-live`.
+2. If the failure was caused by a missing mint, signer mismatch, or unsupported retired fixture row, fix the env or fixture filter and rerun the bootstrap.
+3. If the bootstrap partially executed, verify account existence and idempotency before retrying.
+4. Run `npm run devnet:frontend:bootstrap`, `npm run devnet:frontend:signoff`, and `npm run devnet:operator:drawer:sim` after remediation.
+5. Capture the root cause and update the launch checklist.
 
 ## Ownership
 
-- Governance operations owner: protocol core team
+- Control-authority operations owner: protocol core team
 - Oracle operations owner: oracle service team
 - Frontend and operator support owner: protocol web team
 - Incident commander: assigned per launch window

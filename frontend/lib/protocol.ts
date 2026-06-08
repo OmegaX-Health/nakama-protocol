@@ -117,6 +117,7 @@ import type {
 } from "./protocol/types";
 import {
   asAddress,
+  asAddressOrDefault,
   asOptionalAddress,
   bigintFromAnchorValue,
   decodedField,
@@ -972,7 +973,7 @@ export function buildMemberReadModel(params: {
         (obligation) => obligation.memberWallet === wallet && obligation.policySeries === position.policySeries,
       );
       const claimCases = params.claimCases.filter(
-        (claimCase) => claimCase.memberPosition === position.address,
+        (claimCase) => claimCase.memberPosition === position.address || claimCase.claimant === wallet,
       );
       const claimStatusCounts = claimCases.reduce<Record<string, number>>((accumulator, claimCase) => {
         const label = describeClaimStatus(claimCase.intakeStatus);
@@ -1167,7 +1168,7 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
       case "HealthPlan":
         {
           const membershipModeValue = Number(decodedField(decoded, "membershipMode") ?? 0);
-          const membershipGateKindValue = Number(decodedField(decoded, "membershipGateKind") ?? 0);
+          const membershipGateKindValue = Number(decodedField(decoded, "membershipGateKind") ?? MEMBERSHIP_GATE_KIND_OPEN);
           snapshot.healthPlans.push({
             address,
             reserveDomain: asAddress(decodedField(decoded, "reserveDomain")),
@@ -1183,9 +1184,9 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
             membershipGateKind: membershipGateKindLabel(membershipGateKindValue),
             membershipModeValue,
             membershipGateKindValue,
-            membershipGateMint: asAddress(decodedField(decoded, "membershipGateMint")),
+            membershipGateMint: asOptionalAddress(decodedField(decoded, "membershipGateMint")) ?? ZERO_PUBKEY,
             membershipGateMinAmount: bigintFromAnchorValue(decodedField(decoded, "membershipGateMinAmount")),
-            membershipInviteAuthority: asAddress(decodedField(decoded, "membershipInviteAuthority")),
+            membershipInviteAuthority: asOptionalAddress(decodedField(decoded, "membershipInviteAuthority")) ?? ZERO_PUBKEY,
             pauseFlags: Number(decodedField(decoded, "pauseFlags") ?? 0),
             active: Boolean(decodedField(decoded, "active")),
           });
@@ -1260,7 +1261,7 @@ export async function loadProtocolConsoleSnapshot(connection: Connection): Promi
           healthPlan: asAddress(decodedField(decoded, "healthPlan")),
           policySeries: asOptionalAddress(decodedField(decoded, "policySeries")),
           fundingLine: asAddress(decodedField(decoded, "fundingLine")),
-          memberPosition: asAddress(decodedField(decoded, "memberPosition")),
+          memberPosition: asAddressOrDefault(decodedField(decoded, "memberPosition")),
           claimant: asAddress(decodedField(decoded, "claimant")),
           adjudicator: asOptionalAddress(decodedField(decoded, "adjudicator")),
           claimId: stringFromAnchorValue(decodedField(decoded, "claimId")),

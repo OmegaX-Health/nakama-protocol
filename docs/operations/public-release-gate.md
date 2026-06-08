@@ -87,9 +87,10 @@ For this release train, reviewers should be able to discover from the checked-in
 
 - the canonical console mounts `/plans`, `/capital`, `/claims`, `/members`, `/governance`, `/oracles`, and `/schemas`
 - the mounted workbenches read live protocol snapshot data rather than fixture-only state
-- the oracle and outcome-schema registries are part of the current public protocol surface
-- member enrollment and claim intake are operator-mediated in the mounted protocol console rather than standalone self-serve dapp actions
-- the shared-devnet sign-off flow includes frontend parity, governance smoke, and observability
+- oracle and evidence review are adjunct/off-chain in the trimmed base program, with proof fingerprints stored on claim cases
+- member-seat, liquidity-pool, capital-class, allocation, and in-program governance rails are retired from the live program surface
+- claim intake is operator-mediated in the mounted protocol console rather than a standalone self-serve dapp action
+- the shared-devnet sign-off flow includes live bootstrap, frontend parity, operator drawer simulation, and observability
 
 ## Shared-devnet sign-off
 
@@ -103,15 +104,14 @@ Recommended sequence:
 3. `npm run protocol:bootstrap:devnet-live`
 4. `npm run devnet:frontend:bootstrap`
 5. `npm run devnet:frontend:signoff`
-6. `npm run devnet:governance:smoke:create-vote`
-7. `npm run devnet:governance:smoke:execute` after the required voting and hold-up windows expire
-8. `npm run devnet:governance:ui:readonly`
-9. `OBSERVABILITY_OUTPUT_JSON=artifacts/devnet_observability.json npm run devnet:beta:observe`
+6. `npm run devnet:operator:drawer:sim`
+7. `OBSERVABILITY_OUTPUT_JSON=artifacts/devnet_observability.json npm run devnet:beta:observe`
 
 Record the resulting outputs in the rollout summary:
 
 - upgraded program id and slot
-- proposal address used for governance smoke
+- live bootstrap proof-claim address and summary counts
+- operator drawer simulation summary
 - observability artifact path
 - frontend bootstrap artifacts refreshed under `devnet/` and `frontend/public/`
 
@@ -124,7 +124,7 @@ Before any broader production promotion outside devnet:
 - **Fill in [`./release-candidate-evidence-template.md`](./release-candidate-evidence-template.md) for the candidate commit.** Every section is required. Empty sections are blockers, not formalities. The template is what records the exact commit, generated artifact hashes, CI run IDs, branch-protection state, localnet/operator-drawer outputs, dependency scan, actuarial gate (where applicable), and the truthful external-audit / bug-bounty posture for the release.
 - confirm the release notes match the generated artifacts and public docs
 - confirm downstream SDK and public docs consumers have the regenerated protocol contract
-- explicitly review any remaining canonical-console action gaps so production claims/capital/governance workflows are not overstated
+- explicitly review any remaining canonical-console action gaps so production claims, capital-contribution, and reserve-control workflows are not overstated
 - run the operator drawer simulate-only smoke before presenting membership, claim, reserve, or plan-control actions as usable from the public console
 - for Genesis Protect Acute live seeding, use [`./genesis-live-bootstrap.md`](./genesis-live-bootstrap.md) so the launch bootstrap takes explicit cluster, oracle, schema, and reserve-lane inputs instead of the shared devnet fixture matrix
 
@@ -146,7 +146,8 @@ From the checked-in docs alone, a reviewer should be able to find:
 - where health plans and policy series are created or versioned
 - where funding lines are opened, funded, and reserved against obligations
 - where claim cases are opened, adjudicated, and settled
-- where liquidity pools, capital classes, allocations, and redemption queues are handled
+- where reserve-capital contributions, reserve earnings, and returns are handled
+- which historical LP/capital-class/allocation/governance fixture views are no longer part of the live base-program surface
 
 If that path is hard to follow, update docs or module comments as part of the same change.
 
