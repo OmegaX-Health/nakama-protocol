@@ -4,7 +4,7 @@ import { DEVNET_PROTOCOL_FIXTURE_STATE, type DevnetFixtureRole } from "./devnet-
 import { GENESIS_PROTECT_ACUTE_PLAN_ID } from "./genesis-protect-acute";
 import { GENESIS_PROTECT_ACUTE_PRIMARY_SKU } from "./genesis-protect-acute-operator";
 import { NETWORK_SCHOOL_ACUTE_ASSIST_DEFAULT_SKU, NETWORK_SCHOOL_ACUTE_ASSIST_PLAN_ID } from "./network-school-acute-assist";
-import { buildOverviewStats, countPendingRedemptionSources, type OverviewStatsSource } from "./overview-metrics";
+import { buildOverviewStats, type OverviewStatsSource } from "./overview-metrics";
 import {
   availableFundingLineBalance,
   CLAIM_INTAKE_APPROVED,
@@ -25,7 +25,7 @@ import {
 
 import type { GovernanceProposalSummary } from "@/lib/governance-readonly";
 
-export type WorkbenchSection = "overview" | "plans" | "capital" | "governance" | "oracles" | "schemas";
+export type WorkbenchSection = "overview" | "plans" | "governance";
 
 export type WorkbenchPersona = "observer" | "sponsor" | "capital" | "governance";
 
@@ -55,14 +55,11 @@ export const WORKBENCH_NAV: Array<{
   id: WorkbenchSection;
   href: `/${WorkbenchSection}`;
   label: string;
-  icon: "overview" | "plans" | "capital" | "governance" | "oracles" | "schemas";
+  icon: "overview" | "plans" | "governance";
 }> = [
   { id: "overview", href: "/overview", label: "Overview", icon: "overview" },
   { id: "plans", href: "/plans", label: "Plans", icon: "plans" },
-  { id: "capital", href: "/capital", label: "Capital", icon: "capital" },
   { id: "governance", href: "/governance", label: "Governance", icon: "governance" },
-  { id: "oracles", href: "/oracles", label: "Oracles", icon: "oracles" },
-  { id: "schemas", href: "/schemas", label: "Schemas", icon: "schemas" },
 ] as const;
 
 export const PLAN_TABS = [
@@ -73,15 +70,6 @@ export const PLAN_TABS = [
   { id: "treasury", label: "Treasury" },
 ] as const satisfies readonly WorkbenchTab[];
 
-export const CAPITAL_TABS = [
-  { id: "overview", label: "Overview" },
-  { id: "classes", label: "Classes" },
-  { id: "allocations", label: "Allocations" },
-  { id: "queue", label: "Queue" },
-  { id: "linked-plans", label: "Linked plans" },
-  { id: "treasury", label: "Treasury" },
-] as const satisfies readonly WorkbenchTab[];
-
 export const GOVERNANCE_TABS = [
   { id: "overview", label: "Overview" },
   { id: "queue", label: "Queue" },
@@ -89,18 +77,8 @@ export const GOVERNANCE_TABS = [
   { id: "templates", label: "Templates" },
 ] as const satisfies readonly WorkbenchTab[];
 
-export const ORACLE_TABS = [
-  { id: "registry", label: "Registry" },
-  { id: "bindings", label: "Bindings" },
-  { id: "attestations", label: "Attestations" },
-  { id: "disputes", label: "Disputes" },
-  { id: "staking", label: "Staking" },
-] as const satisfies readonly WorkbenchTab[];
-
 export type PlanTabId = (typeof PLAN_TABS)[number]["id"];
-export type CapitalTabId = (typeof CAPITAL_TABS)[number]["id"];
 export type GovernanceTabId = (typeof GOVERNANCE_TABS)[number]["id"];
-export type OracleTabId = (typeof ORACLE_TABS)[number]["id"];
 
 export const GOVERNANCE_TEMPLATE_ROWS = [
   {
@@ -166,20 +144,8 @@ type BuildAuditTrailInput =
     demo?: boolean;
   }
   | {
-    section: "capital";
-    poolAddress?: string | null;
-    classAddress?: string | null;
-    source?: WorkbenchProtocolSource;
-  }
-  | {
     section: "plans";
     planAddress?: string | null;
-    seriesAddress?: string | null;
-    source?: WorkbenchProtocolSource;
-  }
-  | {
-    section: "oracles";
-    poolAddress?: string | null;
     seriesAddress?: string | null;
     source?: WorkbenchProtocolSource;
   }
@@ -393,10 +359,7 @@ function stageLabelForProposal(proposal: GovernanceProposalSummary): string {
 }
 
 export function sectionFromPathname(pathname: string): WorkbenchSection {
-  if (pathname.startsWith("/capital")) return "capital";
   if (pathname.startsWith("/governance")) return "governance";
-  if (pathname.startsWith("/oracles")) return "oracles";
-  if (pathname.startsWith("/schemas")) return "schemas";
   if (pathname.startsWith("/plans")) return "plans";
   return "overview";
 }
@@ -413,29 +376,11 @@ export function sectionChrome(section: WorkbenchSection): {
         eyebrow: "Sponsor, series, claims, and funding lanes",
         description: "Manage health plans as one continuous operational surface.",
       };
-    case "capital":
-      return {
-        title: "Capital",
-        eyebrow: "Liquidity pools, classes, and queue posture",
-        description: "Keep pool mechanics, class posture, and allocation routing in one stable context.",
-      };
     case "governance":
       return {
         title: "Governance",
         eyebrow: "Proposal queue and scoped control lanes",
         description: "Coordinate proposals, templates, and authority posture without fragmenting the operating model.",
-      };
-    case "oracles":
-      return {
-        title: "Oracles",
-        eyebrow: "Registry, attestations, and dispute posture",
-        description: "Track verification operators and settlement-sensitive bindings without exposing raw health data.",
-      };
-    case "schemas":
-      return {
-        title: "Schemas",
-        eyebrow: "Outcome schemas and series comparability",
-        description: "Audit the live schema registry and versioned series rules without losing route context.",
       };
     case "overview":
     default:
@@ -474,28 +419,15 @@ export function defaultTabForPersona(
   section: Exclude<WorkbenchSection, "overview">,
   persona: WorkbenchPersona,
 ): string {
-  if (section === "schemas") return "registry";
-
   if (section === "plans") {
     if (persona === "capital") return "treasury";
     if (persona === "governance") return "claims";
     return "overview";
   }
 
-  if (section === "capital") {
-    if (persona === "sponsor") return "linked-plans";
-    if (persona === "governance") return "queue";
-    return "overview";
-  }
-
-  if (section === "governance") {
-    if (persona === "capital") return "templates";
-    return "queue";
-  }
-
-  if (persona === "governance") return "attestations";
-  if (persona === "capital") return "bindings";
-  return "registry";
+  // governance
+  if (persona === "capital") return "templates";
+  return "queue";
 }
 
 export function linkedContextForPool(poolAddress?: string | null): {
@@ -573,13 +505,9 @@ export function buildGovernanceQueue(proposals: GovernanceProposalSummary[] = []
 
 export function computeWorkbenchMetrics(source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE) {
   const activeClaims = source.claimCases.filter((claim) => isActiveClaimStatus(claim.intakeStatus)).length;
-  const pendingRedemptions = countPendingRedemptionSources(source);
   const reservedObligations = source.obligations.filter(
     (obligation) =>
       obligation.status === OBLIGATION_STATUS_RESERVED || obligation.status === OBLIGATION_STATUS_CLAIMABLE_PAYABLE,
-  ).length;
-  const queueOnlyPools = source.liquidityPools.filter(
-    (pool) => pool.redemptionPolicy === REDEMPTION_POLICY_QUEUE_ONLY,
   ).length;
   const approvedClaims = source.claimCases.filter(
     (claim) => claim.intakeStatus === CLAIM_INTAKE_APPROVED,
@@ -588,9 +516,7 @@ export function computeWorkbenchMetrics(source: WorkbenchProtocolSource = DEVNET
   return {
     activeClaims,
     approvedClaims,
-    pendingRedemptions,
     reservedObligations,
-    queueOnlyPools,
   };
 }
 
@@ -649,52 +575,11 @@ function buildOverviewAuditTrail(
   const sourceNoun = demoSource ? "explicit demo fixture set" : "live protocol snapshot";
   const metrics = buildOverviewStats(statsSource);
   const leadProposal = queue[0] ?? null;
-  const largestPool = [...statsSource.liquidityPools].sort((left, right) =>
-    compareAmountsDesc(left.totalValueLocked, right.totalValueLocked),
-  )[0] ?? null;
   const activePlan = statsSource.healthPlans.find((plan) =>
     statsSource.claimCases.some(
       (claim) => claim.healthPlan === plan.address && isActiveClaimStatus(claim.intakeStatus),
     ),
   ) ?? statsSource.healthPlans[0] ?? null;
-
-  if (persona === "capital") {
-    const scopedAllocations = largestPool
-      ? (statsSource.allocationPositions ?? []).filter((allocation) => allocation.liquidityPool === largestPool.address)
-      : [];
-    const leadAllocation = [...scopedAllocations].sort((left, right) =>
-      compareAmountsDesc(left.allocatedAmount, right.allocatedAmount),
-    )[0] ?? null;
-    const leadSeries = statsSource.policySeries.find((series) => series.address === leadAllocation?.policySeries) ?? null;
-
-    return [
-      createAuditItem({
-        seed: `overview:${persona}:queue`,
-        index: 0,
-        label: metrics.pendingRedemptionCount > 0 ? "Queue watch" : "Queue clear",
-        tone: metrics.pendingRedemptionCount > 0 ? "pending" : "verified",
-        detail: `${metrics.pendingRedemptionCount} redemption source${metrics.pendingRedemptionCount === 1 ? "" : "s"} ${countRemain(metrics.pendingRedemptionCount)} across ${metrics.queueOnlyPoolCount} pool${metrics.queueOnlyPoolCount === 1 ? "" : "s"} using queued redemptions.`,
-      }),
-      createAuditItem({
-        seed: `overview:${persona}:routing`,
-        index: 1,
-        label: leadAllocation ? "Routing live" : "Routing idle",
-        tone: leadAllocation ? "signal" : "verified",
-        detail: leadAllocation && leadSeries && largestPool
-          ? `${largestPool.displayName} is led by ${leadSeries.displayName} with ${formatAuditAmount(leadAllocation.allocatedAmount)} allocated and ${formatAuditAmount(leadAllocation.reservedCapacity)} reserved capacity.`
-          : "No active allocation lanes are currently registered on the visible capital surface.",
-      }),
-      createAuditItem({
-        seed: `overview:${persona}:governance`,
-        index: 2,
-        label: leadProposal?.status ?? "Review",
-        tone: leadProposal?.status === "Executing" ? "signal" : "pending",
-        detail: leadProposal
-          ? `${leadProposal.title} is the lead governance item for the shared protocol shell.`
-          : "No active governance proposals are waiting right now.",
-      }),
-    ];
-  }
 
   if (persona === "governance") {
     return [
@@ -740,87 +625,6 @@ function buildOverviewAuditTrail(
       detail: activePlan
         ? `${activePlan.displayName} is the sponsor lane with the most live claim activity in the ${sourceNoun}.`
         : "No plan lanes are currently active in the visible sponsor surface.",
-    }),
-    createAuditItem({
-      seed: `overview:${persona}:capital`,
-      index: 2,
-      label: metrics.pendingRedemptionCount > 0 ? "Capital queue" : "Capital clear",
-      tone: metrics.pendingRedemptionCount > 0 ? "pending" : "verified",
-      detail: `${metrics.pendingRedemptionCount} redemption source${metrics.pendingRedemptionCount === 1 ? "" : "s"} ${metrics.pendingRedemptionCount === 1 ? "still needs" : "still need"} processing across active capital classes.`,
-    }),
-  ];
-}
-
-function buildCapitalAuditTrail(
-  poolAddress?: string | null,
-  classAddress?: string | null,
-  source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE,
-): WorkbenchAuditItem[] {
-  const pool = source.liquidityPools.find((candidate) => candidate.address === (poolAddress ?? ""))
-    ?? source.liquidityPools[0]
-    ?? null;
-  if (!pool) return buildOverviewAuditTrail("capital", [], source);
-
-  const poolClasses = source.capitalClasses.filter((capitalClass) => capitalClass.liquidityPool === pool.address);
-  const selectedClass = poolClasses.find((capitalClass) => capitalClass.address === (classAddress ?? ""))
-    ?? poolClasses[0]
-    ?? null;
-  const scopedAllocations = source.allocationPositions.filter((allocation) =>
-    selectedClass ? allocation.capitalClass === selectedClass.address : allocation.liquidityPool === pool.address,
-  );
-  const leadAllocation = [...scopedAllocations].sort((left, right) =>
-    compareAmountsDesc(left.allocatedAmount, right.allocatedAmount),
-  )[0] ?? null;
-  const leadSeries = source.policySeries.find((series) => series.address === leadAllocation?.policySeries) ?? null;
-  const leadPlan = source.healthPlans.find((plan) => plan.address === leadAllocation?.healthPlan) ?? null;
-  const scopedObligations = source.obligations.filter((obligation) =>
-    obligation.liquidityPool === pool.address && (!selectedClass || obligation.capitalClass === selectedClass.address),
-  );
-  const payableObligations = scopedObligations.filter((obligation) => obligation.status === OBLIGATION_STATUS_CLAIMABLE_PAYABLE);
-  const payableAmount = payableObligations.reduce(
-    (sum, obligation) => sum + toBigIntAmount(obligation.payableAmount ?? obligation.outstandingAmount),
-    0n,
-  );
-  const impairedAllocations = scopedAllocations.filter((allocation) => toBigIntAmount(allocation.impairedAmount) > 0n);
-  const totalImpairedAmount = impairedAllocations.reduce((sum, allocation) => sum + toBigIntAmount(allocation.impairedAmount), 0n);
-  const leadImpairedAllocation = [...impairedAllocations].sort((left, right) =>
-    compareAmountsDesc(left.impairedAmount, right.impairedAmount),
-  )[0] ?? null;
-  const leadImpairedSeries = source.policySeries.find((series) => series.address === leadImpairedAllocation?.policySeries) ?? null;
-  const linkedPlanCount = new Set(scopedAllocations.map((allocation) => allocation.healthPlan)).size;
-  const pendingRedemptions = toBigIntAmount(selectedClass?.pendingRedemptions ?? pool.totalPendingRedemptions);
-  const queueScope = selectedClass?.displayName ?? pool.displayName;
-  const exitMode = selectedClass?.queueOnlyRedemptions || pool.redemptionPolicy === REDEMPTION_POLICY_QUEUE_ONLY
-    ? "queued redemption processing"
-    : "open redemption processing";
-
-  return [
-    createAuditItem({
-      seed: `capital:${queueScope}:queue`,
-      index: 0,
-      label: pendingRedemptions > 0n ? "Queue watch" : "Queue clear",
-      tone: pendingRedemptions > 0n ? "pending" : "verified",
-      detail: `${queueScope} is using ${exitMode} with ${formatAuditAmount(pendingRedemptions)} settlement units pending in the redemption queue.`,
-    }),
-    createAuditItem({
-      seed: `capital:${queueScope}:routing`,
-      index: 1,
-      label: leadAllocation ? "Routing live" : "Routing idle",
-      tone: leadAllocation ? "signal" : "verified",
-      detail: leadAllocation && leadSeries && leadPlan
-        ? `${leadSeries.displayName} in ${leadPlan.displayName} is the largest live routing lane with ${formatAuditAmount(leadAllocation.allocatedAmount)} allocated and ${formatAuditAmount(leadAllocation.reservedCapacity)} reserved capacity.`
-        : `No active plan allocations are currently linked to ${queueScope}.`,
-    }),
-    createAuditItem({
-      seed: `capital:${queueScope}:risk`,
-      index: 2,
-      label: totalImpairedAmount > 0n ? "Impairment watch" : payableAmount > 0n ? "Settlement watch" : "Plan linkage",
-      tone: totalImpairedAmount > 0n ? "pending" : payableAmount > 0n ? "signal" : "verified",
-      detail: totalImpairedAmount > 0n
-        ? `${queueScope} is carrying ${formatAuditAmount(totalImpairedAmount)} impaired exposure, led by ${leadImpairedSeries?.displayName ?? "the top allocation"} at ${formatAuditAmount(leadImpairedAllocation?.impairedAmount)}.`
-        : payableAmount > 0n
-          ? `${payableObligations.length} obligation lane${payableObligations.length === 1 ? "" : "s"} ${countRemain(payableObligations.length)} ${describeObligationStatus(OBLIGATION_STATUS_CLAIMABLE_PAYABLE)} with ${formatAuditAmount(payableAmount)} still scheduled for settlement.`
-          : `${linkedPlanCount} linked plan lane${linkedPlanCount === 1 ? "" : "s"} ${linkedPlanCount === 1 ? "currently draws" : "currently draw"} on ${pool.displayName}, and none are carrying impaired or payable exposure.`,
     }),
   ];
 }
@@ -889,72 +693,6 @@ function buildPlansAuditTrail(
   ];
 }
 
-function buildOraclesAuditTrail(
-  poolAddress?: string | null,
-  seriesAddress?: string | null,
-  source: WorkbenchProtocolSource = DEVNET_PROTOCOL_FIXTURE_STATE,
-): WorkbenchAuditItem[] {
-  const pool = source.liquidityPools.find((candidate) => candidate.address === (poolAddress ?? ""))
-    ?? source.liquidityPools[0]
-    ?? null;
-  if (!pool) return buildOverviewAuditTrail("governance");
-
-  const boundAllocations = source.allocationPositions.filter((allocation) => allocation.liquidityPool === pool.address);
-  const boundSeries = source.policySeries.filter((series) =>
-    boundAllocations.some((allocation) => allocation.policySeries === series.address),
-  );
-  const selectedSeries = boundSeries.find((series) => series.address === (seriesAddress ?? "")) ?? boundSeries[0] ?? null;
-  const scopedClaims = source.claimCases.filter((claim) =>
-    selectedSeries
-      ? claim.policySeries === selectedSeries.address
-      : boundSeries.some((series) => series.address === claim.policySeries),
-  );
-  const scopedObligations = source.obligations.filter((obligation) =>
-    selectedSeries
-      ? obligation.policySeries === selectedSeries.address
-      : obligation.liquidityPool === pool.address,
-  );
-  const watchlistObligations = scopedObligations.filter(isObligationOnDisputeWatch);
-  const watchlistAmount = watchlistObligations.reduce(
-    (sum, obligation) =>
-      sum + toBigIntAmount(obligation.reservedAmount) + toBigIntAmount(obligation.payableAmount) + toBigIntAmount(obligation.impairedAmount),
-    0n,
-  );
-  const leadClaim = scopedClaims[0] ?? null;
-  const leadClaimSeries = source.policySeries.find((series) => series.address === leadClaim?.policySeries) ?? selectedSeries;
-  const scopeLabel = selectedSeries?.displayName ?? pool.displayName;
-
-  return [
-    createAuditItem({
-      seed: `oracles:${scopeLabel}:binding`,
-      index: 0,
-      label: selectedSeries ? "Binding live" : "Pool bindings",
-      tone: selectedSeries ? "verified" : "signal",
-      detail: selectedSeries
-        ? `${selectedSeries.displayName} stays bound to ${pool.displayName} in ${describeSeriesMode(selectedSeries.mode)} mode${selectedSeries.termsVersion ? ` with terms ${selectedSeries.termsVersion}` : ""}.`
-        : `${boundSeries.length} series ${countBe(boundSeries.length)} currently bound to ${pool.displayName} for the visible oracle shell.`,
-    }),
-    createAuditItem({
-      seed: `oracles:${scopeLabel}:attestations`,
-      index: 1,
-      label: scopedClaims.length > 0 ? "Attestation watch" : "Attestations quiet",
-      tone: scopedClaims.length > 0 ? "pending" : "verified",
-      detail: leadClaim && leadClaimSeries
-        ? `${scopedClaims.length} claim case${scopedClaims.length === 1 ? "" : "s"} ${countBe(scopedClaims.length)} in scope; ${leadClaim.claimId} is ${describeClaimStatus(leadClaim.intakeStatus)} for ${leadClaimSeries.displayName}.`
-        : `No claim attestations are currently scoped to ${scopeLabel}.`,
-    }),
-    createAuditItem({
-      seed: `oracles:${scopeLabel}:watchlist`,
-      index: 2,
-      label: watchlistObligations.length > 0 ? "Dispute watch" : "Disputes clear",
-      tone: watchlistObligations.length > 0 ? "signal" : "verified",
-      detail: watchlistObligations.length > 0
-        ? `${watchlistObligations.length} obligation lane${watchlistObligations.length === 1 ? "" : "s"} ${countRemain(watchlistObligations.length)} on the operator watchlist with ${formatAuditAmount(watchlistAmount)} in reserved, payable, or impaired exposure.`
-        : `No bound obligations currently need dispute or settlement escalation for ${scopeLabel}.`,
-    }),
-  ];
-}
-
 function buildGovernanceAuditTrail(
   queue: GovernanceQueueItem[] = [],
   proposal?: GovernanceQueueItem | null,
@@ -1000,12 +738,8 @@ function buildGovernanceAuditTrail(
 
 export function buildAuditTrail(input?: BuildAuditTrailInput): WorkbenchAuditItem[] {
   switch (input?.section) {
-    case "capital":
-      return buildCapitalAuditTrail(input.poolAddress, input.classAddress, input.source);
     case "plans":
       return buildPlansAuditTrail(input.planAddress, input.seriesAddress, input.source);
-    case "oracles":
-      return buildOraclesAuditTrail(input.poolAddress, input.seriesAddress, input.source);
     case "governance":
       return buildGovernanceAuditTrail(input.queue, input.proposal);
     case "overview":
