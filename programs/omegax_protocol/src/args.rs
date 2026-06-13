@@ -356,6 +356,13 @@ pub struct CreateLiquidityPoolArgs {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
+pub struct UpdateLiquidityPoolControlsArgs {
+    pub pause_flags: u32,
+    pub active: bool,
+    pub reason_hash: [u8; 32],
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, InitSpace)]
 pub struct CreateCapitalClassArgs {
     #[max_len(MAX_ID_LEN)]
     pub class_id: String,

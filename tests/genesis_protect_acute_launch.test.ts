@@ -143,8 +143,8 @@ test("Genesis Protect Acute fixtures add a dedicated launch plan, pool, and two 
   );
   assert.equal(new Set(genesisAllocations.map((allocation) => allocation.policySeries)).size, 2);
   assert.equal(genesisAllocations.reduce((sum, allocation) => sum + BigInt(allocation.allocatedAmount ?? 0n), 0n), 57_500n);
-  assert.equal(genesisPool.totalValueLocked, 63_500n);
-  assert.equal(genesisPool.totalAllocated, 63_500n);
+  assert.equal(genesisPool.totalValueLocked, 62_500n);
+  assert.equal(genesisPool.totalAllocated, 62_500n);
 });
 
 test("Genesis Protect Acute metadata documents encode the canonical Event 7 and Travel 30 launch truth", () => {

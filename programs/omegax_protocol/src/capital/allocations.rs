@@ -43,6 +43,10 @@ pub(crate) fn create_allocation_position(
         ctx.accounts.health_plan.key(),
         OmegaXProtocolError::HealthPlanMismatch
     );
+    require!(
+        ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+        OmegaXProtocolError::FundingLineTypeMismatch
+    );
     require_keys_eq!(
         ctx.accounts.funding_line.policy_series,
         args.policy_series,
@@ -150,6 +154,10 @@ pub(crate) fn allocate_capital(
         ctx.accounts.funding_line.asset_mint,
         ctx.accounts.liquidity_pool.deposit_asset_mint,
         OmegaXProtocolError::AllocationAssetMismatch
+    );
+    require!(
+        ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+        OmegaXProtocolError::FundingLineTypeMismatch
     );
     require_allocatable_reserve_capacity(&ctx.accounts.pool_class_ledger.sheet, amount)?;
 

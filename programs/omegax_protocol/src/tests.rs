@@ -2116,6 +2116,29 @@ fn membership_proof_validation_accepts_open_and_invite_modes() {
 }
 
 #[test]
+fn invite_membership_anchor_ref_requires_nonzero_matching_invite_id() {
+    let invite_id_hash = [7u8; 32];
+    let invite_anchor = Pubkey::new_from_array(invite_id_hash);
+
+    assert_eq!(
+        resolved_invite_membership_anchor_ref(invite_id_hash, invite_anchor).unwrap(),
+        invite_anchor
+    );
+    assert_eq!(
+        resolved_invite_membership_anchor_ref([0u8; 32], Pubkey::new_unique()).unwrap_err(),
+        OmegaXProtocolError::MembershipAnchorReferenceMissing.into()
+    );
+    assert_eq!(
+        resolved_invite_membership_anchor_ref(invite_id_hash, Pubkey::new_unique()).unwrap_err(),
+        OmegaXProtocolError::MembershipAnchorSeatMismatch.into()
+    );
+    assert!(membership_gate_kind_requires_anchor_seat(
+        MEMBERSHIP_MODE_INVITE_ONLY,
+        MEMBERSHIP_GATE_KIND_INVITE_ONLY
+    ));
+}
+
+#[test]
 fn membership_proof_validation_accepts_token_gate_variants() {
     let mut snapshot_input =
         membership_proof_input(MEMBERSHIP_MODE_TOKEN_GATE, MEMBERSHIP_PROOF_MODE_TOKEN_GATE);
@@ -2208,6 +2231,51 @@ fn membership_anchor_seat_cannot_be_activated_twice_while_live() {
     assert!(anchor_seat.active);
     assert_eq!(anchor_seat.opened_at, 50);
     assert_eq!(anchor_seat.updated_at, 70);
+}
+
+#[test]
+fn invite_membership_anchor_seat_cannot_be_reused_after_deactivation() {
+    let health_plan = Pubkey::new_unique();
+    let invite_anchor_ref = Pubkey::new_unique();
+    let mut anchor_seat = MembershipAnchorSeat {
+        health_plan: ZERO_PUBKEY,
+        anchor_ref: ZERO_PUBKEY,
+        gate_kind: MEMBERSHIP_GATE_KIND_INVITE_ONLY,
+        holder_wallet: ZERO_PUBKEY,
+        member_position: ZERO_PUBKEY,
+        active: false,
+        opened_at: 0,
+        updated_at: 0,
+        bump: 0,
+    };
+
+    assert!(activate_membership_anchor_seat(
+        &mut anchor_seat,
+        health_plan,
+        invite_anchor_ref,
+        MEMBERSHIP_GATE_KIND_INVITE_ONLY,
+        Pubkey::new_unique(),
+        Pubkey::new_unique(),
+        50,
+        Some(9),
+    )
+    .is_ok());
+
+    anchor_seat.active = false;
+    assert_eq!(
+        activate_membership_anchor_seat(
+            &mut anchor_seat,
+            health_plan,
+            invite_anchor_ref,
+            MEMBERSHIP_GATE_KIND_INVITE_ONLY,
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            70,
+            Some(9),
+        )
+        .unwrap_err(),
+        OmegaXProtocolError::MembershipAnchorSeatAlreadyActive.into()
+    );
 }
 
 fn oracle_profile_with_supported_schemas(

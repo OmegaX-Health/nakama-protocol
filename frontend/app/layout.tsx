@@ -5,6 +5,10 @@ import { Fira_Code, Newsreader, Space_Grotesk } from "next/font/google";
 
 import AppProviders from "@/components/app-providers";
 import ProtocolWorkbenchShell from "@/components/protocol-workbench-shell";
+import "./styles/workbench-shell.css";
+import "./styles/plans-workbench.css";
+import "./styles/plan-creation-wizard.css";
+import "./styles/action-panels.css";
 import "./globals.css";
 
 const display = Newsreader({

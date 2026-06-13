@@ -47,6 +47,23 @@ pub(crate) fn require_health_plan_active(plan: &HealthPlan) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn require_reserve_domain_rails_open(
+    domain: &Account<ReserveDomain>,
+    expected_reserve_domain: Pubkey,
+) -> Result<()> {
+    require_keys_eq!(
+        domain.key(),
+        expected_reserve_domain,
+        OmegaXProtocolError::ReserveDomainMismatch
+    );
+    require!(domain.active, OmegaXProtocolError::ReserveDomainInactive);
+    require!(
+        domain.pause_flags & PAUSE_FLAG_DOMAIN_RAILS == 0,
+        OmegaXProtocolError::ReserveDomainRailsPaused
+    );
+    Ok(())
+}
+
 pub(crate) fn require_capital_class_active(capital_class: &CapitalClass) -> Result<()> {
     require!(
         capital_class.active,

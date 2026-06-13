@@ -20,6 +20,10 @@ pub(crate) fn settle_obligation(
         &ctx.accounts.health_plan,
         obligation,
     )?;
+    require_reserve_domain_rails_open(
+        &ctx.accounts.reserve_domain,
+        ctx.accounts.health_plan.reserve_domain,
+    )?;
     if args.next_status == OBLIGATION_STATUS_SETTLED {
         crate::reserve_waterfall::require_reserve_asset_rail_payout_enabled(
             &ctx.accounts.reserve_asset_rail,
@@ -40,10 +44,12 @@ pub(crate) fn settle_obligation(
         ctx.accounts.funding_line.asset_mint,
     )?;
 
+    let obligation_is_linked = obligation_has_linked_claim_case(obligation);
     let oracle_fee = resolve_obligation_oracle_fee(
         ctx.accounts.health_plan.key(),
         obligation,
         ctx.accounts.claim_case.as_deref(),
+        obligation_is_linked || ctx.accounts.claim_case.is_some(),
         ctx.accounts.pool_oracle_fee_vault.as_deref(),
         ctx.accounts.pool_oracle_policy.as_deref(),
         ctx.accounts.oracle_fee_attestation.as_deref(),
@@ -51,7 +57,6 @@ pub(crate) fn settle_obligation(
     )?;
     let net_to_recipient = checked_sub(amount, oracle_fee)?;
     require_positive_amount(net_to_recipient)?;
-    let obligation_is_linked = obligation_has_linked_claim_case(obligation);
 
     if obligation_is_linked {
         require!(
@@ -68,6 +73,23 @@ pub(crate) fn settle_obligation(
             obligation.key(),
             ctx.accounts.health_plan.key(),
         )?;
+        if matches!(
+            args.next_status,
+            OBLIGATION_STATUS_CLAIMABLE_PAYABLE | OBLIGATION_STATUS_SETTLED
+        ) {
+            let settlement_attestation = ctx
+                .accounts
+                .settlement_attestation
+                .as_deref()
+                .ok_or(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee)?;
+            crate::claims::require_claim_settlement_attestation(
+                settlement_attestation,
+                claim_case,
+                claim_case.key(),
+                ctx.accounts.health_plan.key(),
+                obligation.allocation_position,
+            )?;
+        }
         if args.next_status == OBLIGATION_STATUS_SETTLED {
             require!(
                 amount <= remaining_claim_amount(claim_case),
@@ -284,77 +306,52 @@ fn resolve_obligation_oracle_fee(
     health_plan_key: Pubkey,
     obligation: &Obligation,
     claim_case: Option<&Account<ClaimCase>>,
+    require_configured_fee_accounts: bool,
     pool_oracle_fee_vault: Option<&Account<PoolOracleFeeVault>>,
     pool_oracle_policy: Option<&Account<PoolOraclePolicy>>,
     oracle_fee_attestation: Option<&Account<ClaimAttestation>>,
     amount: u64,
 ) -> Result<u64> {
+    if obligation.liquidity_pool != ZERO_PUBKEY && require_configured_fee_accounts {
+        let policy =
+            pool_oracle_policy.ok_or(OmegaXProtocolError::FeeVaultRequiredForConfiguredFee)?;
+        crate::claims::require_pool_oracle_policy_canonical(policy, obligation.liquidity_pool)?;
+        if policy.oracle_fee_bps == 0
+            && pool_oracle_fee_vault.is_none()
+            && oracle_fee_attestation.is_none()
+        {
+            return Ok(0);
+        }
+        let vault =
+            pool_oracle_fee_vault.ok_or(OmegaXProtocolError::FeeVaultRequiredForConfiguredFee)?;
+        let attestation = oracle_fee_attestation
+            .ok_or(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee)?;
+        return resolve_obligation_oracle_fee_with_accounts(
+            health_plan_key,
+            obligation,
+            claim_case,
+            vault,
+            policy,
+            attestation,
+            amount,
+        );
+    }
+
     match (
         pool_oracle_fee_vault,
         pool_oracle_policy,
         oracle_fee_attestation,
     ) {
         (Some(vault), Some(policy), Some(attestation)) => {
-            require!(
-                claim_case.is_some(),
-                OmegaXProtocolError::ClaimAttestationRequiredForOracleFee
-            );
-            let claim_case =
-                claim_case.ok_or(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee)?;
-            crate::claims::require_oracle_fee_accounts_canonical(
+            resolve_obligation_oracle_fee_with_accounts(
+                health_plan_key,
+                obligation,
+                claim_case,
                 vault,
                 policy,
                 attestation,
-                claim_case.key(),
-                obligation.asset_mint,
-            )?;
-            require_keys_eq!(
-                vault.oracle,
-                attestation.oracle,
-                OmegaXProtocolError::OracleProfileMismatch
-            );
-            require_keys_eq!(
-                attestation.claim_case,
-                claim_case.key(),
-                OmegaXProtocolError::Unauthorized
-            );
-            require_keys_eq!(
-                attestation.health_plan,
-                health_plan_key,
-                OmegaXProtocolError::HealthPlanMismatch
-            );
-            require_keys_eq!(
-                attestation.policy_series,
-                claim_case.policy_series,
-                OmegaXProtocolError::PolicySeriesMismatch
-            );
-            require!(
-                attestation.evidence_ref_hash == claim_case.evidence_ref_hash,
-                OmegaXProtocolError::ClaimEvidenceMismatch
-            );
-            require_keys_eq!(
-                vault.asset_mint,
-                obligation.asset_mint,
-                OmegaXProtocolError::FeeVaultMismatch
-            );
-            require_keys_eq!(
-                vault.liquidity_pool,
-                policy.liquidity_pool,
-                OmegaXProtocolError::LiquidityPoolMismatch
-            );
-            require_keys_eq!(
-                attestation.liquidity_pool,
-                policy.liquidity_pool,
-                OmegaXProtocolError::LiquidityPoolMismatch
-            );
-            require_keys_eq!(
-                attestation.allocation_position,
-                obligation.allocation_position,
-                OmegaXProtocolError::AllocationPositionMismatch
-            );
-            let fee = fee_share_from_bps(amount, policy.oracle_fee_bps)?;
-            require!(fee < amount, OmegaXProtocolError::FeeVaultBpsMisconfigured);
-            Ok(fee)
+                amount,
+            )
         }
         (Some(_), Some(_), None) => {
             err!(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee)
@@ -367,6 +364,78 @@ fn resolve_obligation_oracle_fee(
     }
 }
 
+fn resolve_obligation_oracle_fee_with_accounts(
+    health_plan_key: Pubkey,
+    obligation: &Obligation,
+    claim_case: Option<&Account<ClaimCase>>,
+    vault: &Account<PoolOracleFeeVault>,
+    policy: &Account<PoolOraclePolicy>,
+    attestation: &Account<ClaimAttestation>,
+    amount: u64,
+) -> Result<u64> {
+    require!(
+        claim_case.is_some(),
+        OmegaXProtocolError::ClaimAttestationRequiredForOracleFee
+    );
+    let claim_case = claim_case.ok_or(OmegaXProtocolError::ClaimAttestationRequiredForOracleFee)?;
+    crate::claims::require_oracle_fee_accounts_canonical(
+        vault,
+        policy,
+        attestation,
+        claim_case.key(),
+        obligation.asset_mint,
+    )?;
+    require_keys_eq!(
+        vault.oracle,
+        attestation.oracle,
+        OmegaXProtocolError::OracleProfileMismatch
+    );
+    require_keys_eq!(
+        attestation.claim_case,
+        claim_case.key(),
+        OmegaXProtocolError::Unauthorized
+    );
+    require_keys_eq!(
+        attestation.health_plan,
+        health_plan_key,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        attestation.policy_series,
+        claim_case.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require!(
+        attestation.evidence_ref_hash == claim_case.evidence_ref_hash,
+        OmegaXProtocolError::ClaimEvidenceMismatch
+    );
+    crate::claims::require_claim_settlement_attestation(
+        attestation,
+        claim_case,
+        claim_case.key(),
+        health_plan_key,
+        obligation.allocation_position,
+    )?;
+    require_keys_eq!(
+        vault.asset_mint,
+        obligation.asset_mint,
+        OmegaXProtocolError::FeeVaultMismatch
+    );
+    require_keys_eq!(
+        vault.liquidity_pool,
+        policy.liquidity_pool,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        attestation.liquidity_pool,
+        policy.liquidity_pool,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    let fee = fee_share_from_bps(amount, policy.oracle_fee_bps)?;
+    require!(fee < amount, OmegaXProtocolError::FeeVaultBpsMisconfigured);
+    Ok(fee)
+}
+
 #[derive(Accounts)]
 pub struct SettleObligation<'info> {
     pub authority: Signer<'info>,
@@ -374,6 +443,8 @@ pub struct SettleObligation<'info> {
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    pub reserve_domain: Box<Account<'info, ReserveDomain>>,
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), obligation.asset_mint.as_ref()],
         bump = reserve_asset_rail.bump,
@@ -403,6 +474,7 @@ pub struct SettleObligation<'info> {
     pub obligation: Box<Account<'info, Obligation>>,
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Option<Box<Account<'info, ClaimCase>>>,
+    pub settlement_attestation: Option<Box<Account<'info, ClaimAttestation>>>,
     // Optional for non-claim obligation transitions, but required when a
     // linked claim is being marked SETTLED so accounting cannot move without
     // the matching SPL outflow.

@@ -309,6 +309,13 @@ pub mod omegax_protocol {
         crate::capital::create_liquidity_pool(ctx, args)
     }
 
+    pub fn update_liquidity_pool_controls(
+        ctx: Context<UpdateLiquidityPoolControls>,
+        args: UpdateLiquidityPoolControlsArgs,
+    ) -> Result<()> {
+        crate::capital::update_liquidity_pool_controls(ctx, args)
+    }
+
     pub fn create_capital_class(
         ctx: Context<CreateCapitalClass>,
         args: CreateCapitalClassArgs,

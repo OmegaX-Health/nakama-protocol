@@ -522,6 +522,8 @@ pub struct CloseOutcomeSchema<'info> {
         close = recipient_system_account
     )]
     pub schema_dependency_ledger: Account<'info, SchemaDependencyLedger>,
-    #[account(mut)]
-    pub recipient_system_account: SystemAccount<'info>,
+    /// CHECK: the address constraint forces the close recipient to the
+    /// governance authority account; no account data is read.
+    #[account(mut, address = governance_authority.key() @ OmegaXProtocolError::Unauthorized)]
+    pub recipient_system_account: UncheckedAccount<'info>,
 }

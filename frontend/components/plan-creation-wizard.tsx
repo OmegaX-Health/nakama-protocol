@@ -4,16 +4,48 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 
 import { DocumentLinkRow } from "@/components/document-link-row";
-import { MultiOraclePicker, type MultiOracleOption } from "@/components/multi-oracle-picker";
+import { MultiOraclePicker } from "@/components/multi-oracle-picker";
 import { useNetworkContext } from "@/components/network-context";
 import { useProtocolTransactionReviewPrompt } from "@/components/protocol-transaction-review";
 import { WizardDetailSheet, WizardDetailTriggerRow, type WizardDetailMetaItem } from "@/components/wizard-detail-sheet";
+import {
+  STEP_COPY,
+  SOL_DECIMALS,
+  ZERO_HASH,
+  baseUnitsPreview,
+  buildLaunchOracleOptions,
+  buildWorkflowSteps,
+  defaultProtectionMetadataUri,
+  firstError,
+  humanizeChoice,
+  isGenesisProtectAcuteTemplate,
+  normalize,
+  protocolToken,
+  randomId,
+  seedDefault,
+  seriesDisplayDefault,
+  shortAddress,
+  toAssetPublicKey,
+  toPositiveInt,
+  toUiAmountBaseUnits,
+  wizardDetailKey,
+  type ActionLog,
+  type CreatedArtifacts,
+  type RulePreview,
+  type StepId,
+  type WizardDetailState,
+} from "@/components/plan-creation-wizard/helpers";
+import {
+  FieldGroup,
+  LaunchPreviewMetric,
+  ReviewRow,
+  ReviewSection,
+} from "@/components/plan-creation-wizard/presentation";
 import { cn } from "@/lib/cn";
 import {
   buildCreateHealthPlanInstruction,
@@ -95,324 +127,9 @@ import {
   parseSchemaOutcomes,
   type SchemaOutcomeOption,
 } from "@/lib/schema-metadata";
-import { getMintDecimals, parseUiAmountToBaseUnits } from "@/lib/spl";
+import { getMintDecimals } from "@/lib/spl";
 import { stableSha256Hex, stableStringify } from "@/lib/stable-hash";
 import { useProtocolConsoleSnapshot } from "@/lib/use-protocol-console-snapshot";
-
-type StepId =
-  | "basics"
-  | "membership"
-  | "verification"
-  | "reward-lane"
-  | "protection-lane"
-  | "review";
-
-type StepDescriptor = {
-  id: StepId;
-  number: string;
-  label: string;
-};
-
-type StepCopy = {
-  headline: string;
-  emphasis: string;
-  body: string;
-  tip: string;
-};
-
-type ActionLog = {
-  id: string;
-  action: string;
-  message: string;
-  explorerUrl?: string;
-  signature?: string;
-};
-
-type CreatedArtifacts = {
-  healthPlanAddress: string;
-  rewardSeriesAddress: string | null;
-  protectionSeriesAddress: string | null;
-  rewardFundingLineAddress: string | null;
-  protectionFundingLineAddress: string | null;
-  poolAddress?: string | null;
-  capitalClassAddresses?: string[];
-  allocationAddresses?: string[];
-  extraSeriesAddresses?: string[];
-  extraFundingLineAddresses?: string[];
-};
-
-type RulePreview = {
-  derivedRuleHashHex: string;
-  derivedPayoutHashHex: string;
-};
-
-type WizardDetailState =
-  | { key: "launch-preview" }
-  | { key: "rule-commitments"; outcomeId: string }
-  | { key: "protection-posture" };
-
-const ZERO_HASH = "0".repeat(64);
-const SOL_DECIMALS = 9;
-const DEFAULT_PROTECTION_METADATA_URIS = {
-  defi_native: "/metadata/protection/default-defi-v1.json",
-  rwa_policy: "/metadata/protection/default-rwa-v1.json",
-} as const;
-
-function defaultProtectionMetadataUri(pathway: Exclude<CoveragePathway, "">): string {
-  return DEFAULT_PROTECTION_METADATA_URIS[pathway];
-}
-
-function isGenesisProtectAcuteTemplate(value: string | null): boolean {
-  return (value ?? "").trim() === GENESIS_PROTECT_ACUTE_TEMPLATE_KEY;
-}
-
-const STEP_COPY: Record<StepId, StepCopy> = {
-  basics: {
-    headline: "Set up your",
-    emphasis: "plan.",
-    body: "Start with the basics. You’ll pick rewards and coverage in the next steps.",
-    tip: "Pick a name, identifier, and public link you’re comfortable keeping long term.",
-  },
-  membership: {
-    headline: "Choose who can",
-    emphasis: "join.",
-    body: "Enrollment rules apply before members participate in any reward or coverage lane.",
-    tip: "Keep it simple at launch. You can tighten enrollment rules later.",
-  },
-  verification: {
-    headline: "Choose who verifies",
-    emphasis: "outcomes.",
-    body: "The verifiers you pick define who may attest outcomes; quorum is recorded for the future finality layer.",
-    tip: "Pick enough verifiers to avoid single-operator risk, but keep the launch quorum simple.",
-  },
-  "reward-lane": {
-    headline: "Set up your",
-    emphasis: "rewards.",
-    body: "Pick the outcomes that should trigger a reward, name each rule, and connect the budget that will fund payouts.",
-    tip: "Start narrow. One crisp reward is better than many muddy ones.",
-  },
-  "protection-lane": {
-    headline: "Set up your",
-    emphasis: "coverage.",
-    body: "Define the protection terms, premium schedule, and public policy details members can inspect.",
-    tip: "Link to terms and disclosures real people can read.",
-  },
-  review: {
-    headline: "Review and",
-    emphasis: "create.",
-    body: "Final check before the plan, series, and funding lines are created on-chain.",
-    tip: "If creation partially succeeds, rerunning is safe — existing accounts are skipped.",
-  },
-};
-
-function normalize(value: string): string {
-  return value.trim();
-}
-
-function shortAddress(value: string): string {
-  if (!value || value.length < 12) return value || "n/a";
-  return `${value.slice(0, 4)}...${value.slice(-4)}`;
-}
-
-function randomId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function firstError(errors: string[]): string | null {
-  return errors[0] ?? null;
-}
-
-function toPositiveInt(value: string): number {
-  const parsed = Number.parseInt(normalize(value), 10);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function protocolToken(value: string): string {
-  const normalized = normalize(value)
-    .replace(/[^a-z0-9]+/gi, "_")
-    .replace(/^_+|_+$/g, "")
-    .toUpperCase();
-  return normalized || "PENDING";
-}
-
-function humanizeChoice(value: string): string {
-  const normalized = normalize(value).replace(/[_-]+/g, " ").trim();
-  if (!normalized) return "Pending";
-  if (normalized === "defi native") return "DeFi native";
-  if (normalized === "rwa policy") return "RWA policy";
-  if (normalized === "spl") return "SPL";
-  if (normalized === "sol") return "SOL";
-  if (normalized === "nft anchor") return "NFT anchor";
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-}
-
-function seedDefault(value: string, fallback: string): string {
-  const normalized = normalize(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return (normalized || fallback).slice(0, 32);
-}
-
-function seriesDisplayDefault(planDisplayName: string, suffix: string): string {
-  const normalized = normalize(planDisplayName);
-  return normalized ? `${normalized} ${suffix}` : `OmegaX ${suffix}`;
-}
-
-function toAssetPublicKey(value: string): PublicKey | null {
-  try {
-    return new PublicKey(normalize(value));
-  } catch {
-    return null;
-  }
-}
-
-function toUiAmountBaseUnits(value: string, mode: PayoutAssetMode, splDecimals: number | null): bigint {
-  if (mode === "sol") {
-    return parseUiAmountToBaseUnits(value, SOL_DECIMALS);
-  }
-  if (splDecimals === null) {
-    throw new Error("Token decimals are not loaded yet.");
-  }
-  return parseUiAmountToBaseUnits(value, splDecimals);
-}
-
-function baseUnitsPreview(value: string, mode: PayoutAssetMode, splDecimals: number | null): string {
-  try {
-    return `${toUiAmountBaseUnits(value, mode, splDecimals).toLocaleString()} base units`;
-  } catch {
-    return "n/a";
-  }
-}
-
-function buildWorkflowSteps(intent: LaunchIntent, genesisTemplateMode = false): StepDescriptor[] {
-  const steps: StepDescriptor[] = [
-    { id: "basics", number: "01", label: "Basics" },
-    { id: "membership", number: "02", label: "Membership" },
-    { id: "verification", number: "03", label: "Verification" },
-  ];
-  if (genesisTemplateMode) {
-    steps.push({ id: "review", number: String(steps.length + 1).padStart(2, "0"), label: "Review" });
-    return steps;
-  }
-  if (requiresRewardLane(intent)) {
-    steps.push({ id: "reward-lane", number: String(steps.length + 1).padStart(2, "0"), label: "Reward Lane" });
-  }
-  if (requiresProtectionLane(intent)) {
-    steps.push({ id: "protection-lane", number: String(steps.length + 1).padStart(2, "0"), label: "Protection Lane" });
-  }
-  steps.push({ id: "review", number: String(steps.length + 1).padStart(2, "0"), label: "Review" });
-  return steps;
-}
-
-function buildLaunchOracleOptions(
-  liveProfiles: Array<{ oracle: string; active: boolean; metadataUri: string }>,
-  selectedOracles: string[],
-): MultiOracleOption[] {
-  const options = new Map<string, MultiOracleOption>();
-
-  for (const profile of liveProfiles) {
-    options.set(profile.oracle, {
-      oracle: profile.oracle,
-      active: profile.active,
-      metadataUri: profile.metadataUri,
-    });
-  }
-
-  for (const oracle of selectedOracles) {
-    if (!options.has(oracle)) {
-      options.set(oracle, {
-        oracle,
-        active: true,
-        metadataUri: "Manual oracle entry",
-      });
-    }
-  }
-
-  return [...options.values()];
-}
-
-function FieldGroup({
-  label,
-  children,
-  hint,
-}: {
-  label: string;
-  children: ReactNode;
-  hint?: ReactNode;
-}) {
-  return (
-    <label className="plans-wizard-field-group">
-      <span className="plans-wizard-field-label">{label}</span>
-      {children}
-      {hint ? <span className="plans-wizard-field-hint">{hint}</span> : null}
-    </label>
-  );
-}
-
-function ReviewRow({
-  label,
-  value,
-  muted = false,
-}: {
-  label: string;
-  value: string;
-  muted?: boolean;
-}) {
-  return (
-    <div className="plans-wizard-review-row">
-      <span className="plans-wizard-review-label">{label}</span>
-      <strong className={cn("plans-wizard-review-value", muted && "opacity-70")}>{value}</strong>
-    </div>
-  );
-}
-
-function ReviewSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="plans-wizard-review-section">
-      <div className="plans-wizard-review-section-head">
-        <h3>{title}</h3>
-        <p>{description}</p>
-      </div>
-      <div className="plans-wizard-review-section-rows">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function LaunchPreviewMetric({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="plans-launch-preview-metric">
-      <span className="plans-launch-preview-metric-label">{label}</span>
-      <strong className="plans-launch-preview-metric-value">{value}</strong>
-      <span className="plans-launch-preview-metric-detail">{detail}</span>
-    </div>
-  );
-}
-
-function wizardDetailKey(detail: WizardDetailState): string {
-  return detail.key === "rule-commitments" ? `rule-commitments:${detail.outcomeId}` : detail.key;
-}
 
 export function PlanCreationWizard() {
   const router = useRouter();

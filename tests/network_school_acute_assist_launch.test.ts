@@ -67,10 +67,17 @@ type NetworkSchoolProtectionMetadataDocument = {
     manualReviewAboveUsd: number;
     sublimits: Array<{ label: string; amountUsd: number }>;
     householdRules?: {
-      includedAdults: number;
-      includedChildren: number;
+      includedAdults?: number;
+      includedChildren?: number;
+      maxAdults?: number;
+      maxChildren?: number;
       maxPaidClaimsPerWindow: number;
     };
+  };
+  termRules?: {
+    aggregateCapDoesNotReset: boolean;
+    upfrontPaymentRequired: boolean;
+    exampleQuotes: string[];
   };
   waitingPeriods: {
     illnessHours: number;
@@ -116,7 +123,7 @@ function loadPlanDocument(pathname: string): Record<string, unknown> {
   ) as Record<string, unknown>;
 }
 
-test("Network School Acute Assist fixtures add an invite-gated plan and four tier series on the shared acute pool", () => {
+test("Network School Acute Assist fixtures add an invite-gated plan and guarded tier series on the shared acute pool", () => {
   const nsPlan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans.find((plan) => plan.planId === NETWORK_SCHOOL_ACUTE_ASSIST_PLAN_ID);
   const sharedPool = DEVNET_PROTOCOL_FIXTURE_STATE.liquidityPools.find((pool) => pool.poolId === NETWORK_SCHOOL_ACUTE_ASSIST_POOL_ID);
   const nsSeries = DEVNET_PROTOCOL_FIXTURE_STATE.policySeries.filter((series) => series.healthPlan === nsPlan?.address);
@@ -131,14 +138,14 @@ test("Network School Acute Assist fixtures add an invite-gated plan and four tie
   assert.equal(nsPlan.membershipModel, "invite-only-network-school-discord");
   assert.equal(nsPlan.membershipModeValue, 2);
   assert.equal(nsPlan.membershipGateKindValue, 1);
-  assert.equal(nsSeries.length, 4);
+  assert.equal(nsSeries.length, 3);
   assert.deepEqual(nsSeries.map((series) => series.seriesId), NETWORK_SCHOOL_ACUTE_ASSIST_SKU_LIST.map((sku) => sku.seriesId));
   assert.deepEqual(nsSeries.map((series) => series.metadataUri), NETWORK_SCHOOL_ACUTE_ASSIST_SKU_LIST.map((sku) => sku.metadataUri));
-  assert.equal(nsFundingLines.length, 8);
-  assert.equal(nsAllocations.length, 4);
-  assert.equal(nsAllocations.reduce((sum, allocation) => sum + BigInt(allocation.allocatedAmount ?? 0n), 0n), 6_000n);
-  assert.equal(sharedPool.totalValueLocked, 63_500n);
-  assert.equal(sharedPool.totalAllocated, 63_500n);
+  assert.equal(nsFundingLines.length, 6);
+  assert.equal(nsAllocations.length, 3);
+  assert.equal(nsAllocations.reduce((sum, allocation) => sum + BigInt(allocation.allocatedAmount ?? 0n), 0n), 5_000n);
+  assert.equal(sharedPool.totalValueLocked, 62_500n);
+  assert.equal(sharedPool.totalAllocated, 62_500n);
 });
 
 test("Network School Acute Assist metadata documents encode NS-only launch truth", () => {
@@ -177,7 +184,11 @@ test("Network School Acute Assist metadata documents encode NS-only launch truth
     assert.equal(document.eligibility.superteamEligible, false);
     assert.equal(document.eligibility.officialNetworkSchoolBenefit, false);
     assert.equal(document.eligibility.failClosedWhenVerifierMissing, true);
-    assert(document.eligibility.eligibleMembers.some((entry) => /short-term/.test(entry)));
+    if (definition.key === "longTermer") {
+      assert(!document.eligibility.eligibleMembers.some((entry) => /short-term/.test(entry)));
+    } else {
+      assert(document.eligibility.eligibleMembers.some((entry) => /short-term/.test(entry)));
+    }
     assert(document.eligibility.eligibleMembers.some((entry) => /long-term/.test(entry)));
     assert.equal(document.launchTruth.primaryLaunchSku, NETWORK_SCHOOL_ACUTE_ASSIST_LAUNCH_TRUTH.primaryLaunchSku);
     assert.equal(document.launchTruth.claimsTrustPhase, NETWORK_SCHOOL_ACUTE_ASSIST_LAUNCH_TRUTH.claimsTrustPhase);
@@ -187,6 +198,23 @@ test("Network School Acute Assist metadata documents encode NS-only launch truth
     assert.equal(document.launchTruth.discordVerificationRequired, true);
     assert.equal(document.launchTruth.rawHealthEvidenceOnchain, false);
   }
+});
+
+test("Network School Acute Assist long-termer and family offers preserve reserve guardrails", () => {
+  const longTermer = loadProtectionDocument(NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.longTermer.metadataUri);
+  const family = loadProtectionDocument(NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyGuarded.metadataUri);
+
+  assert.equal(longTermer.product.maxPayoutUsd, 1_000);
+  assert.equal(longTermer.termRules?.aggregateCapDoesNotReset, true);
+  assert.equal(longTermer.termRules?.upfrontPaymentRequired, true);
+  assert(longTermer.termRules?.exampleQuotes.some((entry) => /7 months/.test(entry)));
+
+  assert.equal(family.product.maxPayoutUsd, 1_500);
+  assert.equal(family.pricing.retailUsd, 89);
+  assert.equal(family.benefitSchedule.householdRules?.maxAdults, 2);
+  assert.equal(family.benefitSchedule.householdRules?.maxChildren, 3);
+  assert.equal(family.benefitSchedule.householdRules?.maxPaidClaimsPerWindow, 2);
+  assert(family.termRules?.exampleQuotes.some((entry) => /2 adults \+ 3 children -> 99 USD/.test(entry)));
 });
 
 test("Network School Acute Assist plan metadata preserves the Cohort 0 gate and reserve controls", () => {
@@ -216,8 +244,8 @@ test("Network School Acute Assist plan metadata preserves the Cohort 0 gate and 
   assert.equal(cohort0.policyOrHouseholdCap, NETWORK_SCHOOL_ACUTE_ASSIST_COHORT0_POLICY_CAP);
   assert.equal(cohort0.hardAggregatePayoutCapUsd, NETWORK_SCHOOL_ACUTE_ASSIST_COHORT0_HARD_PAYOUT_CAP_USD);
   assert.equal(cohort0.defaultSku, NETWORK_SCHOOL_ACUTE_ASSIST_DEFAULT_SKU.key);
-  assert.deepEqual(cohort0.launchSkus, ["lite", "core", "plus", "familyCore"]);
-  assert.deepEqual(cohort0.excludedSkus, ["familyPlus"]);
+  assert.deepEqual(cohort0.launchSkus, ["core", "longTermer", "familyGuarded"]);
+  assert.deepEqual(cohort0.excludedSkus, ["lite", "plus", "familyPlus"]);
 });
 
 test("Network School Acute Assist keeps shared-pool navigation explicit", () => {
@@ -254,4 +282,3 @@ test("Network School Acute Assist claim schema is bundled for server-side metada
     globalThis.fetch = previousFetch;
   }
 });
-

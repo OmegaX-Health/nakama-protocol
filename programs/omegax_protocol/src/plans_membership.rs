@@ -278,14 +278,19 @@ pub(crate) fn open_member_position(
     validate_membership_proof(&ctx, &args)?;
 
     let now_ts = Clock::get()?.unix_timestamp;
-    let resolved_anchor_ref = resolved_membership_anchor_ref(
-        &ctx.accounts.health_plan,
-        ctx.accounts
-            .token_gate_account
-            .as_ref()
-            .map(|account| account.key()),
-        args.anchor_ref,
-    )?;
+    let resolved_anchor_ref =
+        if ctx.accounts.health_plan.membership_mode == MEMBERSHIP_MODE_INVITE_ONLY {
+            resolved_invite_membership_anchor_ref(args.invite_id_hash, args.anchor_ref)?
+        } else {
+            resolved_membership_anchor_ref(
+                &ctx.accounts.health_plan,
+                ctx.accounts
+                    .token_gate_account
+                    .as_ref()
+                    .map(|account| account.key()),
+                args.anchor_ref,
+            )?
+        };
     if membership_gate_kind_requires_anchor_seat(
         ctx.accounts.health_plan.membership_mode,
         ctx.accounts.health_plan.membership_gate_kind,
@@ -312,14 +317,14 @@ pub(crate) fn open_member_position(
     member_position.policy_series = args.series_scope;
     member_position.wallet = ctx.accounts.wallet.key();
     member_position.subject_commitment = args.subject_commitment;
-    member_position.eligibility_status = args.eligibility_status;
+    member_position.eligibility_status = ELIGIBILITY_PENDING;
     member_position.delegated_rights = args.delegated_rights;
     member_position.enrollment_proof_mode = args.proof_mode;
     member_position.membership_gate_kind = ctx.accounts.health_plan.membership_gate_kind;
     member_position.membership_anchor_ref = resolved_anchor_ref;
     member_position.gate_amount_snapshot = args.token_gate_amount_snapshot;
     member_position.invite_id_hash = args.invite_id_hash;
-    member_position.active = true;
+    member_position.active = false;
     member_position.opened_at = now_ts;
     member_position.updated_at = member_position.opened_at;
     member_position.bump = ctx.bumps.member_position;
@@ -362,6 +367,11 @@ pub(crate) fn update_member_eligibility(
         require_keys_eq!(
             anchor_seat.anchor_ref,
             member_position.membership_anchor_ref,
+            OmegaXProtocolError::MembershipAnchorSeatMismatch
+        );
+        require_keys_eq!(
+            anchor_seat.member_position,
+            member_position.key(),
             OmegaXProtocolError::MembershipAnchorSeatMismatch
         );
         anchor_seat.active = false;

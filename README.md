@@ -103,43 +103,12 @@ This repository treats the earlier pool-first surface as retired devnet history 
 
 ## Release Status
 
-Current publish target: `v0.3.1`
+Current publish target: `v0.3.1`.
 
-This patch hardens the first publishable canonical OmegaX health-capital-markets surface.
-
-- reserve inflows now require checked SPL token transfers into the configured domain vault token account before ledgers increase
-- redemption payouts are derived on-chain from queued shares and NAV rather than caller-supplied payout amounts
-- emergency pause now covers reserve-moving exits and settlement paths; Founder reservations remain off-chain Squads custody until activation/posting
-- settlement and redemption fee carve-outs must leave a positive net recipient payout; oracle-fee accrual is bound to the matching claim attestation
-- fee accrual leaves reserve ledgers and LP TVL net of fee claims while `DomainAssetVault.total_assets` tracks physical custody until SPL fee withdrawal
-- optional mutable reserve ledgers are bound to the expected series, class, allocation, funding line, domain, and mint before mutation
-- it is a hard-break devnet migration from the retired pool-first model
-- reserve domains define hard custody and legal settlement boundaries
-- health plans define sponsor, member, liability, and claims administration roots
-- funding lines separate sponsor budgets, premiums, LP allocations, and backstops
-- liquidity pools and capital classes define LP-facing exposure, yield, impairment, and redemption rights
-- allocation positions bridge capital sleeves into plan-side liabilities without hiding attribution
-- the canonical console now mounts `/plans`, `/capital`, `/claims`, `/members`, `/governance`, `/oracles`, and `/schemas` against live snapshot-backed protocol reads
-- `/plans/new` now launches from live reserve-domain, vault-rail, oracle, and schema registry data rather than fixture-only defaults
-- `/plans/new?template=genesis-protect-acute` now bootstraps the canonical Genesis Protect Acute shell in place using the frozen Event 7 and Travel 30 launch truth
-- `/plans?...&setup=genesis-protect-acute` now exposes the Genesis setup checklist, issuance posture, and reserve-warning view inside the mounted sponsor/operator workspace
-- the mounted Genesis claims tab now behaves as an operator claim queue with summary cards, queue filters, selected-case detail, and contextual handoff into adjudication, reserve, and oracle follow-through
-- the mounted Genesis treasury tab now behaves as a reserve console with lane filters, per-SKU reserve attribution, degraded-visibility warnings, and treasury actions scoped from the selected live funding lane
-- `/governance` now exposes mounted protocol bootstrap actions for governance, reserve domains, and domain asset vaults
-- `/members` and `/claims` now route into the mounted plan/operator workspace instead of advertising standalone self-serve dapp actions
-- mounted workbenches now include sponsor-side post-launch series and funding-line actions, LP credentialing updates, and claim impairment handling
-- the protocol now includes first-class oracle registry and outcome-schema registry accounts with checked-in generated artifacts
-
-Genesis Protect Acute sprint-1 launch truth is frozen in the public metadata and fixture surface for the April 16-20, 2026 implementation window.
-
-- `Travel 30` is the primary Founder launch SKU with a reserve-indexed target cap, and `Event 7` is the fast demo SKU
-- the current public target is end-of-month mainnet readiness, not broadly live insurance issuance today
-- phase-0 claims trust is an operator-backed oracle flow rather than decentralized adjudication
-- AI recommendation and more explicit decentralized review remain next-phase work, not current public fact
-- prediction markets do not count as reserve truth; only posted premiums, sponsor funds, liquidity, and explicit backstops do
-- app membership billing remains separate from per-window protection premiums
-- the public sponsor/operator console now carries the Genesis bootstrap, checklist, operator claim queue, and reserve-console read path directly on `/plans`
-- the Genesis protection metadata disclosure routes now resolve on the public protocol frontend at `/coverage/technical-terms` and `/coverage/risk-disclosures`
+The repository is a devnet-beta public protocol surface, not a live insurance
+issuance surface. Current release notes, evidence templates, and operator
+runbooks live under [`docs/operations/`](./docs/operations/); the root README
+stays focused on orientation, setup, and verification.
 
 Read the canonical design set first:
 
@@ -193,73 +162,24 @@ Run the public verification gate:
 npm run verify:public
 ```
 
-## QEDGen Verification Lane
+## Formal Verification
 
-The QEDGen spec lives at [`omegax_protocol.qedspec`](./omegax_protocol.qedspec)
-and `.qed/config.json` pins it for local commands. Generated verification code
-is intentionally isolated under [`formal_verification/`](./formal_verification/)
-so the live Anchor program in `programs/omegax_protocol/` is not overwritten by
-QEDGen scaffolding.
-
-```bash
-npm run qedgen:check
-npm run qedgen:codegen
-npm run qedgen:verify
-npm run qedgen:reconcile
-```
-
-`npm run qedgen:codegen` writes the Anchor verification model to
-`formal_verification/anchor_model/`, the Lean proof surface to
-`formal_verification/Spec.lean`, and the generated Kani/proptest harnesses to
-`formal_verification/anchor_model/tests/`.
-
-Treat the current QEDGen lane as a coverage and spec-hygiene gate unless a
-specific property has committed proof bodies. Generated theorem stubs, missing
-Lean obligations, and `todo!("fill non-mechanical effects, events, transfers,
-calls")` placeholders in `formal_verification/anchor_model/` are not production
-proof coverage by themselves and must not be described as mainnet formal-proof
-sign-off.
-
-The only currently accepted warning is
-`missing_cpi_for_token_context` on `create_domain_asset_vault`.
-That handler uses `token_program` for token-account initialization, not for a
-token transfer. The modeling gap is tracked in
-[`.qed/plan/findings/001-domain-vault-init-token-program.md`](./.qed/plan/findings/001-domain-vault-init-token-program.md)
-and [`.qed/plan/gaps.md`](./.qed/plan/gaps.md).
+QEDGen and Certora-oriented materials live under
+[`formal_verification/`](./formal_verification/) with the root
+[`omegax_protocol.qedspec`](./omegax_protocol.qedspec). Treat those lanes as
+maintainer verification evidence, not as an external audit or mainnet formal
+proof claim.
 
 ## Maintainer and Devnet Operations
 
-These helpers are for repo maintainers and shared-devnet operators rather than first-time SDK consumers.
+These helpers are for repo maintainers and shared-devnet operators rather than first-time SDK consumers. Start with [Operator Runbooks](./docs/operations/runbooks.md) before running any command that can mutate shared devnet state.
 
-- `npm run protocol:bootstrap`
-  - writes `devnet/health-capital-markets-manifest.json`
-  - writes `devnet/health-capital-markets.env`
-  - emits stable canonical fixture ids for the new model
-- `npm run protocol:bootstrap:devnet-live`
-  - seeds the canonical plan/capital/oracle/schema graph onto shared devnet using the configured signer
-  - requires real SPL source/vault token accounts for funding and LP deposit seed transactions
-  - provisions reusable local role wallets under `$HOME/.config/solana/omegax-devnet/`
-  - syncs canonical public role addresses back into `frontend/.env.local`
-- `npm run devnet:frontend:bootstrap`
-  - syncs canonical fixture env values into `frontend/.env.local`
-  - writes `frontend/public/devnet-fixtures.json`
-- `npm run devnet:beta:deploy`
-  - runs the checked build and artifact parity
-  - regenerates the canonical bootstrap artifacts
-  - leaves the final live deploy step operator-mediated for auditability
-  - prints the exact canonical `solana program deploy --program-id ...` upgrade command and warns if `target/deploy/omegax_protocol-keypair.json` has drifted away from the canonical program id
-- `npm run devnet:frontend:smoke`
-  - checks that the canonical fixture set is present and coherent
-- `npm run devnet:frontend:signoff`
-  - runs the strict frontend parity matrix against the canonical fixture/env set
-- `npm run devnet:governance:smoke:create-vote`
-  - creates the shared-devnet governance smoke proposal
-- `npm run devnet:governance:smoke:execute`
-  - executes the previously created governance smoke proposal after the DAO windows expire
-- `npm run devnet:governance:ui:readonly`
-  - verifies readonly governance routes against the current devnet proposal state
-- `npm run devnet:beta:observe`
-  - captures a structured observability snapshot for the shared devnet deployment
+- `npm run protocol:bootstrap` refreshes `devnet/health-capital-markets-manifest.json` and `devnet/health-capital-markets.env.example`
+- `npm run protocol:bootstrap:devnet-live` seeds the canonical plan/capital/oracle/schema graph onto shared devnet using the configured signer
+- `npm run devnet:frontend:bootstrap` syncs canonical fixture env values into `frontend/.env.local` and writes `frontend/public/devnet-fixtures.json`
+- `npm run devnet:beta:deploy` runs checked build and artifact parity, then prints the operator-mediated deploy command
+- `npm run devnet:frontend:smoke` and `npm run devnet:frontend:signoff` check the canonical fixture set and frontend parity matrix
+- `npm run devnet:beta:observe` captures a structured observability snapshot for the shared devnet deployment
 
 ## Verification Philosophy
 

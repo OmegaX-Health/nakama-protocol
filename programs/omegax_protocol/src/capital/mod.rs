@@ -25,7 +25,7 @@ pub(crate) use allocations::{
 };
 pub(crate) use classes::{create_capital_class, update_capital_class_controls};
 pub(crate) use impairments::mark_impairment;
-pub(crate) use liquidity_pool::create_liquidity_pool;
+pub(crate) use liquidity_pool::{create_liquidity_pool, update_liquidity_pool_controls};
 pub(crate) use lp_positions::{deposit_into_capital_class, update_lp_position_credentialing};
 pub(crate) use redemptions::{process_redemption_queue, request_redemption};
 
@@ -34,7 +34,7 @@ pub use allocations::{
 };
 pub use classes::{CreateCapitalClass, UpdateCapitalClassControls};
 pub use impairments::MarkImpairment;
-pub use liquidity_pool::CreateLiquidityPool;
+pub use liquidity_pool::{CreateLiquidityPool, UpdateLiquidityPoolControls};
 pub use lp_positions::{DepositIntoCapitalClass, UpdateLpPositionCredentialing};
 pub use redemptions::{ProcessRedemptionQueue, RequestRedemption};
 
@@ -46,7 +46,9 @@ pub(crate) use classes::{
     __client_accounts_create_capital_class, __client_accounts_update_capital_class_controls,
 };
 pub(crate) use impairments::__client_accounts_mark_impairment;
-pub(crate) use liquidity_pool::__client_accounts_create_liquidity_pool;
+pub(crate) use liquidity_pool::{
+    __client_accounts_create_liquidity_pool, __client_accounts_update_liquidity_pool_controls,
+};
 pub(crate) use lp_positions::{
     __client_accounts_deposit_into_capital_class,
     __client_accounts_update_lp_position_credentialing,

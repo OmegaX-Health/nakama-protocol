@@ -1377,6 +1377,25 @@ handler create_liquidity_pool (args : CreateLiquidityPoolArgs) : State.Live -> S
   }
 }
 
+/// `update_liquidity_pool_controls` - Anchor facade forwarder.
+/// Implementation: `crate::capital::update_liquidity_pool_controls`; accounts context: `UpdateLiquidityPoolControls`.
+handler update_liquidity_pool_controls (args : UpdateLiquidityPoolControlsArgs) : State.Live -> State.Live {
+  auth authority
+
+  accounts {
+    authority           : signer
+    protocol_governance : readonly
+    liquidity_pool      : writable
+  }
+
+  // SPEC-REFINE: replace abstract deltas with exact account-field RHS where needed.
+  effect {
+    pause_flags := args.pause_flags
+    active := args.active
+    audit_nonce +=! 1
+  }
+}
+
 /// `create_capital_class` - Anchor facade forwarder.
 /// Implementation: `crate::capital::create_capital_class`; accounts context: `CreateCapitalClass`.
 handler create_capital_class (args : CreateCapitalClassArgs) : State.Live -> State.Live {

@@ -48,7 +48,7 @@ function configureNetworkSchoolOperators(snapshot: ReturnType<typeof cloneFixtur
   plan.membershipInviteAuthority = "NsInvite1111111111111111111111111111111";
 }
 
-test("Network School operator bootstrap definitions stay aligned to the four tier series", () => {
+test("Network School operator bootstrap definitions stay aligned to the guarded series", () => {
   const fundingLines = networkSchoolAcuteAssistBootstrapFundingLines();
   const classes = networkSchoolAcuteAssistBootstrapCapitalClasses();
   const allocations = networkSchoolAcuteAssistBootstrapAllocations();
@@ -56,14 +56,12 @@ test("Network School operator bootstrap definitions stay aligned to the four tie
   assert.deepEqual(
     fundingLines.map((line) => [line.lineId, line.fundingPriority]),
     [
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.lite.fundingLineIds.premium, 0],
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.lite.fundingLineIds.liquidity, 1],
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core.fundingLineIds.premium, 2],
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core.fundingLineIds.liquidity, 3],
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.plus.fundingLineIds.premium, 4],
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.plus.fundingLineIds.liquidity, 5],
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyCore.fundingLineIds.premium, 6],
-      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyCore.fundingLineIds.liquidity, 7],
+      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core.fundingLineIds.premium, 0],
+      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core.fundingLineIds.liquidity, 1],
+      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.longTermer.fundingLineIds.premium, 2],
+      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.longTermer.fundingLineIds.liquidity, 3],
+      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyGuarded.fundingLineIds.premium, 4],
+      [NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyGuarded.fundingLineIds.liquidity, 5],
     ],
   );
   assert.deepEqual(
@@ -76,14 +74,13 @@ test("Network School operator bootstrap definitions stay aligned to the four tie
   assert.deepEqual(
     allocations.map((entry) => [entry.key, entry.classId, entry.fundingLineId, entry.weightBps, entry.capAmount]),
     [
-      ["lite-junior", NETWORK_SCHOOL_ACUTE_ASSIST_JUNIOR_CLASS_ID, NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.lite.fundingLineIds.liquidity, 1250, 750n],
-      ["core-senior", NETWORK_SCHOOL_ACUTE_ASSIST_SENIOR_CLASS_ID, NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core.fundingLineIds.liquidity, 3334, 2000n],
-      ["plus-junior", NETWORK_SCHOOL_ACUTE_ASSIST_JUNIOR_CLASS_ID, NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.plus.fundingLineIds.liquidity, 3333, 2000n],
-      ["family-core-junior", NETWORK_SCHOOL_ACUTE_ASSIST_JUNIOR_CLASS_ID, NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyCore.fundingLineIds.liquidity, 2083, 1250n],
+      ["core-senior", NETWORK_SCHOOL_ACUTE_ASSIST_SENIOR_CLASS_ID, NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core.fundingLineIds.liquidity, 5000, 2500n],
+      ["long-termer-junior", NETWORK_SCHOOL_ACUTE_ASSIST_JUNIOR_CLASS_ID, NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.longTermer.fundingLineIds.liquidity, 2000, 1000n],
+      ["family-guarded-junior", NETWORK_SCHOOL_ACUTE_ASSIST_JUNIOR_CLASS_ID, NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyGuarded.fundingLineIds.liquidity, 3000, 1500n],
     ],
   );
   assert.equal(allocations.reduce((sum, entry) => sum + entry.weightBps, 0), 10_000);
-  assert.equal(allocations.reduce((sum, entry) => sum + entry.capAmount, 0n), 6_000n);
+  assert.equal(allocations.reduce((sum, entry) => sum + entry.capAmount, 0n), 5_000n);
 });
 
 test("Network School wizard defaults pin invite-only Core as the product default", () => {
@@ -138,7 +135,7 @@ test("Network School setup model stays reserve_pending while shared acute sleeve
   });
 
   assert.equal(model.queueOnlyRedemptionsActive, true);
-  assert.equal(model.claimsPayingCapital, 8_800n);
+  assert.equal(model.claimsPayingCapital, 6_568n);
   assert.equal(model.readinessPhase, "reserve_pending");
 });
 
@@ -195,4 +192,3 @@ test("Network School setup does not treat an unconfigured shared pool as live po
     externalYieldAdapterHashHex: "33".repeat(32),
   }), true);
 });
-

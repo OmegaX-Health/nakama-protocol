@@ -55,6 +55,33 @@ pub(crate) fn create_liquidity_pool(
     Ok(())
 }
 
+pub(crate) fn update_liquidity_pool_controls(
+    ctx: Context<UpdateLiquidityPoolControls>,
+    args: UpdateLiquidityPoolControlsArgs,
+) -> Result<()> {
+    require_curator_control(
+        &ctx.accounts.authority.key(),
+        &ctx.accounts.protocol_governance,
+        &ctx.accounts.liquidity_pool,
+    )?;
+
+    let pool = &mut ctx.accounts.liquidity_pool;
+    pool.pause_flags = args.pause_flags;
+    pool.active = args.active;
+    pool.audit_nonce = pool.audit_nonce.saturating_add(1);
+
+    emit!(ScopedControlChangedEvent {
+        scope_kind: ScopeKind::LiquidityPool as u8,
+        scope: pool.key(),
+        authority: ctx.accounts.authority.key(),
+        pause_flags: pool.pause_flags,
+        reason_hash: args.reason_hash,
+        audit_nonce: pool.audit_nonce,
+    });
+
+    Ok(())
+}
+
 #[derive(Accounts)]
 #[instruction(args: CreateLiquidityPoolArgs)]
 pub struct CreateLiquidityPool<'info> {
@@ -75,4 +102,13 @@ pub struct CreateLiquidityPool<'info> {
     )]
     pub liquidity_pool: Account<'info, LiquidityPool>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct UpdateLiquidityPoolControls<'info> {
+    pub authority: Signer<'info>,
+    #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
+    pub protocol_governance: Account<'info, ProtocolGovernance>,
+    #[account(mut, seeds = [SEED_LIQUIDITY_POOL, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.pool_id.as_bytes()], bump = liquidity_pool.bump)]
+    pub liquidity_pool: Account<'info, LiquidityPool>,
 }

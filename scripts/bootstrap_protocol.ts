@@ -16,7 +16,7 @@ const {
 
 const OUTPUT_DIR = resolve(process.cwd(), "devnet");
 const MANIFEST_PATH = resolve(OUTPUT_DIR, "health-capital-markets-manifest.json");
-const ENV_PATH = resolve(OUTPUT_DIR, "health-capital-markets.env");
+const ENV_PATH = resolve(OUTPUT_DIR, "health-capital-markets.env.example");
 
 function writeFile(path: string, content: string): void {
   mkdirSync(dirname(path), { recursive: true });

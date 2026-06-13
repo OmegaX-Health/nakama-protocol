@@ -84,6 +84,10 @@ pub(crate) fn process_redemption_queue(
         &ctx.accounts.protocol_governance,
         &ctx.accounts.liquidity_pool,
     )?;
+    require_reserve_domain_rails_open(
+        &ctx.accounts.reserve_domain,
+        ctx.accounts.liquidity_pool.reserve_domain,
+    )?;
     require_positive_amount(args.shares)?;
     require!(
         args.shares <= ctx.accounts.lp_position.pending_redemption_shares,
@@ -231,6 +235,8 @@ pub struct ProcessRedemptionQueue<'info> {
     pub authority: Signer<'info>,
     #[account(seeds = [SEED_PROTOCOL_GOVERNANCE], bump = protocol_governance.bump)]
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
+    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    pub reserve_domain: Box<Account<'info, ReserveDomain>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, liquidity_pool.reserve_domain.as_ref(), liquidity_pool.deposit_asset_mint.as_ref()], bump = domain_asset_ledger.bump)]

@@ -4,6 +4,7 @@
 
 use anchor_lang::prelude::*;
 
+use super::auth::is_zero_hash;
 use crate::args::*;
 use crate::constants::*;
 use crate::errors::*;
@@ -19,9 +20,10 @@ pub(crate) fn membership_mode_requires_token_gate(mode: u8) -> bool {
 }
 
 pub(crate) fn membership_gate_kind_requires_anchor_seat(mode: u8, gate_kind: u8) -> bool {
-    membership_mode_requires_token_gate(mode)
-        && (gate_kind == MEMBERSHIP_GATE_KIND_NFT_ANCHOR
-            || gate_kind == MEMBERSHIP_GATE_KIND_STAKE_ANCHOR)
+    (mode == MEMBERSHIP_MODE_INVITE_ONLY && gate_kind == MEMBERSHIP_GATE_KIND_INVITE_ONLY)
+        || (membership_mode_requires_token_gate(mode)
+            && (gate_kind == MEMBERSHIP_GATE_KIND_NFT_ANCHOR
+                || gate_kind == MEMBERSHIP_GATE_KIND_STAKE_ANCHOR))
 }
 
 pub(crate) fn validate_membership_gate_fields(
@@ -250,6 +252,23 @@ pub(crate) fn resolved_membership_anchor_ref(
     }
 }
 
+pub(crate) fn resolved_invite_membership_anchor_ref(
+    invite_id_hash: [u8; 32],
+    anchor_ref: Pubkey,
+) -> Result<Pubkey> {
+    require!(
+        !is_zero_hash(&invite_id_hash),
+        OmegaXProtocolError::MembershipAnchorReferenceMissing
+    );
+    let invite_anchor_ref = Pubkey::new_from_array(invite_id_hash);
+    require_keys_eq!(
+        anchor_ref,
+        invite_anchor_ref,
+        OmegaXProtocolError::MembershipAnchorSeatMismatch
+    );
+    Ok(invite_anchor_ref)
+}
+
 pub(crate) fn activate_membership_anchor_seat(
     anchor_seat: &mut MembershipAnchorSeat,
     health_plan: Pubkey,
@@ -283,6 +302,9 @@ pub(crate) fn activate_membership_anchor_seat(
         anchor_ref,
         OmegaXProtocolError::MembershipAnchorSeatMismatch
     );
+    if gate_kind == MEMBERSHIP_GATE_KIND_INVITE_ONLY {
+        return err!(OmegaXProtocolError::MembershipAnchorSeatAlreadyActive);
+    }
     require!(
         !anchor_seat.active,
         OmegaXProtocolError::MembershipAnchorSeatAlreadyActive

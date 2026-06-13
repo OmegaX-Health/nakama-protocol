@@ -1,7 +1,7 @@
 {
   "version": 1,
   "lane": "protection",
-  "metadataUri": "/metadata/protection/ns-acute-assist-family-core-30-v1.json",
+  "metadataUri": "/metadata/protection/ns-acute-assist-long-termer-v1.json",
   "coveragePathway": "defi_native",
   "defi": {
     "settlementStyle": "onchain_programmatic",
@@ -10,21 +10,20 @@
   },
   "product": {
     "family": "Network School Acute Assist",
-    "sku": "Family Core 30",
-    "displayName": "NS Acute Assist - Family Core 30",
-    "positioning": "Shared 30-day acute assistance for a verified Network School household, with family aggregate and per-event caps.",
-    "coverWindowDays": 30,
+    "sku": "Long-Termer Guarded",
+    "displayName": "NS Acute Assist - Long-Termer Guarded",
+    "positioning": "Custom remaining-contract acute assistance for verified Network School long-term members, with one aggregate cap that does not reset monthly.",
+    "coverWindowDays": 365,
     "currency": "USDC",
-    "benefitStyle": "shared_family_reimbursement_after_excess",
-    "capMode": "fixed",
-    "maxPayoutUsd": 4000,
+    "benefitStyle": "remaining_contract_reimbursement_after_excess",
+    "capMode": "fixed_contract_aggregate",
+    "maxPayoutUsd": 1000,
     "defaultSelection": false,
-    "familyPlan": true
+    "familyPlan": false
   },
   "eligibility": {
     "eligibleMembers": [
-      "verified Network School short-term members",
-      "verified Network School long-term members"
+      "verified Network School long-term members with a known contract end date"
     ],
     "gate": "invite_only_network_school_discord",
     "superteamEligible": false,
@@ -32,61 +31,59 @@
     "failClosedWhenVerifierMissing": true
   },
   "pricing": {
-    "retailUsd": 34,
-    "termRolBps": 85,
-    "expectedLossUsd": 14,
-    "baseLossRatioPct": 41,
-    "stressLossRatioPct": 124
+    "retailUsd": 19,
+    "termRolBps": 190,
+    "expectedLossUsd": 7.5,
+    "baseLossRatioPct": 39,
+    "stressLossRatioPct": 118
+  },
+  "termRules": {
+    "quoteBasis": "per_started_30_day_period",
+    "formula": "quote_usd = ceil(remaining_contract_days / 30) * 19; one 1000 USD aggregate cap applies until the Network School contract end date and does not reset monthly.",
+    "minCoveredDays": 31,
+    "maxCoveredDays": 365,
+    "upfrontPaymentRequired": true,
+    "aggregateCapDoesNotReset": true,
+    "exampleQuotes": [
+      "7 months remaining -> 133 USD upfront, 1000 USD aggregate cap",
+      "10 months remaining -> 190 USD upfront, 1000 USD aggregate cap",
+      "12 months remaining -> 228 USD upfront, 1000 USD aggregate cap"
+    ]
   },
   "benefitSchedule": {
     "excessUsd": 50,
     "reimbursementPctAfterExcess": 80,
     "formula": "min(plan_limit, sublimit, remaining_member_limit, remaining_pool_cap, max(0, (eligible_bill - 50) * 0.80))",
-    "fastLaneUsd": 500,
-    "manualReviewAboveUsd": 500,
+    "fastLaneUsd": 200,
+    "manualReviewAboveUsd": 200,
     "tiers": [
       {
-        "id": "family_shared_aggregate",
-        "label": "Shared family aggregate",
-        "trigger": "Eligible acute event for a named covered household member inside the active 30-day window.",
-        "benefitUsd": 4000
+        "id": "long_termer_contract_aggregate",
+        "label": "Remaining-contract aggregate",
+        "trigger": "Eligible acute event after activation and before the verified Network School contract end date.",
+        "benefitUsd": 1000
       },
       {
-        "id": "family_per_person",
-        "label": "Per-person maximum",
-        "trigger": "Maximum payable for one covered household member during the active 30-day window.",
-        "benefitUsd": 1500
-      },
-      {
-        "id": "family_per_event",
+        "id": "long_termer_per_event",
         "label": "Per-event maximum",
-        "trigger": "Maximum payable for one acute event in the covered household.",
-        "benefitUsd": 2000
+        "trigger": "Maximum payable for one acute event during the remaining-contract window.",
+        "benefitUsd": 600
       }
     ],
     "sublimits": [
       {
-        "label": "Shared family aggregate",
-        "amountUsd": 4000
-      },
-      {
-        "label": "Per-person maximum",
-        "amountUsd": 1500
+        "label": "Remaining-contract aggregate",
+        "amountUsd": 1000
       },
       {
         "label": "Per-event maximum",
-        "amountUsd": 2000
+        "amountUsd": 600
       },
       {
-        "label": "Outpatient and clinic family sublimit",
-        "amountUsd": 1000
+        "label": "Outpatient and clinic sublimit",
+        "amountUsd": 400
       }
-    ],
-    "householdRules": {
-      "includedAdults": 2,
-      "includedChildren": 2,
-      "maxPaidClaimsPerWindow": 3
-    }
+    ]
   },
   "waitingPeriods": {
     "illnessHours": 24,
@@ -100,14 +97,15 @@
   },
   "coverage": {
     "coveredWhen": [
-      "Sudden acute illness or injury occurs after activation and inside the 30-day window.",
-      "The household member was named at activation.",
+      "Sudden acute illness or injury occurs after activation and before the verified Network School contract end date.",
+      "The contract end date and activation timestamp were recorded before symptoms, injury, or the acute event.",
       "The event is documented by receipt, invoice, provider note, or other acceptable evidence.",
       "The care type fits acute clinic, pharmacy, urgent care, ER consult, or stabilization within cap."
     ],
     "evidenceRequired": [
       "member wallet or pseudonymous member ID",
-      "named household member",
+      "verified Network School long-term member reference",
+      "contract end date",
       "activation timestamp",
       "incident date and location",
       "provider receipt or invoice",
@@ -119,7 +117,6 @@
     "exclusions": [
       "chronic and pre-existing conditions",
       "known symptoms before activation",
-      "routine pediatric checkups, vaccines, preventive care, and chronic pediatric conditions",
       "routine, preventive, elective, dental, vision, maternity, fertility, mental health, cosmetic, and long-term rehabilitation care",
       "ongoing medication refills",
       "intoxication-related events, illegal activity, fraud, high-risk sport without add-on, and professional sport",
@@ -134,12 +131,12 @@
   },
   "fundingLanes": {
     "premium": {
-      "lineId": "ns-acute-family-core30-premiums",
-      "reserveRole": "Collected 30-day member premiums attributed to NS Acute Assist Family Core 30."
+      "lineId": "ns-acute-long-termer-premiums",
+      "reserveRole": "Collected custom remaining-contract member premiums attributed to NS Acute Assist Long-Termer Guarded."
     },
     "liquidity": {
-      "lineId": "ns-acute-family-core30-liquidity",
-      "reserveRole": "Posted acute-pool capital allocated to approved NS Acute Assist Family Core 30 obligations."
+      "lineId": "ns-acute-long-termer-liquidity",
+      "reserveRole": "Posted acute-pool capital allocated to approved NS Acute Assist Long-Termer Guarded obligations."
     }
   },
   "issuanceControls": {
@@ -147,15 +144,16 @@
     "publicStatusRule": "Keep this as a Network School-only limited pilot. Do not present it as official Network School coverage, Superteam coverage, broad public insurance, or guaranteed payout insurance.",
     "issueWhen": [
       "Network School membership verification has succeeded through the off-chain Discord/member verifier.",
-      "The member activates the 30-day window before symptoms, injury, or the acute event.",
+      "The member's contract end date is known and the full custom premium is collected upfront.",
+      "The member activates before symptoms, injury, or the acute event.",
       "Usable claim-paying reserve supports the active Cohort 0 product ladder and aggregate payout cap.",
       "Claims operators can review evidence manually above the fast-lane threshold."
     ],
     "pauseWhen": [
       "Discord or Network School membership verification is unavailable, unconfigured, or stale.",
-      "Paid claims exceed 50% of the monthly payout cap or hit the hard aggregate cap.",
-      "Any Family Core 30 claim exceeds the fast-lane threshold of 500 USD without manual review.",
-      "One Family Core claim exceeds 2000 USD before at least 100 paid policies or households are active.",
+      "Paid claims exceed 50% of the Cohort 0 hard aggregate payout cap or hit the hard aggregate cap.",
+      "Any Long-Termer Guarded claim exceeds the fast-lane threshold of 200 USD without manual review.",
+      "Claims-paying reserve falls below 5000 USD before collecting the next premium batch.",
       "Provider evidence, pricing, reserve controls, or public terms drift from the published metadata."
     ]
   },
@@ -170,4 +168,3 @@
     "rawHealthEvidenceOnchain": false
   }
 }
-

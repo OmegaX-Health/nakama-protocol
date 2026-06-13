@@ -18,6 +18,7 @@ const {
 
 const {
   OBLIGATION_STATUS_SETTLED,
+  deriveClaimAttestationPda,
   buildSettleClaimCaseTx,
   buildSettleClaimCaseSelectedAssetTx,
   buildSettleObligationTx,
@@ -86,6 +87,20 @@ test("[CSO-2026-05-06] claim and obligation settlement require payout-enabled re
   assert.match(programSource, /require_fresh_reserve_asset_price/);
 });
 
+test("[MAINNET-AUDIT-2026-06-12] money-moving settlement requires domain rails to be open", () => {
+  const railsHelperBody = extractRustFunctionBody("require_reserve_domain_rails_open");
+  const claimBody = extractInstructionBody("settle_claim_case");
+  const selectedClaimBody = extractInstructionBody("settle_claim_case_selected_asset");
+  const obligationBody = extractInstructionBody("settle_obligation");
+
+  assert.match(railsHelperBody, /domain\.active/);
+  assert.match(railsHelperBody, /PAUSE_FLAG_DOMAIN_RAILS/);
+  assert.match(railsHelperBody, /ReserveDomainRailsPaused/);
+  assert.match(claimBody, /require_reserve_domain_rails_open\(/);
+  assert.match(selectedClaimBody, /require_reserve_domain_rails_open\(/);
+  assert.match(obligationBody, /require_reserve_domain_rails_open\(/);
+});
+
 test("[CSO-2026-05-10] direct claim settlement consumes free reserve, not delivery buckets", () => {
   const claimBody = extractInstructionBody("settle_claim_case");
   const liabilityBody = extractRustFunctionBody("sync_adjudicated_claim_liability");
@@ -121,17 +136,55 @@ test("[CSO-2026-05-04] redemption settlement rejects zero-net LP payouts", () =>
 test("[ALMANAX-630dbd6a] claim settlement validates canonical oracle-fee PDAs", () => {
   const settleBody = extractInstructionBody("settle_claim_case");
   const helperBody = extractRustFunctionBody("require_oracle_fee_accounts_canonical");
+  const policyHelperBody = extractRustFunctionBody("require_pool_oracle_policy_canonical");
 
   assert.match(settleBody, /require_oracle_fee_accounts_canonical\(/);
-  assert.match(helperBody, /SEED_POOL_ORACLE_POLICY/);
+  assert.match(helperBody, /require_pool_oracle_policy_canonical\(policy, policy\.liquidity_pool\)\?/);
+  assert.match(policyHelperBody, /SEED_POOL_ORACLE_POLICY/);
+  assert.match(policyHelperBody, /policy\.key\(\)[\s\S]+expected_policy/);
+  assert.match(policyHelperBody, /policy\.bump == expected_policy_bump/);
+  assert.match(policyHelperBody, /policy\.liquidity_pool[\s\S]+liquidity_pool/);
   assert.match(helperBody, /SEED_POOL_ORACLE_FEE_VAULT/);
   assert.match(helperBody, /SEED_CLAIM_ATTESTATION/);
-  assert.match(helperBody, /policy\.key\(\)[\s\S]+expected_policy/);
   assert.match(helperBody, /vault\.key\(\)[\s\S]+expected_vault/);
   assert.match(helperBody, /attestation\.key\(\)[\s\S]+expected_attestation/);
-  assert.match(helperBody, /policy\.bump == expected_policy_bump/);
   assert.match(helperBody, /vault\.bump == expected_vault_bump/);
   assert.match(helperBody, /attestation\.bump == expected_attestation_bump/);
+});
+
+test("[MAINNET-AUDIT-2026-06-12] claim payouts require approval-supporting attestations", () => {
+  const helperBody = extractRustFunctionBody("require_claim_settlement_attestation");
+  const claimBody = extractInstructionBody("settle_claim_case");
+  const selectedClaimBody = extractInstructionBody("settle_claim_case_selected_asset");
+  const obligationBody = extractInstructionBody("settle_obligation");
+
+  assert.match(helperBody, /CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE/);
+  assert.match(helperBody, /ClaimAttestationMustSupportApproval/);
+  assert.match(helperBody, /SEED_CLAIM_ATTESTATION/);
+  assert.match(helperBody, /attestation\.claim_case[\s\S]+claim_case_key/);
+  assert.match(helperBody, /attestation\.health_plan[\s\S]+health_plan_key/);
+  assert.match(helperBody, /attestation\.evidence_ref_hash[\s\S]+claim_case\.evidence_ref_hash/);
+  assert.match(helperBody, /attestation\.attestation_ref_hash[\s\S]+claim_case\.evidence_ref_hash/);
+  assert.match(helperBody, /expected_allocation_position == ZERO_PUBKEY[\s\S]+attestation\.liquidity_pool[\s\S]+ZERO_PUBKEY/);
+  assert.match(helperBody, /attestation\.allocation_position[\s\S]+expected_allocation_position/);
+  assert.match(claimBody, /require_claim_settlement_attestation\(/);
+  assert.match(selectedClaimBody, /require_claim_settlement_attestation\(/);
+  assert.match(obligationBody, /settlement_attestation[\s\S]+require_claim_settlement_attestation\(/);
+  assert.match(
+    programSource,
+    /fn resolve_obligation_oracle_fee_with_accounts[\s\S]+require_claim_settlement_attestation\(/,
+  );
+});
+
+test("[MAINNET-AUDIT-2026-06-12] direct claim settlement cannot drain LP allocation funding lines", () => {
+  assert.match(
+    extractInstructionBody("settle_claim_case"),
+    /funding_line\.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION[\s\S]+FundingLineTypeMismatch/,
+  );
+  assert.match(
+    extractInstructionBody("settle_claim_case_selected_asset"),
+    /payout_funding_line\.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION[\s\S]+FundingLineTypeMismatch/,
+  );
 });
 
 test("[ALMANAX-2026-05-06] obligation settlement validates canonical oracle-fee PDAs", () => {
@@ -175,6 +228,11 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
   )!;
   const vaultTokenAccount = vault.address;
   const recipientTokenAccount = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[1]!.address;
+  const settlementOracle = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[2]!.address;
+  const settlementAttestation = deriveClaimAttestationPda({
+    claimCase: claim.address,
+    oracle: settlementOracle,
+  }).toBase58();
   const recentBlockhash = "11111111111111111111111111111111";
 
   const settleClaim = buildSettleClaimCaseTx({
@@ -191,28 +249,30 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
     capitalClassAddress: obligation.capitalClass ?? null,
     allocationPositionAddress: obligation.allocationPosition ?? null,
     poolAssetMint: fundingLine.assetMint,
+    settlementOracleAddress: settlementOracle,
     memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
   });
   assertAccountCount("settle_claim_case", settleClaim.instructions[0]!.keys.length);
   assert.equal(
-    settleClaim.instructions[0]!.keys[3]!.pubkey.toBase58(),
+    settleClaim.instructions[0]!.keys[4]!.pubkey.toBase58(),
     deriveReserveAssetRailPda({
       reserveDomain: claim.reserveDomain,
       assetMint: fundingLine.assetMint,
     }).toBase58(),
   );
+  assert.equal(settleClaim.instructions[0]!.keys[15]!.pubkey.toBase58(), settlementAttestation);
   assert.equal(
-    settleClaim.instructions[0]!.keys[15]!.pubkey.toBase58(),
+    settleClaim.instructions[0]!.keys[17]!.pubkey.toBase58(),
     deriveProtocolFeeVaultPda({
       reserveDomain: claim.reserveDomain,
       assetMint: fundingLine.assetMint,
     }).toBase58(),
   );
-  assert.equal(settleClaim.instructions[0]!.keys[19]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(settleClaim.instructions[0]!.keys[21]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(settleClaim.instructions[0]!.keys[22]!.pubkey.toBase58(), recipientTokenAccount);
+  assert.equal(settleClaim.instructions[0]!.keys[21]!.pubkey.toBase58(), claim.memberPosition);
+  assert.equal(settleClaim.instructions[0]!.keys[23]!.pubkey.toBase58(), vaultTokenAccount);
+  assert.equal(settleClaim.instructions[0]!.keys[24]!.pubkey.toBase58(), recipientTokenAccount);
 
   const settleObligation = buildSettleObligationTx({
     authority: DEVNET_PROTOCOL_FIXTURE_STATE.wallets[0]!.address,
@@ -229,21 +289,23 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
     capitalClassAddress: obligation.capitalClass ?? null,
     allocationPositionAddress: obligation.allocationPosition ?? null,
     poolAssetMint: fundingLine.assetMint,
+    settlementOracleAddress: settlementOracle,
     memberPositionAddress: claim.memberPosition,
     vaultTokenAccountAddress: vaultTokenAccount,
     recipientTokenAccountAddress: recipientTokenAccount,
   });
   assertAccountCount("settle_obligation", settleObligation.instructions[0]!.keys.length);
   assert.equal(
-    settleObligation.instructions[0]!.keys[3]!.pubkey.toBase58(),
+    settleObligation.instructions[0]!.keys[4]!.pubkey.toBase58(),
     deriveReserveAssetRailPda({
       reserveDomain: obligation.reserveDomain,
       assetMint: obligation.assetMint,
     }).toBase58(),
   );
-  assert.equal(settleObligation.instructions[0]!.keys[15]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(settleObligation.instructions[0]!.keys[17]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(settleObligation.instructions[0]!.keys[18]!.pubkey.toBase58(), recipientTokenAccount);
+  assert.equal(settleObligation.instructions[0]!.keys[16]!.pubkey.toBase58(), settlementAttestation);
+  assert.equal(settleObligation.instructions[0]!.keys[17]!.pubkey.toBase58(), claim.memberPosition);
+  assert.equal(settleObligation.instructions[0]!.keys[19]!.pubkey.toBase58(), vaultTokenAccount);
+  assert.equal(settleObligation.instructions[0]!.keys[20]!.pubkey.toBase58(), recipientTokenAccount);
 
   const payoutAssetMint = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[2]!.address;
   const payoutFundingLine = DEVNET_PROTOCOL_FIXTURE_STATE.wallets[3]!.address;
@@ -262,38 +324,40 @@ test("[CSO-2026-04-29] settlement builders preserve fee and outflow account slot
     claimCreditAmount: 1n,
     payoutAmount: 1n,
     policySeriesAddress: claim.policySeries ?? null,
+    settlementOracleAddress: settlementOracle,
   });
   assertAccountCount("settle_claim_case_selected_asset", selectedAssetSettlement.instructions[0]!.keys.length);
   assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[3]!.pubkey.toBase58(),
+    selectedAssetSettlement.instructions[0]!.keys[4]!.pubkey.toBase58(),
     deriveReserveAssetRailPda({
       reserveDomain: claim.reserveDomain,
       assetMint: fundingLine.assetMint,
     }).toBase58(),
   );
   assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[4]!.pubkey.toBase58(),
+    selectedAssetSettlement.instructions[0]!.keys[5]!.pubkey.toBase58(),
     deriveReserveAssetRailPda({
       reserveDomain: claim.reserveDomain,
       assetMint: payoutAssetMint,
     }).toBase58(),
   );
   assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[5]!.pubkey.toBase58(),
+    selectedAssetSettlement.instructions[0]!.keys[6]!.pubkey.toBase58(),
     deriveDomainAssetVaultPda({
       reserveDomain: claim.reserveDomain,
       assetMint: payoutAssetMint,
     }).toBase58(),
   );
   assert.equal(
-    selectedAssetSettlement.instructions[0]!.keys[6]!.pubkey.toBase58(),
+    selectedAssetSettlement.instructions[0]!.keys[7]!.pubkey.toBase58(),
     deriveDomainAssetLedgerPda({
       reserveDomain: claim.reserveDomain,
       assetMint: payoutAssetMint,
     }).toBase58(),
   );
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[11]!.pubkey.toBase58(), claim.address);
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[12]!.pubkey.toBase58(), claim.memberPosition);
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[15]!.pubkey.toBase58(), vaultTokenAccount);
-  assert.equal(selectedAssetSettlement.instructions[0]!.keys[16]!.pubkey.toBase58(), recipientTokenAccount);
+  assert.equal(selectedAssetSettlement.instructions[0]!.keys[12]!.pubkey.toBase58(), claim.address);
+  assert.equal(selectedAssetSettlement.instructions[0]!.keys[13]!.pubkey.toBase58(), settlementAttestation);
+  assert.equal(selectedAssetSettlement.instructions[0]!.keys[14]!.pubkey.toBase58(), claim.memberPosition);
+  assert.equal(selectedAssetSettlement.instructions[0]!.keys[17]!.pubkey.toBase58(), vaultTokenAccount);
+  assert.equal(selectedAssetSettlement.instructions[0]!.keys[18]!.pubkey.toBase58(), recipientTokenAccount);
 });

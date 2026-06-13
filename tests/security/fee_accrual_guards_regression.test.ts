@@ -46,6 +46,26 @@ test("[CSO-2026-04-29] fee-accrual handlers removed missing-vault compatibility 
   assert.doesNotMatch(redemptionBody, /class_fee_bps\s*==\s*0/);
 });
 
+test("[MAINNET-AUDIT-2026-06-12] money-moving inflow and LP paths require open reserve-domain rails", () => {
+  assert.match(extractInstructionBody("fund_sponsor_budget"), /require_reserve_domain_rails_open\(/);
+  assert.match(extractInstructionBody("record_premium_payment"), /require_reserve_domain_rails_open\(/);
+  assert.match(extractInstructionBody("deposit_into_capital_class"), /require_reserve_domain_rails_open\(/);
+  assert.match(extractInstructionBody("process_redemption_queue"), /require_reserve_domain_rails_open\(/);
+});
+
+test("[MAINNET-AUDIT-2026-06-12] LP deposit rejects inactive or subscription-paused pool before transfer", () => {
+  const body = extractInstructionBody("deposit_into_capital_class");
+  const poolActiveIndex = body.indexOf("require_liquidity_pool_active");
+  const poolPauseIndex = body.indexOf("PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS");
+  const transferIndex = body.indexOf("transfer_to_domain_vault");
+
+  assert.notEqual(poolActiveIndex, -1);
+  assert.notEqual(poolPauseIndex, -1);
+  assert.notEqual(transferIndex, -1);
+  assert.ok(poolActiveIndex < transferIndex, "pool active guard must run before LP deposit transfer");
+  assert.ok(poolPauseIndex < transferIndex, "pool subscription pause guard must run before LP deposit transfer");
+});
+
 test("[CSO-2026-05-04] fee accrual leaves reserve ledgers net of fees", () => {
   const premiumBody = extractInstructionBody("record_premium_payment");
   const depositBody = extractInstructionBody("deposit_into_capital_class");
@@ -87,7 +107,7 @@ test("[CSO-2026-04-29] fee-accrual builders derive canonical fee-vault PDAs", ()
   });
   assertAccountCount("record_premium_payment", recordPremium.instructions[0]!.keys.length);
   assert.equal(
-    recordPremium.instructions[0]!.keys[9]!.pubkey.toBase58(),
+    recordPremium.instructions[0]!.keys[10]!.pubkey.toBase58(),
     deriveProtocolFeeVaultPda({
       reserveDomain: plan.reserveDomain,
       assetMint: fundingLine.assetMint,
@@ -108,7 +128,7 @@ test("[CSO-2026-04-29] fee-accrual builders derive canonical fee-vault PDAs", ()
   });
   assertAccountCount("deposit_into_capital_class", deposit.instructions[0]!.keys.length);
   assert.equal(
-    deposit.instructions[0]!.keys[8]!.pubkey.toBase58(),
+    deposit.instructions[0]!.keys[9]!.pubkey.toBase58(),
     derivePoolTreasuryVaultPda({
       liquidityPool: pool.address,
       assetMint: pool.depositAssetMint,
@@ -129,12 +149,12 @@ test("[CSO-2026-04-29] fee-accrual builders derive canonical fee-vault PDAs", ()
   });
   assertAccountCount("process_redemption_queue", redemption.instructions[0]!.keys.length);
   assert.equal(
-    redemption.instructions[0]!.keys[8]!.pubkey.toBase58(),
+    redemption.instructions[0]!.keys[9]!.pubkey.toBase58(),
     derivePoolTreasuryVaultPda({
       liquidityPool: pool.address,
       assetMint: pool.depositAssetMint,
     }).toBase58(),
   );
-  assert.equal(redemption.instructions[0]!.keys[10]!.pubkey.toBase58(), pool.address);
-  assert.equal(redemption.instructions[0]!.keys[11]!.pubkey.toBase58(), recipient);
+  assert.equal(redemption.instructions[0]!.keys[11]!.pubkey.toBase58(), pool.address);
+  assert.equal(redemption.instructions[0]!.keys[12]!.pubkey.toBase58(), recipient);
 });

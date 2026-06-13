@@ -26,6 +26,13 @@ pub(crate) fn mark_impairment(
     )?;
 
     let amount = args.amount;
+    require_impairment_capacity(
+        amount,
+        &ctx.accounts.funding_line,
+        &ctx.accounts.funding_line_ledger,
+        ctx.accounts.allocation_position.as_deref(),
+        ctx.accounts.obligation.as_deref(),
+    )?;
     book_impairment(&mut ctx.accounts.domain_asset_ledger.sheet, amount)?;
     book_impairment(&mut ctx.accounts.plan_reserve_ledger.sheet, amount)?;
     book_impairment(&mut ctx.accounts.funding_line_ledger.sheet, amount)?;
@@ -71,6 +78,42 @@ pub(crate) fn mark_impairment(
     });
 
     Ok(())
+}
+
+fn require_impairment_capacity(
+    amount: u64,
+    funding_line: &FundingLine,
+    funding_line_ledger: &FundingLineLedger,
+    allocation_position: Option<&Account<AllocationPosition>>,
+    obligation: Option<&Account<Obligation>>,
+) -> Result<()> {
+    if let Some(obligation) = obligation {
+        let remaining_obligation_exposure = obligation
+            .outstanding_amount
+            .saturating_sub(obligation.impaired_amount);
+        require!(
+            amount <= remaining_obligation_exposure,
+            OmegaXProtocolError::AmountExceedsOutstandingObligation
+        );
+        return Ok(());
+    }
+
+    if let Some(position) = allocation_position {
+        let remaining_allocation_exposure = position
+            .allocated_amount
+            .saturating_sub(position.impaired_amount);
+        require!(
+            amount <= remaining_allocation_exposure,
+            OmegaXProtocolError::InsufficientFreeAllocationCapacity
+        );
+        return Ok(());
+    }
+
+    require!(
+        funding_line.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    require_free_reserve_capacity(&funding_line_ledger.sheet, amount)
 }
 
 #[derive(Accounts)]

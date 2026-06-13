@@ -378,16 +378,14 @@ const networkSchoolAcuteAssistAllocationAddresses = Object.fromEntries(
   ]),
 ) as Record<string, string>;
 const networkSchoolAcuteAssistPremiumFundingBySku = {
-  lite: 200n,
   core: 1_000n,
-  plus: 1_260n,
-  familyCore: 340n,
+  longTermer: 380n,
+  familyGuarded: 188n,
 } as const satisfies Record<NetworkSchoolAcuteAssistSkuKey, bigint>;
 const networkSchoolAcuteAssistLiquidityFundingBySku = {
-  lite: 750n,
-  core: 2_000n,
-  plus: 2_000n,
-  familyCore: 1_250n,
+  core: 2_500n,
+  longTermer: 1_000n,
+  familyGuarded: 1_500n,
 } as const satisfies Record<NetworkSchoolAcuteAssistSkuKey, bigint>;
 const networkSchoolAcuteAssistTotalPremiumFunding = Object.values(networkSchoolAcuteAssistPremiumFundingBySku)
   .reduce((sum, value) => sum + value, 0n);

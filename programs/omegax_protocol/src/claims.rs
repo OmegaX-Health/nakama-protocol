@@ -175,6 +175,10 @@ pub(crate) fn settle_claim_case(
         &ctx.accounts.protocol_governance,
         &ctx.accounts.health_plan,
     )?;
+    require_reserve_domain_rails_open(
+        &ctx.accounts.reserve_domain,
+        ctx.accounts.health_plan.reserve_domain,
+    )?;
     require_direct_claim_case_settlement(&ctx.accounts.claim_case)?;
     crate::reserve_waterfall::require_reserve_asset_rail_payout_enabled(
         &ctx.accounts.reserve_asset_rail,
@@ -192,6 +196,17 @@ pub(crate) fn settle_claim_case(
         &ctx.accounts.claim_case,
         ctx.accounts.funding_line.key(),
         ctx.accounts.funding_line.asset_mint,
+    )?;
+    require!(
+        ctx.accounts.funding_line.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+        OmegaXProtocolError::FundingLineTypeMismatch
+    );
+    require_claim_settlement_attestation(
+        &ctx.accounts.settlement_attestation,
+        &ctx.accounts.claim_case,
+        ctx.accounts.claim_case.key(),
+        ctx.accounts.health_plan.key(),
+        ZERO_PUBKEY,
     )?;
 
     // PT-2026-04-27-01/02 fix: resolve the SPL recipient before mutating
@@ -268,6 +283,13 @@ pub(crate) fn settle_claim_case(
                 attestation.evidence_ref_hash == ctx.accounts.claim_case.evidence_ref_hash,
                 OmegaXProtocolError::ClaimEvidenceMismatch
             );
+            require_claim_settlement_attestation(
+                attestation,
+                &ctx.accounts.claim_case,
+                ctx.accounts.claim_case.key(),
+                ctx.accounts.health_plan.key(),
+                ZERO_PUBKEY,
+            )?;
             require_keys_eq!(
                 vault.asset_mint,
                 asset_mint_key,
@@ -392,15 +414,12 @@ pub(crate) fn settle_claim_case(
     Ok(())
 }
 
-pub(crate) fn require_oracle_fee_accounts_canonical(
-    vault: &Account<PoolOracleFeeVault>,
+pub(crate) fn require_pool_oracle_policy_canonical(
     policy: &Account<PoolOraclePolicy>,
-    attestation: &Account<ClaimAttestation>,
-    claim_case: Pubkey,
-    asset_mint: Pubkey,
+    liquidity_pool: Pubkey,
 ) -> Result<()> {
     let (expected_policy, expected_policy_bump) = Pubkey::find_program_address(
-        &[SEED_POOL_ORACLE_POLICY, policy.liquidity_pool.as_ref()],
+        &[SEED_POOL_ORACLE_POLICY, liquidity_pool.as_ref()],
         &crate::ID,
     );
     require_keys_eq!(
@@ -412,6 +431,22 @@ pub(crate) fn require_oracle_fee_accounts_canonical(
         policy.bump == expected_policy_bump,
         OmegaXProtocolError::PoolOracleApprovalRequired
     );
+    require_keys_eq!(
+        policy.liquidity_pool,
+        liquidity_pool,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    Ok(())
+}
+
+pub(crate) fn require_oracle_fee_accounts_canonical(
+    vault: &Account<PoolOracleFeeVault>,
+    policy: &Account<PoolOraclePolicy>,
+    attestation: &Account<ClaimAttestation>,
+    claim_case: Pubkey,
+    asset_mint: Pubkey,
+) -> Result<()> {
+    require_pool_oracle_policy_canonical(policy, policy.liquidity_pool)?;
 
     let (expected_attestation, expected_attestation_bump) = Pubkey::find_program_address(
         &[
@@ -453,6 +488,81 @@ pub(crate) fn require_oracle_fee_accounts_canonical(
     Ok(())
 }
 
+pub(crate) fn require_claim_settlement_attestation(
+    attestation: &Account<ClaimAttestation>,
+    claim_case: &ClaimCase,
+    claim_case_key: Pubkey,
+    health_plan_key: Pubkey,
+    expected_allocation_position: Pubkey,
+) -> Result<()> {
+    require!(
+        attestation.decision == CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE,
+        OmegaXProtocolError::ClaimAttestationMustSupportApproval
+    );
+    let (expected_attestation, expected_attestation_bump) = Pubkey::find_program_address(
+        &[
+            SEED_CLAIM_ATTESTATION,
+            claim_case_key.as_ref(),
+            attestation.oracle.as_ref(),
+        ],
+        &crate::ID,
+    );
+    require_keys_eq!(
+        attestation.key(),
+        expected_attestation,
+        OmegaXProtocolError::Unauthorized
+    );
+    require!(
+        attestation.bump == expected_attestation_bump,
+        OmegaXProtocolError::Unauthorized
+    );
+    require_keys_eq!(
+        attestation.claim_case,
+        claim_case_key,
+        OmegaXProtocolError::Unauthorized
+    );
+    require_keys_eq!(
+        attestation.health_plan,
+        health_plan_key,
+        OmegaXProtocolError::HealthPlanMismatch
+    );
+    require_keys_eq!(
+        attestation.policy_series,
+        claim_case.policy_series,
+        OmegaXProtocolError::PolicySeriesMismatch
+    );
+    require!(
+        attestation.evidence_ref_hash == claim_case.evidence_ref_hash
+            && attestation.attestation_ref_hash == claim_case.evidence_ref_hash,
+        OmegaXProtocolError::ClaimEvidenceMismatch
+    );
+
+    if expected_allocation_position == ZERO_PUBKEY {
+        require_keys_eq!(
+            attestation.liquidity_pool,
+            ZERO_PUBKEY,
+            OmegaXProtocolError::LiquidityPoolMismatch
+        );
+        require_keys_eq!(
+            attestation.allocation_position,
+            ZERO_PUBKEY,
+            OmegaXProtocolError::AllocationPositionMismatch
+        );
+        return Ok(());
+    }
+
+    require!(
+        attestation.liquidity_pool != ZERO_PUBKEY,
+        OmegaXProtocolError::LiquidityPoolMismatch
+    );
+    require_keys_eq!(
+        attestation.allocation_position,
+        expected_allocation_position,
+        OmegaXProtocolError::AllocationPositionMismatch
+    );
+    Ok(())
+}
+
 pub(crate) fn settle_claim_case_selected_asset(
     ctx: Context<SettleClaimCaseSelectedAsset>,
     args: SettleClaimCaseSelectedAssetArgs,
@@ -462,6 +572,10 @@ pub(crate) fn settle_claim_case_selected_asset(
         &ctx.accounts.authority.key(),
         &ctx.accounts.protocol_governance,
         &ctx.accounts.health_plan,
+    )?;
+    require_reserve_domain_rails_open(
+        &ctx.accounts.reserve_domain,
+        ctx.accounts.health_plan.reserve_domain,
     )?;
     require_direct_claim_case_settlement(&ctx.accounts.claim_case)?;
     require_positive_amount(args.claim_credit_amount)?;
@@ -488,6 +602,17 @@ pub(crate) fn settle_claim_case_selected_asset(
         ctx.accounts.payout_funding_line.status == FUNDING_LINE_STATUS_OPEN,
         OmegaXProtocolError::FundingLineMismatch
     );
+    require!(
+        ctx.accounts.payout_funding_line.line_type != FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION,
+        OmegaXProtocolError::FundingLineTypeMismatch
+    );
+    require_claim_settlement_attestation(
+        &ctx.accounts.settlement_attestation,
+        &ctx.accounts.claim_case,
+        ctx.accounts.claim_case.key(),
+        ctx.accounts.health_plan.key(),
+        ZERO_PUBKEY,
+    )?;
     require_keys_neq!(
         ctx.accounts.claim_case.asset_mint,
         ctx.accounts.payout_funding_line.asset_mint,
@@ -1065,6 +1190,8 @@ pub struct SettleClaimCase<'info> {
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    pub reserve_domain: Box<Account<'info, ReserveDomain>>,
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
         bump = reserve_asset_rail.bump,
@@ -1092,6 +1219,8 @@ pub struct SettleClaimCase<'info> {
     pub allocation_ledger: Option<Box<Account<'info, AllocationLedger>>>,
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Box<Account<'info, ClaimCase>>,
+    #[account(seeds = [SEED_CLAIM_ATTESTATION, claim_case.key().as_ref(), settlement_attestation.oracle.as_ref()], bump = settlement_attestation.bump)]
+    pub settlement_attestation: Box<Account<'info, ClaimAttestation>>,
     #[account(mut)]
     pub obligation: Option<Box<Account<'info, Obligation>>>,
     #[account(
@@ -1145,6 +1274,8 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    pub reserve_domain: Box<Account<'info, ReserveDomain>>,
     #[account(
         seeds = [SEED_RESERVE_ASSET_RAIL, health_plan.reserve_domain.as_ref(), claim_case.asset_mint.as_ref()],
         bump = claim_asset_rail.bump,
@@ -1201,6 +1332,8 @@ pub struct SettleClaimCaseSelectedAsset<'info> {
     pub payout_series_reserve_ledger: Option<Box<Account<'info, SeriesReserveLedger>>>,
     #[account(mut, seeds = [SEED_CLAIM_CASE, health_plan.key().as_ref(), claim_case.claim_id.as_bytes()], bump = claim_case.bump)]
     pub claim_case: Box<Account<'info, ClaimCase>>,
+    #[account(seeds = [SEED_CLAIM_ATTESTATION, claim_case.key().as_ref(), settlement_attestation.oracle.as_ref()], bump = settlement_attestation.bump)]
+    pub settlement_attestation: Box<Account<'info, ClaimAttestation>>,
     #[account(
         constraint = member_position.key() == claim_case.member_position @ OmegaXProtocolError::Unauthorized,
     )]

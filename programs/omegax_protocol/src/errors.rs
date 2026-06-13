@@ -18,6 +18,8 @@ pub enum OmegaXProtocolError {
     ProtocolEmergencyPaused,
     #[msg("Reserve domain is inactive")]
     ReserveDomainInactive,
+    #[msg("Reserve domain rails are paused")]
+    ReserveDomainRailsPaused,
     #[msg("Domain asset vault token account is missing or invalid")]
     VaultTokenAccountInvalid,
     #[msg("Health plan is paused")]
@@ -148,6 +150,8 @@ pub enum OmegaXProtocolError {
     OracleProfileUnclaimed,
     #[msg("Claim attestation decision is not a recognized value")]
     InvalidClaimAttestationDecision,
+    #[msg("Claim settlement requires an approval-supporting attestation")]
+    ClaimAttestationMustSupportApproval,
     #[msg("Claim attestation must reference a registered schema key hash")]
     ClaimAttestationSchemaRequired,
     #[msg("Oracle profile does not advertise support for the selected claim-attestation schema")]

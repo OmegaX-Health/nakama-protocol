@@ -3714,6 +3714,40 @@
           }
         },
         {
+          "name": "reserve_domain",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve_domain.domain_id",
+                "account": "ReserveDomain"
+              }
+            ]
+          }
+        },
+        {
           "name": "domain_asset_vault",
           "writable": true,
           "signer": false,
@@ -4122,6 +4156,40 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve_domain",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve_domain.domain_id",
+                "account": "ReserveDomain"
               }
             ]
           }
@@ -6420,6 +6488,40 @@
           }
         },
         {
+          "name": "reserve_domain",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve_domain.domain_id",
+                "account": "ReserveDomain"
+              }
+            ]
+          }
+        },
+        {
           "name": "domain_asset_vault",
           "writable": true,
           "signer": false,
@@ -6930,6 +7032,40 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve_domain",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve_domain.domain_id",
+                "account": "ReserveDomain"
               }
             ]
           }
@@ -9187,6 +9323,40 @@
           }
         },
         {
+          "name": "reserve_domain",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve_domain.domain_id",
+                "account": "ReserveDomain"
+              }
+            ]
+          }
+        },
+        {
           "name": "reserve_asset_rail",
           "writable": false,
           "signer": false,
@@ -9497,6 +9667,47 @@
           }
         },
         {
+          "name": "settlement_attestation",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  97,
+                  116,
+                  116,
+                  101,
+                  115,
+                  116,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "claim_case"
+              },
+              {
+                "kind": "account",
+                "path": "settlement_attestation.oracle",
+                "account": "ClaimAttestation"
+              }
+            ]
+          }
+        },
+        {
           "name": "obligation",
           "writable": true,
           "signer": false,
@@ -9690,6 +9901,40 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve_domain",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve_domain.domain_id",
+                "account": "ReserveDomain"
               }
             ]
           }
@@ -10030,6 +10275,47 @@
           }
         },
         {
+          "name": "settlement_attestation",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  97,
+                  116,
+                  116,
+                  101,
+                  115,
+                  116,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "claim_case"
+              },
+              {
+                "kind": "account",
+                "path": "settlement_attestation.oracle",
+                "account": "ClaimAttestation"
+              }
+            ]
+          }
+        },
+        {
           "name": "member_position",
           "writable": false,
           "signer": false,
@@ -10162,6 +10448,40 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
+              }
+            ]
+          }
+        },
+        {
+          "name": "reserve_domain",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  114,
+                  101,
+                  115,
+                  101,
+                  114,
+                  118,
+                  101,
+                  95,
+                  100,
+                  111,
+                  109,
+                  97,
+                  105,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "reserve_domain.domain_id",
+                "account": "ReserveDomain"
               }
             ]
           }
@@ -10509,6 +10829,12 @@
               }
             ]
           }
+        },
+        {
+          "name": "settlement_attestation",
+          "writable": false,
+          "signer": false,
+          "optional": true
         },
         {
           "name": "member_position",
@@ -10944,6 +11270,110 @@
                 "kind": "account",
                 "path": "health_plan.health_plan_id",
                 "account": "HealthPlan"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_liquidity_pool_controls",
+      "discriminator": [
+        159,
+        35,
+        237,
+        173,
+        121,
+        42,
+        157,
+        59
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "UpdateLiquidityPoolControlsArgs"
+            }
+          }
+        }
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": false,
+          "signer": true,
+          "optional": false
+        },
+        {
+          "name": "protocol_governance",
+          "writable": false,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  95,
+                  103,
+                  111,
+                  118,
+                  101,
+                  114,
+                  110,
+                  97,
+                  110,
+                  99,
+                  101
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "liquidity_pool",
+          "writable": true,
+          "signer": false,
+          "optional": false,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  105,
+                  113,
+                  117,
+                  105,
+                  100,
+                  105,
+                  116,
+                  121,
+                  95,
+                  112,
+                  111,
+                  111,
+                  108
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "liquidity_pool.reserve_domain",
+                "account": "LiquidityPool"
+              },
+              {
+                "kind": "account",
+                "path": "liquidity_pool.pool_id",
+                "account": "LiquidityPool"
               }
             ]
           }

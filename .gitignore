@@ -55,6 +55,9 @@ frontend/apphosting.*.local.yaml
 tmp/
 *.log
 strategy/
+/AGENTS.local.md
+/CLAUDE.local.md
+/ns-live-app-*.png
 
 # Private internal research data
 /internal-db/
@@ -66,6 +69,7 @@ strategy/
 .vscode
 .claude/
 .playwright-cli/
+.playwright-mcp/
 .gstack/
 .superstack/
 .certora_internal/

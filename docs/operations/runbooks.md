@@ -36,7 +36,7 @@ These environment-variable expectations are enforced by the underlying scripts, 
 - `OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1` — break-glass override for incident recovery; emits a loud stderr warning and **must** be recorded in the [release-candidate evidence template](./release-candidate-evidence-template.md) §8.
 - `NEXT_PUBLIC_GOVERNANCE_REALM`, `NEXT_PUBLIC_GOVERNANCE_CONFIG`, `NEXT_PUBLIC_GOVERNANCE_TOKEN_MINT` — frontend governance wiring; loaded from `frontend/.env.local`.
 
-The `scripts/CLAUDE.md` file is explicit that bootstrap, deploy, and devnet governance scripts may mutate on-chain state — never run them unless the operator/contributor explicitly intends to.
+The `scripts/AGENTS.md` file is explicit that bootstrap, deploy, and devnet governance scripts may mutate on-chain state - never run them unless the operator/contributor explicitly intends to.
 
 ## Generated artifacts
 
@@ -54,7 +54,7 @@ CI runs `idl:freshness:check` and `protocol:contract:check` automatically (see `
 ## Public-safety guardrails
 
 - Never commit secrets, private keys, deployment-only env files, or local validator artifacts to this repo. The `npm run public:hygiene:check` gate looks for the most common patterns.
-- The Genesis vanity wallet `oxhocTdPyENqy9RS13iaq2upoNAovMJHu9PMaBxrK8h` is public-safe; the corresponding private keypair is **not**. See `CLAUDE.md` Genesis Protect Launch Keys for the env-var contract.
+- The Genesis vanity wallet `oxhocTdPyENqy9RS13iaq2upoNAovMJHu9PMaBxrK8h` is public-safe; the corresponding private keypair is **not**. See `AGENTS.md` Genesis Protect Launch Keys for the env-var contract.
 - `idl/`, `shared/protocol_contract.json`, and `frontend/lib/generated/` are generated artifacts — do not hand-edit unless a documented maintenance workflow explicitly requires it.
 
 ## Related references

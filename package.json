@@ -98,6 +98,7 @@
   },
   "packageManager": "npm@10.9.2",
   "overrides": {
+    "axios": "1.17.0",
     "uuid": "14.0.0"
   }
 }

@@ -14,6 +14,10 @@ pub(crate) fn fund_sponsor_budget(
         &ctx.accounts.protocol_governance,
         &ctx.accounts.health_plan,
     )?;
+    require_reserve_domain_rails_open(
+        &ctx.accounts.reserve_domain,
+        ctx.accounts.health_plan.reserve_domain,
+    )?;
     require_positive_amount(args.amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_SPONSOR_BUDGET,
@@ -63,6 +67,10 @@ pub(crate) fn record_premium_payment(
         &ctx.accounts.authority.key(),
         &ctx.accounts.protocol_governance,
         &ctx.accounts.health_plan,
+    )?;
+    require_reserve_domain_rails_open(
+        &ctx.accounts.reserve_domain,
+        ctx.accounts.health_plan.reserve_domain,
     )?;
     require_positive_amount(args.amount)?;
     require!(
@@ -155,6 +163,8 @@ pub struct FundSponsorBudget<'info> {
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    pub reserve_domain: Box<Account<'info, ReserveDomain>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]
@@ -181,6 +191,8 @@ pub struct RecordPremiumPayment<'info> {
     pub protocol_governance: Box<Account<'info, ProtocolGovernance>>,
     #[account(seeds = [SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id.as_bytes()], bump = health_plan.bump)]
     pub health_plan: Box<Account<'info, HealthPlan>>,
+    #[account(seeds = [SEED_RESERVE_DOMAIN, reserve_domain.domain_id.as_bytes()], bump = reserve_domain.bump)]
+    pub reserve_domain: Box<Account<'info, ReserveDomain>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_vault.bump)]
     pub domain_asset_vault: Box<Account<'info, DomainAssetVault>>,
     #[account(mut, seeds = [SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()], bump = domain_asset_ledger.bump)]

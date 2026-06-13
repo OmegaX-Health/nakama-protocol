@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { PublicKey } from "@solana/web3.js";
 
 import fixturesModule from "../frontend/lib/devnet-fixtures.ts";
 import protocolModule from "../frontend/lib/protocol.ts";
@@ -259,6 +260,7 @@ test("member enrollment builder marks invite authority as a signer", () => {
   const plan = DEVNET_PROTOCOL_FIXTURE_STATE.healthPlans[0]!;
   const memberWallet = DEVNET_PROTOCOL_FIXTURE_STATE.wallets.find((wallet) => wallet.role === "member")!.address;
   const inviteAuthority = plan.membershipInviteAuthority!;
+  const inviteAnchorRef = new PublicKey(Uint8Array.from({ length: 32 }, () => 0x22));
   const tx = buildOpenMemberPositionTx({
     wallet: memberWallet,
     healthPlanAddress: plan.address,
@@ -277,4 +279,12 @@ test("member enrollment builder marks invite authority as a signer", () => {
   const keys = tx.instructions[0]!.keys;
   assert.equal(keys.find((key) => key.pubkey.toBase58() === memberWallet)?.isSigner, true);
   assert.equal(keys.find((key) => key.pubkey.toBase58() === inviteAuthority)?.isSigner, true);
+  assert.equal(
+    keys[5]!.pubkey.toBase58(),
+    deriveMembershipAnchorSeatPda({
+      healthPlan: plan.address,
+      anchorRef: inviteAnchorRef,
+    }).toBase58(),
+  );
+  assert.equal(keys[5]!.isWritable, true);
 });
