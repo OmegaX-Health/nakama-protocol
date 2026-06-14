@@ -43,9 +43,9 @@ reserve snapshot, waiting periods, exclusions, and quote expiry are locked.
 
 | Role | Who | What they can do | What they cannot do |
 |---|---|---|---|
-| **Member** | Enrolled wallet (MemberPosition) | Open claim case, submit evidence via oracle portal, authorize payout recipient, check claim status | Adjudicate their own claim, mutate evidence after attestation |
-| **Claims Operator** | OmegaX ops team (claims_operator key) | Attach evidence hash, adjudicate, reserve obligation, settle claim | Move funds outside claim-linked liabilities, override oracle attestation |
-| **Oracle Authority** | Designated oracle profile | Attest claim case against verified evidence schema | Adjudicate or settle claim unilaterally |
+| **Member** | Activated claimant wallet | Open claim case, submit evidence via oracle portal, authorize payout recipient, check claim status | Adjudicate their own claim or mutate base-program state after settlement |
+| **Claims Operator** | OmegaX ops team (claims_operator key) | Adjudicate, reserve obligation, settle claim, open claim on behalf of incapacitated claimant | Move funds outside claim-linked liabilities |
+| **Oracle Authority** | Offchain/adjunct review signer | Support evidence review and decision feeds outside the base protocol | Adjudicate or settle claim unilaterally |
 | **Plan Admin** | OmegaX admin key (plan_admin) | Pause plan, set operational controls, open claim on behalf of incapacitated member | Rewrite approved or settled liabilities |
 | **LP / Sponsor** | Capital providers | Monitor reserve exposure, fund FundingLine | Intervene in individual claim decisions |
 | **TEE Reviewer** | MagicBlock private review path (Phase 0 demo) | Inspect private evidence in TEE, emit hash-bounded review artifact | Access raw PHI outside TEE, adjudicate or settle claim |
@@ -78,7 +78,7 @@ Failure at any of these gates results in an immediate denial without entering th
 
 | Check | Pass condition | Failure action |
 |---|---|---|
-| Active MemberPosition exists | `member_position.wallet == claimant` and position is in an active state | Deny: no valid policy |
+| Active coverage exists | Offchain activation record or coverage certificate names the claimant wallet and active window | Deny: no valid policy |
 | Policy is within coverage window | Incident date falls within the 7-day (Event 7) or 30-day (Travel 30) coverage period from activation | Deny: outside coverage window |
 | Premium payment confirmed | `record_premium_payment` instruction has been executed for this member position | Deny: unpaid policy |
 | Protocol is not paused | `HealthPlan.emergency_pause == false` | Hold: system pause — re-queue when cleared |
@@ -91,13 +91,13 @@ Failure at any of these gates results in an immediate denial without entering th
 | Incident is within covered travel context | Evidence confirms care occurred outside member's home country or at covered event venue | Deny: not a covered travel context |
 | Condition is an acute emergency | Clinical summary confirms unplanned acute event (not pre-scheduled, not elective) | Deny: non-acute / elective — see Exclusion §8 |
 | Waiting period satisfied | Illness onset is not within the 7-day pre-enrollment waiting period | Deny: waiting period not satisfied |
-| Single claim per coverage period | No prior settled or approved `ClaimCase` exists for this `MemberPosition` in the same policy window | Deny: duplicate claim |
+| Single claim per coverage period | No prior settled or approved `ClaimCase` exists for this claimant and policy window | Deny: duplicate claim |
 
 ### 4.3 Member Identity Verification
 
 | Check | Pass condition | Failure action |
 |---|---|---|
-| Claimant wallet matches MemberPosition | `args.claimant == member_position.wallet` | Reject at intake (PT-04 constraint — protocol-enforced) |
+| Claimant wallet is present and authorized | `args.claimant` is nonzero, and the signer is either the claimant or the plan's `claims_operator` / `plan_admin` | Reject at intake (PT-04 constraint — protocol-enforced) |
 | Operator submission is authorized | If operator opens on behalf of member, authority is `claims_operator` or `plan_admin` | Reject at intake (protocol-enforced) |
 
 ---
@@ -105,8 +105,9 @@ Failure at any of these gates results in an immediate denial without entering th
 ## 5. Required Evidence
 
 All evidence is submitted **offchain** through the OmegaX Health oracle portal. The operator
-attaches a SHA-256 hash of the evidence packet to the `ClaimCase` via `attach_claim_evidence_ref`.
-Raw medical documents are never stored onchain or published publicly.
+computes and retains a SHA-256 hash of the evidence packet in the offchain claim manifest or adjunct
+receipt system. Raw medical documents are not stored in the base `omegax_protocol` accounts or
+published publicly; the base claim case stores only evidence and decision proof fingerprints.
 
 ### 5.1 Mandatory Documents (all claims)
 
@@ -208,7 +209,7 @@ Execution Environment (TEE) reviewer without placing raw PHI on the Solana base 
 | 5 | `record_private_review` records review hashes and status on the delegated session | Only the registered reviewer can write; binary hash must match operator registry |
 | 6 | `record_private_payment_ref` stores private payment reference hash (if applicable) | Reference hash only — payment details never onchain |
 | 7 | `commit_and_close_review_session` commits and undelegates back to Solana | Approved sessions require payment ref before commit |
-| 8 | `omegax_protocol::attest_claim_case` consumes the committed review artifact hash via normal attestation path | Onchain attestation proceeds as in standard flow |
+| 8 | Offchain consumers verify the committed review artifact before base-program adjudication | The adjunct supports the decision handoff; the base program records adjudication, reserve, and settlement |
 
 ### Boundaries (must not be crossed)
 
@@ -235,7 +236,7 @@ is required before adjudication can proceed.
 | **Date inconsistency** | Document date precedes policy activation date, or discharge date is after the current date |
 | **Location mismatch** | Care facility country does not match the location proof submitted |
 | **Document anachronism** | Invoice or doctor note bears a date that post-dates the claim submission timestamp |
-| **Duplicate evidence hash** | `evidence_ref_hash` matches a hash from a previously submitted claim (same or different member) |
+| **Duplicate evidence hash** | Offchain evidence packet hash matches a hash from a previously submitted claim (same or different member) |
 | **Policy-period overlap** | Member has another open or recently settled claim within the same coverage window |
 | **Velocity flag** | Member has submitted 2+ claims across separate policy periods within 90 days |
 | **Known exclusion keyword** | Clinical narrative contains terms triggering a mandatory exclusion review (see §8) |
@@ -313,8 +314,6 @@ the `adjudicate_claim_case` instruction and hashed as the denial reason in the a
 | Onchain state | Instruction | Economic consequence |
 |---|---|---|
 | `proposed` | `open_claim_case` | No money moved. Claim identity recorded. |
-| `evidence_attached` | `attach_claim_evidence_ref` | Evidence hash locked onchain. No money moved. |
-| `attested` | `attest_claim_case` | Oracle has signed the evidence hash. No money moved. |
 | `approved` | `adjudicate_claim_case` (approve) | Decision recorded. Tier and amount confirmed. No money moved yet. |
 | `denied` | `adjudicate_claim_case` (deny) | Denial reason hash recorded. No money moved. End state. |
 | `reserved` | `reserve_obligation` | USDC reserved on FundingLine. Encumbered reserve increases. |
@@ -401,31 +400,30 @@ These are operating targets for staffing and queue design. They are not member-f
 
 **Preferred settlement asset**: USDC (SPL token, `hWMfBLfo8EBaRTCcrWV33xaUR8gK2iTtqPoQvEMHmvu` on devnet).
 
-**Multi-asset payout rails (protocol v0.3.2+)**: `settle_claim_case` and `settle_obligation` now
-require a matching `ReserveAssetRail` for the selected payout asset. The off-chain settlement router
-or oracle service selects the asset from the approved waterfall. The Solana program enforces the
+**Same-asset payout path**: `settle_claim_case` and `settle_obligation`
+require matching domain vault, funding line, reserve ledgers, and SPL outflow
+accounts for the claim or obligation asset mint. The Solana program enforces the
 following before any value leaves custody:
 
-| Rail check | Requirement | Failure behaviour |
+| Settlement check | Requirement | Failure behaviour |
 |---|---|---|
-| Domain and mint binding | Rail must be bound to the same reserve domain and asset mint as the claim | Settlement fails |
-| Rail active | `rail.active == true` | Settlement fails |
-| Payout enabled | `rail.payout_enabled == true` | Settlement fails |
-| Oracle price freshness | Published price must be within the rail's freshness window | Asset counted as zero capacity — cannot be selected |
-| Oracle confidence | Price confidence must be ≤ `rail.max_confidence_bps` | Asset counted as zero capacity — cannot be selected |
+| Domain and mint binding | Vault, ledgers, funding line, and liability must use the same reserve domain and asset mint | Settlement fails |
+| Free reserve | Same-asset free reserve must cover the payout | Settlement fails |
+| SPL outflow accounts | Vault token account, recipient token account, and token program must be present for token outflow | Settlement fails |
 
-Approved fallback rails (where configured): PUSD, USDT, SOL, WBTC, WETH.
-The program **does not swap assets** and does not treat pending reservation custody as
-claims-paying reserve until activation/posting rules have made that true.
+Approved fallback reserves (where configured): PUSD, USDT, SOL, WBTC, WETH.
+Those assets are reserve inventory and operator-rebalancing inputs, not direct
+cross-asset claim payouts. The program **does not swap assets** and does not
+treat pending reservation custody as claims-paying reserve until
+activation/posting rules have made that true.
 
 Other settlement mechanics:
 - Payout is transferred atomically via `transfer_from_domain_vault` — the only authorized path
   money leaves the reserve domain (PT-01/PT-02 — protocol-enforced).
-- Default payout wallet: `MemberPosition.wallet`.
+- Default payout wallet: `ClaimCase.claimant`.
 - Delegated payout wallet: `ClaimCase.delegate_recipient` if set via `authorize_claim_recipient`
   before settlement. The delegate can only be set by the member, not by the operator (PT-04).
-- Protocol fee and oracle fee are carved out at settlement according to the fee vault configuration.
-- Net payout = approved amount − protocol fee − oracle fee.
+- The gross approved amount is the same as the token amount debited from the matching reserve asset.
 
 ### 11.3 Partial Settlement and Impairment
 
@@ -451,9 +449,8 @@ An external reviewer must be able to answer all of the following from onchain st
 | Question | Source |
 |---|---|
 | Who opened the claim and when? | `ClaimCase.claimant` + opening transaction signer + slot timestamp |
-| What was the policy series and coverage window? | `ClaimCase.policy_series` + `MemberPosition` |
-| What evidence was attached? | `ClaimCase.evidence_ref_hash` (immutable after first attestation) |
-| Who attested the evidence? | `ClaimAttestation` — oracle profile, attestation hash, schema hash/version |
+| What was the policy series and coverage window? | `ClaimCase.policy_series` + offchain activation/coverage record |
+| What evidence supported the decision? | Authorized offchain claim manifest or adjunct receipt |
 | Who adjudicated and what was the decision? | Adjudication transaction signer + `ClaimCase.state` + reason hash |
 | How much was approved and from which FundingLine? | `Obligation.reserved_amount` + `FundingLine` reference |
 | Was the payout recipient changed between approval and settlement? | `ClaimCase.delegate_recipient` history (recoverable from transaction logs) |
@@ -482,14 +479,13 @@ This boundary is a critical security and privacy design choice. It must not be b
 | What lives onchain | What stays offchain |
 |---|---|
 | Claim identity, state, and lifecycle | Raw medical documents (PHI) |
-| Evidence hash (SHA-256 of full packet) | Actual invoice content, diagnoses, clinical notes |
-| Decision result and reason hash | Decision rationale narrative |
+| Decision result and reason hash | Evidence packet hash, invoice content, diagnoses, clinical notes, decision rationale narrative |
 | Reserve and settlement amounts | Member identity documents |
 | Transaction signatures (full audit graph) | Operator review notes |
 | Fee vault accrual | Fraud investigation records |
 
-Any document published to a public endpoint must never contain raw PHI.
-The `evidence_ref_hash` onchain is a tamper-evident commitment to the offchain packet — not a link to the content.
+Any document published to a public endpoint must never contain raw PHI. Evidence packet hashes are
+tamper-evident commitments in the operator or adjunct review trail, not base-program account fields.
 
 ### 12.4 Third-Party Audit Path
 
@@ -497,13 +493,11 @@ An authorized third-party reviewer (for example, an LP, sponsor, or independent 
 claim integrity without access to PHI using the following steps:
 
 1. Retrieve the `ClaimCase` PDA from any Solana RPC using the claim's transaction signature.
-2. Verify `ClaimCase.evidence_ref_hash` matches the hash of the full evidence packet (provided
-   by OmegaX Health under NDA with auditor).
-3. Verify `ClaimAttestation.evidence_ref_hash` matches the same hash — confirming the oracle
-   attested to an unmodified packet.
-4. Verify the adjudication transaction signer matches the registered `claims_operator` key.
-5. Verify settlement transaction via `transfer_from_domain_vault` — net payout, fee vaults, recipient.
-6. Cross-check `FundingLine.reserved` and `domain_asset_vault.balance` deltas.
+2. Verify the offchain claim manifest or adjunct receipt hash matches the full evidence packet
+   provided by OmegaX Health under NDA with auditor.
+3. Verify the adjudication transaction signer matches the registered `claims_operator` key.
+4. Verify settlement transaction via `transfer_from_domain_vault` — net payout, fee vaults, recipient.
+5. Cross-check `FundingLine.reserved` and `domain_asset_vault.balance` deltas.
 
 All six steps can be performed without accessing any PHI.
 

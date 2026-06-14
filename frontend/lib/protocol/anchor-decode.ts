@@ -51,8 +51,14 @@ export function asAddress(value: unknown): string {
 }
 
 export function asOptionalAddress(value: unknown): string | null {
+  if (value === null || value === undefined) return null;
   const address = asAddress(value);
   return address === ZERO_PUBKEY ? null : address;
+}
+
+export function asAddressOrDefault(value: unknown, fallback = ZERO_PUBKEY): string {
+  if (value === null || value === undefined) return fallback;
+  return asAddress(value);
 }
 
 export function bigintFromAnchorValue(value: unknown): bigint {

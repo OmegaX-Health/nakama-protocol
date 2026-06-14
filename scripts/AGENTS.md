@@ -1,6 +1,6 @@
-# Protocol Scripts Agent Rules
+# Scripts
 
-Rules for protocol automation, generation, and verification scripts.
+Scoped instructions for `scripts/`.
 
 - Start with `../README.md`, `../CONTRIBUTING.md`, and `README.md` in this directory.
 - Prefer root `npm run ...` wrappers over invoking individual script files directly when a package script already exists.

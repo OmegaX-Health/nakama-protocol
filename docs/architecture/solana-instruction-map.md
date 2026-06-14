@@ -1,113 +1,81 @@
 # Solana Instruction Map
 
-This map lists the canonical public instructions after the health-capital-markets redesign.
+This map lists the current public instructions after the Quasar trimming pass.
+The authoritative facade is
+[`programs/omegax_protocol/src/lib.rs`](../../programs/omegax_protocol/src/lib.rs);
+implementation and account contexts live in the domain modules under
+`programs/omegax_protocol/src/`.
 
-All current public instructions remain present in [`programs/omegax_protocol/src/lib.rs`](../../programs/omegax_protocol/src/lib.rs). That file is the Anchor facade; implementation and account contexts live in the domain modules under `programs/omegax_protocol/src/`.
-
-## Governance and Controls
-
-| Instruction | Primary purpose |
-| --- | --- |
-| `initialize_protocol_governance` | bootstrap protocol governance state |
-| `set_protocol_emergency_pause` | protocol-wide emergency control |
-| `create_reserve_domain` | create a hard settlement or legal segregation boundary |
-| `update_reserve_domain_controls` | update domain-scoped controls |
-| `create_domain_asset_vault` | create custody and ledger state for a domain/mint pair |
-| `update_health_plan_controls` | update plan-scoped pause and control flags |
-| `update_capital_class_controls` | update class-scoped redemption and activity flags |
-| `update_allocation_caps` | change allocation caps, weights, or deallocation-only mode |
-
-## Oracle Registry and Pool Binding
+## Reserve Domains and Plans
 
 | Instruction | Primary purpose |
 | --- | --- |
-| `register_oracle` | register a first-class oracle operator profile |
-| `claim_oracle` | let the operator wallet claim and control its own profile |
-| `update_oracle_profile` | update the canonical oracle profile metadata and supported schema set |
-| `set_pool_oracle` | approve or deactivate an oracle for a specific liquidity pool |
-| `set_pool_oracle_permissions` | set pool-scoped oracle permission bits |
-| `set_pool_oracle_policy` | configure quorum, schema-verification, fee, and challenge posture for a pool |
-
-## Schema Registry
-
-| Instruction | Primary purpose |
-| --- | --- |
-| `register_outcome_schema` | register a versioned outcome schema and initialize its dependency ledger |
-| `verify_outcome_schema` | mark a schema as verified or unverified through governance authority |
-| `backfill_schema_dependency_ledger` | refresh the schema dependency ledger with the current pool-rule references |
-| `close_outcome_schema` | retire a schema and close its dependency ledger through governance authority |
-
-## Plan and Product Surface
-
-| Instruction | Primary purpose |
-| --- | --- |
-| `create_health_plan` | create the sponsor/member/liability root |
+| `create_reserve_domain` | create a hard custody or legal settlement boundary |
+| `update_reserve_domain_controls` | update domain-scoped rails, pause flags, and active status |
+| `create_domain_asset_vault` | create custody for one domain/mint pair |
+| `create_health_plan` | create the sponsor/liability/control root |
+| `update_health_plan_controls` | update plan operators, oracle authority, rails, and pause flags |
 | `create_policy_series` | create a versioned product lane under a plan |
-| `version_policy_series` | create a new series version instead of mutating live economics |
-| `open_member_position` | create a member participation record |
-| `update_member_eligibility` | update member eligibility state and delegated rights |
+| `version_policy_series` | create a successor series version instead of silently mutating live terms |
 
-## Funding, Claims, and Obligations
+## Funding and Reserve Accounting
 
 | Instruction | Primary purpose |
 | --- | --- |
-| `open_funding_line` | create a sponsor, premium, LP, backstop, or subsidy funding line |
-| `fund_sponsor_budget` | transfer sponsor budget tokens into the configured domain vault and record reserve funding |
-| `record_premium_payment` | transfer premium tokens into the configured domain vault and record premium income in the reserve kernel |
-| `configure_reserve_asset_rail` | create or update an accepted reserve asset rail with role, waterfall priority, oracle source, freshness, confidence, haircut, and exposure controls |
-| `publish_reserve_asset_rail_price` | publish governance/oracle-approved reserve asset pricing used by mixed-reserve capacity and selected-asset payout checks; confidence must fit the rail threshold |
-| `create_obligation` | create a canonical liability unit |
-| `reserve_obligation` | reserve liability against plan-side capital and optionally mirror a linked `ClaimCase` reserve balance |
-| `settle_obligation` | move an obligation into claimable, payable, settled, or canceled states and mirror linked protection-claim settlement state; settlement requires the selected payout asset's active, payout-enabled, fresh confidence-bounded `ReserveAssetRail` |
-| `release_reserve` | release reserved liability back to free capital and mirror linked protection-claim reserve state |
-| `open_claim_case` | open an explicit claim lifecycle from the enrolled member wallet or a plan claim/operator path |
-| `attach_claim_evidence_ref` | attach evidence and decision-support references |
-| `attest_claim_case` | anchor a verified-schema oracle attestation against the claim's locked evidence hash; non-LP claims require the plan oracle authority, while LP-allocation claims require pool oracle approval and `ATTEST_CLAIM` permission |
-| `adjudicate_claim_case` | approve or deny a claim case and optionally bind it to the matching `Obligation` |
-| `settle_claim_case` | settle approved same-asset claim payouts through the reserve kernel only when no linked `Obligation` exists; the claim asset must have an active, payout-enabled, fresh confidence-bounded `ReserveAssetRail`; fee carve-outs must leave a positive net payout and oracle-fee accrual must bind to the attesting `ClaimAttestation` |
-| `settle_claim_case_selected_asset` | settle an approved direct claim by crediting the claim denomination amount while paying a different selected reserve asset to the member/delegate; requires fresh confidence-bounded prices for both assets, bounded value conversion, selected payout rail enablement, and debits only the selected payout asset ledgers/vault |
-| `mark_impairment` | record impairment against the affected ledgers and optional obligation |
+| `open_funding_line` | create a sponsor budget, premium income, backstop, or subsidy funding line |
+| `fund_sponsor_budget` | transfer sponsor budget tokens into the domain vault and increase reserve ledgers |
+| `record_premium_payment` | transfer premium tokens into the domain vault and increase reserve ledgers |
+| `deposit_reserve_capital` | let a contributor sign a simple backstop deposit and update its `CapitalContribution` balance |
+| `return_reserve_capital` | return available free backstop capital to the recorded contributor without touching encumbered reserve |
+| `record_reserve_earnings` | transfer realized same-mint earnings into the domain vault with a nonzero off-chain reference hash |
 
-## Capital Surface
+`CapitalContribution` is an attribution record, not a tokenized share class. It
+lets the quote oracle or operator systems know who supplied backstop capital and
+how much has been returned, while pricing, discounts, and manual reward policy
+stay off-chain for this version.
+
+`FundingFlowRecordedEvent.reference_hash` carries the relevant off-chain proof
+fingerprint when one exists: contribution terms for reserve-capital deposits,
+return reasons for capital returns, and earnings references for realized
+reserve earnings. Sponsor-budget and premium inflows use a zero reference hash.
+
+## Obligations and Claims
 
 | Instruction | Primary purpose |
 | --- | --- |
-| `create_liquidity_pool` | create an LP-facing capital sleeve inside a reserve domain |
-| `create_capital_class` | create a class-specific investor instrument inside a pool |
-| `update_lp_position_credentialing` | grant or revoke managed LP access for restricted classes |
-| `deposit_into_capital_class` | transfer LP capital into the configured domain vault and mint or expand class exposure using on-chain LP credential state |
-| `request_redemption` | queue a class redemption request with NAV-derived asset accounting |
-| `process_redemption_queue` | settle queued redemptions using queued share/NAV accounting when curator or governance allows |
-| `create_allocation_position` | bridge a capital class into a plan funding line |
-| `allocate_capital` | allocate class capital into a funding line |
-| `deallocate_capital` | release unneeded allocated capital back to the pool |
+| `create_obligation` | create a canonical liability unit tied to a funding line |
+| `reserve_obligation` | reserve liability against free plan/funding-line capacity and mirror linked claim reserve state |
+| `settle_obligation` | settle or cancel an obligation with matching vault, ledger, funding-line, and SPL payout accounts |
+| `release_reserve` | release reserved liability back to free capacity and mirror linked claim state |
+| `open_claim_case` | open an explicit claim lifecycle for a claimant and funding line |
+| `authorize_claim_recipient` | lock a non-default payout recipient before approval or payout state exists |
+| `adjudicate_claim_case` | approve, deny, or request review while preserving claim evidence and decision fingerprints |
+| `settle_claim_case` | settle an approved unlinked same-asset claim through the reserve kernel |
+
+Raw medical/evidence packets and adjudication packages stay private and
+off-chain. The base program stores only 32-byte proof fingerprints on
+`ClaimCase`: `evidence_ref_hash` and `decision_support_hash`.
+
+## Retired From the Live Surface
+
+The trimmed live program no longer exposes protocol governance, fee vaults,
+member-position/token-gate rails, oracle registry/schema registry accounts,
+reserve-asset rail price feeds, liquidity pools, capital classes, LP positions,
+allocation positions, redemption queues, impairment handlers, or on-chain
+`ClaimAttestation` accounts.
+
+Historical docs may still describe those ideas as roadmap or design history,
+but they are not current IDL surface. Current review should follow `src/lib.rs`,
+`src/reserve_custody.rs`, `src/plans_membership.rs`,
+`src/funding_obligations/`, `src/claims.rs`, and the generated artifacts under
+`idl/`, `shared/`, and `frontend/lib/generated/`.
 
 ## Planned Reserve Productivity Surface
 
-These instructions are not part of the live IDL yet. They are the planned
-surface from
-[`ADR 0002`](../adr/0002-reserve-productivity-and-strategy-adapters.md) for
-making reserve productive without turning the claims kernel into a general DeFi
-router.
-
-| Planned instruction | Primary purpose |
-| --- | --- |
-| `register_yield_strategy` | governance-register a strategy profile for one reserve domain, asset mint, adapter program, and exposure policy |
-| `update_yield_strategy_controls` | update strategy caps, pause flags, active status, and policy hashes |
-| `open_strategy_position` | bind one attributable reserve scope to one registered strategy |
-| `deploy_free_reserve` | move only eligible free reserve into a registered adapter while booking restricted capacity |
-| `harvest_strategy_yield` | reconcile realized, same-mint yield back into the domain vault and scoped ledgers |
-| `recall_strategy_principal` | pull principal back from a strategy and release restricted capacity only after vault reconciliation |
-| `mark_strategy_impairment` | record strategy loss against the correct reserve, allocation, and capital-class waterfall |
-| `release_premium_surplus` | recognize underwriting surplus only after risk windows, claim runoff, and reserve floors are satisfied |
+The long-term reserve-productivity direction remains off the live IDL. When it
+returns, it should stay separate from the claims kernel: deploy only eligible
+free reserve, reconcile realized tokens before counting them as claims-paying
+capacity, and record losses against the correct reserve scope.
 
 Hard boundary: deployed principal, unrealized APY, and adapter-reported rewards
 do not count as free claims-paying reserve.
-
-## Reviewer Notes
-
-- The retired pre-rearchitecture program-root creation flow does not exist in the live surface.
-- The retired pre-rearchitecture product-typing field does not exist in the live surface.
-- Sponsor budgets and LP capital no longer share one overloaded root.
-- Reward and protection both reconcile through the same reserve kernel.
-- For implementation review, follow the facade delegation into `governance.rs`, `reserve_custody.rs`, `plans_membership.rs`, `funding_obligations/`, `claims.rs`, `capital/`, `fees.rs`, or `oracle_schema.rs`.

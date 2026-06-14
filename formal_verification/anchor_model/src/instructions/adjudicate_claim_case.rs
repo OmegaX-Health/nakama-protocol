@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{AdjudicateClaimCase, AdjudicateClaimCaseArgs};
 
 impl<'info> AdjudicateClaimCase<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "adjudicate_claim_case", hash = "253a13baa1311c84", spec_hash = "8d94a0b40552cf6e")]
+    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "adjudicate_claim_case", hash = "253a13baa1311c84", spec_hash = "c631aaf21f744f54")]
     #[inline(always)]
     pub fn handler(&mut self, args: AdjudicateClaimCaseArgs) -> Result<()> {
         guards::adjudicate_claim_case(self, args)?;

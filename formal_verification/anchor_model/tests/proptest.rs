@@ -8,13 +8,11 @@
 use omegaxprotocol::state::{
     InitializeProtocolGovernanceArgs,
     SettleClaimCaseArgs,
-    SettleClaimCaseSelectedAssetArgs,
     WithdrawArgs,
 };
 use proptest::prelude::*;
 
 const MAX_CONFIGURED_FEE_BPS: u16 = 9999;
-const MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS: u16 = 50;
 const SAFE_RAIL_CONFIDENCE_BPS: u16 = 25;
 const SAFE_RAIL_MAX_CONFIDENCE_BPS: u16 = 100;
 const SAFE_RAIL_PRICE_USD_1E8: u64 = 100_000_000;
@@ -34,31 +32,6 @@ fn safe_settle_claim_args(amount: u64) -> SettleClaimCaseArgs {
     }
 }
 
-fn safe_selected_asset_args(
-    claim_credit_amount: u64,
-    payout_amount: u64,
-    max_overpay_bps: u16,
-) -> SettleClaimCaseSelectedAssetArgs {
-    SettleClaimCaseSelectedAssetArgs {
-        claim_credit_amount,
-        payout_amount,
-        max_overpay_bps,
-        claim_rail_active: true,
-        claim_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
-        claim_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
-        claim_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
-        claim_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
-        claim_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
-        payout_rail_active: true,
-        payout_rail_payout_enabled: true,
-        payout_rail_price_usd_1e8: SAFE_RAIL_PRICE_USD_1E8,
-        payout_rail_max_staleness_seconds: SAFE_RAIL_STALENESS_SECONDS,
-        payout_rail_max_confidence_bps: SAFE_RAIL_MAX_CONFIDENCE_BPS,
-        payout_rail_last_price_confidence_bps: SAFE_RAIL_CONFIDENCE_BPS,
-        payout_rail_last_price_published_at_ts: SAFE_RAIL_PUBLISHED_AT_TS,
-    }
-}
-
 proptest! {
     #[test]
     fn protocol_fee_guard_accepts_configured_domain(protocol_fee_bps in 0u16..=MAX_CONFIGURED_FEE_BPS, emergency_pause in any::<bool>()) {
@@ -71,16 +44,6 @@ proptest! {
         let args = safe_settle_claim_args(amount);
         let approved_amount = paid_amount + args.amount;
         let next_paid = paid_amount + args.amount;
-        prop_assert!(next_paid <= approved_amount);
-    }
-
-    #[test]
-    fn selected_asset_guard_bounds_overpay_and_claim_credit(paid_amount in 0u64..=(u64::MAX / 2), claim_credit_amount in 1u64..=(u64::MAX / 2), payout_amount in 1u64..=u64::MAX, max_overpay_bps in 0u16..=MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS) {
-        let args = safe_selected_asset_args(claim_credit_amount, payout_amount, max_overpay_bps);
-        let approved_amount = paid_amount + args.claim_credit_amount;
-        let next_paid = paid_amount + args.claim_credit_amount;
-        prop_assert!(args.payout_amount > 0);
-        prop_assert!(args.max_overpay_bps <= MAX_SELECTED_ASSET_PAYOUT_OVERPAY_BPS);
         prop_assert!(next_paid <= approved_amount);
     }
 

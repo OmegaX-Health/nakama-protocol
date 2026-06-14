@@ -2,41 +2,9 @@
 
 //! Public event types emitted by the protocol.
 
-use anchor_lang::prelude::*;
+use crate::platform::*;
 
-#[event]
-pub struct ProtocolGovernanceInitializedEvent {
-    pub governance_authority: Pubkey,
-    pub protocol_fee_bps: u16,
-    pub emergency_pause: bool,
-}
-
-#[event]
-pub struct ProtocolGovernanceAuthorityRotatedEvent {
-    pub previous_governance_authority: Pubkey,
-    pub new_governance_authority: Pubkey,
-    pub authority: Pubkey,
-    pub audit_nonce: u64,
-}
-
-#[event]
-pub struct ProtocolGovernanceAuthorityTransferProposedEvent {
-    pub current_governance_authority: Pubkey,
-    pub pending_governance_authority: Pubkey,
-    pub authority: Pubkey,
-    pub proposed_at_ts: i64,
-    pub expires_at_ts: i64,
-    pub audit_nonce: u64,
-}
-
-#[event]
-pub struct ProtocolGovernanceAuthorityTransferCanceledEvent {
-    pub governance_authority: Pubkey,
-    pub canceled_governance_authority: Pubkey,
-    pub authority: Pubkey,
-    pub audit_nonce: u64,
-}
-
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct ReserveDomainCreatedEvent {
     pub reserve_domain: Pubkey,
@@ -44,6 +12,15 @@ pub struct ReserveDomainCreatedEvent {
     pub settlement_mode: u8,
 }
 
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [138, 101, 116, 228, 188, 195, 89, 37]))]
+pub struct ReserveDomainCreatedEvent {
+    pub reserve_domain: Address,
+    pub domain_admin: Address,
+    pub settlement_mode: u8,
+}
+
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct HealthPlanCreatedEvent {
     pub reserve_domain: Pubkey,
@@ -51,6 +28,15 @@ pub struct HealthPlanCreatedEvent {
     pub sponsor: Pubkey,
 }
 
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [160, 200, 242, 77, 168, 222, 253, 22]))]
+pub struct HealthPlanCreatedEvent {
+    pub reserve_domain: Address,
+    pub health_plan: Address,
+    pub sponsor: Address,
+}
+
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct PolicySeriesCreatedEvent {
     pub health_plan: Pubkey,
@@ -60,6 +46,17 @@ pub struct PolicySeriesCreatedEvent {
     pub terms_version: u16,
 }
 
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [106, 212, 178, 224, 202, 185, 17, 157]))]
+pub struct PolicySeriesCreatedEvent {
+    pub health_plan: Address,
+    pub policy_series: Address,
+    pub asset_mint: Address,
+    pub mode: u8,
+    pub terms_version: u16,
+}
+
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct PolicySeriesVersionedEvent {
     pub prior_series: Pubkey,
@@ -67,6 +64,15 @@ pub struct PolicySeriesVersionedEvent {
     pub new_terms_version: u16,
 }
 
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [37, 154, 96, 209, 46, 91, 162, 255]))]
+pub struct PolicySeriesVersionedEvent {
+    pub prior_series: Address,
+    pub next_series: Address,
+    pub new_terms_version: u16,
+}
+
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct FundingLineOpenedEvent {
     pub health_plan: Pubkey,
@@ -75,70 +81,34 @@ pub struct FundingLineOpenedEvent {
     pub line_type: u8,
 }
 
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [47, 172, 14, 218, 139, 94, 10, 145]))]
+pub struct FundingLineOpenedEvent {
+    pub health_plan: Address,
+    pub funding_line: Address,
+    pub asset_mint: Address,
+    pub line_type: u8,
+}
+
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct FundingFlowRecordedEvent {
     pub funding_line: Pubkey,
     pub amount: u64,
     pub flow_kind: u8,
+    pub reference_hash: [u8; 32],
 }
 
-#[event]
-pub struct ReserveAssetRailConfiguredEvent {
-    pub reserve_domain: Pubkey,
-    pub reserve_asset_rail: Pubkey,
-    pub asset_mint: Pubkey,
-    pub role: u8,
-    pub payout_priority: u8,
-    pub oracle_source: u8,
-    pub active: bool,
-    pub reason_hash: [u8; 32],
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [207, 159, 154, 43, 193, 239, 239, 163]))]
+pub struct FundingFlowRecordedEvent {
+    pub funding_line: Address,
+    pub amount: u64,
+    pub flow_kind: u8,
+    pub reference_hash: Address,
 }
 
-#[event]
-pub struct ReserveAssetRailPricePublishedEvent {
-    pub reserve_asset_rail: Pubkey,
-    pub asset_mint: Pubkey,
-    pub oracle_authority: Pubkey,
-    pub price_usd_1e8: u64,
-    pub confidence_bps: u16,
-    pub published_at_ts: i64,
-    pub proof_hash: [u8; 32],
-}
-
-#[event]
-pub struct LiquidityPoolCreatedEvent {
-    pub reserve_domain: Pubkey,
-    pub liquidity_pool: Pubkey,
-    pub asset_mint: Pubkey,
-}
-
-#[event]
-pub struct CapitalClassDepositEvent {
-    pub capital_class: Pubkey,
-    pub owner: Pubkey,
-    pub asset_amount: u64,
-    pub shares: u64,
-}
-
-#[event]
-pub struct LPPositionCredentialingUpdatedEvent {
-    pub capital_class: Pubkey,
-    pub owner: Pubkey,
-    pub authority: Pubkey,
-    pub credentialed: bool,
-    pub reason_hash: [u8; 32],
-}
-
-#[event]
-pub struct RedemptionRequestedEvent {
-    pub capital_class: Pubkey,
-    pub owner: Pubkey,
-    pub shares: u64,
-    pub asset_amount: u64,
-    pub redemption_sequence: u64,
-    pub requested_at_ts: i64,
-}
-
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct ObligationStatusChangedEvent {
     pub obligation: Pubkey,
@@ -147,6 +117,16 @@ pub struct ObligationStatusChangedEvent {
     pub amount: u64,
 }
 
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [173, 116, 84, 221, 225, 109, 198, 74]))]
+pub struct ObligationStatusChangedEvent {
+    pub obligation: Address,
+    pub funding_line: Address,
+    pub status: u8,
+    pub amount: u64,
+}
+
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct ClaimCaseStateChangedEvent {
     pub claim_case: Pubkey,
@@ -154,43 +134,15 @@ pub struct ClaimCaseStateChangedEvent {
     pub approved_amount: u64,
 }
 
-#[event]
-pub struct ClaimCaseSelectedAssetPayoutEvent {
-    pub claim_case: Pubkey,
-    pub claim_asset_mint: Pubkey,
-    pub payout_asset_mint: Pubkey,
-    pub claim_credit_amount: u64,
-    pub payout_amount: u64,
-    pub settlement_reason_hash: [u8; 32],
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [162, 195, 160, 236, 219, 18, 240, 208]))]
+pub struct ClaimCaseStateChangedEvent {
+    pub claim_case: Address,
+    pub intake_status: u8,
+    pub approved_amount: u64,
 }
 
-#[event]
-pub struct ClaimCaseAttestedEvent {
-    pub claim_attestation: Pubkey,
-    pub claim_case: Pubkey,
-    pub oracle_profile: Pubkey,
-    pub oracle: Pubkey,
-    pub decision: u8,
-    pub attestation_hash: [u8; 32],
-}
-
-#[event]
-pub struct AllocationUpdatedEvent {
-    pub allocation_position: Pubkey,
-    pub capital_class: Pubkey,
-    pub funding_line: Pubkey,
-    pub allocated_amount: u64,
-    pub reserved_capacity: u64,
-}
-
-#[event]
-pub struct ImpairmentRecordedEvent {
-    pub funding_line: Pubkey,
-    pub obligation: Pubkey,
-    pub amount: u64,
-    pub reason_hash: [u8; 32],
-}
-
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct ScopedControlChangedEvent {
     pub scope_kind: u8,
@@ -201,6 +153,18 @@ pub struct ScopedControlChangedEvent {
     pub audit_nonce: u64,
 }
 
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [103, 133, 3, 156, 72, 49, 119, 157]))]
+pub struct ScopedControlChangedEvent {
+    pub scope_kind: u8,
+    pub scope: Address,
+    pub authority: Address,
+    pub pause_flags: u32,
+    pub reason_hash: Address,
+    pub audit_nonce: u64,
+}
+
+#[cfg(not(feature = "quasar"))]
 #[event]
 pub struct LedgerInitializedEvent {
     pub scope_kind: u8,
@@ -208,111 +172,10 @@ pub struct LedgerInitializedEvent {
     pub asset_mint: Pubkey,
 }
 
-#[event]
-pub struct FeeVaultInitializedEvent {
-    pub vault: Pubkey,
-    pub scope: Pubkey,
-    pub asset_mint: Pubkey,
-    pub fee_recipient: Pubkey,
-    /// 0 = ProtocolFeeVault, 1 = PoolTreasuryVault, 2 = PoolOracleFeeVault.
-    pub rail: u8,
-}
-
-#[event]
-pub struct FeeAccruedEvent {
-    pub vault: Pubkey,
-    pub asset_mint: Pubkey,
-    pub amount: u64,
-    pub accrued_total: u64,
-}
-
-#[event]
-pub struct FeeWithdrawnEvent {
-    pub vault: Pubkey,
-    pub asset_mint: Pubkey,
-    pub amount: u64,
-    pub configured_recipient: Pubkey,
-    pub recipient: Pubkey,
-    pub withdrawn_total: u64,
-}
-
-#[event]
-pub struct OracleProfileRegisteredEvent {
-    pub oracle_profile: Pubkey,
-    pub oracle: Pubkey,
-    pub admin: Pubkey,
-    pub oracle_type: u8,
-    pub claimed: bool,
-}
-
-#[event]
-pub struct OracleProfileClaimedEvent {
-    pub oracle_profile: Pubkey,
-    pub oracle: Pubkey,
-    pub admin: Pubkey,
-}
-
-#[event]
-pub struct OracleProfileUpdatedEvent {
-    pub oracle_profile: Pubkey,
-    pub oracle: Pubkey,
-    pub authority: Pubkey,
-    pub oracle_type: u8,
-}
-
-#[event]
-pub struct PoolOracleApprovalChangedEvent {
-    pub liquidity_pool: Pubkey,
-    pub oracle: Pubkey,
-    pub authority: Pubkey,
-    pub active: bool,
-}
-
-#[event]
-pub struct PoolOraclePermissionsChangedEvent {
-    pub liquidity_pool: Pubkey,
-    pub oracle: Pubkey,
-    pub authority: Pubkey,
-    pub permissions: u32,
-}
-
-#[event]
-pub struct PoolOraclePolicyChangedEvent {
-    pub liquidity_pool: Pubkey,
-    pub authority: Pubkey,
-    pub quorum_m: u8,
-    pub quorum_n: u8,
-    pub oracle_fee_bps: u16,
-}
-
-#[event]
-pub struct OutcomeSchemaRegisteredEvent {
-    pub outcome_schema: Pubkey,
-    pub publisher: Pubkey,
-    pub schema_key_hash: [u8; 32],
-    pub version: u16,
-}
-
-#[event]
-pub struct OutcomeSchemaStateChangedEvent {
-    pub outcome_schema: Pubkey,
-    pub governance_authority: Pubkey,
-    pub schema_key_hash: [u8; 32],
-    pub verified: bool,
-}
-
-#[event]
-pub struct SchemaDependencyLedgerUpdatedEvent {
-    pub schema_dependency_ledger: Pubkey,
-    pub governance_authority: Pubkey,
-    pub schema_key_hash: [u8; 32],
-    pub dependency_count: u16,
-}
-
-#[event]
-pub struct OutcomeSchemaClosedEvent {
-    pub outcome_schema: Pubkey,
-    pub governance_authority: Pubkey,
-    pub schema_key_hash: [u8; 32],
-    pub recipient: Pubkey,
+#[cfg(feature = "quasar")]
+#[cfg_attr(any(), event(discriminator = [155, 186, 165, 141, 70, 86, 207, 246]))]
+pub struct LedgerInitializedEvent {
+    pub scope_kind: u8,
+    pub scope: Address,
+    pub asset_mint: Address,
 }

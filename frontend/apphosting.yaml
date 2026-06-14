@@ -22,7 +22,7 @@ env:
     availability: [BUILD, RUNTIME]
 
   - variable: NEXT_PUBLIC_PROTOCOL_PROGRAM_ID
-    value: "Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B"
+    value: "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM"
     availability: [BUILD, RUNTIME]
 
   - variable: NEXT_PUBLIC_IPFS_GATEWAY_BASE

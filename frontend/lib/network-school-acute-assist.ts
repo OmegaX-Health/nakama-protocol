@@ -10,7 +10,7 @@ import {
   GENESIS_PROTECT_ACUTE_SENIOR_CLASS_ID,
 } from "@/lib/genesis-protect-acute";
 
-export type NetworkSchoolAcuteAssistSkuKey = "core" | "longTermer" | "familyGuarded";
+export type NetworkSchoolAcuteAssistSkuKey = "lite" | "core" | "plus" | "familyCore";
 
 export type NetworkSchoolAcuteAssistSublimit = {
   label: string;
@@ -73,30 +73,12 @@ export type NetworkSchoolAcuteAssistSkuDefinition = {
   };
   sublimits: NetworkSchoolAcuteAssistSublimit[];
   householdRules?: {
-    baseHouseholdUsd?: number;
-    adultUsd?: number;
-    childUsd?: number;
-    referenceAdults?: number;
-    referenceChildren?: number;
-    maxAdults?: number;
-    maxChildren?: number;
-    adultPerPersonMaxUsd?: number;
-    childPerPersonMaxUsd?: number;
-    includedAdults?: number;
-    includedChildren?: number;
-    perPersonMaxUsd?: number;
+    includedAdults: number;
+    includedChildren: number;
+    perPersonMaxUsd: number;
     perEventMaxUsd: number;
     outpatientFamilySublimitUsd: number;
     maxPaidClaimsPerWindow: number;
-  };
-  termRules?: {
-    quoteBasis: "per_started_30_day_period" | "household_size_and_term";
-    formula: string;
-    minCoveredDays: number;
-    maxCoveredDays: number;
-    upfrontPaymentRequired: boolean;
-    aggregateCapDoesNotReset: boolean;
-    exampleQuotes: string[];
   };
   waitingPeriods: {
     illnessHours: number;
@@ -141,14 +123,14 @@ export const NETWORK_SCHOOL_ACUTE_ASSIST_SENIOR_CLASS_DISPLAY_NAME =
 export const NETWORK_SCHOOL_ACUTE_ASSIST_JUNIOR_CLASS_ID = GENESIS_PROTECT_ACUTE_JUNIOR_CLASS_ID;
 export const NETWORK_SCHOOL_ACUTE_ASSIST_JUNIOR_CLASS_DISPLAY_NAME =
   GENESIS_PROTECT_ACUTE_JUNIOR_CLASS_DISPLAY_NAME;
-export const NETWORK_SCHOOL_ACUTE_ASSIST_VISIBLE_RESERVE_USD = 5_000;
-export const NETWORK_SCHOOL_ACUTE_ASSIST_COHORT0_POLICY_CAP = 25;
-export const NETWORK_SCHOOL_ACUTE_ASSIST_COHORT0_HARD_PAYOUT_CAP_USD = 3_000;
+export const NETWORK_SCHOOL_ACUTE_ASSIST_COHORT0_POLICY_CAP = 250;
+export const NETWORK_SCHOOL_ACUTE_ASSIST_COHORT0_HARD_PAYOUT_CAP_USD = 6_000;
 
 export const NETWORK_SCHOOL_ACUTE_ASSIST_METADATA_URIS = {
+  lite: "/metadata/protection/ns-acute-assist-lite-30-v1.json",
   core: "/metadata/protection/ns-acute-assist-core-30-v1.json",
-  longTermer: "/metadata/protection/ns-acute-assist-long-termer-v1.json",
-  familyGuarded: "/metadata/protection/ns-acute-assist-family-guarded-v1.json",
+  plus: "/metadata/protection/ns-acute-assist-plus-30-v1.json",
+  familyCore: "/metadata/protection/ns-acute-assist-family-core-30-v1.json",
 } as const satisfies Record<NetworkSchoolAcuteAssistSkuKey, string>;
 
 export const NETWORK_SCHOOL_ACUTE_ASSIST_EVIDENCE_SCHEMA: NetworkSchoolAcuteAssistEvidenceSchemaBinding = {
@@ -215,22 +197,53 @@ function cohort0IssuanceControls(displayName: string, fastLaneUsd: number): Netw
     ],
     pauseWhen: [
       "Discord or Network School membership verification is unavailable, unconfigured, or stale.",
-      "Paid claims exceed 50% of the Cohort 0 hard aggregate payout cap or hit the hard aggregate cap.",
+      "Paid claims exceed 50% of the monthly payout cap or hit the hard aggregate cap.",
       `Any ${displayName} claim exceeds the fast-lane threshold of ${fastLaneUsd} USD without manual review.`,
-      `Claims-paying reserve falls below ${NETWORK_SCHOOL_ACUTE_ASSIST_VISIBLE_RESERVE_USD} USD before collecting the next premium batch.`,
       "Provider evidence, pricing, reserve controls, or public terms drift from the published metadata.",
     ],
   };
 }
 
+const liteLanes = fundingLanesFor("ns-acute-lite30", "NS Acute Assist Lite 30");
 const coreLanes = fundingLanesFor("ns-acute-core30", "NS Acute Assist Core 30");
-const longTermerLanes = fundingLanesFor("ns-acute-long-termer", "NS Acute Assist Long-Termer Guarded");
-const familyGuardedLanes = fundingLanesFor("ns-family-guarded", "NS Acute Assist Family Guarded");
+const plusLanes = fundingLanesFor("ns-acute-plus30", "NS Acute Assist Plus 30");
+const familyCoreLanes = fundingLanesFor("ns-acute-family-core30", "NS Acute Assist Family Core 30");
 
 export const NETWORK_SCHOOL_ACUTE_ASSIST_SKUS: Record<
   NetworkSchoolAcuteAssistSkuKey,
   NetworkSchoolAcuteAssistSkuDefinition
 > = {
+  lite: {
+    key: "lite",
+    seriesId: "ns-acute-lite-30-v1",
+    displayName: "NS Acute Assist - Lite 30",
+    metadataUri: NETWORK_SCHOOL_ACUTE_ASSIST_METADATA_URIS.lite,
+    comparabilityKey: "ns-acute-assist-lite-30",
+    coverWindowDays: 30,
+    defaultSelection: false,
+    cohort0Launch: true,
+    familyPlan: false,
+    pricing: {
+      retailUsd: 5,
+      termRolBps: 100,
+      expectedLossUsd: 0.9,
+      baseLossRatioPct: 18,
+      stressLossRatioPct: 60,
+    },
+    supportLimitUsd: 500,
+    fastLaneUsd: 150,
+    manualReviewAboveUsd: 150,
+    reimbursement: NETWORK_SCHOOL_ACUTE_ASSIST_REIMBURSEMENT,
+    sublimits: [
+      { label: "Clinic, pharmacy, and urgent care", amountUsd: 500 },
+    ],
+    waitingPeriods: NETWORK_SCHOOL_ACUTE_ASSIST_WAITING_PERIODS,
+    evidenceSchema: NETWORK_SCHOOL_ACUTE_ASSIST_EVIDENCE_SCHEMA,
+    fundingLineIds: liteLanes.fundingLineIds,
+    fundingLanes: liteLanes.fundingLanes,
+    issuanceControls: cohort0IssuanceControls("Lite 30", 150),
+    launchTruth: NETWORK_SCHOOL_ACUTE_ASSIST_LAUNCH_TRUTH,
+  },
   core: {
     key: "core",
     seriesId: "ns-acute-core-30-v1",
@@ -242,11 +255,11 @@ export const NETWORK_SCHOOL_ACUTE_ASSIST_SKUS: Record<
     cohort0Launch: true,
     familyPlan: false,
     pricing: {
-      retailUsd: 19,
-      termRolBps: 190,
-      expectedLossUsd: 7.5,
-      baseLossRatioPct: 39,
-      stressLossRatioPct: 118,
+      retailUsd: 10,
+      termRolBps: 100,
+      expectedLossUsd: 3,
+      baseLossRatioPct: 30,
+      stressLossRatioPct: 90,
     },
     supportLimitUsd: 1_000,
     fastLaneUsd: 250,
@@ -262,113 +275,79 @@ export const NETWORK_SCHOOL_ACUTE_ASSIST_SKUS: Record<
     issuanceControls: cohort0IssuanceControls("Core 30", 250),
     launchTruth: NETWORK_SCHOOL_ACUTE_ASSIST_LAUNCH_TRUTH,
   },
-  longTermer: {
-    key: "longTermer",
-    seriesId: "ns-acute-long-termer-v1",
-    displayName: "NS Acute Assist - Long-Termer Guarded",
-    metadataUri: NETWORK_SCHOOL_ACUTE_ASSIST_METADATA_URIS.longTermer,
-    comparabilityKey: "ns-acute-assist-long-termer",
-    coverWindowDays: 365,
+  plus: {
+    key: "plus",
+    seriesId: "ns-acute-plus-30-v1",
+    displayName: "NS Acute Assist - Plus 30",
+    metadataUri: NETWORK_SCHOOL_ACUTE_ASSIST_METADATA_URIS.plus,
+    comparabilityKey: "ns-acute-assist-plus-30",
+    coverWindowDays: 30,
     defaultSelection: false,
     cohort0Launch: true,
     familyPlan: false,
     pricing: {
-      retailUsd: 19,
-      termRolBps: 190,
-      expectedLossUsd: 7.5,
-      baseLossRatioPct: 39,
-      stressLossRatioPct: 118,
+      retailUsd: 21,
+      termRolBps: 84,
+      expectedLossUsd: 6.5,
+      baseLossRatioPct: 31,
+      stressLossRatioPct: 93,
     },
-    supportLimitUsd: 1_000,
-    fastLaneUsd: 200,
-    manualReviewAboveUsd: 200,
+    supportLimitUsd: 2_500,
+    fastLaneUsd: 500,
+    manualReviewAboveUsd: 500,
     reimbursement: NETWORK_SCHOOL_ACUTE_ASSIST_REIMBURSEMENT,
     sublimits: [
-      { label: "Remaining-contract aggregate", amountUsd: 1_000 },
-      { label: "Per-event maximum", amountUsd: 600 },
-      { label: "Outpatient and clinic sublimit", amountUsd: 400 },
+      { label: "Clinic, outpatient, and pharmacy", amountUsd: 1_000 },
+      { label: "Dengue, infection, urgent labs, and observation", amountUsd: 1_500 },
+      { label: "ER and hospital stabilization", amountUsd: 2_500 },
     ],
-    termRules: {
-      quoteBasis: "per_started_30_day_period",
-      formula:
-        "quote_usd = ceil(remaining_contract_days / 30) * 19; one 1000 USD aggregate cap applies until the Network School contract end date and does not reset monthly.",
-      minCoveredDays: 31,
-      maxCoveredDays: 365,
-      upfrontPaymentRequired: true,
-      aggregateCapDoesNotReset: true,
-      exampleQuotes: [
-        "7 months remaining -> 133 USD upfront, 1000 USD aggregate cap",
-        "10 months remaining -> 190 USD upfront, 1000 USD aggregate cap",
-        "12 months remaining -> 228 USD upfront, 1000 USD aggregate cap",
-      ],
-    },
     waitingPeriods: NETWORK_SCHOOL_ACUTE_ASSIST_WAITING_PERIODS,
     evidenceSchema: NETWORK_SCHOOL_ACUTE_ASSIST_EVIDENCE_SCHEMA,
-    fundingLineIds: longTermerLanes.fundingLineIds,
-    fundingLanes: longTermerLanes.fundingLanes,
-    issuanceControls: cohort0IssuanceControls("Long-Termer Guarded", 200),
+    fundingLineIds: plusLanes.fundingLineIds,
+    fundingLanes: plusLanes.fundingLanes,
+    issuanceControls: cohort0IssuanceControls("Plus 30", 500),
     launchTruth: NETWORK_SCHOOL_ACUTE_ASSIST_LAUNCH_TRUTH,
   },
-  familyGuarded: {
-    key: "familyGuarded",
-    seriesId: "ns-acute-family-guarded-v1",
-    displayName: "NS Acute Assist - Family Guarded",
-    metadataUri: NETWORK_SCHOOL_ACUTE_ASSIST_METADATA_URIS.familyGuarded,
-    comparabilityKey: "ns-acute-assist-family-guarded",
+  familyCore: {
+    key: "familyCore",
+    seriesId: "ns-acute-family-core-30-v1",
+    displayName: "NS Acute Assist - Family Core 30",
+    metadataUri: NETWORK_SCHOOL_ACUTE_ASSIST_METADATA_URIS.familyCore,
+    comparabilityKey: "ns-acute-assist-family-core-30",
     coverWindowDays: 30,
     defaultSelection: false,
     cohort0Launch: true,
     familyPlan: true,
     pricing: {
-      retailUsd: 89,
-      termRolBps: 593,
-      expectedLossUsd: 24,
-      baseLossRatioPct: 27,
-      stressLossRatioPct: 81,
+      retailUsd: 34,
+      termRolBps: 85,
+      expectedLossUsd: 14,
+      baseLossRatioPct: 41,
+      stressLossRatioPct: 124,
     },
-    supportLimitUsd: 1_500,
-    fastLaneUsd: 250,
-    manualReviewAboveUsd: 250,
+    supportLimitUsd: 4_000,
+    fastLaneUsd: 500,
+    manualReviewAboveUsd: 500,
     reimbursement: NETWORK_SCHOOL_ACUTE_ASSIST_REIMBURSEMENT,
     sublimits: [
-      { label: "Shared family aggregate", amountUsd: 1_500 },
-      { label: "Adult per-person maximum", amountUsd: 600 },
-      { label: "Child per-person maximum", amountUsd: 350 },
-      { label: "Per-event maximum", amountUsd: 750 },
-      { label: "Outpatient and clinic family sublimit", amountUsd: 500 },
+      { label: "Shared family aggregate", amountUsd: 4_000 },
+      { label: "Per-person maximum", amountUsd: 1_500 },
+      { label: "Per-event maximum", amountUsd: 2_000 },
+      { label: "Outpatient and clinic family sublimit", amountUsd: 1_000 },
     ],
     householdRules: {
-      baseHouseholdUsd: 39,
-      adultUsd: 15,
-      childUsd: 10,
-      referenceAdults: 2,
-      referenceChildren: 2,
-      maxAdults: 2,
-      maxChildren: 3,
-      adultPerPersonMaxUsd: 600,
-      childPerPersonMaxUsd: 350,
-      perEventMaxUsd: 750,
-      outpatientFamilySublimitUsd: 500,
-      maxPaidClaimsPerWindow: 2,
-    },
-    termRules: {
-      quoteBasis: "household_size_and_term",
-      formula:
-        "quote_usd_per_30_days = 39 + (15 * covered_adults) + (10 * covered_children); renewals require reserve review and the 1500 USD household aggregate does not reset until the next approved renewal.",
-      minCoveredDays: 1,
-      maxCoveredDays: 30,
-      upfrontPaymentRequired: true,
-      aggregateCapDoesNotReset: true,
-      exampleQuotes: [
-        "2 adults + 2 children -> 89 USD for 30 days, 1500 USD shared aggregate cap",
-        "2 adults + 3 children -> 99 USD for 30 days, 1500 USD shared aggregate cap",
-      ],
+      includedAdults: 2,
+      includedChildren: 2,
+      perPersonMaxUsd: 1_500,
+      perEventMaxUsd: 2_000,
+      outpatientFamilySublimitUsd: 1_000,
+      maxPaidClaimsPerWindow: 3,
     },
     waitingPeriods: NETWORK_SCHOOL_ACUTE_ASSIST_WAITING_PERIODS,
     evidenceSchema: NETWORK_SCHOOL_ACUTE_ASSIST_EVIDENCE_SCHEMA,
-    fundingLineIds: familyGuardedLanes.fundingLineIds,
-    fundingLanes: familyGuardedLanes.fundingLanes,
-    issuanceControls: cohort0IssuanceControls("Family Guarded", 250),
+    fundingLineIds: familyCoreLanes.fundingLineIds,
+    fundingLanes: familyCoreLanes.fundingLanes,
+    issuanceControls: cohort0IssuanceControls("Family Core 30", 500),
     launchTruth: NETWORK_SCHOOL_ACUTE_ASSIST_LAUNCH_TRUTH,
   },
 };
@@ -376,9 +355,10 @@ export const NETWORK_SCHOOL_ACUTE_ASSIST_SKUS: Record<
 export const NETWORK_SCHOOL_ACUTE_ASSIST_DEFAULT_SKU = NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core;
 
 export const NETWORK_SCHOOL_ACUTE_ASSIST_SKU_LIST = [
+  NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.lite,
   NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.core,
-  NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.longTermer,
-  NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyGuarded,
+  NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.plus,
+  NETWORK_SCHOOL_ACUTE_ASSIST_SKUS.familyCore,
 ] as const;
 
 export const NETWORK_SCHOOL_ACUTE_ASSIST_COMMON_EXCLUSIONS = [
@@ -405,3 +385,4 @@ export const NETWORK_SCHOOL_ACUTE_ASSIST_COVERED_EVENTS = [
   "doctor-prescribed medication tied to an eligible acute event",
   "basic diagnostics tied directly to an eligible acute event",
 ] as const;
+

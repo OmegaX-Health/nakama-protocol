@@ -187,13 +187,11 @@ Offchain:
 Onchain:
 
 - `open_claim_case`
-- `attach_claim_evidence_ref`
-- `attest_claim_case`
 - `adjudicate_claim_case`
 - `reserve_obligation`
 - `settle_claim_case` / `settle_obligation`
 
-Raw medical payloads remain offchain. The chain records evidence references, attestation, adjudication, reserve effect, and settlement.
+Raw medical payloads and oracle review artifacts remain offchain or in adjunct receipt systems. The base chain records claim intake, evidence/decision proof fingerprints, adjudication, reserve effect, and settlement.
 
 The detailed truth-chain walkthrough is in `docs/architecture/genesis-protect-claim-trace.md`.
 
@@ -202,7 +200,7 @@ The detailed truth-chain walkthrough is in `docs/architecture/genesis-protect-cl
 V1 should include:
 
 - acute-only emergency medical scope
-- offchain coverage certificates anchored to active `MemberPosition`, `PolicySeries`, terms hash, reserve/pool metadata, and premium proof
+- offchain coverage certificates anchored to active claimant wallet, `PolicySeries`, terms hash, reserve/pool metadata, and premium proof
 - explicit exclusions
 - hard coverage caps
 - waiting periods
@@ -267,7 +265,7 @@ Before public mainnet activation, the launch surface should have:
 - Backstop capital posted or explicitly documented.
 - Existing active terms protected from later reserve changes; reserve changes affect only new activations or renewals.
 - AI/operator claim intake ready.
-- Evidence reference and claim attestation path ready.
+- Offchain evidence review path and claim-decision handoff ready.
 - Settlement path tested with real payout rail assumptions.
 - Public copy says "AI-assisted under operator oversight."
 - Terms, exclusions, waiting periods, and evidence requirements resolve from public links.

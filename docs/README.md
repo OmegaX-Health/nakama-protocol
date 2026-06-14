@@ -28,6 +28,7 @@ This path is intentionally launch-truth-first: `Travel 30` is the primary reserv
 ### Architecture
 
 - [Repository Layout](./architecture/repository-layout.md)
+- [Protocol Vision and Capability Narrative](./architecture/protocol-vision-and-capability-narrative.md)
 - [Solana Program Architecture](./architecture/solana-program-architecture.md)
 - [Solana Instruction Map](./architecture/solana-instruction-map.md)
 - [Decentralized Coverage Claims](./architecture/decentralized-coverage-claims.md) — abstract claim model
@@ -36,9 +37,10 @@ This path is intentionally launch-truth-first: `Travel 30` is the primary reserv
 - [Frontend Information Architecture](./architecture/frontend-information-architecture.md)
 - [Protocol Console Functional Specification](./architecture/protocol-console-functional-spec.md)
 
-### Review Archive
+### Reviews
 
-- [`reviews/`](./reviews/) keeps dated readiness reviews and historical cleanup backlogs. Start with current architecture, testing, and operations docs before using archived reviews as decision inputs.
+- [Review and Iterate Readiness Review (May 10, 2026)](./reviews/review-and-iterate-2026-05-10.md)
+- [Solana Public Readiness Review (March 10, 2026)](./reviews/solana-public-readiness-review.md)
 
 ### Reference
 
@@ -46,7 +48,7 @@ This path is intentionally launch-truth-first: `Travel 30` is the primary reserv
 
 ### Examples
 
-- [Protocol Examples](../examples/README.md) - canonical public examples first, exploratory research clearly labeled
+- [Non-Canonical Protocol Examples](../examples/README.md)
 
 ### Testing
 
@@ -59,12 +61,15 @@ This path is intentionally launch-truth-first: `Travel 30` is the primary reserv
 - [Genesis Live Bootstrap](./operations/genesis-live-bootstrap.md)
 - [Public Release Gate](./operations/public-release-gate.md) — `verify:public` is repo baseline; production promotion needs the evidence template
 - [Release-Candidate Evidence Template](./operations/release-candidate-evidence-template.md) — fill in before public-tag or mainnet promotion
-- [`operations/`](./operations/) also keeps dated release notes, dependency decisions, and deployment cutover records for maintainers.
+- [Firebase App Hosting Cutover](./operations/firebase-app-hosting-cutover.md)
+- [Dependency Advisory Risk Acceptance](./operations/dependency-advisory-risk-acceptance.md)
+- [Release v0.3.0](./operations/release-v0.3.0.md)
+- [Release v0.3.1](./operations/release-v0.3.1.md)
 
 ### Security
 
 - [Mainnet Privileged-Role Controls](./security/mainnet-privileged-role-controls.md) — role matrix, multisig requirement, break-glass exception, rotation, incident recovery
-- [`security/`](./security/) keeps dated internal audit and pen-test evidence. Do not treat those notes as third-party audit claims.
+- [Pre-Mainnet Pen-Test (2026-04-27)](./security/pre-mainnet-pen-test-2026-04-27.md)
 
 ### Public Site
 
@@ -88,19 +93,20 @@ This path is intentionally launch-truth-first: `Travel 30` is the primary reserv
 - Use [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface) when you need the current public protocol boundary before reading repo internals.
 - Use [OmegaX Docs](https://docs.omegax.health/docs) when you want the polished public overview, product story, and external documentation hub rather than repo-specific workflow details.
 - Use [Why OmegaX](https://docs.omegax.health/docs/thesis/why-omegax) when you need the clearest public statement of the protocol’s purpose and long-range destination.
+- Use [Protocol Vision and Capability Narrative](./architecture/protocol-vision-and-capability-narrative.md) when you need the repo-local explanation of the trimmed protocol vision, current accounts, current functions, and community-owned coverage narrative.
 - Start with [Repository Layout](./architecture/repository-layout.md) if you are new to the repo and need the internal file map.
 - Use [Solana Program Architecture](./architecture/solana-program-architecture.md) to understand the on-chain program layout and reviewer read order.
 - Use [Solana Instruction Map](./architecture/solana-instruction-map.md) when tracing an instruction from entrypoint to handler, accounts, and helpers.
 - Use [Decentralized Coverage Claims](./architecture/decentralized-coverage-claims.md) when you need the signer model, claim roles, and payout-path rules for reviewed coverage claims.
 - Use [Protocol Console Functional Specification](./architecture/protocol-console-functional-spec.md) when you need the target-state screen-by-screen functional brief for the public protocol console.
-- Use [`reviews/`](./reviews/) for dated readiness reviews and historical cleanup backlogs.
+- Use [Review and Iterate Readiness Review](./reviews/review-and-iterate-2026-05-10.md) for the latest scored audit, remaining blockers, and validation evidence.
+- Use [Solana Public Readiness Review](./reviews/solana-public-readiness-review.md) for the historical March 2026 scored audit and cleanup backlog.
 - Use [Liquidity Pool Metadata Schema](./reference/liquidity-pool-metadata-schema.md) when integrating LP-facing off-chain APY metadata for a `LiquidityPool`.
 - Use [Protocol Surface Audit](./testing/protocol-surface-audit.md) when you need the heavier localnet proof for canonical instruction ownership, scenario coverage, and release-candidate sign-off.
 - Start with [Operator Runbooks — Index](./operations/runbooks.md) when you need to find the right runbook for a role × environment without reading every operations doc.
 - Use [Devnet Beta Runbook](./operations/devnet-beta-runbook.md) for structured devnet beta operations.
 - Use [Genesis Live Bootstrap](./operations/genesis-live-bootstrap.md) when seeding the live Genesis Protect Acute launch surface on a real cluster.
 - Use [Public Release Gate](./operations/public-release-gate.md) for the repo-only verification baseline and release-candidate sign-off workflow.
-- Use [`operations/`](./operations/) for dated release notes and deployment evidence after you know which current runbook applies.
 
 For directory-specific guidance, also see:
 - [../e2e/README.md](../e2e/README.md)

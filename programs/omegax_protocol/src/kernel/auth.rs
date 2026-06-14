@@ -2,9 +2,8 @@
 
 //! Authorization, authority, and bounded-field validation helpers.
 
-use anchor_lang::prelude::*;
+use crate::platform::*;
 
-use crate::args::*;
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
@@ -17,74 +16,75 @@ pub(crate) fn require_id(value: &str) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn require_bounded_string(value: &str, max_len: usize) -> Result<()> {
-    require!(value.len() <= max_len, OmegaXProtocolError::StringTooLong);
-    Ok(())
-}
-
-pub(crate) fn require_governance(
-    authority: &Pubkey,
-    governance: &ProtocolGovernance,
-) -> Result<()> {
-    require_keys_eq!(
-        *authority,
-        governance.governance_authority,
-        OmegaXProtocolError::Unauthorized
-    );
-    Ok(())
-}
-
-pub(crate) fn require_protocol_not_paused(governance: &ProtocolGovernance) -> Result<()> {
-    require!(
-        !governance.emergency_pause,
-        OmegaXProtocolError::ProtocolEmergencyPaused
-    );
-    Ok(())
-}
-
-pub(crate) fn require_health_plan_active(plan: &HealthPlan) -> Result<()> {
+pub(crate) fn require_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
     require!(plan.active, OmegaXProtocolError::HealthPlanInactive);
     Ok(())
 }
 
-pub(crate) fn require_reserve_domain_rails_open(
-    domain: &Account<ReserveDomain>,
-    expected_reserve_domain: Pubkey,
+pub(crate) fn require_plan_pause_flags_clear(
+    plan: &HealthPlanAccountData<'_>,
+    flags: u32,
+    error: OmegaXProtocolError,
 ) -> Result<()> {
-    require_keys_eq!(
-        domain.key(),
-        expected_reserve_domain,
-        OmegaXProtocolError::ReserveDomainMismatch
-    );
-    require!(domain.active, OmegaXProtocolError::ReserveDomainInactive);
-    require!(
-        domain.pause_flags & PAUSE_FLAG_DOMAIN_RAILS == 0,
-        OmegaXProtocolError::ReserveDomainRailsPaused
-    );
-    Ok(())
+    if plan.pause_flags & flags == 0 {
+        Ok(())
+    } else {
+        Err(error.into())
+    }
 }
 
-pub(crate) fn require_capital_class_active(capital_class: &CapitalClass) -> Result<()> {
-    require!(
-        capital_class.active,
-        OmegaXProtocolError::CapitalClassInactive
-    );
-    Ok(())
+pub(crate) fn require_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_health_plan_active(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
 }
 
-pub(crate) fn require_liquidity_pool_active(pool: &LiquidityPool) -> Result<()> {
-    require!(pool.active, OmegaXProtocolError::LiquidityPoolInactive);
-    Ok(())
+pub(crate) fn require_reserve_rails_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_plan_operations_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_DOMAIN_RAILS | PAUSE_FLAG_ALLOCATION_FREEZE,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
 }
 
-pub(crate) fn require_allocation_position_allocatable(
-    allocation_position: &AllocationPosition,
-) -> Result<()> {
-    require!(
-        allocation_position.active && !allocation_position.deallocation_only,
-        OmegaXProtocolError::AllocationPositionInactive
-    );
-    Ok(())
+pub(crate) fn require_capital_subscriptions_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_reserve_rails_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+pub(crate) fn require_reserve_redemptions_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_reserve_rails_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_REDEMPTION_QUEUE_ONLY,
+        OmegaXProtocolError::HealthPlanPaused,
+    )
+}
+
+pub(crate) fn require_claim_intake_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_plan_operations_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_CLAIM_INTAKE,
+        OmegaXProtocolError::ClaimIntakePaused,
+    )
+}
+
+pub(crate) fn require_claim_finality_open(plan: &HealthPlanAccountData<'_>) -> Result<()> {
+    require_reserve_rails_open(plan)?;
+    require_plan_pause_flags_clear(
+        plan,
+        PAUSE_FLAG_ORACLE_FINALITY_HOLD,
+        OmegaXProtocolError::OracleFinalityHeld,
+    )
 }
 
 pub(crate) fn require_positive_amount(amount: u64) -> Result<()> {
@@ -92,192 +92,39 @@ pub(crate) fn require_positive_amount(amount: u64) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn propose_protocol_governance_authority_transfer_state(
-    governance: &mut ProtocolGovernance,
-    new_governance_authority: Pubkey,
-    now_ts: i64,
-) -> Result<(Pubkey, i64)> {
-    require!(
-        new_governance_authority != ZERO_PUBKEY,
-        OmegaXProtocolError::InvalidGovernanceAuthority
-    );
-    require!(
-        new_governance_authority != governance.governance_authority,
-        OmegaXProtocolError::InvalidGovernanceAuthority
-    );
-
-    let previous_governance_authority = governance.governance_authority;
-    let expires_at_ts = now_ts
-        .checked_add(GOVERNANCE_AUTHORITY_TRANSFER_WINDOW_SECONDS)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
-    governance.pending_governance_authority = new_governance_authority;
-    governance.pending_governance_proposed_at = now_ts;
-    governance.pending_governance_expires_at = expires_at_ts;
-    governance.audit_nonce = governance.audit_nonce.saturating_add(1);
-    Ok((previous_governance_authority, expires_at_ts))
-}
-
-pub(crate) fn accept_protocol_governance_authority_transfer_state(
-    governance: &mut ProtocolGovernance,
-    accepting_authority: &Pubkey,
-    now_ts: i64,
-) -> Result<Pubkey> {
-    require!(
-        governance.pending_governance_authority != ZERO_PUBKEY,
-        OmegaXProtocolError::GovernanceAuthorityTransferMissing
-    );
-    require_keys_eq!(
-        *accepting_authority,
-        governance.pending_governance_authority,
-        OmegaXProtocolError::InvalidGovernanceAuthority
-    );
-    require!(
-        now_ts <= governance.pending_governance_expires_at,
-        OmegaXProtocolError::GovernanceAuthorityTransferExpired
-    );
-
-    let previous_governance_authority = governance.governance_authority;
-    governance.governance_authority = governance.pending_governance_authority;
-    governance.pending_governance_authority = ZERO_PUBKEY;
-    governance.pending_governance_proposed_at = 0;
-    governance.pending_governance_expires_at = 0;
-    governance.audit_nonce = governance.audit_nonce.saturating_add(1);
-    Ok(previous_governance_authority)
-}
-
-pub(crate) fn cancel_protocol_governance_authority_transfer_state(
-    governance: &mut ProtocolGovernance,
-) -> Result<Pubkey> {
-    require!(
-        governance.pending_governance_authority != ZERO_PUBKEY,
-        OmegaXProtocolError::GovernanceAuthorityTransferMissing
-    );
-
-    let canceled_governance_authority = governance.pending_governance_authority;
-    governance.pending_governance_authority = ZERO_PUBKEY;
-    governance.pending_governance_proposed_at = 0;
-    governance.pending_governance_expires_at = 0;
-    governance.audit_nonce = governance.audit_nonce.saturating_add(1);
-    Ok(canceled_governance_authority)
-}
-
 pub(crate) fn require_domain_control(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    domain: &ReserveDomain,
+    domain: &ReserveDomainAccountData<'_>,
 ) -> Result<()> {
-    if *authority == domain.domain_admin || *authority == governance.governance_authority {
+    if *authority == domain.domain_admin {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)
     }
-}
-
-pub(crate) fn require_oracle_profile_control(
-    authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    oracle_profile: &OracleProfile,
-) -> Result<()> {
-    if *authority == oracle_profile.admin
-        || *authority == oracle_profile.oracle
-        || *authority == governance.governance_authority
-    {
-        Ok(())
-    } else {
-        err!(OmegaXProtocolError::Unauthorized)
-    }
-}
-
-pub(crate) fn validate_oracle_profile_fields(args: &RegisterOracleArgs) -> Result<()> {
-    validate_oracle_profile_strings(
-        &args.display_name,
-        &args.legal_name,
-        &args.website_url,
-        &args.app_url,
-        &args.logo_uri,
-        &args.webhook_url,
-        &args.supported_schema_key_hashes,
-    )
-}
-
-pub(crate) fn validate_oracle_profile_strings(
-    display_name: &str,
-    legal_name: &str,
-    website_url: &str,
-    app_url: &str,
-    logo_uri: &str,
-    webhook_url: &str,
-    supported_schema_key_hashes: &[[u8; 32]],
-) -> Result<()> {
-    require_bounded_string(display_name, MAX_NAME_LEN)?;
-    require_bounded_string(legal_name, MAX_LONG_NAME_LEN)?;
-    require_bounded_string(website_url, MAX_URI_LEN)?;
-    require_bounded_string(app_url, MAX_URI_LEN)?;
-    require_bounded_string(logo_uri, MAX_URI_LEN)?;
-    require_bounded_string(webhook_url, MAX_URI_LEN)?;
-    require!(
-        supported_schema_key_hashes.len() <= MAX_ORACLE_SUPPORTED_SCHEMAS,
-        OmegaXProtocolError::TooManyOracleSupportedSchemas
-    );
-    Ok(())
-}
-
-pub(crate) fn validate_oracle_profile_fields_update(args: &UpdateOracleProfileArgs) -> Result<()> {
-    validate_oracle_profile_strings(
-        &args.display_name,
-        &args.legal_name,
-        &args.website_url,
-        &args.app_url,
-        &args.logo_uri,
-        &args.webhook_url,
-        &args.supported_schema_key_hashes,
-    )
-}
-
-pub(crate) fn write_supported_schema_hashes(
-    destination: &mut [[u8; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS],
-    values: &[[u8; 32]],
-) {
-    *destination = [[0u8; 32]; MAX_ORACLE_SUPPORTED_SCHEMAS];
-    for (index, value) in values.iter().enumerate() {
-        destination[index] = *value;
-    }
-}
-
-pub(crate) fn validate_outcome_schema_fields(args: &RegisterOutcomeSchemaArgs) -> Result<()> {
-    require_bounded_string(&args.schema_key, MAX_SCHEMA_KEY_LEN)?;
-    require_bounded_string(&args.metadata_uri, MAX_URI_LEN)?;
-    Ok(())
 }
 
 pub(crate) fn require_plan_control(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    plan: &HealthPlan,
+    plan: &HealthPlanAccountData<'_>,
 ) -> Result<()> {
-    if *authority == plan.plan_admin
-        || *authority == plan.sponsor_operator
-        || *authority == governance.governance_authority
-    {
+    if *authority == plan.plan_admin || *authority == plan.sponsor_operator {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)
     }
 }
 
-pub(crate) fn obligation_has_linked_claim_case(obligation: &Obligation) -> bool {
+pub(crate) fn obligation_has_linked_claim_case(obligation: &ObligationAccountData<'_>) -> bool {
     obligation.claim_case != ZERO_PUBKEY
 }
 
 pub(crate) fn require_linked_claim_reserve_operator(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    plan: &HealthPlan,
+    plan: &HealthPlanAccountData<'_>,
 ) -> Result<()> {
     if *authority == plan.oracle_authority
         || *authority == plan.claims_operator
         || *authority == plan.plan_admin
-        || *authority == governance.governance_authority
     {
         Ok(())
     } else {
@@ -287,13 +134,9 @@ pub(crate) fn require_linked_claim_reserve_operator(
 
 pub(crate) fn require_linked_claim_settlement_operator(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    plan: &HealthPlan,
+    plan: &HealthPlanAccountData<'_>,
 ) -> Result<()> {
-    if *authority == plan.claims_operator
-        || *authority == plan.plan_admin
-        || *authority == governance.governance_authority
-    {
+    if *authority == plan.claims_operator || *authority == plan.plan_admin {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)
@@ -302,62 +145,49 @@ pub(crate) fn require_linked_claim_settlement_operator(
 
 pub(crate) fn require_obligation_reserve_control(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    plan: &HealthPlan,
-    obligation: &Obligation,
+    plan: &HealthPlanAccountData<'_>,
+    obligation: &ObligationAccountData<'_>,
 ) -> Result<()> {
     if obligation_has_linked_claim_case(obligation) {
-        require_linked_claim_reserve_operator(authority, governance, plan)
+        require_linked_claim_reserve_operator(authority, plan)
     } else {
-        require_plan_control(authority, governance, plan)
+        require_plan_control(authority, plan)
     }
 }
 
 pub(crate) fn require_obligation_settlement_control(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    plan: &HealthPlan,
-    obligation: &Obligation,
+    plan: &HealthPlanAccountData<'_>,
+    obligation: &ObligationAccountData<'_>,
 ) -> Result<()> {
     if obligation_has_linked_claim_case(obligation) {
-        require_linked_claim_settlement_operator(authority, governance, plan)
+        require_linked_claim_settlement_operator(authority, plan)
     } else {
-        require_plan_control(authority, governance, plan)
+        require_plan_control(authority, plan)
     }
 }
 
-// Resolve the SPL recipient for a claim settlement. Routing is exclusively
-// controlled by the member-set delegate_recipient field on ClaimCase: if it
-// is the ZERO_PUBKEY, payouts go to member_position.wallet. The `claimant`
-// field on ClaimCase is informational metadata only — it is constrained at
-// intake to equal member_position.wallet (PT-2026-04-27-04 fix).
-pub(crate) fn resolve_claim_settlement_recipient(
-    claim_case: &ClaimCase,
-    member_position: &MemberPosition,
-) -> Pubkey {
+// Resolve the SPL recipient for a claim settlement. The claimant is now the
+// on-chain settlement default; a claimant-authorized delegate may override it.
+pub(crate) fn resolve_claim_settlement_recipient(claim_case: &ClaimCaseAccountData<'_>) -> Pubkey {
     if claim_case.delegate_recipient != ZERO_PUBKEY {
         claim_case.delegate_recipient
     } else {
-        member_position.wallet
+        claim_case.claimant
     }
 }
 
 pub(crate) fn require_claim_intake_submitter(
     authority: &Pubkey,
-    plan: &HealthPlan,
-    member_position: &MemberPosition,
-    args: &OpenClaimCaseArgs,
+    plan: &HealthPlanAccountData<'_>,
+    claimant: Pubkey,
 ) -> Result<()> {
-    // Both branches require args.claimant == member_position.wallet so the
-    // claimant field cannot be used to divert funds when settlement transfers
-    // ship. Recipient routing is handled separately via ClaimCase.delegate_recipient
-    // (set by the member via `authorize_claim_recipient`).
-    let claimant_is_member = args.claimant == member_position.wallet;
-    let member_self_submit = *authority == member_position.wallet && claimant_is_member;
+    let claimant_present = claimant != ZERO_PUBKEY;
+    let claimant_self_submit = *authority == claimant && claimant_present;
     let operator_submit =
-        (*authority == plan.claims_operator || *authority == plan.plan_admin) && claimant_is_member;
+        (*authority == plan.claims_operator || *authority == plan.plan_admin) && claimant_present;
 
-    if member_self_submit || operator_submit {
+    if claimant_self_submit || operator_submit {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)
@@ -366,92 +196,20 @@ pub(crate) fn require_claim_intake_submitter(
 
 pub(crate) fn require_claim_operator(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    plan: &HealthPlan,
+    plan: &HealthPlanAccountData<'_>,
 ) -> Result<()> {
-    if *authority == plan.claims_operator
-        || *authority == plan.plan_admin
-        || *authority == governance.governance_authority
-    {
+    if *authority == plan.claims_operator || *authority == plan.plan_admin {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)
     }
 }
 
-pub(crate) fn require_valid_attestation_decision(decision: u8) -> Result<()> {
-    match decision {
-        CLAIM_ATTESTATION_DECISION_SUPPORT_APPROVE
-        | CLAIM_ATTESTATION_DECISION_SUPPORT_DENY
-        | CLAIM_ATTESTATION_DECISION_REQUEST_REVIEW
-        | CLAIM_ATTESTATION_DECISION_ABSTAIN => Ok(()),
-        _ => err!(OmegaXProtocolError::InvalidClaimAttestationDecision),
-    }
-}
-
-pub(crate) fn is_zero_hash(value: &[u8; 32]) -> bool {
-    *value == [0; 32]
-}
-
-pub(crate) fn oracle_profile_supports_schema(
-    oracle_profile: &OracleProfile,
-    schema_key_hash: [u8; 32],
-) -> bool {
-    if is_zero_hash(&schema_key_hash) {
-        return false;
-    }
-
-    let supported_count =
-        usize::from(oracle_profile.supported_schema_count).min(MAX_ORACLE_SUPPORTED_SCHEMAS);
-    if supported_count == 0 {
-        return false;
-    }
-
-    oracle_profile
-        .supported_schema_key_hashes
-        .iter()
-        .take(supported_count)
-        .any(|supported_hash| *supported_hash == schema_key_hash)
-}
-
-pub(crate) fn require_claim_attestation_oracle_authority(
-    health_plan: &HealthPlan,
-    funding_line: &FundingLine,
-    oracle_profile: &OracleProfile,
-) -> Result<()> {
-    if funding_line.line_type == FUNDING_LINE_TYPE_LIQUIDITY_POOL_ALLOCATION {
-        return Ok(());
-    }
-
-    require_keys_eq!(
-        oracle_profile.oracle,
-        health_plan.oracle_authority,
-        OmegaXProtocolError::Unauthorized
-    );
-    Ok(())
-}
-
-pub(crate) fn require_curator_control(
+pub(crate) fn require_direct_claim_settlement_control(
     authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    pool: &LiquidityPool,
+    plan: &HealthPlanAccountData<'_>,
 ) -> Result<()> {
-    if *authority == pool.curator || *authority == governance.governance_authority {
-        Ok(())
-    } else {
-        err!(OmegaXProtocolError::Unauthorized)
-    }
-}
-
-pub(crate) fn require_allocator(
-    authority: &Pubkey,
-    governance: &ProtocolGovernance,
-    pool: &LiquidityPool,
-) -> Result<()> {
-    if *authority == pool.allocator
-        || *authority == pool.curator
-        || *authority == governance.governance_authority
-    {
+    if *authority == plan.plan_admin {
         Ok(())
     } else {
         err!(OmegaXProtocolError::Unauthorized)

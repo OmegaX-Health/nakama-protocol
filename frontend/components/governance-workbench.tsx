@@ -112,21 +112,16 @@ type GovernanceAuthorityLane = {
   configured: boolean;
 };
 
-// Canonical on-chain instructions each governance lane controls. Strings must
-// match instruction names in the deployed program surface (shared/protocol_contract.json).
 const GOVERNANCE_ROLE_ACTIONS: Record<GovernanceAuthorityRole, string[]> = {
-  protocol_governance: ["set_protocol_emergency_pause", "rotate_protocol_governance_authority"],
-  domain_admin: ["update_reserve_domain_controls", "configure_reserve_asset_rail"],
-  plan_admin: ["update_health_plan_controls", "version_policy_series"],
-  sponsor_operator: ["open_funding_line", "fund_sponsor_budget"],
+  protocol_governance: ["set_protocol_emergency_pause", "governance_execute"],
+  domain_admin: ["update_reserve_domain_controls", "rail_posture"],
+  plan_admin: ["update_health_plan_controls", "update_policy_series_controls"],
+  sponsor_operator: ["create_funding_line", "fund_plan_liabilities"],
   claims_operator: ["adjudicate_claim_case", "settle_claim_case", "settle_obligation"],
   oracle_authority: ["reserve_obligation", "release_reserve"],
   pool_curator: ["update_liquidity_pool_controls", "update_capital_class_controls"],
   pool_allocator: ["create_allocation_position", "allocate_capital"],
-  // Pool sentinel is a configured guardian field but holds no direct instruction
-  // authority on-chain today (the program rejects sentinel curator/allocator calls),
-  // so it advertises no callable instructions.
-  pool_sentinel: [],
+  pool_sentinel: ["queue_only_controls", "capital_pause"],
 };
 
 function isConfiguredAuthority(address?: string | null): address is string {
@@ -158,7 +153,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
   const [proposalQueueError, setProposalQueueError] = useState<string | null>(null);
   const canOperate = OPERATOR_PERSONAS.has(effectivePersona);
   const [operatorOpen, setOperatorOpen] = useState(false);
-  const [operatorSection, setOperatorSection] = useState<GovernanceOperatorSection>("governance");
+  const [operatorSection, setOperatorSection] = useState<GovernanceOperatorSection>("domain");
 
   const openOperator = useCallback((next: GovernanceOperatorSection) => {
     setOperatorSection(next);
@@ -197,18 +192,6 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
     : null;
   const authorityWallets = useMemo<GovernanceAuthorityLane[]>(() => {
     const rows: GovernanceAuthorityLane[] = [];
-
-    if (isConfiguredAuthority(snapshot.protocolGovernance?.governanceAuthority)) {
-      rows.push({
-        key: `protocol_governance:${snapshot.protocolGovernance.governanceAuthority}`,
-        role: "protocol_governance",
-        label: "Shared protocol timelock",
-        lane: "Protocol shell",
-        address: snapshot.protocolGovernance.governanceAuthority,
-        actions: GOVERNANCE_ROLE_ACTIONS.protocol_governance,
-        configured: true,
-      });
-    }
 
     for (const domain of snapshot.reserveDomains) {
       if (!isConfiguredAuthority(domain.domainAdmin)) continue;
@@ -307,7 +290,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
     }
 
     return [...rows].sort(compareAuthorityLanes);
-  }, [snapshot.healthPlans, snapshot.liquidityPools, snapshot.protocolGovernance, snapshot.reserveDomains]);
+  }, [snapshot.healthPlans, snapshot.liquidityPools, snapshot.reserveDomains]);
   const configuredAuthorityWallets = authorityWallets.filter((wallet) => wallet.configured);
   const reserveDomains = snapshot.reserveDomains;
   const queueStateCounts = useMemo(() => buildQueueStateCounts(queue), [queue]);
@@ -433,7 +416,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                 <button
                   type="button"
                   className="plans-hero-cta"
-                  onClick={() => openOperator("governance")}
+                  onClick={() => openOperator("domain")}
                 >
                   <span className="material-symbols-outlined" aria-hidden="true">tune</span>
                   Operator actions
@@ -588,13 +571,7 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                         type="button"
                         className="plans-secondary-cta"
                         onClick={() =>
-                          openOperator(
-                            snapshot.protocolGovernance
-                              ? snapshot.reserveDomains.length === 0
-                                ? "domain"
-                                : "vault"
-                              : "governance",
-                          )
+                          openOperator(snapshot.reserveDomains.length === 0 ? "domain" : "vault")
                         }
                       >
                         <span className="material-symbols-outlined" aria-hidden="true">tune</span>
@@ -603,12 +580,6 @@ export function GovernanceWorkbench({ searchParams = {} }: GovernanceWorkbenchPr
                     ) : null}
                   </div>
                   <div className="plans-data-grid">
-                    <div className="plans-data-row">
-                      <span className="plans-data-label">Governance</span>
-                      <span className="plans-data-value">
-                        {snapshot.protocolGovernance ? "Initialized" : "Missing"}
-                      </span>
-                    </div>
                     <div className="plans-data-row">
                       <span className="plans-data-label">Reserve domains</span>
                       <span className="plans-data-value">

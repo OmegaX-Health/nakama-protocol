@@ -6,7 +6,7 @@
 
 ## Why this exists
 
-The on-chain program enforces role checks (`require_governance`, `require_plan_control`, `require_claim_operator`, `require_curator_control`, `require_allocator`) plus pool-scoped oracle approval/permission checks for LP-backed claim attestations. The safety story for any of those checks is **only as strong as the wallet behind the role**. Pre-pen-test, the Genesis live bootstrap defaulted every privileged role to the governance signer if the role-specific environment variable was unset — a single key compromise drained the whole protocol. PT-05 closed the silent collapse via the opt-in `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1` guard. This doc closes the rest of the gap: matrix, multisig requirement, break-glass exception, and rotation/recovery posture.
+The on-chain program enforces role checks for plan control, claim operations, reserve-domain control, and settlement custody. The safety story for any of those checks is **only as strong as the wallet behind the role**. Pre-pen-test, the Genesis live bootstrap defaulted every privileged role to the governance signer if the role-specific environment variable was unset — a single key compromise drained the whole protocol. PT-05 closed the silent collapse via the opt-in `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1` guard. This doc closes the rest of the gap: matrix, multisig requirement, break-glass exception, and rotation/recovery posture.
 
 ## 1. Privileged roles
 
@@ -14,12 +14,12 @@ Every entry below maps to a `require_*` check in the onchain program source (`pr
 
 | Role | Guards (program) | Allowed actions | Custody owner | Mainnet signer (required) | Pre-fix default |
 |------|------------------|-----------------|---------------|---------------------------|-----------------|
-| **Protocol governance** | `require_governance` | `set_protocol_emergency_pause`, `rotate_protocol_governance_authority` proposal, `accept_protocol_governance_authority`, `cancel_protocol_governance_authority_transfer`, protocol-config updates | OmegaX Health FZCO | **Multisig PDA** (Squads V4 or equivalent) — see §2 | local keypair via `SOLANA_KEYPAIR` |
+| **Protocol governance** | `require_governance` | `set_protocol_emergency_pause`, protocol-config updates | OmegaX Health FZCO | **Multisig PDA** (Squads V4 or equivalent) — see §2 | local keypair via `SOLANA_KEYPAIR` |
 | **Reserve domain admin** | `require_governance` (domain ops) | reserve-domain pause flags, vault wiring | Same as governance for v1; can split later | Multisig PDA | `governanceAuthority` |
 | **Plan admin / Sponsor** | `require_plan_control` | `update_health_plan`, sponsor-budget funding, plan pause flags | Sponsor entity | Distinct wallet (multisig recommended for >$10k exposure) | `governanceAuthority` |
 | **Sponsor operator** | `require_plan_control` (sponsor lane) | premium recording, sponsor-budget operations | Operations team | Distinct wallet | `governanceAuthority` |
-| **Claims operator** | `require_claim_operator` | `attach_claim_evidence_ref`, `adjudicate_claim_case`, `settle_claim_case` | Claims operations team | Distinct hot wallet (rotated quarterly), backed by ≥2-of-N multisig for high-value claims | `governanceAuthority` |
-| **Oracle authority** | `OracleProfile` signer + verified-schema gate; non-LP claims require the plan's configured oracle authority; LP-backed claims require active `PoolOracleApproval` and `POOL_ORACLE_PERMISSION_ATTEST_CLAIM` | `register_oracle`, `claim_oracle`, `attest_claim_case` from oracle profile | Oracle operator (OmegaX Health for v1) | Distinct hot wallet, rotated quarterly | (none — must be set explicitly) |
+| **Claims operator** | `require_claim_operator` | `adjudicate_claim_case`, `settle_claim_case` | Claims operations team | Distinct hot wallet (rotated quarterly), backed by ≥2-of-N multisig for high-value claims | `governanceAuthority` |
+| **Oracle authority** | Off-chain/adjunct review signer for Phase 0 evidence workflows | Evidence review and claim-decision feeds outside the base protocol | Oracle operator (OmegaX Health for v1) | Distinct hot wallet, rotated quarterly | (none — must be set explicitly) |
 | **Pool curator** | `require_curator_control` | `create_capital_class`, capital-class restriction updates, manager credentialing | LP product team | Distinct wallet, multisig for production | `governanceAuthority` |
 | **Pool allocator** | `require_allocator` | `create_allocation_position`, allocation cap & weight updates | Capital management team | Distinct wallet | `governanceAuthority` |
 | **Pool sentinel** | no broad economic mutation helper; sentinel remains a configured emergency role for future narrow pause/throttle surfaces | pool-level pause flags, redemption-queue throttle | On-call sentinel | Distinct hot wallet (low blast radius — short-lived rotation OK) | `governanceAuthority` |
@@ -77,7 +77,7 @@ Each role has a defined rotation cadence and method. Rotation does not require a
 
 | Role | Cadence | Method | Approval |
 |------|---------|--------|----------|
-| Protocol governance | On-demand only (post-incident or member change) | `rotate_protocol_governance_authority` proposes a pending authority; `accept_protocol_governance_authority` must be signed by the new authority within 7 days; `cancel_protocol_governance_authority_transfer` clears stale proposals | ≥2-of-N multisig proposal + new-authority acceptance evidence |
+| Protocol governance | On-demand only (post-incident or member change) | No in-program handoff in the trimmed surface; initialize or redeploy with the intended governance authority | ≥2-of-N multisig proposal plus release/redeploy evidence |
 | Plan admin / Sponsor | On-demand (sponsor change, contract end) | governance-authorized plan-config update | ≥1 governance multisig signer + sponsor signature |
 | Claims operator | Quarterly | governance-authorized plan-config update; old key remains valid for a 7-day overlap before being removed | ≥1 governance multisig signer |
 | Oracle authority | Quarterly | `register_oracle` / `claim_oracle` from new authority, then pool approval/permission updates for LP-backed claim products | Oracle operator + ≥1 governance multisig signer |

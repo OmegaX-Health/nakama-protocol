@@ -2,13 +2,23 @@
 
 //! Classic SPL-token custody checks and vault transfer helpers.
 
-use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
+#[cfg(not(feature = "quasar"))]
+use crate::classic_token::{Mint, TokenAccount, TokenInterface};
+use crate::platform::*;
+#[cfg(not(feature = "quasar"))]
+use anchor_lang::prelude::CpiContext;
+#[cfg(not(feature = "quasar"))]
+use anchor_spl::token::{self, TransferChecked};
+#[cfg(feature = "quasar")]
+use quasar_lang::cpi::Seed;
+#[cfg(feature = "quasar")]
+use quasar_spl::{TokenCpi, SPL_TOKEN_ID};
 
 use crate::constants::*;
 use crate::errors::*;
 use crate::state::*;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_classic_token_program_keys(
     mint_owner: Pubkey,
     token_program: Pubkey,
@@ -26,20 +36,51 @@ pub(crate) fn require_classic_token_program_keys(
     Ok(())
 }
 
+#[cfg(feature = "quasar")]
+pub(crate) fn require_classic_token_program_keys(
+    mint_owner: Pubkey,
+    token_program: Pubkey,
+) -> Result<()> {
+    require_keys_eq!(
+        mint_owner,
+        SPL_TOKEN_ID,
+        OmegaXProtocolError::Token2022NotSupported
+    );
+    require_keys_eq!(
+        token_program,
+        SPL_TOKEN_ID,
+        OmegaXProtocolError::Token2022NotSupported
+    );
+    Ok(())
+}
+
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn require_classic_spl_token<'info>(
-    asset_mint: &InterfaceAccount<'info, Mint>,
-    token_program: &Interface<'info, TokenInterface>,
+    asset_mint: &Account<'info, Mint>,
+    token_program: &Program<'info, TokenInterface>,
 ) -> Result<()> {
     require_classic_token_program_keys(*asset_mint.to_account_info().owner, token_program.key())
 }
 
+#[cfg(feature = "quasar")]
+pub(crate) fn require_classic_spl_token(
+    asset_mint: &InterfaceAccount<Mint>,
+    token_program: &Interface<TokenInterface>,
+) -> Result<()> {
+    require_classic_token_program_keys(
+        *asset_mint.to_account_view().owner(),
+        *token_program.address(),
+    )
+}
+
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn transfer_to_domain_vault<'info>(
     amount: u64,
     authority: &Signer<'info>,
-    source_token_account: &InterfaceAccount<'info, TokenAccount>,
-    asset_mint: &InterfaceAccount<'info, Mint>,
-    vault_token_account: &InterfaceAccount<'info, TokenAccount>,
-    token_program: &Interface<'info, TokenInterface>,
+    source_token_account: &Account<'info, TokenAccount>,
+    asset_mint: &Account<'info, Mint>,
+    vault_token_account: &Account<'info, TokenAccount>,
+    token_program: &Program<'info, TokenInterface>,
     domain_asset_vault: &DomainAssetVault,
 ) -> Result<()> {
     require_classic_spl_token(asset_mint, token_program)?;
@@ -80,11 +121,65 @@ pub(crate) fn transfer_to_domain_vault<'info>(
         to: vault_token_account.to_account_info(),
         authority: authority.to_account_info(),
     };
-    token_interface::transfer_checked(
+    token::transfer_checked(
         CpiContext::new(token_program.to_account_info(), accounts),
         amount,
         asset_mint.decimals,
     )
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn transfer_to_domain_vault(
+    amount: u64,
+    authority: &Signer,
+    source_token_account: &InterfaceAccount<TokenAccount>,
+    asset_mint: &InterfaceAccount<Mint>,
+    vault_token_account: &InterfaceAccount<TokenAccount>,
+    token_program: &Interface<TokenInterface>,
+    domain_asset_vault: &DomainAssetVault,
+) -> Result<()> {
+    require_classic_spl_token(asset_mint, token_program)?;
+    require_keys_eq!(
+        *source_token_account.owner(),
+        *authority.address(),
+        OmegaXProtocolError::TokenAccountOwnerMismatch
+    );
+    require_keys_neq!(
+        *source_token_account.address(),
+        *vault_token_account.address(),
+        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+    );
+    require_keys_eq!(
+        *source_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *asset_mint.address(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *vault_token_account.address(),
+        domain_asset_vault.vault_token_account,
+        OmegaXProtocolError::VaultTokenAccountMismatch
+    );
+    require_keys_eq!(
+        *vault_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+
+    token_program
+        .transfer_checked(
+            source_token_account,
+            asset_mint,
+            vault_token_account,
+            authority,
+            amount,
+            asset_mint.decimals(),
+        )
+        .invoke()
 }
 
 // PDA-signed outflow helper. Unblocks PT-2026-04-27-01 and PT-2026-04-27-02:
@@ -99,13 +194,14 @@ pub(crate) fn transfer_to_domain_vault<'info>(
 // `token::authority = domain_asset_vault`. Without that refactor in place the
 // CPI will fail at runtime with TokenOwnerMismatch — by design.
 #[allow(dead_code)]
+#[cfg(not(feature = "quasar"))]
 pub(crate) fn transfer_from_domain_vault<'info>(
     amount: u64,
     domain_asset_vault: &Account<'info, DomainAssetVault>,
-    vault_token_account: &InterfaceAccount<'info, TokenAccount>,
-    recipient_token_account: &InterfaceAccount<'info, TokenAccount>,
-    asset_mint: &InterfaceAccount<'info, Mint>,
-    token_program: &Interface<'info, TokenInterface>,
+    vault_token_account: &Account<'info, TokenAccount>,
+    recipient_token_account: &Account<'info, TokenAccount>,
+    asset_mint: &Account<'info, Mint>,
+    token_program: &Program<'info, TokenInterface>,
 ) -> Result<()> {
     require_classic_spl_token(asset_mint, token_program)?;
     require_keys_eq!(
@@ -150,9 +246,67 @@ pub(crate) fn transfer_from_domain_vault<'info>(
         to: recipient_token_account.to_account_info(),
         authority: domain_asset_vault.to_account_info(),
     };
-    token_interface::transfer_checked(
+    token::transfer_checked(
         CpiContext::new_with_signer(token_program.to_account_info(), accounts, signer_seeds),
         amount,
         asset_mint.decimals,
     )
+}
+
+#[cfg(feature = "quasar")]
+pub(crate) fn transfer_from_domain_vault(
+    amount: u64,
+    domain_asset_vault: &Account<DomainAssetVault>,
+    vault_token_account: &InterfaceAccount<TokenAccount>,
+    recipient_token_account: &InterfaceAccount<TokenAccount>,
+    asset_mint: &InterfaceAccount<Mint>,
+    token_program: &Interface<TokenInterface>,
+) -> Result<()> {
+    require_classic_spl_token(asset_mint, token_program)?;
+    require_keys_eq!(
+        *vault_token_account.address(),
+        domain_asset_vault.vault_token_account,
+        OmegaXProtocolError::VaultTokenAccountMismatch
+    );
+    require_keys_eq!(
+        *asset_mint.address(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *vault_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_eq!(
+        *recipient_token_account.mint(),
+        domain_asset_vault.asset_mint,
+        OmegaXProtocolError::AssetMintMismatch
+    );
+    require_keys_neq!(
+        *vault_token_account.address(),
+        *recipient_token_account.address(),
+        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+    );
+
+    let reserve_domain = domain_asset_vault.reserve_domain;
+    let asset_mint_key = domain_asset_vault.asset_mint;
+    let bump_seed = [domain_asset_vault.bump];
+    let signer_seeds = [
+        Seed::from(SEED_DOMAIN_ASSET_VAULT),
+        Seed::from(reserve_domain.as_ref()),
+        Seed::from(asset_mint_key.as_ref()),
+        Seed::from(&bump_seed),
+    ];
+
+    token_program
+        .transfer_checked(
+            vault_token_account,
+            asset_mint,
+            recipient_token_account,
+            domain_asset_vault,
+            amount,
+            asset_mint.decimals(),
+        )
+        .invoke_signed(&signer_seeds)
 }

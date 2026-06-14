@@ -3,7 +3,7 @@
   "displayName": "Network School Acute Assist",
   "sponsorLabel": "Network School Verified Members",
   "metadataUri": "/metadata/plans/network-school-acute-assist-v1.json",
-  "description": "Public-safe operator bootstrap metadata for a Network School-only acute assistance pilot with guarded Core, Long-Termer, and Family offers.",
+  "description": "Public-safe operator bootstrap metadata for a Network School-only 30-day acute assistance pilot.",
   "membership": {
     "mode": "invite_only",
     "gateKind": "invite_only",
@@ -35,17 +35,16 @@
     }
   ],
   "cohort0": {
-    "policyOrHouseholdCap": 25,
-    "hardAggregatePayoutCapUsd": 3000,
+    "policyOrHouseholdCap": 250,
+    "hardAggregatePayoutCapUsd": 6000,
     "defaultSku": "core",
     "launchSkus": [
+      "lite",
       "core",
-      "longTermer",
-      "familyGuarded"
+      "plus",
+      "familyCore"
     ],
     "excludedSkus": [
-      "lite",
-      "plus",
       "familyPlus"
     ]
   },
@@ -82,3 +81,4 @@
     ]
   }
 }
+

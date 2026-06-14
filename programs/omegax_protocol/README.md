@@ -8,16 +8,23 @@ The canonical Anchor facade lives in [`src/lib.rs`](./src/lib.rs). It declares
 the program id, re-exports the public protocol types, and keeps every public
 instruction present in `#[program] pub mod omegax_protocol`.
 
+The Anchor-to-Quasar migration is staged through
+[`src/platform.rs`](./src/platform.rs). Protocol implementation modules should
+import `crate::platform::*` instead of framework preludes directly, so the
+remaining Quasar swap is constrained to the platform seam plus the account,
+instruction, and CPI ports. Quasar discriminator constants live in
+[`src/quasar_discriminators.rs`](./src/quasar_discriminators.rs) and preserve
+the current IDL instruction, account, and event byte prefixes. The live
+migration checklist is
+[`../../docs/architecture/quasar-migration.md`](../../docs/architecture/quasar-migration.md).
+
 Instruction implementation now sits next to its account validation context in
 audit-domain modules:
 
-- [`src/governance.rs`](./src/governance.rs)
 - [`src/reserve_custody.rs`](./src/reserve_custody.rs)
-- [`src/plans_membership.rs`](./src/plans_membership.rs)
+- [`src/plans_membership.rs`](./src/plans_membership.rs) for health plans and policy series
 - [`src/funding_obligations/`](./src/funding_obligations/)
 - [`src/claims.rs`](./src/claims.rs)
-- [`src/capital/`](./src/capital/)
-- [`src/fees.rs`](./src/fees.rs)
 - [`src/oracle_schema.rs`](./src/oracle_schema.rs)
 - [`src/kernel.rs`](./src/kernel.rs) and [`src/kernel/`](./src/kernel/) for shared authorization, math, transfer, and reserve-accounting helpers
 
@@ -31,38 +38,40 @@ Shared public surface types live in explicit modules:
 
 The active public object model is:
 
-- `ProtocolGovernance`
 - `ReserveDomain`
 - `DomainAssetVault`
 - `DomainAssetLedger`
 - `HealthPlan`
 - `PlanReserveLedger`
 - `PolicySeries`
-- `SeriesReserveLedger`
-- `MemberPosition`
 - `FundingLine`
 - `FundingLineLedger`
+- `CapitalContribution`
 - `ClaimCase`
 - `Obligation`
-- `LiquidityPool`
-- `CapitalClass`
-- `PoolClassLedger`
-- `LPPosition`
-- `AllocationPosition`
-- `AllocationLedger`
 
-Restricted and wrapper-only capital classes now rely on managed `LPPosition` credentialing. Direct deposits do not carry a caller-supplied credential flag; access is granted on-chain through the canonical LP position for that class and owner.
+The former governance, fee-vault, liquidity-pool, capital-class, LP-position,
+allocation, redemption, impairment, member-position, and outcome-schema
+registry accounts have been removed from the live program surface. Reserve
+movement now flows through reserve domains, health plans, policy series,
+funding lines, obligations, and claim cases. Claim cases keep only proof
+fingerprints for evidence and decision packages; raw evidence review and oracle
+attestations stay off-chain or in adjunct programs instead of the base protocol.
+Backstop capital now uses `CapitalContribution` records instead of tokenized LP
+positions: contributors sign deposits into open backstop funding lines, the
+program tracks contributed and returned amounts, and quote/reward policy remains
+off-chain.
 
 Founder reservations are off-chain payment reservations into Squads custody,
 not on-chain protocol accounts. They do not increase claims-paying reserve,
 create active cover, or change policy state until an activation/posting flow
 books reserve through the existing reserve, premium, and claim controls.
-`ReserveAssetRail` remains the on-chain enforcement layer for live reserve
-capacity and payout eligibility: role, payout priority, oracle source, price
-freshness, price-confidence threshold, haircut, and exposure cap. Stable rails
-pay first, volatile rails are discounted, and OMEGAX remains disabled for
-capacity/payout by default unless governance explicitly enables it with
-conservative limits.
+The base program now enforces same-asset settlement through domain asset vaults,
+domain/funding/plan/series ledgers, funding-line asset binding, and SPL outflow
+accounts instead of a separate reserve-asset rail and price feed layer.
+Realized reserve earnings can be recorded only after tokens move back into the
+domain vault, and each recording carries a nonzero reference hash for off-chain
+auditability.
 
 ## Important reviewer rule
 
@@ -87,17 +96,34 @@ npm run rust:fmt:check
 npm run rust:test
 npm run rust:lint
 npm run anchor:idl
+npm run quasar:check
+npm run quasar:discriminators
 npm run protocol:contract
 ```
 
 ## QEDGen onboarding
 
-The repo has a brownfield QEDGen spec at
+The repo now has a brownfield QEDGen spec at
 [`../../omegax_protocol.qedspec`](../../omegax_protocol.qedspec), with
 project metadata in [`../../.qed/config.json`](../../.qed/config.json).
 
-Use [`../../formal_verification/README.md`](../../formal_verification/README.md)
-for the current commands, expected warning, and proof-claim boundary.
+Run the current spec sanity check from the repository root:
+
+```bash
+qedgen check --anchor-project programs/omegax_protocol --coverage --json
+```
+
+The current pass records the public handler surface, program id, selected
+constants, account contexts, source-derived signer bindings, an abstract
+aggregate `State.Live`, first-order handler effects, initial properties, and
+the obvious SPL transfer directions. Remaining modeling work is deliberately
+called out inline as `SPEC-REFINE` comments where exact per-account right-hand
+sides, fee carve-outs, PDA derivations, emitted events, and deeper conservation
+equations still need to be tightened.
+
+The current QEDGen check is expected to report one token-CPI warning for
+`create_domain_asset_vault`: that handler accepts `token_program` for vault
+account initialization but does not move tokens.
 
 ## Certora Solana lane
 

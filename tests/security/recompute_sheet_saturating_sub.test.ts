@@ -18,7 +18,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractRustFunctionBody, programSource as programSrc } from "./program_source.ts";
+import { extractRustFunctionBody } from "./program_source.ts";
 
 function extractFunctionBody(signaturePrefix: string): string {
   const match = /(?:pub\s+)?fn\s+(\w+)\s*\(/.exec(signaturePrefix);
@@ -59,22 +59,17 @@ test("[PT-12] book_inflow_sheet uses checked_add on the load-bearing `funded` fi
 });
 
 test("[PT-12] money-out paths decrement vault.total_assets via checked_sub, not saturating_sub", () => {
-  // Spot-check process_redemption_queue and settle_obligation — the two paths
-  // that decrement vault.total_assets. They must use checked_sub so an
-  // overdraft attempt aborts rather than silently wrapping.
-  const redemption = extractFunctionBody("pub fn process_redemption_queue(");
+  // Settlement and claim payout helpers must still use checked_sub directly
+  // on the reserve asset totals after the fee-vault rail cleanup.
+  const settleDelivery = extractFunctionBody("pub(crate) fn settle_delivery(");
   assert.ok(
-    /domain_asset_vault\.total_assets\s*=\s*\n?\s*checked_sub\(\s*ctx\.accounts\.domain_asset_vault\.total_assets,/.test(
-      redemption,
-    ) ||
-      /domain_asset_vault\.total_assets[^=]*=[^;]*checked_sub/.test(redemption),
-    "PT-12 mitigation: process_redemption_queue must use checked_sub on vault.total_assets",
+    /\*domain_assets\s*=\s*checked_sub\(\*domain_assets,\s*amount\)\?/.test(settleDelivery),
+    "PT-12 mitigation: settle_delivery must checked_sub domain_assets",
   );
 
-  // settle_obligation uses a helper (book_settlement_from_delivery). Confirm
-  // the helper exists and that it does the checked_sub via book_outflow.
+  const directClaimPayout = extractFunctionBody("pub(crate) fn book_direct_claim_payout(");
   assert.ok(
-    /fn\s+book_settlement_from_delivery/.test(programSrc),
-    "PT-12 prerequisite: book_settlement_from_delivery helper must exist",
+    /\*domain_assets\s*=\s*checked_sub\(\*domain_assets,\s*amount\)\?/.test(directClaimPayout),
+    "PT-12 mitigation: direct claim payout must checked_sub domain_assets",
   );
 });

@@ -8,7 +8,7 @@ Protection products now reconcile through the same reserve kernel as rewards, bu
 
 The protocol therefore separates:
 
-- policy and membership state on the `HealthPlan`
+- policy state on the `HealthPlan`
 - product economics on the `PolicySeries`
 - funding responsibility on the `FundingLine`
 - reviewed claim workflow on the `ClaimCase`
@@ -21,7 +21,6 @@ Raw medical payloads, raw claims packets, and human workflow stay offchain.
 Onchain claim state should hold only:
 
 - claim identity and lifecycle state
-- evidence or decision-support references
 - adjudication consequence
 - reserve booking and release consequence
 - settlement consequence
@@ -39,7 +38,6 @@ This keeps the economic truth portable without turning the chain into a case-man
 ### Claims operator / adjudicator
 
 - opens materially relevant `ClaimCase` records when needed
-- attaches evidence or decision-support references
 - approves or denies claims through explicit adjudication
 - can settle linked claim obligations after reserve is booked
 - does not get arbitrary authority to move unrelated money outside claim-linked liabilities
@@ -51,8 +49,7 @@ This keeps the economic truth portable without turning the chain into a case-man
 
 ### Member / beneficiary
 
-- holds plan and series participation through `MemberPosition`
-- is the beneficiary named on the resulting `Obligation`
+- is the beneficiary named on the resulting `Obligation` or claim
 - can inspect claim status and payout history through readers
 
 ## Canonical claim lifecycle
@@ -60,29 +57,22 @@ This keeps the economic truth portable without turning the chain into a case-man
 The canonical public flow is:
 
 1. `open_claim_case`
-2. optional `attach_claim_evidence_ref`
-3. optional `attest_claim_case`
-4. `adjudicate_claim_case`
-5. either:
+2. `adjudicate_claim_case`
+3. either:
    - `settle_claim_case` for unlinked claims, or
    - `reserve_obligation` -> `settle_obligation` for linked protection liabilities
 
 The economic consequence is expressed through `Obligation` state transitions:
 
 `open_claim_case` is intentionally authorization-bound at intake. The signer must either be the
-enrolled `MemberPosition.wallet` opening a claim for itself, or the plan's claim/plan operator
-opening the case through an operator workflow. The provided member position and funding line must
-belong to the selected plan and policy series, and the funding line must still be open.
+claimant opening a claim for itself, or the plan's claim/plan operator opening the case through an
+operator workflow for a nonzero claimant. The funding line must belong to the selected plan and
+policy series, and the funding line must still be open. Off-chain buyer, eligibility, and coverage
+activation systems own member eligibility before claims reach the protocol.
 
-Evidence references are mutable only until the first attestation. `attest_claim_case` must reference
-the current `claim_case.evidence_ref_hash`, use a governance-verified schema supported by the oracle
-profile, and run while protocol emergency pause and plan oracle-finality hold are clear. For
-premium, sponsor, and other non-LP funding lines, the attesting oracle must be the plan's configured
-`HealthPlan.oracle_authority`. For LP-allocation-backed claims, attestation instead requires active
-pool oracle approval plus the
-`POOL_ORACLE_PERMISSION_ATTEST_CLAIM` permission bit. Pool quorum is still policy metadata in Phase 0;
-multi-attestation finality is a later adjudication/finality layer, not something this instruction
-pretends to enforce.
+Evidence review payloads and oracle attestations are off-chain or adjunct-program concerns. The base
+protocol stores only claim proof fingerprints, the claim case, adjudication amounts, optional linked
+obligation, reserve impact, and settlement state.
 
 - proposed
 - reserved
@@ -102,15 +92,21 @@ Each material claim links back to:
 - one `HealthPlan`
 - one `PolicySeries`
 - one `FundingLine`
-- optional `LiquidityPool`, `CapitalClass`, and `AllocationPosition` when LP capital is part of the funding stack
+- optional contributor-level `CapitalContribution` facts when an open backstop funding line is funded by outside capital
 
 That keeps it possible to answer:
 
 - which funding line is responsible
-- which capital class is exposed
+- which contributor supplied simple backstop capital, if any
 - how much is reserved
 - how much is payable
 - what remains free or redeemable
+
+Contributor economics are intentionally not priced on-chain in this version. The
+quote oracle can read `CapitalContribution` records and realized reserve
+earnings references to decide discounts, credits, or manual rewards, while the
+program stays focused on custody, reserve accounting, claim fingerprints, and
+payout safety.
 
 ## Reviewer path
 
@@ -129,8 +125,8 @@ For the live program surface, start with:
 The localnet audit covers:
 
 - explicit protection-series premium funding
-- claim-case creation, attestation, and linkage
+- claim-case creation, adjudication, and linkage
 - approved and settled claim states
-- obligation linkage back to plan-side and capital-side funding
+- obligation linkage back to plan-side funding and backstop contribution facts
 - linked claim cases mirroring reserve and settlement state from the obligation path
 - reserve visibility during payout and post-settlement

@@ -14,8 +14,6 @@ import {
   deriveFundingLineLedgerPda,
   deriveMembershipAnchorSeatPda,
   derivePlanReserveLedgerPda,
-  deriveProtocolGovernancePda,
-  deriveSeriesReserveLedgerPda,
   getProgramId,
 } from "@/lib/protocol";
 import type { MembershipGateKind, MembershipMode } from "@/lib/plan-launch";
@@ -53,7 +51,6 @@ type CreatePolicySeriesInstructionParams = {
   authority: PublicKey;
   healthPlan: PublicKey;
   policySeries: PublicKey;
-  seriesReserveLedger: PublicKey;
   args: {
     seriesId: string;
     displayName: string;
@@ -66,7 +63,6 @@ type CreatePolicySeriesInstructionParams = {
     pricingHashHex: string;
     payoutHashHex: string;
     reserveModelHashHex: string;
-    evidenceRequirementsHashHex: string;
     comparabilityHashHex: string;
     policyOverridesHashHex: string;
     cycleSeconds: bigint;
@@ -83,7 +79,6 @@ type OpenFundingLineInstructionParams = {
   fundingLine: PublicKey;
   fundingLineLedger: PublicKey;
   planReserveLedger: PublicKey;
-  seriesReserveLedger: PublicKey;
   args: {
     lineId: string;
     policySeries: PublicKey;
@@ -174,7 +169,6 @@ function membershipGateKindValue(kind: MembershipGateKind): number {
 
 export function buildCreateHealthPlanInstruction(params: CreateHealthPlanInstructionParams): TransactionInstruction {
   const programId = getProgramId();
-  const protocolGovernance = deriveProtocolGovernancePda();
   const data = buildInstructionData(
     Uint8Array.from([136, 7, 197, 134, 241, 206, 83, 171]),
     [
@@ -205,7 +199,6 @@ export function buildCreateHealthPlanInstruction(params: CreateHealthPlanInstruc
     data,
     keys: [
       { pubkey: params.planAdmin, isSigner: true, isWritable: true },
-      { pubkey: protocolGovernance, isSigner: false, isWritable: false },
       { pubkey: params.reserveDomain, isSigner: false, isWritable: false },
       { pubkey: params.healthPlan, isSigner: false, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
@@ -215,7 +208,6 @@ export function buildCreateHealthPlanInstruction(params: CreateHealthPlanInstruc
 
 export function buildCreatePolicySeriesInstruction(params: CreatePolicySeriesInstructionParams): TransactionInstruction {
   const programId = getProgramId();
-  const protocolGovernance = deriveProtocolGovernancePda();
   const data = buildInstructionData(
     Uint8Array.from([70, 162, 231, 218, 211, 136, 110, 176]),
     [
@@ -230,7 +222,6 @@ export function buildCreatePolicySeriesInstruction(params: CreatePolicySeriesIns
       encodeHex32(params.args.pricingHashHex),
       encodeHex32(params.args.payoutHashHex),
       encodeHex32(params.args.reserveModelHashHex),
-      encodeHex32(params.args.evidenceRequirementsHashHex),
       encodeHex32(params.args.comparabilityHashHex),
       encodeHex32(params.args.policyOverridesHashHex),
       encodeI64(params.args.cycleSeconds),
@@ -243,10 +234,8 @@ export function buildCreatePolicySeriesInstruction(params: CreatePolicySeriesIns
     data,
     keys: [
       { pubkey: params.authority, isSigner: true, isWritable: true },
-      { pubkey: protocolGovernance, isSigner: false, isWritable: false },
       { pubkey: params.healthPlan, isSigner: false, isWritable: false },
       { pubkey: params.policySeries, isSigner: false, isWritable: true },
-      { pubkey: params.seriesReserveLedger, isSigner: false, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
   });
@@ -254,7 +243,6 @@ export function buildCreatePolicySeriesInstruction(params: CreatePolicySeriesIns
 
 export function buildOpenFundingLineInstruction(params: OpenFundingLineInstructionParams): TransactionInstruction {
   const programId = getProgramId();
-  const protocolGovernance = deriveProtocolGovernancePda();
   const domainAssetVault = deriveDomainAssetVaultPda({
     reserveDomain: params.reserveDomain,
     assetMint: params.assetMint,
@@ -281,7 +269,6 @@ export function buildOpenFundingLineInstruction(params: OpenFundingLineInstructi
     data,
     keys: [
       { pubkey: params.authority, isSigner: true, isWritable: true },
-      { pubkey: protocolGovernance, isSigner: false, isWritable: false },
       { pubkey: params.healthPlan, isSigner: false, isWritable: false },
       { pubkey: domainAssetVault, isSigner: false, isWritable: false },
       { pubkey: domainAssetLedger, isSigner: false, isWritable: true },
@@ -289,7 +276,6 @@ export function buildOpenFundingLineInstruction(params: OpenFundingLineInstructi
       { pubkey: params.fundingLineLedger, isSigner: false, isWritable: true },
       { pubkey: params.planReserveLedger, isSigner: false, isWritable: true },
       { pubkey: params.policySeries, isSigner: false, isWritable: false },
-      { pubkey: params.seriesReserveLedger, isSigner: false, isWritable: true },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
     ],
   });
@@ -313,10 +299,6 @@ export function deriveLaunchLedgerAddresses(params: {
     }),
     planReserveLedger: derivePlanReserveLedgerPda({
       healthPlan: params.healthPlan,
-      assetMint: params.assetMint,
-    }),
-    seriesReserveLedger: deriveSeriesReserveLedgerPda({
-      policySeries: params.policySeries,
       assetMint: params.assetMint,
     }),
     fundingLineLedger: deriveFundingLineLedgerPda({

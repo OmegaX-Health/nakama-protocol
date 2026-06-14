@@ -105,6 +105,12 @@ pub struct DeallocateCapitalArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct DepositReserveCapitalArgs {
+    pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 pub struct DepositIntoCapitalClassArgs {
     pub amount: u64,
     pub shares: u64,
@@ -188,6 +194,12 @@ pub struct RecordPremiumPaymentArgs {
 
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct RecordReserveEarningsArgs {
+    pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 pub struct RegisterOracleArgs {
 }
 
@@ -211,6 +223,12 @@ pub struct RequestRedemptionArgs {
 #[repr(C)]
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
 pub struct ReserveObligationArgs {
+    pub amount: u64,
+}
+
+#[repr(C)]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy)]
+pub struct ReturnReserveCapitalArgs {
     pub amount: u64,
 }
 

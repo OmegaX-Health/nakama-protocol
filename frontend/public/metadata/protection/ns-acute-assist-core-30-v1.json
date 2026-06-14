@@ -32,11 +32,11 @@
     "failClosedWhenVerifierMissing": true
   },
   "pricing": {
-    "retailUsd": 19,
-    "termRolBps": 190,
-    "expectedLossUsd": 7.5,
-    "baseLossRatioPct": 39,
-    "stressLossRatioPct": 118
+    "retailUsd": 10,
+    "termRolBps": 100,
+    "expectedLossUsd": 3,
+    "baseLossRatioPct": 30,
+    "stressLossRatioPct": 90
   },
   "benefitSchedule": {
     "excessUsd": 50,
@@ -121,9 +121,8 @@
     ],
     "pauseWhen": [
       "Discord or Network School membership verification is unavailable, unconfigured, or stale.",
-      "Paid claims exceed 50% of the Cohort 0 hard aggregate payout cap or hit the hard aggregate cap.",
+      "Paid claims exceed 50% of the monthly payout cap or hit the hard aggregate cap.",
       "Any Core 30 claim exceeds the fast-lane threshold of 250 USD without manual review.",
-      "Claims-paying reserve falls below 5000 USD before collecting the next premium batch.",
       "Provider evidence, pricing, reserve controls, or public terms drift from the published metadata."
     ]
   },
@@ -138,3 +137,4 @@
     "rawHealthEvidenceOnchain": false
   }
 }
+

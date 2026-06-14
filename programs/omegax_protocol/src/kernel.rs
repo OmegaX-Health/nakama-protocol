@@ -2,18 +2,24 @@
 
 //! Shared kernel helper module group.
 
+#[cfg(not(feature = "quasar"))]
 mod auth;
+#[cfg(not(feature = "quasar"))]
 mod bindings;
-mod capital_math;
+#[cfg(not(feature = "quasar"))]
 mod custody;
-mod fees;
-mod membership;
+#[cfg(feature = "quasar")]
+mod custody;
+#[cfg(not(feature = "quasar"))]
 mod reserve_accounting;
 
+#[cfg(not(feature = "quasar"))]
 pub(crate) use auth::*;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use bindings::*;
-pub(crate) use capital_math::*;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use custody::*;
-pub(crate) use fees::*;
-pub(crate) use membership::*;
+#[cfg(feature = "quasar")]
+pub(crate) use custody::*;
+#[cfg(not(feature = "quasar"))]
 pub(crate) use reserve_accounting::*;

@@ -9,8 +9,9 @@
 // CPI.
 //
 // Current role of this file: pin the remediation. It now asserts that real
-// money-out handlers call `transfer_from_domain_vault`, and that fee withdrawal
-// instructions remain present in the IDL.
+// money-out handlers call `transfer_from_domain_vault`. Fee-vault init/withdraw
+// rails and LP redemptions were later removed from the live protocol surface;
+// claim and linked-obligation payouts are the supported money-out paths.
 //
 // `release_reserve` remains accounting-only by design: it releases reserved
 // capacity back to free reserve and does not move SPL tokens.
@@ -30,19 +31,12 @@ const idl = JSON.parse(
 
 const extractInstructionBody = extractRustFunctionBody;
 
-test("[PT-01 defense regression] IDL exposes the 6 expected fee-vault withdrawal instructions", () => {
-  // Phase 1.7 (PR2) shipped 6 withdraw_*_fee_* instructions, fully closing
-  // PT-01 on the protocol-fee / pool-treasury / pool-oracle rails. This
-  // assertion was flipped from VULN_CONFIRMED to a defense regression: if
-  // any of the six are removed, the original "no money-out path" finding
-  // would re-emerge for that rail.
-  const drainPatterns = /^(withdraw|sweep|collect_fee|reclaim|payout)/i;
-  const matches = idl.instructions
-    .map((ix) => ix.name)
-    .filter((name) => drainPatterns.test(name))
-    .sort();
-
-  const expected = [
+test("[PT-01 defense regression] IDL does not expose removed fee-vault rails", () => {
+  const names = idl.instructions.map((ix) => ix.name);
+  const removed = [
+    "init_protocol_fee_vault",
+    "init_pool_treasury_vault",
+    "init_pool_oracle_fee_vault",
     "withdraw_pool_oracle_fee_sol",
     "withdraw_pool_oracle_fee_spl",
     "withdraw_pool_treasury_sol",
@@ -50,15 +44,13 @@ test("[PT-01 defense regression] IDL exposes the 6 expected fee-vault withdrawal
     "withdraw_protocol_fee_sol",
     "withdraw_protocol_fee_spl",
   ];
-  assert.deepEqual(
-    matches,
-    expected,
-    "[PT-01 defense] expected exactly the 6 Phase 1.7 fee-vault withdraw instructions; removal or addition would change the protocol's outflow surface and warrants security review.",
-  );
+  for (const instruction of removed) {
+    assert(!names.includes(instruction), `${instruction} should stay removed from the IDL`);
+  }
 });
 
-test("[PT-02 defense] settle_claim_case + process_redemption_queue + settle_obligation call transfer_from_domain_vault", () => {
-  // All three money-out instruction handlers are wired. settle_obligation
+test("[PT-02 defense] settle_claim_case + settle_obligation call transfer_from_domain_vault", () => {
+  // Both remaining money-out instruction handlers are wired. settle_obligation
   // does the CPI conditionally (only when claim_case is linked AND outflow
   // accounts are supplied) — the body still contains the helper call site,
   // so the source-pattern test is satisfied either way.
@@ -67,12 +59,7 @@ test("[PT-02 defense] settle_claim_case + process_redemption_queue + settle_obli
   // pure accounting operation that returns reserved capital to the free pool
   // (status becomes CANCELED if reserved hits zero). It is intentionally
   // excluded from this defense test.
-  const wired = [
-    "settle_claim_case",
-    "settle_claim_case_selected_asset",
-    "process_redemption_queue",
-    "settle_obligation",
-  ];
+  const wired = ["settle_claim_case", "settle_obligation"];
   for (const handler of wired) {
     const body = extractInstructionBody(handler);
     assert.ok(
@@ -102,7 +89,8 @@ test("[PT-02] The only token CPI lives in transfer_to_domain_vault and is inflow
   const expectedInflowHandlers = new Set([
     "fund_sponsor_budget",
     "record_premium_payment",
-    "deposit_into_capital_class",
+    "deposit_reserve_capital",
+    "record_reserve_earnings",
   ]);
   const lines = programSource.split("\n");
   const violations: Array<{ lineno: number; handler: string }> = [];
@@ -119,7 +107,7 @@ test("[PT-02] The only token CPI lives in transfer_to_domain_vault and is inflow
     `Token CPI must only appear in inflow handlers; finding PT-02 would change if otherwise. Got: ${JSON.stringify(violations, null, 2)}`,
   );
 
-  // Sanity: all three expected inflow handlers must in fact use the helper.
+  // Sanity: all expected inflow handlers must in fact use the helper.
   const handlersWithCpi = new Set(
     callsiteLines.map(({ lineno }) => {
       return findEnclosingRustFunctionName(lines, lineno) ?? "<unknown>";

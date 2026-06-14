@@ -29,14 +29,14 @@ These environment-variable expectations are enforced by the underlying scripts, 
 - `SOLANA_KEYPAIR` — operator keypair path. Defaults to `~/.config/solana/id.json`.
 - `OMEGAX_LIVE_ORACLE_WALLET`, `OMEGAX_LIVE_ORACLE_KEYPAIR_PATH` — Genesis live oracle wallet pair (mainnet bootstrap).
 - `OMEGAX_LIVE_SETTLEMENT_MINT` — settlement asset mint for the live cluster (mainnet bootstrap).
-- `OMEGAX_DEVNET_*_VAULT_TOKEN_ACCOUNT` — devnet treasury custody token accounts (devnet bootstrap).
+- `OMEGAX_DEVNET_OPERATOR_SOURCE_TOKEN_ACCOUNT` and `OMEGAX_DEVNET_*_VAULT_TOKEN_ACCOUNT` — optional devnet custody token accounts for drawer simulation or explicit treasury movement; the trimmed live bootstrap itself does not move SPL custody balances.
 - `OMEGAX_REQUIRE_DISTINCT_OPERATOR_KEYS=1` — **required on mainnet**; refuses configs where any two privileged roles resolve to the same pubkey. Bootstrap hard-fails on mainnet without this flag.
 - `OMEGAX_LIVE_{RESERVE_DOMAIN_ADMIN,SPONSOR,SPONSOR_OPERATOR,CLAIMS_OPERATOR,POOL_CURATOR,POOL_ALLOCATOR,POOL_SENTINEL}_WALLET` — **required on mainnet**; without explicit values these default to the governance signer and the bootstrap refuses to load. See [`../security/mainnet-privileged-role-controls.md`](../security/mainnet-privileged-role-controls.md) §1 for the role matrix.
 - `OMEGAX_LIVE_CLUSTER_OVERRIDE=devnet|localnet` — opt out of the mainnet guard for isolated rehearsals against a private mainnet-beta-like cluster.
 - `OMEGAX_ALLOW_LOCAL_SIGNER_FOR_MAINNET=1` — break-glass override for incident recovery; emits a loud stderr warning and **must** be recorded in the [release-candidate evidence template](./release-candidate-evidence-template.md) §8.
-- `NEXT_PUBLIC_GOVERNANCE_REALM`, `NEXT_PUBLIC_GOVERNANCE_CONFIG`, `NEXT_PUBLIC_GOVERNANCE_TOKEN_MINT` — frontend governance wiring; loaded from `frontend/.env.local`.
+- `NEXT_PUBLIC_GOVERNANCE_REALM`, `NEXT_PUBLIC_GOVERNANCE_CONFIG`, `NEXT_PUBLIC_GOVERNANCE_TOKEN_MINT` — optional legacy/adjunct frontend governance wiring; not required by the trimmed base-program bootstrap.
 
-The `scripts/AGENTS.md` file is explicit that bootstrap, deploy, and devnet governance scripts may mutate on-chain state - never run them unless the operator/contributor explicitly intends to.
+The `scripts/CLAUDE.md` file is explicit that bootstrap, deploy, treasury, and legacy devnet governance scripts may mutate on-chain state — never run them unless the operator/contributor explicitly intends to.
 
 ## Generated artifacts
 
@@ -54,7 +54,7 @@ CI runs `idl:freshness:check` and `protocol:contract:check` automatically (see `
 ## Public-safety guardrails
 
 - Never commit secrets, private keys, deployment-only env files, or local validator artifacts to this repo. The `npm run public:hygiene:check` gate looks for the most common patterns.
-- The Genesis vanity wallet `oxhocTdPyENqy9RS13iaq2upoNAovMJHu9PMaBxrK8h` is public-safe; the corresponding private keypair is **not**. See `AGENTS.md` Genesis Protect Launch Keys for the env-var contract.
+- The Genesis vanity wallet `oxhocTdPyENqy9RS13iaq2upoNAovMJHu9PMaBxrK8h` is public-safe; the corresponding private keypair is **not**. See `CLAUDE.md` Genesis Protect Launch Keys for the env-var contract.
 - `idl/`, `shared/protocol_contract.json`, and `frontend/lib/generated/` are generated artifacts — do not hand-edit unless a documented maintenance workflow explicitly requires it.
 
 ## Related references

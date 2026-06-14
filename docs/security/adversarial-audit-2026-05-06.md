@@ -4,11 +4,11 @@
 
 Current posture after this implementation pass: no unauthenticated or attacker-recipient money-out path was found in the patched tree. The fastest real money-loss path before the earlier pass was scoped authority/account confusion around allocator-controlled surfaces; that remains closed for `update_allocation_caps` and hardened for optional reserve/allocation accounts.
 
-The remaining exploitable edge is operational rather than a newly observed vault-drain path: compromised governance/curator/operator keys, a bad bootstrap authority split, or a launch environment that does not match the evidence packet. Mistaken governance authority rotation is now materially reduced by a proposal/accept/cancel handoff, and the devnet operator drawer simulation has been rerun with the canonical governance signer; mainnet funding still depends on proving the intended multisig.
+The remaining exploitable edge is operational rather than a newly observed vault-drain path: compromised governance/curator/operator keys, a bad bootstrap authority split, or a launch environment that does not match the evidence packet. The trimmed protocol surface removes in-program governance authority handoff; launch environments must initialize or redeploy with the intended multisig. The devnet operator drawer simulation has been rerun with the canonical governance signer; mainnet funding still depends on proving the intended multisig.
 
 What destroys trust fastest is a public reservation/reserve story that implies pending or haircut-adjusted assets are active claims-paying reserve. The code, docs, and UI copy now describe Founder reservations as off-chain Squads custody only; pending reservations remain separate from active cover and claims-paying reserve.
 
-What is probably fine now because current code and tests prove it: classic-SPL-only custody, fee-recipient binding, claim-recipient binding, selected-asset payout value bounds, direct claim settlement rejecting allocation scope, LP allocation settlement using allocation capacity rather than pretending it is funded custody, two-step governance authority transfer, on-chain FIFO redemption processing, frontend pre-sign review coverage, generated IDL/contract parity, and localnet adversarial money/control probes.
+What is probably fine now because current code and tests prove it: classic-SPL-only custody, claim-recipient binding, same-asset claim payout reserve checks, direct claim settlement rejecting allocation scope, LP allocation settlement using allocation capacity rather than pretending it is funded custody, on-chain FIFO redemption processing, frontend pre-sign review coverage, generated IDL/contract parity, and localnet adversarial money/control probes.
 
 ## 2. Scope And Assumptions
 
@@ -23,7 +23,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 
 | Surface | Entrypoints | Assets | Trust Boundary | Existing Controls | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Governance | `initialize_protocol_governance`, `rotate_protocol_governance_authority`, `accept_protocol_governance_authority`, `cancel_protocol_governance_authority_transfer`, pause | Entire protocol control plane | Upgrade authority, governance signer, release operator | Init requires ProgramData upgrade authority; rotation is proposal/accept/cancel with expiry; pause guard; DCO docs | Acceptance requires the pending authority signer. |
+| Governance | `initialize_protocol_governance`, pause | Entire protocol control plane | Upgrade authority, governance signer, release operator | Init requires ProgramData upgrade authority; no trimmed in-program authority handoff; pause guard; DCO docs | Deployment must initialize with the intended governance authority. |
 | Reserve custody | domain vault setup, SPL inflow/outflow helpers | SPL token custody and accounting sheets | Token program, vault PDA, mint, recipient | Classic SPL guard, PDA-signed outflows, vault/mint checks | No Token-2022 acceptance found. |
 | Claims | claim intake, evidence, attestation, settlement | Approved claim value and member payout | Member, operator, oracle, funding line, settlement recipient | Claimant binding, recipient lock, evidence lock, payout rail pricing | Direct claim settlement rejects LP allocation accounts. |
 | Obligations | reserve, release, settle, cancel | Reserved/payable/claimable obligations | Plan authority, claim operator, optional scoped accounts | Full-transition guards, outflow-required settlement, canonical optional PDA hardening | Linked claims require claim/member context. |
@@ -53,9 +53,9 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 - Moment: optional series/pool/allocation accounts are supplied to reserve, settlement, impairment, or claim paths.
 - Target asset: reserve ledgers and allocation accounting.
 - Technical path: provide an account whose inner fields look correct but whose address is not the canonical PDA for those fields.
-- What the ledger should show: only canonical `SeriesReserveLedger`, `PoolClassLedger`, `AllocationPosition`, and `AllocationLedger` can mutate.
-- Existing tripwires: field equality checks.
-- Hardening added: validators now recompute PDA addresses and bumps before accepting optional accounts.
+- What the ledger should show: current sponsor-reserve accounting mutates only canonical domain, plan, and funding-line ledgers.
+- Existing tripwires: field equality checks and PDA seed constraints on live ledger accounts.
+- Hardening added: the former optional scoped-ledger paths were removed from the live base protocol surface.
 
 ### Story: Bootstrap Governance Is Not Upgrade Authority
 
@@ -98,15 +98,15 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 - Fix: add `require_keys_eq!(allocation_position.liquidity_pool, liquidity_pool.key(), LiquidityPoolMismatch)`.
 - Regression test: `tests/security/cybersecurity_plan_regression.test.ts` `CSO-2026-05-06`.
 
-### [Medium, Fixed/Hardening] Optional Reserve And Allocation Accounts Did Not Prove Canonical PDA Addresses
+### [Medium, Retired] Optional Reserve And Allocation Accounts Did Not Prove Canonical PDA Addresses
 
 - Confidence: medium for hardening, lower for direct exploitability because Anchor account ownership already limits fake program accounts.
 - Attack goal: mutate reserve/allocation accounting through a noncanonical account that matches inner fields.
-- Impacted asset: series, pool class, allocation position, and allocation ledger accounting.
+- Impacted asset: former series, pool class, allocation position, and allocation ledger accounting.
 - Preconditions: a noncanonical program-owned account of the correct type exists through a future migration/init bug or account-state corruption.
 - Concrete path: optional validators checked stored fields but not the derived PDA address/bump.
 - Violated invariant: optional money-account inputs must be canonical PDAs, not just program-owned accounts with matching fields.
-- Evidence: `programs/omegax_protocol/src/kernel/bindings.rs` now recomputes `SEED_SERIES_RESERVE_LEDGER`, `SEED_POOL_CLASS_LEDGER`, `SEED_ALLOCATION_POSITION`, and `SEED_ALLOCATION_LEDGER`.
+- Evidence: the live base protocol no longer accepts the optional series, pool-class, allocation-position, or allocation-ledger accounts on treasury mutation paths.
 - Regression test: `tests/security/allocation_scope_required_regression.test.ts` `CSO-2026-05-06`.
 
 ### [High, Fixed] Protocol Governance Initialization Did Not Prove Upgrade-Authority Control
@@ -127,9 +127,9 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 - Attack goal: brick or silently transfer governance by rotating to a wrong/dead key.
 - Impacted asset: protocol governance authority.
 - Preconditions: current governance authority signs a mistaken or compromised rotation.
-- Concrete path before this fix: `rotate_protocol_governance_authority_state` immediately wrote `governance.governance_authority = new_governance_authority`; only zero pubkey was rejected.
+- Concrete path before the two-step fix: `rotate_protocol_governance_authority_state` immediately wrote `governance.governance_authority = new_governance_authority`; only zero pubkey was rejected.
 - Violated invariant: high-value ownership transfer should require proposal plus acceptance by the new authority.
-- Evidence: `ProtocolGovernance` now stores pending authority/proposed/expires fields; `rotate_protocol_governance_authority` proposes only; `accept_protocol_governance_authority` requires the pending authority signer; current governance can cancel before acceptance.
+- Current trimmed surface: the in-program authority handoff has been removed; deployments must initialize or redeploy with the intended governance authority.
 - Fix: add pending authority, accept, cancel, and 7-day expiry semantics.
 - Regression tests: Rust unit coverage for propose/accept/cancel/expired/missing pending authority, plus Node builder coverage for proposal, acceptance, and cancellation.
 
@@ -174,8 +174,8 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 18. Fee withdrawals cannot exceed accrued minus withdrawn fees.
 19. Zero-net fee outcomes are rejected.
 20. Token-2022 mints/programs are rejected for v1 custody.
-21. Selected-asset payouts require payout-enabled rails with fresh nonzero-staleness pricing.
-22. Selected-asset payout value cannot exceed configured overpay bounds.
+21. Same-asset claim payouts require payout-enabled rails with fresh nonzero-staleness pricing.
+22. Cross-asset selected payout is not exposed as a claim settlement path.
 23. LP redemption pays only the LP owner.
 24. LP redemption processing must target the current FIFO head sequence.
 25. Partial LP redemption processing cannot advance the FIFO head before the LP position is fully cleared.

@@ -22,6 +22,8 @@
     "anchor:build:checked": "node scripts/anchor_build_with_stack_gate.mjs",
     "anchor:test": "node scripts/anchor_test_with_stack_gate.mjs",
     "anchor:idl": "npm run anchor:build:checked && mkdir -p idl && cp target/idl/omegax_protocol.json idl/omegax_protocol.json && cp target/idl/omegax_private_claim_review.json idl/omegax_private_claim_review.json && node scripts/check_idl_freshness.mjs --write",
+    "quasar:check": "cargo check -p omegax_protocol --features quasar --lib",
+    "quasar:discriminators": "node scripts/generate_quasar_discriminators.mjs",
     "idl:freshness:check": "node scripts/check_idl_freshness.mjs",
     "rust:fmt:check": "cargo fmt --all -- --check",
     "rust:test": "cargo test --workspace --lib",
@@ -49,7 +51,6 @@
     "devnet:frontend:signoff": "DEVNET_FIXTURE_STRICT=1 node --import tsx scripts/devnet_frontend_role_smoke.ts",
     "devnet:operator:drawer:sim": "node --import tsx scripts/devnet_operator_drawer_sim.ts",
     "devnet:program:redeploy-fresh": "node --import tsx scripts/deploy_fresh_devnet_program.ts",
-    "devnet:governance:handoff": "node --import tsx scripts/devnet_protocol_governance_handoff.ts",
     "devnet:treasury:seed-canaries": "node --import tsx scripts/seed_devnet_treasury_canaries.ts",
     "devnet:treasury:pen-test": "node --import tsx scripts/devnet_treasury_pen_test.ts",
     "devnet:governance:smoke:create-vote": "node --import tsx scripts/devnet_governance_smoke.ts create-vote",
@@ -75,7 +76,7 @@
     "license:audit": "node scripts/check_dependency_licenses.mjs",
     "security:audit:deps": "node scripts/check_dependency_advisories.mjs",
     "security:sbom": "node scripts/generate_sbom.mjs",
-    "ci:public": "npm run rust:fmt:check && npm run rust:test && npm run rust:lint && npm run idl:freshness:check && npm run protocol:contract:check && npm run test:node && npm run frontend:build && npm run semantic:readiness:check && npm run public:hygiene:check",
+    "ci:public": "npm run rust:fmt:check && npm run rust:test && npm run rust:lint && npm run quasar:check && npm run idl:freshness:check && npm run protocol:contract:check && npm run test:node && npm run frontend:build && npm run semantic:readiness:check && npm run public:hygiene:check",
     "verify:public": "npm run ci:public && npm run license:audit && npm run security:audit:deps && npm run security:sbom",
     "doctor": "node scripts/doctor.mjs",
     "verify": "npm run doctor && npm run ci:public"
@@ -98,7 +99,6 @@
   },
   "packageManager": "npm@10.9.2",
   "overrides": {
-    "axios": "1.17.0",
     "uuid": "14.0.0"
   }
 }

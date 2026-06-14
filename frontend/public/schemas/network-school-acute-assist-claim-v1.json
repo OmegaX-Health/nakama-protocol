@@ -85,7 +85,7 @@
     {
       "id": "tier_key",
       "label": "Tier key",
-      "description": "core, longTermer, or familyGuarded."
+      "description": "lite, core, plus, or familyCore."
     },
     {
       "id": "care_type",
@@ -104,3 +104,4 @@
     }
   ]
 }
+

@@ -1,6 +1,6 @@
 # OmegaX Protocol
 
-OmegaX Protocol's current launch job is concrete: help a sponsor fund Travel 30 acute travel protection for a cohort, show whether the reserve posture can support it, and trace every claim from evidence to payout.
+OmegaX Protocol's current launch job is concrete: help a sponsor fund Travel 30 acute travel protection for a cohort, show whether the reserve posture can support it, and trace every claim from intake to payout.
 
 Plainly: a sponsor can fund a protected group, see what backs the promise, and audit what happened when a claim is reviewed or paid.
 
@@ -9,9 +9,8 @@ The current public launch reference is Genesis Protect Acute. `Travel 30` is the
 On Solana devnet beta today, the public surface in this repository can already anchor:
 
 - sponsor-funded reward or protection lanes with explicit reserve and funding-line attribution
+- contributor-signed backstop deposits with on-chain contribution/return balances
 - operator-mediated member enrollment, claim intake, obligations, reserve booking, and payouts
-- LP-facing capital pools, classes, allocations, redemptions, and impairment handling
-- normalized outcome events produced by OmegaX Health or future compatible oracle operators
 
 ## Start Here
 
@@ -33,9 +32,9 @@ Start with:
 - [Genesis Protect Claim Trace](./docs/architecture/genesis-protect-claim-trace.md)
 - [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface)
 
-### Capital integrators
+### Reserve and backstop integrators
 
-Connect pools, classes, allocations, redemption queues, and reserve-domain accounting to the same Travel 30 / Event 7 launch truth.
+Connect domain vaults, sponsor budgets, premiums, backstops, and reserve-domain accounting to the same Travel 30 / Event 7 launch truth.
 
 Start with:
 
@@ -65,17 +64,15 @@ Start with:
 
 ## What Exists Today on Devnet Beta
 
-- reserve domains and domain asset vaults define settlement boundaries and payment rails
+- reserve domains and domain asset vaults define settlement boundaries and payment custody
 - health plans, policy series, and funding lines define sponsor and member-side products
-- operator-mediated member enrollment, claim intake, obligations, settlement, and impairment are mounted in the canonical console
-- liquidity pools, capital classes, allocations, and redemptions define LP-facing exposure and queue behavior
-- oracle registry and schema registry accounts let outside event producers and integrations target the same public surface
+- operator-mediated member enrollment, claim intake, obligations, settlement, and payout checks are mounted in the canonical console
 
 ## Long-Term Destination
 
 OmegaX Health is the first oracle and the public sponsor/operator console is the first managed experience around the protocol.
 
-The destination is still health capital markets: one shared settlement foundation that can support sponsor programs, coverage products, outside oracle builders, wallet-native health apps, and capital formation without fragmenting the underlying accounting truth.
+The destination is one shared settlement foundation that can support sponsor programs, coverage products, outside oracle builders, wallet-native health apps, and reserve partners without fragmenting the underlying accounting truth.
 
 ## Protocol Model
 
@@ -83,32 +80,60 @@ The canonical public model in this repository is:
 
 - `ReserveDomain`: hard custody or legal segregation boundary
 - `DomainAssetVault`: token custody per `[reserve_domain, asset_mint]`
-- `HealthPlan`: sponsor/member/liability root
+- `HealthPlan`: sponsor/liability root
 - `PolicySeries`: versioned product lane
 - `FundingLine`: plan-side funding source
+- `CapitalContribution`: contributor-level reserve capital balance per funding line
 - `ClaimCase`: explicit adjudication lifecycle for material claims
 - `Obligation`: canonical liability unit
-- `LiquidityPool`: LP-facing capital sleeve
-- `CapitalClass`: investor instrument inside a pool
-- `AllocationPosition`: explicit capital-to-plan bridge
 
 ## Current Surface Notes
 
 This repository treats the earlier pool-first surface as retired devnet history and improves the current canonical model in place.
 
 - sponsor budgets are not LP capital
+- reserve-capital deposits are tracked as contribution facts, not tokenized LP shares
 - reward and protection reconcile through one reserve kernel
 - reserve truth is ledger-based, not implied by scattered treasuries
-- restricted or wrapper-mediated participation is layered through reserve domains, capital classes, and managed LP credentialing rather than parallel protocols
+- LP/capital-class formation, allocation, redemption, impairment, protocol-governance, fee-vault, token-gate, and outcome-schema registry rails are retired from the live program surface
 
 ## Release Status
 
-Current publish target: `v0.3.1`.
+Current publish target: `v0.3.1`
 
-The repository is a devnet-beta public protocol surface, not a live insurance
-issuance surface. Current release notes, evidence templates, and operator
-runbooks live under [`docs/operations/`](./docs/operations/); the root README
-stays focused on orientation, setup, and verification.
+This patch hardens the first publishable canonical OmegaX reserve, obligation, and claim surface.
+
+- reserve inflows now require checked SPL token transfers into the configured domain vault token account before ledgers increase
+- emergency pause now covers reserve-moving exits and settlement paths; Founder reservations remain off-chain Squads custody until activation/posting
+- settlement payouts must leave a positive net recipient payout and remain bound to the matching domain vault, funding line, and reserve ledgers
+- optional mutable reserve ledgers are bound to the expected series, funding line, domain, and mint before mutation
+- it is a hard-break devnet migration from the retired pool-first model
+- reserve domains define hard custody and legal settlement boundaries
+- health plans define sponsor, member, liability, and claims administration roots
+- funding lines separate sponsor budgets, premiums, backstops, and subsidies
+- backstop contributors can deposit into open backstop funding lines; the program tracks contributed and returned amounts for quote-oracle discounts or manual credits off-chain
+- realized reserve earnings can be recorded only after same-mint tokens are transferred back into the domain vault with a nonzero earnings reference hash
+- the canonical console now mounts `/plans`, `/claims`, `/members`, `/oracles`, and `/schemas` against live snapshot-backed protocol reads
+- `/plans/new` now launches from live reserve-domain, asset-vault, policy-series, and funding-line data rather than fixture-only defaults
+- `/plans/new?template=genesis-protect-acute` now bootstraps the canonical Genesis Protect Acute shell in place using the frozen Event 7 and Travel 30 launch truth
+- `/plans?...&setup=genesis-protect-acute` now exposes the Genesis setup checklist, issuance posture, and reserve-warning view inside the mounted sponsor/operator workspace
+- the mounted Genesis claims tab now behaves as an operator claim queue with summary cards, queue filters, selected-case detail, and contextual handoff into adjudication, reserve, and oracle follow-through
+- the mounted Genesis treasury tab now behaves as a reserve console with lane filters, per-SKU reserve attribution, degraded-visibility warnings, and treasury actions scoped from the selected live funding lane
+- `/members` and `/claims` now route into the mounted plan/operator workspace instead of advertising standalone self-serve dapp actions
+- mounted workbenches now include sponsor-side post-launch series, funding-line actions, claim intake, and payout handling
+- raw evidence review and oracle attestations are off-chain/adjunct concerns; the live program stores claim intake, proof fingerprints, adjudication, reserve, and settlement state
+- pricing/yield benefits stay outside the program math for now: the quote oracle reads contribution and earnings facts and decides whether to issue discounts, credits, or manual rewards
+
+Genesis Protect Acute sprint-1 launch truth is frozen in the public metadata and fixture surface for the April 16-20, 2026 implementation window.
+
+- `Travel 30` is the primary Founder launch SKU with a reserve-indexed target cap, and `Event 7` is the fast demo SKU
+- the current public target is end-of-month mainnet readiness, not broadly live insurance issuance today
+- phase-0 claims trust is an operator-backed oracle flow rather than decentralized adjudication
+- AI recommendation and more explicit decentralized review remain next-phase work, not current public fact
+- prediction markets do not count as reserve truth; only posted premiums, sponsor funds, and explicit backstops do
+- app membership billing remains separate from per-window protection premiums
+- the public sponsor/operator console now carries the Genesis bootstrap, checklist, operator claim queue, and reserve-console read path directly on `/plans`
+- the Genesis protection metadata disclosure routes now resolve on the public protocol frontend at `/coverage/technical-terms` and `/coverage/risk-disclosures`
 
 Read the canonical design set first:
 
@@ -162,37 +187,79 @@ Run the public verification gate:
 npm run verify:public
 ```
 
-## Formal Verification
+## QEDGen Verification Lane
 
-QEDGen and Certora-oriented materials live under
-[`formal_verification/`](./formal_verification/) with the root
-[`omegax_protocol.qedspec`](./omegax_protocol.qedspec). Treat those lanes as
-maintainer verification evidence, not as an external audit or mainnet formal
-proof claim.
+The QEDGen spec lives at [`omegax_protocol.qedspec`](./omegax_protocol.qedspec)
+and `.qed/config.json` pins it for local commands. Generated verification code
+is intentionally isolated under [`formal_verification/`](./formal_verification/)
+so the live Anchor program in `programs/omegax_protocol/` is not overwritten by
+QEDGen scaffolding.
+
+```bash
+npm run qedgen:check
+npm run qedgen:codegen
+npm run qedgen:verify
+npm run qedgen:reconcile
+```
+
+`npm run qedgen:codegen` writes the Anchor verification model to
+`formal_verification/anchor_model/`, the Lean proof surface to
+`formal_verification/Spec.lean`, and the generated Kani/proptest harnesses to
+`formal_verification/anchor_model/tests/`.
+
+Treat the current QEDGen lane as a coverage and spec-hygiene gate unless a
+specific property has committed proof bodies. Generated theorem stubs, missing
+Lean obligations, and `todo!("fill non-mechanical effects, events, transfers,
+calls")` placeholders in `formal_verification/anchor_model/` are not production
+proof coverage by themselves and must not be described as mainnet formal-proof
+sign-off.
+
+The only currently accepted warning is
+`missing_cpi_for_token_context` on `create_domain_asset_vault`.
+That handler uses `token_program` for token-account initialization, not for a
+token transfer. The modeling gap is tracked in
+[`.qed/plan/findings/001-domain-vault-init-token-program.md`](./.qed/plan/findings/001-domain-vault-init-token-program.md)
+and [`.qed/plan/gaps.md`](./.qed/plan/gaps.md).
 
 ## Maintainer and Devnet Operations
 
-These helpers are for repo maintainers and shared-devnet operators rather than first-time SDK consumers. Start with [Operator Runbooks](./docs/operations/runbooks.md) before running any command that can mutate shared devnet state.
+These helpers are for repo maintainers and shared-devnet operators rather than first-time SDK consumers.
 
-- `npm run protocol:bootstrap` refreshes `devnet/health-capital-markets-manifest.json` and `devnet/health-capital-markets.env.example`
-- `npm run protocol:bootstrap:devnet-live` seeds the canonical plan/capital/oracle/schema graph onto shared devnet using the configured signer
-- `npm run devnet:frontend:bootstrap` syncs canonical fixture env values into `frontend/.env.local` and writes `frontend/public/devnet-fixtures.json`
-- `npm run devnet:beta:deploy` runs checked build and artifact parity, then prints the operator-mediated deploy command
-- `npm run devnet:frontend:smoke` and `npm run devnet:frontend:signoff` check the canonical fixture set and frontend parity matrix
-- `npm run devnet:beta:observe` captures a structured observability snapshot for the shared devnet deployment
+- `npm run protocol:bootstrap`
+  - writes `devnet/health-capital-markets-manifest.json`
+  - writes `devnet/health-capital-markets.env`
+  - emits stable canonical fixture ids for the new model
+- `npm run protocol:bootstrap:devnet-live`
+  - seeds the current reserve-domain, asset-vault, plan, policy-series, funding-line, and proof-claim graph onto shared devnet using the configured signer
+  - does not create retired in-program governance, member-seat, oracle-registry, liquidity-pool, capital-class, or allocation accounts
+  - skips custody-moving funding deposits; use the explicit funding builders or treasury scripts when you intend to move SPL assets
+  - syncs canonical public role addresses back into `frontend/.env.local`
+- `npm run devnet:frontend:bootstrap`
+  - syncs canonical fixture env values into `frontend/.env.local`
+  - writes `frontend/public/devnet-fixtures.json`
+- `npm run devnet:beta:deploy`
+  - runs the checked build and artifact parity
+  - regenerates the canonical bootstrap artifacts
+  - leaves the final live deploy step operator-mediated for auditability
+  - prints the exact canonical `solana program deploy --program-id ...` upgrade command and warns if `target/deploy/omegax_protocol-keypair.json` has drifted away from the canonical program id
+- `npm run devnet:frontend:smoke`
+  - checks that the canonical fixture set is present and coherent
+- `npm run devnet:frontend:signoff`
+  - runs the strict frontend parity matrix against the canonical fixture/env set
+- `npm run devnet:beta:observe`
+  - captures a structured observability snapshot for the shared devnet deployment
 
 ## Verification Philosophy
 
 The fast suite now focuses on the scenarios that matter to the redesign:
 
 - sponsor-only reward plan without LP capital
-- LP-funded protection flows with reserve-aware redemption math
-- one pool funding multiple series
-- multiple pools co-funding one series
+- premium/backstop-funded protection flows with reserve-aware settlement math
+- one reserve domain funding multiple series
+- multiple funding lines co-funding one series
 - reward plus protection under one plan root
-- restricted capital-class semantics
 - separate reserve-domain ring-fencing
-- impairment and queue pressure
+- claim and obligation pressure
 - scoped pause behavior
 - migration smoke for legacy surface retirement
 

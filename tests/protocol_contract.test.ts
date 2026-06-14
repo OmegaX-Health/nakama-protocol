@@ -11,7 +11,7 @@ const {
   PROTOCOL_INSTRUCTION_DISCRIMINATORS,
 } = contractModule as typeof import("../frontend/lib/generated/protocol-contract.ts");
 
-test("canonical contract exposes the health-capital-markets surface", () => {
+test("canonical contract exposes the reserve-accounting surface", () => {
   const instructionNames = Object.keys(PROTOCOL_INSTRUCTION_DISCRIMINATORS);
   const accountNames = Object.keys(PROTOCOL_ACCOUNT_DISCRIMINATORS);
   const serializedAccounts = JSON.stringify(PROTOCOL_INSTRUCTION_ACCOUNTS);
@@ -19,200 +19,137 @@ test("canonical contract exposes the health-capital-markets surface", () => {
     instructions: Array<{ name: string }>;
     types: Array<{ name: string; type: { kind: string; fields?: Array<{ name: string }> } }>;
   };
-  const depositArgs = idl.types.find((entry) => entry.name === "DepositIntoCapitalClassArgs");
-  const initProtocolFeeVaultArgs = idl.types.find((entry) => entry.name === "InitProtocolFeeVaultArgs");
-  const initPoolTreasuryVaultArgs = idl.types.find((entry) => entry.name === "InitPoolTreasuryVaultArgs");
-  const initPoolOracleFeeVaultArgs = idl.types.find((entry) => entry.name === "InitPoolOracleFeeVaultArgs");
-  const requestRedemptionArgs = idl.types.find((entry) => entry.name === "RequestRedemptionArgs");
-  const processRedemptionArgs = idl.types.find((entry) => entry.name === "ProcessRedemptionQueueArgs");
-  const configureReserveAssetRailArgs = idl.types.find((entry) => entry.name === "ConfigureReserveAssetRailArgs");
-  const reserveAssetRailAccount = idl.types.find((entry) => entry.name === "ReserveAssetRail");
   const selectedAssetPayoutArgs = idl.types.find((entry) => entry.name === "SettleClaimCaseSelectedAssetArgs");
+  const healthPlanAccount = idl.types.find((entry) => entry.name === "HealthPlan");
+  const policySeriesAccount = idl.types.find((entry) => entry.name === "PolicySeries");
   const claimCaseAccount = idl.types.find((entry) => entry.name === "ClaimCase");
-  const claimAttestationAccount = idl.types.find((entry) => entry.name === "ClaimAttestation");
+  const capitalContributionAccount = idl.types.find((entry) => entry.name === "CapitalContribution");
+  const openClaimCaseArgs = idl.types.find((entry) => entry.name === "OpenClaimCaseArgs");
+  const adjudicateClaimCaseArgs = idl.types.find((entry) => entry.name === "AdjudicateClaimCaseArgs");
+  const depositReserveCapitalArgs = idl.types.find((entry) => entry.name === "DepositReserveCapitalArgs");
+  const returnReserveCapitalArgs = idl.types.find((entry) => entry.name === "ReturnReserveCapitalArgs");
+  const recordReserveEarningsArgs = idl.types.find((entry) => entry.name === "RecordReserveEarningsArgs");
+  const fundingFlowRecordedEvent = idl.types.find((entry) => entry.name === "FundingFlowRecordedEvent");
 
-  assert(instructionNames.includes("initialize_protocol_governance"));
-  assert(instructionNames.includes("rotate_protocol_governance_authority"));
+  assert(!instructionNames.includes("initialize_protocol_governance"));
+  assert(!instructionNames.includes("set_protocol_emergency_pause"));
+  assert(!instructionNames.includes("rotate_protocol_governance_authority"));
+  assert(!instructionNames.includes("accept_protocol_governance_authority"));
+  assert(!instructionNames.includes("cancel_protocol_governance_authority_transfer"));
   assert(instructionNames.includes("create_reserve_domain"));
   assert(instructionNames.includes("create_health_plan"));
   assert(instructionNames.includes("create_policy_series"));
-  assert(instructionNames.includes("initialize_series_reserve_ledger"));
   assert(instructionNames.includes("open_funding_line"));
-  assert(instructionNames.includes("create_liquidity_pool"));
-  assert(instructionNames.includes("create_capital_class"));
-  assert(instructionNames.includes("update_lp_position_credentialing"));
-  assert(instructionNames.includes("create_allocation_position"));
-  assert(instructionNames.includes("mark_impairment"));
-  assert(instructionNames.includes("register_oracle"));
-  assert(instructionNames.includes("claim_oracle"));
-  assert(instructionNames.includes("set_pool_oracle_policy"));
-  assert(instructionNames.includes("register_outcome_schema"));
-  assert(instructionNames.includes("verify_outcome_schema"));
-  assert(instructionNames.includes("close_outcome_schema"));
-  assert(instructionNames.includes("attest_claim_case"));
-  assert(instructionNames.includes("settle_claim_case_selected_asset"));
+  assert(instructionNames.includes("deposit_reserve_capital"));
+  assert(instructionNames.includes("return_reserve_capital"));
+  assert(instructionNames.includes("record_reserve_earnings"));
+  assert(!instructionNames.includes("open_member_position"));
+  assert(!instructionNames.includes("update_member_eligibility"));
+  assert(!instructionNames.includes("register_oracle"));
+  assert(!instructionNames.includes("claim_oracle"));
+  assert(!instructionNames.includes("update_oracle_profile"));
+  assert(!instructionNames.includes("set_pool_oracle"));
+  assert(!instructionNames.includes("set_pool_oracle_permissions"));
+  assert(!instructionNames.includes("set_pool_oracle_policy"));
+  assert(!instructionNames.includes("register_outcome_schema"));
+  assert(!instructionNames.includes("verify_outcome_schema"));
+  assert(!instructionNames.includes("backfill_schema_dependency_ledger"));
+  assert(!instructionNames.includes("close_outcome_schema"));
+  assert(!instructionNames.includes("attach_claim_evidence_ref"));
+  assert(!instructionNames.includes("attest_claim_case"));
+  assert(!instructionNames.includes("settle_claim_case_selected_asset"));
 
-  // Phase 1.6 — fee-vault init instructions
-  assert(instructionNames.includes("init_protocol_fee_vault"));
-  assert(instructionNames.includes("init_pool_treasury_vault"));
-  assert(instructionNames.includes("init_pool_oracle_fee_vault"));
-
-  // Phase 1.7 — fee-vault withdraw instructions (SOL + SPL × 3 rails)
-  assert(instructionNames.includes("withdraw_protocol_fee_sol"));
-  assert(instructionNames.includes("withdraw_protocol_fee_spl"));
-  assert(instructionNames.includes("withdraw_pool_treasury_sol"));
-  assert(instructionNames.includes("withdraw_pool_treasury_spl"));
-  assert(instructionNames.includes("withdraw_pool_oracle_fee_sol"));
-  assert(instructionNames.includes("withdraw_pool_oracle_fee_spl"));
-
-  assert(accountNames.includes("ReserveDomain"));
-  assert(accountNames.includes("HealthPlan"));
-  assert(accountNames.includes("PolicySeries"));
-  assert(accountNames.includes("MembershipAnchorSeat"));
-  assert(accountNames.includes("FundingLine"));
-  assert(accountNames.includes("LiquidityPool"));
-  assert(accountNames.includes("CapitalClass"));
-  assert(accountNames.includes("AllocationPosition"));
-  assert(accountNames.includes("Obligation"));
-  assert(accountNames.includes("OracleProfile"));
-  assert(accountNames.includes("PoolOracleApproval"));
-  assert(accountNames.includes("PoolOraclePolicy"));
-  assert(accountNames.includes("PoolOraclePermissionSet"));
-  assert(accountNames.includes("OutcomeSchema"));
-  assert(accountNames.includes("SchemaDependencyLedger"));
-  assert(accountNames.includes("ClaimAttestation"));
-
-  // Phase 1.6 — fee-vault account types (declared on-chain, exposed via IDL)
-  assert(accountNames.includes("ProtocolFeeVault"));
-  assert(accountNames.includes("PoolTreasuryVault"));
-  assert(accountNames.includes("PoolOracleFeeVault"));
-
-  // Phase 1.6 — optional fee accounts on the inflow handlers we wired accrual into
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.record_premium_payment.some(
-      (account) => account.name === "protocol_fee_vault",
-    ),
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.deposit_into_capital_class.some(
-      (account) => account.name === "pool_treasury_vault",
-    ),
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.process_redemption_queue.some(
-      (account) => account.name === "pool_treasury_vault",
-    ),
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some(
-      (account) => account.name === "protocol_fee_vault",
-    ),
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some(
-      (account) => account.name === "pool_oracle_fee_vault",
-    ),
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some(
-      (account) => account.name === "pool_oracle_policy",
-    ),
-  );
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.open_claim_case.some((account) => account.name === "protocol_governance"));
-  for (const accountName of [
-    "protocol_governance",
-    "health_plan",
-    "funding_line",
-    "liquidity_pool",
-    "capital_class",
-    "allocation_position",
-    "pool_oracle_approval",
-    "pool_oracle_permission_set",
-    "pool_oracle_policy",
-  ]) {
-    assert(
-      PROTOCOL_INSTRUCTION_ACCOUNTS.attest_claim_case.some((account) => account.name === accountName),
-      `attest_claim_case missing ${accountName}`,
-    );
-  }
-
-  // Phase 1.7 — withdraw ix account lists encode per-rail authority and
-  // physical-custody routing.
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.withdraw_protocol_fee_spl.some(
-      (account) => account.name === "domain_asset_vault",
-    ),
-    "protocol-fee SPL withdraw must thread DomainAssetVault for PDA-signed CPI",
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.withdraw_protocol_fee_sol.some(
-      (account) => account.name === "recipient",
-    ),
-    "protocol-fee SOL withdraw must take a system-account recipient",
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.withdraw_pool_treasury_spl.some(
-      (account) => account.name === "liquidity_pool",
-    ),
-    "pool-treasury withdraw must thread LiquidityPool for curator authority",
-  );
-  assert(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.withdraw_pool_oracle_fee_spl.some(
-      (account) => account.name === "oracle_profile",
-    ),
-    "pool-oracle-fee withdraw must thread OracleProfile for oracle authority",
-  );
-
-  // Phase 1.7 PR3 — withdraw ix args matrix. All 6 ix share WithdrawArgs { amount: u64 }.
-  for (const name of [
+  for (const removedInstruction of [
+    "init_protocol_fee_vault",
+    "init_pool_treasury_vault",
+    "init_pool_oracle_fee_vault",
     "withdraw_protocol_fee_sol",
     "withdraw_protocol_fee_spl",
     "withdraw_pool_treasury_sol",
     "withdraw_pool_treasury_spl",
     "withdraw_pool_oracle_fee_sol",
     "withdraw_pool_oracle_fee_spl",
-  ] as const) {
-    const args = PROTOCOL_INSTRUCTION_ARGS[name];
-    assert(args, `expected args for ${name}`);
-    assert.equal(
-      args.length,
-      1,
-      `${name} should take exactly one args struct (WithdrawArgs)`,
-    );
+    "create_liquidity_pool",
+    "create_capital_class",
+    "update_capital_class_controls",
+    "deposit_into_capital_class",
+    "update_lp_position_credentialing",
+    "request_redemption",
+    "process_redemption_queue",
+    "create_allocation_position",
+    "update_allocation_caps",
+    "allocate_capital",
+    "deallocate_capital",
+    "mark_impairment",
+    "register_oracle",
+    "claim_oracle",
+    "update_oracle_profile",
+    "configure_reserve_asset_rail",
+    "publish_reserve_asset_rail_price",
+    "initialize_series_reserve_ledger",
+    "attach_claim_evidence_ref",
+    "attest_claim_case",
+  ]) {
+    assert(!instructionNames.includes(removedInstruction), `${removedInstruction} should be removed`);
   }
+
+  assert(accountNames.includes("ReserveDomain"));
+  assert(accountNames.includes("HealthPlan"));
+  assert(accountNames.includes("PolicySeries"));
+  assert(accountNames.includes("FundingLine"));
+  assert(accountNames.includes("CapitalContribution"));
+  assert(accountNames.includes("Obligation"));
+  assert(!accountNames.includes("MemberPosition"));
+  assert(!accountNames.includes("OracleProfile"));
+  assert(!accountNames.includes("PoolOracleApproval"));
+  assert(!accountNames.includes("PoolOraclePolicy"));
+  assert(!accountNames.includes("PoolOraclePermissionSet"));
+  assert(!accountNames.includes("OutcomeSchema"));
+  assert(!accountNames.includes("SchemaDependencyLedger"));
+  assert(!accountNames.includes("ClaimAttestation"));
+
+  for (const removedAccount of [
+    "ProtocolGovernance",
+    "ProtocolFeeVault",
+    "PoolTreasuryVault",
+    "PoolOracleFeeVault",
+    "LiquidityPool",
+    "CapitalClass",
+    "LPPosition",
+    "PoolClassLedger",
+    "AllocationPosition",
+    "AllocationLedger",
+    "OracleProfile",
+    "ClaimAttestation",
+    "ReserveAssetRail",
+    "SeriesReserveLedger",
+  ]) {
+    assert(!accountNames.includes(removedAccount), `${removedAccount} should be removed`);
+  }
+  assert(!serializedAccounts.includes("protocol_governance"));
+  assert(!serializedAccounts.includes("protocol_fee_vault"));
+  assert(!serializedAccounts.includes("pool_treasury_vault"));
+  assert(!serializedAccounts.includes("pool_oracle_fee_vault"));
+  assert(!serializedAccounts.includes("member_position"));
+  assert(!serializedAccounts.includes("reserve_asset_rail"));
+  assert(!serializedAccounts.includes("series_reserve_ledger"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "attach_claim_evidence_ref"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "attest_claim_case"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "configure_reserve_asset_rail"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "publish_reserve_asset_rail_price"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "initialize_series_reserve_ledger"));
 
   assert(!instructionNames.includes("create_pool"));
   assert(!instructionNames.includes("set_pool_status"));
   assert(!serializedAccounts.includes("pool_type"));
-  assert(serializedAccounts.includes("membership_anchor_seat"));
-  assert.equal(
-    PROTOCOL_INSTRUCTION_ACCOUNTS.update_member_eligibility.find(
-      (account) => account.name === "membership_anchor_seat",
-    )?.writable,
-    true,
-    "update_member_eligibility must mark membership_anchor_seat writable because the handler mutates it",
-  );
-  assert(PROTOCOL_INSTRUCTION_ARGS.deposit_into_capital_class.length === 1);
-  assert(idl.instructions.some((instruction) => instruction.name === "update_lp_position_credentialing"));
+  assert(!serializedAccounts.includes("membership_anchor_seat"));
+  assert(!accountNames.includes("MembershipAnchorSeat"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.reserve_obligation.some((account) => account.name === "claim_case"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.release_reserve.some((account) => account.name === "claim_case"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "claim_case"));
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "reserve_asset_rail"));
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some((account) => account.name === "reserve_asset_rail"));
-  for (const accountName of [
-    "claim_asset_rail",
-    "payout_asset_rail",
-    "payout_domain_asset_vault",
-    "payout_domain_asset_ledger",
-    "payout_funding_line",
-    "payout_vault_token_account",
-    "recipient_token_account",
-  ]) {
-    assert(
-      PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case_selected_asset.some((account) => account.name === accountName),
-      `settle_claim_case_selected_asset missing ${accountName}`,
-    );
-  }
+  assert(!PROTOCOL_INSTRUCTION_ACCOUNTS.settle_obligation.some((account) => account.name === "reserve_asset_rail"));
+  assert(!PROTOCOL_INSTRUCTION_ACCOUNTS.settle_claim_case.some((account) => account.name === "reserve_asset_rail"));
+  assert(!Object.prototype.hasOwnProperty.call(PROTOCOL_INSTRUCTION_ACCOUNTS, "settle_claim_case_selected_asset"));
   for (const accountName of [
     "liquidity_pool",
     "capital_class",
@@ -221,8 +158,8 @@ test("canonical contract exposes the health-capital-markets surface", () => {
     "allocation_ledger",
   ]) {
     assert(
-      PROTOCOL_INSTRUCTION_ACCOUNTS.create_obligation.some((account) => account.name === accountName),
-      `create_obligation missing ${accountName}`,
+      !PROTOCOL_INSTRUCTION_ACCOUNTS.create_obligation.some((account) => account.name === accountName),
+      `create_obligation should not carry ${accountName}`,
     );
   }
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.reserve_obligation.find((account) => account.name === "claim_case")?.pdaSeeds);
@@ -231,51 +168,41 @@ test("canonical contract exposes the health-capital-markets surface", () => {
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "source_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.fund_sponsor_budget.some((account) => account.name === "vault_token_account"));
   assert(PROTOCOL_INSTRUCTION_ACCOUNTS.record_premium_payment.some((account) => account.name === "token_program"));
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.deposit_into_capital_class.some((account) => account.name === "source_token_account"));
-  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.request_redemption.some((account) => account.name === "protocol_governance"));
-  assert.equal(depositArgs?.type.kind, "struct");
-  assert.deepEqual(
-    depositArgs?.type.fields?.map((field) => field.name),
-    ["amount", "shares"],
-  );
-  assert.deepEqual(
-    initProtocolFeeVaultArgs?.type.fields?.map((field) => field.name),
-    ["asset_mint", "fee_recipient"],
-  );
-  assert.deepEqual(
-    initPoolTreasuryVaultArgs?.type.fields?.map((field) => field.name),
-    ["asset_mint", "fee_recipient"],
-  );
-  assert.deepEqual(
-    initPoolOracleFeeVaultArgs?.type.fields?.map((field) => field.name),
-    ["oracle", "asset_mint", "fee_recipient"],
-  );
-  assert.deepEqual(
-    requestRedemptionArgs?.type.fields?.map((field) => field.name),
-    ["shares"],
-  );
-  assert.deepEqual(
-    processRedemptionArgs?.type.fields?.map((field) => field.name),
-    ["shares"],
-  );
-  assert(configureReserveAssetRailArgs?.type.fields?.some((field) => field.name === "max_confidence_bps"));
-  assert(reserveAssetRailAccount?.type.fields?.some((field) => field.name === "max_confidence_bps"));
-  assert.deepEqual(
-    selectedAssetPayoutArgs?.type.fields?.map((field) => field.name),
-    ["claim_credit_amount", "payout_amount", "max_overpay_bps", "settlement_reason_hash"],
-  );
-  assert(claimCaseAccount?.type.fields?.some((field) => field.name === "attestation_count"));
-  for (const fieldName of [
-    "evidence_ref_hash",
-    "decision_support_hash",
-    "schema_hash",
-    "schema_version",
-    "liquidity_pool",
-    "allocation_position",
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.deposit_reserve_capital.some((account) => account.name === "capital_contribution"));
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.deposit_reserve_capital.some((account) => account.name === "source_token_account"));
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.return_reserve_capital.some((account) => account.name === "recipient_token_account"));
+  assert(PROTOCOL_INSTRUCTION_ACCOUNTS.record_reserve_earnings.some((account) => account.name === "source_token_account"));
+  assert(!idl.types.some((entry) => entry.name === "ConfigureReserveAssetRailArgs"));
+  assert(!idl.types.some((entry) => entry.name === "PublishReserveAssetRailPriceArgs"));
+  assert(!idl.types.some((entry) => entry.name === "ReserveAssetRail"));
+  assert(!idl.types.some((entry) => entry.name === "InitializeSeriesReserveLedgerArgs"));
+  assert(!idl.types.some((entry) => entry.name === "SeriesReserveLedger"));
+  assert(!selectedAssetPayoutArgs);
+  assert(!policySeriesAccount?.type.fields?.some((field) => field.name === "evidence_requirements_hash"));
+  for (const removedHealthPlanField of [
+    "membership_mode",
+    "membership_gate_kind",
+    "membership_gate_mint",
+    "membership_gate_min_amount",
+    "membership_invite_authority",
   ]) {
-    assert(
-      claimAttestationAccount?.type.fields?.some((field) => field.name === fieldName),
-      `ClaimAttestation missing ${fieldName}`,
-    );
+    assert(!healthPlanAccount?.type.fields?.some((field) => field.name === removedHealthPlanField));
+  }
+  assert(!claimCaseAccount?.type.fields?.some((field) => field.name === "member_position"));
+  assert(claimCaseAccount?.type.fields?.some((field) => field.name === "evidence_ref_hash"));
+  assert(claimCaseAccount?.type.fields?.some((field) => field.name === "decision_support_hash"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "contributor"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "contributed_amount"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "returned_amount"));
+  assert(capitalContributionAccount?.type.fields?.some((field) => field.name === "terms_hash"));
+  assert(openClaimCaseArgs?.type.fields?.some((field) => field.name === "evidence_ref_hash"));
+  assert(adjudicateClaimCaseArgs?.type.fields?.some((field) => field.name === "evidence_ref_hash"));
+  assert(adjudicateClaimCaseArgs?.type.fields?.some((field) => field.name === "decision_support_hash"));
+  assert(depositReserveCapitalArgs?.type.fields?.some((field) => field.name === "terms_hash"));
+  assert(returnReserveCapitalArgs?.type.fields?.some((field) => field.name === "reason_hash"));
+  assert(recordReserveEarningsArgs?.type.fields?.some((field) => field.name === "earnings_ref_hash"));
+  assert(fundingFlowRecordedEvent?.type.fields?.some((field) => field.name === "reference_hash"));
+  for (const removedClaimField of ["attestation_count"]) {
+    assert(!claimCaseAccount?.type.fields?.some((field) => field.name === removedClaimField));
   }
 });

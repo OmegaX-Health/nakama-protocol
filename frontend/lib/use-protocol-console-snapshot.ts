@@ -26,6 +26,7 @@ const EMPTY_PROTOCOL_CONSOLE_SNAPSHOT: ProtocolConsoleSnapshot = {
   policySeries: [],
   memberPositions: [],
   fundingLines: [],
+  capitalContributions: [],
   claimCases: [],
   obligations: [],
   liquidityPools: [],
@@ -39,15 +40,9 @@ const EMPTY_PROTOCOL_CONSOLE_SNAPSHOT: ProtocolConsoleSnapshot = {
   allocationLedgers: [],
   outcomesBySeries: {},
   oracleProfiles: [],
-  poolOracleApprovals: [],
-  poolOraclePolicies: [],
-  poolOraclePermissionSets: [],
   outcomeSchemas: [],
   schemaDependencyLedgers: [],
   claimAttestations: [],
-  protocolFeeVaults: [],
-  poolTreasuryVaults: [],
-  poolOracleFeeVaults: [],
 };
 
 type SnapshotCacheEntry = {

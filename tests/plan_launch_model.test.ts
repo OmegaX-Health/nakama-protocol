@@ -125,22 +125,6 @@ test("Genesis Phase 0 launch profile fails closed when execution cluster is unve
   assert.equal(isGenesisPhase0SurfaceActionable(profile, "rewardLaunch"), false);
 });
 
-test("Phase 0 UI keeps public LP self-service separate from hidden admin drawers", () => {
-  const capitalWorkbench = readFileSync("frontend/components/capital-workbench.tsx", "utf8");
-  const planCreationWizard = readFileSync("frontend/components/plan-creation-wizard.tsx", "utf8");
-  const plansWorkbench = readFileSync("frontend/components/plans-workbench.tsx", "utf8");
-  const lpPanel = readFileSync("frontend/components/capital-lp-self-service-panel.tsx", "utf8");
-
-  assert.match(capitalWorkbench, /CapitalLpSelfServicePanel/);
-  assert.match(capitalWorkbench, /capitalAdminActions/);
-  assert.match(capitalWorkbench, /executionClusterVerified/);
-  assert.match(planCreationWizard, /executionClusterVerified/);
-  assert.match(plansWorkbench, /executionClusterVerified/);
-  assert.match(lpPanel, /buildDepositIntoCapitalClassTx/);
-  assert.match(lpPanel, /buildRequestRedemptionTx/);
-  assert.doesNotMatch(lpPanel, /buildProcessRedemptionQueueTx/);
-});
-
 test("RWA policy launch controls stay future-gated by default", () => {
   assert.equal(isRwaPolicyLaunchEnabled({}), false);
   assert.equal(isRwaPolicyLaunchEnabled({ NEXT_PUBLIC_ENABLE_RWA_POLICY: "" }), false);
@@ -158,7 +142,7 @@ function createValidBasics(intent: LaunchBasicsValidationInput["launchIntent"]):
     reserveDomainAddress: "GjJFUSzbjZZMXySmJdb4pxrnPHDuC8rWN7XQkkQRnM7x",
     metadataUri: "https://protocol.omegax.health/plans/nexus-plan",
     payoutAssetMode: "spl",
-    payoutMint: "4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump",
+    payoutMint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     rewardPayoutUi: "25",
     termsHashHex: "",
     payoutPolicyHashHex: "",
@@ -283,14 +267,14 @@ test("membership validation blocks unsupported protection gate combinations whil
   const rewardOnly = createMembership("rewards");
   rewardOnly.membershipMode = "token_gate";
   rewardOnly.membershipGateKind = "fungible_snapshot";
-  rewardOnly.tokenGateMint = "4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump";
+  rewardOnly.tokenGateMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
   rewardOnly.tokenGateMinBalance = "1000";
   assert.deepEqual(validateLaunchMembership(rewardOnly), []);
 
   const protection = createMembership("insurance");
   protection.membershipMode = "token_gate";
   protection.membershipGateKind = "fungible_snapshot";
-  protection.tokenGateMint = "4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump";
+  protection.tokenGateMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
   protection.tokenGateMinBalance = "1000";
   assert(
     validateLaunchMembership(protection).includes(
@@ -301,7 +285,7 @@ test("membership validation blocks unsupported protection gate combinations whil
   const protectionAnchor = createMembership("hybrid");
   protectionAnchor.membershipMode = "token_gate";
   protectionAnchor.membershipGateKind = "nft_anchor";
-  protectionAnchor.tokenGateMint = "4Aar9R14YMbEie6yh8WcH1gWXrBtfucoFjw6SpjXpump";
+  protectionAnchor.tokenGateMint = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
   protectionAnchor.tokenGateMinBalance = "1";
   assert.deepEqual(validateLaunchMembership(protectionAnchor), []);
 });
