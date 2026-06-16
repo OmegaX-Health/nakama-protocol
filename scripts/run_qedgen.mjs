@@ -10,6 +10,10 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+// TODO(NAKAMA-REBRAND-03): the crate dir was renamed to programs/nakama_coverage_protocol,
+// but these still point at the old paths, so qedgen:check is STALE. A gated `qedgen codegen`
+// must rename omegax_protocol.qedspec -> nakama_coverage_protocol.qedspec and recompute the
+// frozen spec/handler hashes (does NOT affect anchor build). Update SPEC + ANCHOR_PROJECT then.
 const SPEC = 'omegax_protocol.qedspec';
 const ANCHOR_PROJECT = 'programs/omegax_protocol';
 const MODEL_DIR = 'formal_verification/anchor_model';

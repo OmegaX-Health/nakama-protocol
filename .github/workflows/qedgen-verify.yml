@@ -122,6 +122,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # TODO(NAKAMA-REBRAND-03): rename omegax_protocol.qedspec -> nakama_coverage_protocol.qedspec
+          # and update the line-37 path filter (programs/omegax_protocol/**) when qedgen is regenerated.
           git diff --exit-code -- \
             omegax_protocol.qedspec \
             formal_verification

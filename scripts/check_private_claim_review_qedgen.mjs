@@ -13,6 +13,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+// TODO(NAKAMA-REBRAND-03): dir renamed to programs/nakama_private_claim_review; update these
+// + rerun qedgen codegen (see run_qedgen.mjs). qedgen:check is stale until then.
 const SPEC = 'formal_verification/omegax_private_claim_review.qedspec';
 const ANCHOR_PROJECT = 'programs/omegax_private_claim_review';
 
