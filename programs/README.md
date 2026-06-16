@@ -1,12 +1,12 @@
 # Programs
 
-This directory contains the Anchor workspace for OmegaX Protocol.
+This directory contains the Anchor workspace for Nakama Protocol.
 
 ## Contents
 
-- `omegax_protocol/` is the main on-chain program crate
+- `nakama_coverage_protocol/` is the main on-chain program crate
 
-See [omegax_protocol/README.md](./omegax_protocol/README.md) for crate-specific notes.
+See [nakama_coverage_protocol/README.md](./nakama_coverage_protocol/README.md) for crate-specific notes.
 
 For reviewer-oriented program docs, also start with:
 

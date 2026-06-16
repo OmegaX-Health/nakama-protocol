@@ -69,8 +69,8 @@ type ProtocolContract = {
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SCRIPT_DIR, '..');
-const TARGET_IDL_PATH = resolve(REPO_ROOT, 'target/idl/omegax_protocol.json');
-const CHECKED_IN_IDL_PATH = resolve(REPO_ROOT, 'idl/omegax_protocol.json');
+const TARGET_IDL_PATH = resolve(REPO_ROOT, 'target/idl/nakama_coverage_protocol.json');
+const CHECKED_IN_IDL_PATH = resolve(REPO_ROOT, 'idl/nakama_coverage_protocol.json');
 const CONTRACT_JSON_PATH = resolve(REPO_ROOT, 'shared/protocol_contract.json');
 const FRONTEND_GENERATED_PATH = resolve(REPO_ROOT, 'frontend/lib/generated/protocol-contract.ts');
 const FRONTEND_GENERATED_JS_PATH = resolve(REPO_ROOT, 'frontend/lib/generated/protocol-contract.js');
@@ -358,7 +358,7 @@ function main() {
   );
 
   const contract: ProtocolContract = {
-    sourceIdlPath: 'idl/omegax_protocol.json',
+    sourceIdlPath: 'idl/nakama_coverage_protocol.json',
     programId: idl.address,
     instructionSetVersion: 1,
     instructions,

@@ -22,7 +22,7 @@
 
 ## Protocol surface changes
 
-If this PR touches `programs/omegax_protocol/`, `idl/`, `shared/protocol_contract.json`, `frontend/lib/protocol.ts`, or shared protocol builders, complete this section. Otherwise mark `n/a`.
+If this PR touches `programs/nakama_coverage_protocol/`, `idl/`, `shared/protocol_contract.json`, `frontend/lib/protocol.ts`, or shared protocol builders, complete this section. Otherwise mark `n/a`.
 
 - [ ] `npm run anchor:idl` ran and checked-in IDLs/source hashes reflect current program sources
 - [ ] `npm run protocol:contract` ran and `shared/protocol_contract.json`, `frontend/lib/generated/` reflect current IDL

@@ -20,7 +20,7 @@ fn inactive_health_plan_guard_blocks_fresh_intake() {
     plan.active = false;
     assert_eq!(
         require_health_plan_active(&plan).unwrap_err(),
-        OmegaXProtocolError::HealthPlanInactive.into()
+        NakamaProtocolError::HealthPlanInactive.into()
     );
 }
 
@@ -926,25 +926,25 @@ fn plan_pause_guards_block_money_and_claim_finality_paths() {
     plan.pause_flags = PAUSE_FLAG_PROTOCOL_EMERGENCY;
     assert_eq!(
         require_reserve_rails_open(&plan).unwrap_err(),
-        OmegaXProtocolError::HealthPlanPaused.into()
+        NakamaProtocolError::HealthPlanPaused.into()
     );
 
     plan.pause_flags = PAUSE_FLAG_CLAIM_INTAKE;
     assert_eq!(
         require_claim_intake_open(&plan).unwrap_err(),
-        OmegaXProtocolError::ClaimIntakePaused.into()
+        NakamaProtocolError::ClaimIntakePaused.into()
     );
 
     plan.pause_flags = PAUSE_FLAG_ORACLE_FINALITY_HOLD;
     assert_eq!(
         require_claim_finality_open(&plan).unwrap_err(),
-        OmegaXProtocolError::OracleFinalityHeld.into()
+        NakamaProtocolError::OracleFinalityHeld.into()
     );
 
     plan.pause_flags = PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS;
     assert_eq!(
         require_capital_subscriptions_open(&plan).unwrap_err(),
-        OmegaXProtocolError::HealthPlanPaused.into()
+        NakamaProtocolError::HealthPlanPaused.into()
     );
 }
 

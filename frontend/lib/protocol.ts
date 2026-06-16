@@ -9,7 +9,7 @@ import {
   Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
-import protocolIdl from "../../idl/omegax_protocol.json";
+import protocolIdl from "../../idl/nakama_coverage_protocol.json";
 
 import {
   PROTOCOL_ACCOUNT_DISCRIMINATORS,

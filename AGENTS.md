@@ -1,4 +1,4 @@
-# OmegaX Protocol Agent Rules
+# Nakama Protocol Agent Rules
 
 This is a public repository. Keep instructions, code, docs, examples, and generated artifacts public-safe.
 
@@ -9,7 +9,7 @@ This is a public repository. Keep instructions, code, docs, examples, and genera
 - Commits intended for this repo require a DCO sign-off trailer. Use `git commit -s` so Public CI passes `Enforce DCO sign-off`.
 
 ## Repo Map
-- `programs/omegax_protocol/`: on-chain program. Pair its local `README.md` with `docs/architecture/`.
+- `programs/nakama_coverage_protocol/`: on-chain program. Pair its local `README.md` with `docs/architecture/`.
 - `frontend/`: public Next.js protocol console.
 - `tests/`: fast Node verification suite.
 - `e2e/`: heavier localnet protocol-surface matrix.
@@ -24,12 +24,12 @@ This is a public repository. Keep instructions, code, docs, examples, and genera
 - If protocol surface or shared builders change, regenerate with `npm run anchor:idl` and `npm run protocol:contract`.
 
 ## Protect Buyer Boundary
-- Founder reservation buyer flow belongs in the OmegaX website Protect funnel and OmegaX Health `protocol-oracle-service`, not as duplicate purchase UI in this console.
+- Founder reservation buyer flow belongs in the Nakama website Protect funnel and Nakama Health `protocol-oracle-service`, not as duplicate purchase UI in this console.
 - The protocol console may show off-chain Squads-custody reservation status: campaign status, accepted rails, pending/activated/refunded counts, terms hash, linked coverage lane, and reserve-impact disclaimers.
 - Keep Founder reservation, Protect quote, activated cover, treasury inventory, and claims-paying reserve semantically distinct in labels, models, and docs.
 - Do not present pending reservations as active cover or available claims-paying reserve.
 - If external consumer/oracle reservation campaign state cannot be read in production, fail closed in protocol-facing copy.
-- Website `/protect/devnet` is a devnet live-coverage simulator owned by website plus OmegaX Health app/oracle service. It is not a mainnet protocol-console surface and must not be described as public mainnet coverage.
+- Website `/protect/devnet` is a devnet live-coverage simulator owned by website plus Nakama Health app/oracle service. It is not a mainnet protocol-console surface and must not be described as public mainnet coverage.
 - Protocol docs may reference the devnet simulator as QA/demo, but settlement truth stays with deployed protocol state, reserve controls, and later `ClaimCase`/`ClaimAttestation` activity.
 
 ## Genesis Protect Launch Keys
@@ -44,7 +44,7 @@ This is a public repository. Keep instructions, code, docs, examples, and genera
 - Do not assume the current shape is frozen.
 - Do not introduce `v2` names, parallel surfaces, or permanent compatibility layers by default.
 - Prefer improving the current surface in place unless a real compatibility constraint requires a separate path.
-- Keep `programs/omegax_protocol/src/`, `frontend/lib/protocol.ts`, `shared/protocol_contract.json`, and `idl/omegax_protocol.json` aligned as the current public surface.
+- Keep `programs/nakama_coverage_protocol/src/`, `frontend/lib/protocol.ts`, `shared/protocol_contract.json`, and `idl/nakama_coverage_protocol.json` aligned as the current public surface.
 - When editing adjacent code, remove stale `v2` wording from labels, docs, tests, and internal locals instead of carrying it forward.
 
 ## Verification

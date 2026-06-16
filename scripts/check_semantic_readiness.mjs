@@ -8,11 +8,11 @@ const repoRoot = process.cwd();
 const targetPathMatchers = [
   /^README\.md$/,
   /^frontend\/README\.md$/,
-  /^programs\/omegax_protocol\/README\.md$/,
+  /^programs\/nakama_coverage_protocol\/README\.md$/,
   /^docs\/(?!adr\/|reviews\/)(?!MIGRATION_MATRIX\.md$)(?!WHY_THIS_MODEL\.md$).+\.md$/,
   /^e2e\/.+\.(?:ts|md)$/,
   /^scripts\/.+\.(?:mjs|js|ts|md)$/,
-  /^programs\/omegax_protocol\/src\/.+\.rs$/,
+  /^programs\/nakama_coverage_protocol\/src\/.+\.rs$/,
   /^frontend\/app\/.+\.(?:ts|tsx)$/,
 ];
 

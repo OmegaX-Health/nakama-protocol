@@ -4,9 +4,9 @@ import { spawnSync } from 'node:child_process';
 
 const SEARCH_TARGETS = [
   'README.md',
-  'programs/omegax_protocol/src',
+  'programs/nakama_coverage_protocol/src',
   'frontend',
-  'idl/omegax_protocol.json',
+  'idl/nakama_coverage_protocol.json',
   'shared/protocol_contract.json',
   'scripts/bootstrap_protocol.ts',
   'scripts/generate_protocol_contract.ts',

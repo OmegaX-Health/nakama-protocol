@@ -13,10 +13,10 @@ type ProtocolIdl = {
   events?: IdlDiscriminatorItem[];
 };
 
-const idl = JSON.parse(readFileSync("idl/omegax_protocol.json", "utf8")) as ProtocolIdl;
-const source = readFileSync("programs/omegax_protocol/src/quasar_discriminators.rs", "utf8");
-const stateSource = readFileSync("programs/omegax_protocol/src/state.rs", "utf8");
-const eventsSource = readFileSync("programs/omegax_protocol/src/events.rs", "utf8");
+const idl = JSON.parse(readFileSync("idl/nakama_coverage_protocol.json", "utf8")) as ProtocolIdl;
+const source = readFileSync("programs/nakama_coverage_protocol/src/quasar_discriminators.rs", "utf8");
+const stateSource = readFileSync("programs/nakama_coverage_protocol/src/state.rs", "utf8");
+const eventsSource = readFileSync("programs/nakama_coverage_protocol/src/events.rs", "utf8");
 
 function constName(prefix: string, name: string): string {
   return `${prefix}_${name

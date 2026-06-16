@@ -10,12 +10,12 @@ use crate::state::*;
 
 pub(crate) fn checked_add(lhs: u64, rhs: u64) -> Result<u64> {
     lhs.checked_add(rhs)
-        .ok_or_else(|| OmegaXProtocolError::ArithmeticError.into())
+        .ok_or_else(|| NakamaProtocolError::ArithmeticError.into())
 }
 
 pub(crate) fn checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
     lhs.checked_sub(rhs)
-        .ok_or_else(|| OmegaXProtocolError::ArithmeticError.into())
+        .ok_or_else(|| NakamaProtocolError::ArithmeticError.into())
 }
 
 pub(crate) fn recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
@@ -26,11 +26,11 @@ pub(crate) fn recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
         .and_then(|value| value.checked_add(sheet.impaired))
         .and_then(|value| value.checked_add(sheet.pending_redemption))
         .and_then(|value| value.checked_add(sheet.restricted))
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+        .ok_or(NakamaProtocolError::ArithmeticError)?;
     sheet.free = sheet.funded.saturating_sub(encumbered);
     let redeemable_encumbered = encumbered
         .checked_add(sheet.allocated)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+        .ok_or(NakamaProtocolError::ArithmeticError)?;
     sheet.redeemable = sheet.funded.saturating_sub(redeemable_encumbered);
     Ok(())
 }
@@ -49,7 +49,7 @@ pub(crate) fn book_inflow_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) ->
 pub(crate) fn book_restricted_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> {
     require!(
         sheet.free >= amount,
-        OmegaXProtocolError::InsufficientStableCoverageCapacity
+        NakamaProtocolError::InsufficientStableCoverageCapacity
     );
     sheet.restricted = checked_add(sheet.restricted, amount)?;
     recompute_sheet(sheet)
@@ -66,7 +66,7 @@ pub(crate) fn require_free_reserve_capacity(
 ) -> Result<()> {
     require!(
         sheet.free >= amount,
-        OmegaXProtocolError::InsufficientFreeReserveCapacity
+        NakamaProtocolError::InsufficientFreeReserveCapacity
     );
     Ok(())
 }
@@ -89,7 +89,7 @@ pub(crate) fn require_direct_claim_case_settlement(
 ) -> Result<()> {
     require!(
         claim_case.linked_obligation == ZERO_PUBKEY,
-        OmegaXProtocolError::LinkedClaimMustSettleThroughObligation
+        NakamaProtocolError::LinkedClaimMustSettleThroughObligation
     );
     Ok(())
 }
@@ -105,7 +105,7 @@ pub(crate) fn require_claim_proof_fingerprints(
     require!(
         !claim_proof_hash_is_zero(evidence_ref_hash)
             && !claim_proof_hash_is_zero(decision_support_hash),
-        OmegaXProtocolError::ClaimProofFingerprintRequired
+        NakamaProtocolError::ClaimProofFingerprintRequired
     );
     Ok(())
 }
@@ -122,13 +122,13 @@ pub(crate) fn resolve_claim_proof_fingerprints(
             claim_proof_hash_is_zero(&evidence_ref_hash)
                 || claim_proof_hash_is_zero(&claim_case.evidence_ref_hash)
                 || evidence_ref_hash == claim_case.evidence_ref_hash,
-            OmegaXProtocolError::ClaimProofFingerprintLocked
+            NakamaProtocolError::ClaimProofFingerprintLocked
         );
         require!(
             claim_proof_hash_is_zero(&decision_support_hash)
                 || claim_proof_hash_is_zero(&claim_case.decision_support_hash)
                 || decision_support_hash == claim_case.decision_support_hash,
-            OmegaXProtocolError::ClaimProofFingerprintLocked
+            NakamaProtocolError::ClaimProofFingerprintLocked
         );
     }
 
@@ -159,28 +159,28 @@ pub(crate) fn require_matching_linked_claim_case(
 ) -> Result<()> {
     require!(
         claim_case.health_plan == health_plan_key && obligation.health_plan == health_plan_key,
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     require!(
         claim_case.policy_series == obligation.policy_series,
-        OmegaXProtocolError::PolicySeriesMismatch
+        NakamaProtocolError::PolicySeriesMismatch
     );
     require!(
         claim_case.funding_line == obligation.funding_line,
-        OmegaXProtocolError::FundingLineMismatch
+        NakamaProtocolError::FundingLineMismatch
     );
     require!(
         claim_case.asset_mint == obligation.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require!(
         obligation.claim_case == ZERO_PUBKEY || obligation.claim_case == claim_case_key,
-        OmegaXProtocolError::ClaimCaseLinkMismatch
+        NakamaProtocolError::ClaimCaseLinkMismatch
     );
     require!(
         claim_case.linked_obligation == ZERO_PUBKEY
             || claim_case.linked_obligation == obligation_key,
-        OmegaXProtocolError::ClaimCaseLinkMismatch
+        NakamaProtocolError::ClaimCaseLinkMismatch
     );
     Ok(())
 }
@@ -223,17 +223,17 @@ pub(crate) fn sync_adjudicated_claim_liability(
         )?;
         require!(
             obligation.reserved_amount <= approved_amount,
-            OmegaXProtocolError::AmountExceedsApprovedClaim
+            NakamaProtocolError::AmountExceedsApprovedClaim
         );
         claim_case.reserved_amount = obligation.reserved_amount;
     } else {
         require!(
             claim_case.linked_obligation == ZERO_PUBKEY,
-            OmegaXProtocolError::ClaimCaseLinkMismatch
+            NakamaProtocolError::ClaimCaseLinkMismatch
         );
         require!(
             reserve_amount == 0,
-            OmegaXProtocolError::DirectClaimReserveUnsupported
+            NakamaProtocolError::DirectClaimReserveUnsupported
         );
         claim_case.reserved_amount = 0;
     }
@@ -246,12 +246,12 @@ pub(crate) fn require_claim_adjudication_mutable(
 ) -> Result<()> {
     require!(
         claim_case.paid_amount == 0 && claim_case.intake_status < CLAIM_INTAKE_SETTLED,
-        OmegaXProtocolError::ClaimAdjudicationLocked
+        NakamaProtocolError::ClaimAdjudicationLocked
     );
     if let Some(obligation) = obligation {
         require!(
             obligation.status < OBLIGATION_STATUS_SETTLED && obligation.settled_amount == 0,
-            OmegaXProtocolError::ClaimAdjudicationLocked
+            NakamaProtocolError::ClaimAdjudicationLocked
         );
     }
     Ok(())
@@ -260,7 +260,7 @@ pub(crate) fn require_claim_adjudication_mutable(
 pub(crate) fn require_supported_obligation_delivery_mode(delivery_mode: u8) -> Result<()> {
     match delivery_mode {
         OBLIGATION_DELIVERY_MODE_CLAIMABLE | OBLIGATION_DELIVERY_MODE_PAYABLE => Ok(()),
-        _ => err!(OmegaXProtocolError::InvalidObligationDeliveryMode),
+        _ => err!(NakamaProtocolError::InvalidObligationDeliveryMode),
     }
 }
 
@@ -275,7 +275,7 @@ pub(crate) fn require_full_obligation_transition_amount(
         | OBLIGATION_STATUS_CANCELED => {
             require!(
                 amount == obligation.outstanding_amount,
-                OmegaXProtocolError::PartialObligationTransitionUnsupported
+                NakamaProtocolError::PartialObligationTransitionUnsupported
             );
             Ok(())
         }
@@ -327,7 +327,7 @@ pub(crate) fn sync_linked_claim_case_after_settlement(
     )?;
     require!(
         amount <= remaining_claim_amount(claim_case),
-        OmegaXProtocolError::AmountExceedsApprovedClaim
+        NakamaProtocolError::AmountExceedsApprovedClaim
     );
 
     obligation.claim_case = claim_case_key;
@@ -374,7 +374,7 @@ pub(crate) fn release_to_claimable_or_payable(
         OBLIGATION_DELIVERY_MODE_PAYABLE => {
             sheet.payable = checked_add(sheet.payable, amount)?;
         }
-        _ => return err!(OmegaXProtocolError::InvalidObligationStateTransition),
+        _ => return err!(NakamaProtocolError::InvalidObligationStateTransition),
     }
     recompute_sheet(sheet)
 }
@@ -391,7 +391,7 @@ pub(crate) fn settle_from_sheet(
             } else if sheet.reserved >= amount {
                 sheet.reserved = checked_sub(sheet.reserved, amount)?;
             } else {
-                return err!(OmegaXProtocolError::AmountExceedsReservedBalance);
+                return err!(NakamaProtocolError::AmountExceedsReservedBalance);
             }
         }
         OBLIGATION_DELIVERY_MODE_PAYABLE => {
@@ -400,10 +400,10 @@ pub(crate) fn settle_from_sheet(
             } else if sheet.reserved >= amount {
                 sheet.reserved = checked_sub(sheet.reserved, amount)?;
             } else {
-                return err!(OmegaXProtocolError::AmountExceedsReservedBalance);
+                return err!(NakamaProtocolError::AmountExceedsReservedBalance);
             }
         }
-        _ => return err!(OmegaXProtocolError::InvalidObligationStateTransition),
+        _ => return err!(NakamaProtocolError::InvalidObligationStateTransition),
     }
     sheet.funded = checked_sub(sheet.funded, amount)?;
     sheet.owed = sheet.owed.saturating_sub(amount);
@@ -493,7 +493,7 @@ pub(crate) fn cancel_outstanding(
         recompute_sheet(plan_sheet)?;
         recompute_sheet(line_sheet)?;
     } else {
-        return err!(OmegaXProtocolError::InvalidObligationStateTransition);
+        return err!(NakamaProtocolError::InvalidObligationStateTransition);
     }
     obligation.outstanding_amount = obligation.outstanding_amount.saturating_sub(amount);
     Ok(())

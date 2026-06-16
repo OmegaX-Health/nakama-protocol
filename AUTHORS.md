@@ -1,6 +1,6 @@
 # Authors
 
-`OmegaX Protocol` is maintained by `OMEGAX HEALTH FZCO` with open-source contributors.
+`Nakama Protocol` is maintained by `OMEGAX HEALTH FZCO` with open-source contributors.
 
 Initial project lead:
 

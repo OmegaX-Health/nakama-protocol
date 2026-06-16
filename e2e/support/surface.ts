@@ -50,7 +50,7 @@ const contract = JSON.parse(
   readFileSync(new URL("../../shared/protocol_contract.json", import.meta.url), "utf8"),
 ) as ProtocolContractSurface;
 const idl = JSON.parse(
-  readFileSync(new URL("../../idl/omegax_protocol.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../idl/nakama_coverage_protocol.json", import.meta.url), "utf8"),
 ) as ProtocolIdl;
 
 function bytesToHex(bytes: Uint8Array | number[]): string {

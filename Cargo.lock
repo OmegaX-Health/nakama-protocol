@@ -1083,6 +1083,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "nakama_coverage_protocol"
+version = "0.3.1"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "blake3",
+ "cvlr",
+ "quasar-lang",
+ "quasar-spl",
+ "solana-sdk-ids",
+ "solana-sha256-hasher",
+]
+
+[[package]]
+name = "nakama_private_claim_review"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "ephemeral-rollups-sdk",
+]
+
+[[package]]
 name = "num-bigint"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1141,28 +1163,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
-]
-
-[[package]]
-name = "omegax_private_claim_review"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "ephemeral-rollups-sdk",
-]
-
-[[package]]
-name = "omegax_protocol"
-version = "0.3.1"
-dependencies = [
- "anchor-lang",
- "anchor-spl",
- "blake3",
- "cvlr",
- "quasar-lang",
- "quasar-spl",
- "solana-sdk-ids",
- "solana-sha256-hasher",
 ]
 
 [[package]]

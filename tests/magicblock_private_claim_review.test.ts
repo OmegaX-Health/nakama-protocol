@@ -15,9 +15,9 @@ const {
 } = privateClaimReviewModule as typeof import("../frontend/lib/private-claim-review.ts");
 
 const anchorToml = readFileSync("Anchor.toml", "utf8");
-const cargoToml = readFileSync("programs/omegax_private_claim_review/Cargo.toml", "utf8");
-const programSource = readFileSync("programs/omegax_private_claim_review/src/lib.rs", "utf8");
-const privateReviewIdl = JSON.parse(readFileSync("idl/omegax_private_claim_review.json", "utf8"));
+const cargoToml = readFileSync("programs/nakama_private_claim_review/Cargo.toml", "utf8");
+const programSource = readFileSync("programs/nakama_private_claim_review/src/lib.rs", "utf8");
+const privateReviewIdl = JSON.parse(readFileSync("idl/nakama_private_claim_review.json", "utf8"));
 const architectureDoc = readFileSync(
   "docs/architecture/magicblock-private-claim-room.md",
   "utf8",
@@ -30,9 +30,9 @@ const claimRoomWorkbench = readFileSync(
 const claimReviewClient = readFileSync("frontend/lib/private-claim-review.ts", "utf8");
 
 test("MagicBlock adjunct program is registered as a separate Anchor program", () => {
-  assert.match(anchorToml, /programs\/omegax_private_claim_review/);
-  assert.match(anchorToml, /omegax_private_claim_review = "[1-9A-HJ-NP-Za-km-z]+"/);
-  assert.match(cargoToml, /name = "omegax_private_claim_review"/);
+  assert.match(anchorToml, /programs\/nakama_private_claim_review/);
+  assert.match(anchorToml, /nakama_private_claim_review = "[1-9A-HJ-NP-Za-km-z]+"/);
+  assert.match(cargoToml, /name = "nakama_private_claim_review"/);
   assert.match(cargoToml, /ephemeral-rollups-sdk/);
 });
 
@@ -81,7 +81,7 @@ test("MagicBlock adjunct uses an authority registry for review sessions", () => 
 });
 
 test("review registry initialization is anchored to the program upgrade authority", () => {
-  assert.match(programSource, /pub program: Program<'info, OmegaxPrivateClaimReview>/);
+  assert.match(programSource, /pub program: Program<'info, NakamaPrivateClaimReview>/);
   assert.match(programSource, /pub program_data: Account<'info, ProgramData>/);
   assert.match(
     programSource,
@@ -179,20 +179,20 @@ test("delegate writes lifecycle state before ER delegation", () => {
 });
 
 test("MagicBlock adjunct keeps the main settlement kernel out of delegation scope", () => {
-  assert.match(architectureDoc, /main `omegax_protocol` program remains/);
+  assert.match(architectureDoc, /main `nakama_coverage_protocol` program remains/);
   assert.match(architectureDoc, /ClaimCase`, reserves, vaults, funding lines, obligations, and payout accounts are not delegated/);
-  assert.doesNotMatch(programSource, /omegax_protocol::/);
+  assert.doesNotMatch(programSource, /nakama_coverage_protocol::/);
 });
 
 test("MagicBlock private claim review program id is valid", () => {
-  const match = anchorToml.match(/omegax_private_claim_review = "([^"]+)"/);
+  const match = anchorToml.match(/nakama_private_claim_review = "([^"]+)"/);
   assert.ok(match?.[1]);
   assert.doesNotThrow(() => new PublicKey(match[1]));
 });
 
 test("MagicBlock claim room frontend is a read-only receipt verifier", () => {
   assert.match(claimRoomPage, /read-only MagicBlock private-review receipt verifier/);
-  assert.match(claimReviewClient, /omegax_private_claim_review\.json/);
+  assert.match(claimReviewClient, /nakama_private_claim_review\.json/);
   assert.match(claimReviewClient, /BorshCoder/);
   assert.match(claimReviewClient, /PRIVATE_CLAIM_REVIEW_PROGRAM_ID/);
   assert.match(claimReviewClient, /PrivateClaimReviewSession/);

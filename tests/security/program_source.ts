@@ -5,7 +5,7 @@ import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const programSrcDir = fileURLToPath(
-  new URL("../../programs/omegax_protocol/src/", import.meta.url),
+  new URL("../../programs/nakama_coverage_protocol/src/", import.meta.url),
 );
 
 function listRustSources(dir: string): string[] {

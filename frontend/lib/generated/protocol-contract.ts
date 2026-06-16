@@ -1,6 +1,6 @@
 // AUTO-GENERATED FILE. DO NOT EDIT MANUALLY.
 // source: shared/protocol_contract.json
-// contract_sha256: 9c7eb5d1484f21c064e560d7ecd80060b61f564496565fb28036e074952bb9fc
+// contract_sha256: 1918898b26d030e18ce9fdff08cd9305aefccdd5ffe374f47a5e974664bc57b5
 
 export type ProtocolInstructionName =
   | "adjudicate_claim_case"

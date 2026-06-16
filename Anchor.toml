@@ -2,15 +2,15 @@
 anchor_version = "0.32.1"
 
 [workspace]
-members = ["programs/omegax_protocol", "programs/omegax_private_claim_review"]
+members = ["programs/nakama_coverage_protocol", "programs/nakama_private_claim_review"]
 
 [programs.localnet]
-omegax_protocol = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM"
-omegax_private_claim_review = "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn"
+nakama_coverage_protocol = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM"
+nakama_private_claim_review = "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn"
 
 [programs.devnet]
-omegax_protocol = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM"
-omegax_private_claim_review = "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn"
+nakama_coverage_protocol = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM"
+nakama_private_claim_review = "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn"
 
 [registry]
 url = "https://api.apr.dev"

@@ -26,12 +26,12 @@ pub(crate) fn require_classic_token_program_keys(
     require_keys_eq!(
         mint_owner,
         anchor_spl::token::ID,
-        OmegaXProtocolError::Token2022NotSupported
+        NakamaProtocolError::Token2022NotSupported
     );
     require_keys_eq!(
         token_program,
         anchor_spl::token::ID,
-        OmegaXProtocolError::Token2022NotSupported
+        NakamaProtocolError::Token2022NotSupported
     );
     Ok(())
 }
@@ -44,12 +44,12 @@ pub(crate) fn require_classic_token_program_keys(
     require_keys_eq!(
         mint_owner,
         SPL_TOKEN_ID,
-        OmegaXProtocolError::Token2022NotSupported
+        NakamaProtocolError::Token2022NotSupported
     );
     require_keys_eq!(
         token_program,
         SPL_TOKEN_ID,
-        OmegaXProtocolError::Token2022NotSupported
+        NakamaProtocolError::Token2022NotSupported
     );
     Ok(())
 }
@@ -87,32 +87,32 @@ pub(crate) fn transfer_to_domain_vault<'info>(
     require_keys_eq!(
         source_token_account.owner,
         authority.key(),
-        OmegaXProtocolError::TokenAccountOwnerMismatch
+        NakamaProtocolError::TokenAccountOwnerMismatch
     );
     require_keys_neq!(
         source_token_account.key(),
         vault_token_account.key(),
-        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+        NakamaProtocolError::TokenAccountSelfTransferInvalid
     );
     require_keys_eq!(
         source_token_account.mint,
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         asset_mint.key(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         vault_token_account.key(),
         domain_asset_vault.vault_token_account,
-        OmegaXProtocolError::VaultTokenAccountMismatch
+        NakamaProtocolError::VaultTokenAccountMismatch
     );
     require_keys_eq!(
         vault_token_account.mint,
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
 
     let accounts = TransferChecked {
@@ -142,32 +142,32 @@ pub(crate) fn transfer_to_domain_vault(
     require_keys_eq!(
         *source_token_account.owner(),
         *authority.address(),
-        OmegaXProtocolError::TokenAccountOwnerMismatch
+        NakamaProtocolError::TokenAccountOwnerMismatch
     );
     require_keys_neq!(
         *source_token_account.address(),
         *vault_token_account.address(),
-        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+        NakamaProtocolError::TokenAccountSelfTransferInvalid
     );
     require_keys_eq!(
         *source_token_account.mint(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         *asset_mint.address(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         *vault_token_account.address(),
         domain_asset_vault.vault_token_account,
-        OmegaXProtocolError::VaultTokenAccountMismatch
+        NakamaProtocolError::VaultTokenAccountMismatch
     );
     require_keys_eq!(
         *vault_token_account.mint(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
 
     token_program
@@ -207,27 +207,27 @@ pub(crate) fn transfer_from_domain_vault<'info>(
     require_keys_eq!(
         vault_token_account.key(),
         domain_asset_vault.vault_token_account,
-        OmegaXProtocolError::VaultTokenAccountMismatch
+        NakamaProtocolError::VaultTokenAccountMismatch
     );
     require_keys_eq!(
         asset_mint.key(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         vault_token_account.mint,
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         recipient_token_account.mint,
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_neq!(
         vault_token_account.key(),
         recipient_token_account.key(),
-        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+        NakamaProtocolError::TokenAccountSelfTransferInvalid
     );
 
     let reserve_domain = domain_asset_vault.reserve_domain;
@@ -266,27 +266,27 @@ pub(crate) fn transfer_from_domain_vault(
     require_keys_eq!(
         *vault_token_account.address(),
         domain_asset_vault.vault_token_account,
-        OmegaXProtocolError::VaultTokenAccountMismatch
+        NakamaProtocolError::VaultTokenAccountMismatch
     );
     require_keys_eq!(
         *asset_mint.address(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         *vault_token_account.mint(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         *recipient_token_account.mint(),
         domain_asset_vault.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_neq!(
         *vault_token_account.address(),
         *recipient_token_account.address(),
-        OmegaXProtocolError::TokenAccountSelfTransferInvalid
+        NakamaProtocolError::TokenAccountSelfTransferInvalid
     );
 
     let reserve_domain = domain_asset_vault.reserve_domain;

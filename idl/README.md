@@ -17,8 +17,8 @@ npm run anchor:idl
 
 The command copies both checked-in public IDLs:
 
-- `target/idl/omegax_protocol.json` -> `idl/omegax_protocol.json`
-- `target/idl/omegax_private_claim_review.json` -> `idl/omegax_private_claim_review.json`
+- `target/idl/nakama_coverage_protocol.json` -> `idl/nakama_coverage_protocol.json`
+- `target/idl/nakama_private_claim_review.json` -> `idl/nakama_private_claim_review.json`
 
 It also refreshes both source-hash files. Do not copy the MagicBlock adjunct
 IDL manually; `npm run idl:freshness:check` gates both programs in CI.

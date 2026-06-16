@@ -1,13 +1,13 @@
 [package]
-name = "omegax_private_claim_review"
+name = "nakama_private_claim_review"
 version = "0.1.0"
-description = "OmegaX MagicBlock private claim review session adjunct program"
+description = "Nakama MagicBlock private claim review session adjunct program"
 edition = "2021"
 license = "AGPL-3.0-or-later"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "omegax_private_claim_review"
+name = "nakama_private_claim_review"
 
 [features]
 default = []

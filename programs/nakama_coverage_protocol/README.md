@@ -1,12 +1,12 @@
-# `omegax_protocol`
+# `nakama_coverage_protocol`
 
-This crate contains the canonical OmegaX Protocol onchain program.
+This crate contains the canonical Nakama Protocol onchain program.
 
 ## Current shape
 
 The canonical Anchor facade lives in [`src/lib.rs`](./src/lib.rs). It declares
 the program id, re-exports the public protocol types, and keeps every public
-instruction present in `#[program] pub mod omegax_protocol`.
+instruction present in `#[program] pub mod nakama_coverage_protocol`.
 
 The Anchor-to-Quasar migration is staged through
 [`src/platform.rs`](./src/platform.rs). Protocol implementation modules should

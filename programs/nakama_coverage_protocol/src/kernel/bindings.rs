@@ -17,21 +17,21 @@ pub(crate) fn validate_optional_policy_series(
     if expected_policy_series == ZERO_PUBKEY {
         require!(
             policy_series.is_none(),
-            OmegaXProtocolError::PolicySeriesMismatch
+            NakamaProtocolError::PolicySeriesMismatch
         );
         return Ok(());
     }
 
-    let series = policy_series.ok_or(OmegaXProtocolError::PolicySeriesMissing)?;
+    let series = policy_series.ok_or(NakamaProtocolError::PolicySeriesMissing)?;
     require_keys_eq!(
         series.key(),
         expected_policy_series,
-        OmegaXProtocolError::PolicySeriesMismatch
+        NakamaProtocolError::PolicySeriesMismatch
     );
     require_keys_eq!(
         series.health_plan,
         expected_health_plan,
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     let (expected_series, expected_bump) = Pubkey::find_program_address(
         &[
@@ -44,16 +44,16 @@ pub(crate) fn validate_optional_policy_series(
     require_keys_eq!(
         series.key(),
         expected_series,
-        OmegaXProtocolError::PolicySeriesMismatch
+        NakamaProtocolError::PolicySeriesMismatch
     );
     require!(
         series.bump == expected_bump,
-        OmegaXProtocolError::PolicySeriesMismatch
+        NakamaProtocolError::PolicySeriesMismatch
     );
     if require_active {
         require!(
             series.status == SERIES_STATUS_ACTIVE,
-            OmegaXProtocolError::PolicySeriesMismatch
+            NakamaProtocolError::PolicySeriesMismatch
         );
     }
 
@@ -67,16 +67,16 @@ pub(crate) fn validate_obligation_creation_scope(
     require_keys_eq!(
         funding_line.reserve_domain,
         health_plan.reserve_domain,
-        OmegaXProtocolError::ReserveDomainMismatch
+        NakamaProtocolError::ReserveDomainMismatch
     );
     require_keys_eq!(
         funding_line.health_plan,
         health_plan.key(),
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     require!(
         is_supported_funding_line_type(funding_line.line_type),
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     Ok(())
 }
@@ -89,12 +89,12 @@ pub(crate) fn validate_treasury_mutation_bindings(
     require_keys_eq!(
         obligation.funding_line,
         funding_line_key,
-        OmegaXProtocolError::FundingLineMismatch
+        NakamaProtocolError::FundingLineMismatch
     );
     require_keys_eq!(
         obligation.asset_mint,
         funding_line_asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     Ok(())
 }
@@ -107,12 +107,12 @@ pub(crate) fn validate_direct_claim_settlement_bindings(
     require_keys_eq!(
         claim_case.funding_line,
         funding_line_key,
-        OmegaXProtocolError::FundingLineMismatch
+        NakamaProtocolError::FundingLineMismatch
     );
     require_keys_eq!(
         claim_case.asset_mint,
         funding_line_asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     Ok(())
 }

@@ -2,8 +2,8 @@
 
 * @marinosabijan
 
-/programs/omegax_protocol/ @marinosabijan
-/programs/omegax_private_claim_review/ @marinosabijan
+/programs/nakama_coverage_protocol/ @marinosabijan
+/programs/nakama_private_claim_review/ @marinosabijan
 /idl/ @marinosabijan
 /shared/ @marinosabijan
 /frontend/lib/generated/ @marinosabijan

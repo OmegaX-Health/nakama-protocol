@@ -2,8 +2,8 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 
-const IDL_PATH = "idl/omegax_protocol.json";
-const OUTPUT_PATH = "programs/omegax_protocol/src/quasar_discriminators.rs";
+const IDL_PATH = "idl/nakama_coverage_protocol.json";
+const OUTPUT_PATH = "programs/nakama_coverage_protocol/src/quasar_discriminators.rs";
 
 const idl = JSON.parse(readFileSync(IDL_PATH, "utf8"));
 
@@ -24,7 +24,7 @@ const lines = [
   "",
   "//! Explicit Quasar discriminators for the public protocol surface.",
   "//!",
-  "//! These values are generated from `idl/omegax_protocol.json` so the Quasar",
+  "//! These values are generated from `idl/nakama_coverage_protocol.json` so the Quasar",
   "//! migration preserves the existing Anchor instruction/account byte prefixes.",
   "",
   "pub mod instruction {",

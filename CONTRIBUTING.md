@@ -1,6 +1,6 @@
-# Contributing to OmegaX Protocol
+# Contributing to Nakama Protocol
 
-Thanks for helping improve OmegaX Protocol.
+Thanks for helping improve Nakama Protocol.
 
 ## License and contribution terms
 
@@ -82,7 +82,7 @@ If you are new to the repository, start with:
 
 - **Caret (`^x.y.z`) for normal runtime and dev dependencies.** Default to caret in `package.json` `dependencies` and `devDependencies` so security patches land via `npm install` without a manual bump. The lockfile (checked in) pins the exact resolved version, so reproducible installs come from `npm ci` regardless of the range syntax.
 - **Exact pin (`x.y.z`, no caret) only in `overrides` for security-sensitive transitive deps.** When upstream ships a CVE-fix in a transitive dependency, pin the exact patched version in `frontend/package.json::overrides` so the override does not float into a regression. Document the reason inline if the pin is non-obvious.
-- **Cargo crates: caret is the default.** `Cargo.toml` already uses `version = "x.y.z"` style; treat that as caret-compatible per cargo defaults. Anchor and Solana SDK crate versions stay aligned across `programs/omegax_protocol/Cargo.toml` and `Anchor.toml`.
+- **Cargo crates: caret is the default.** `Cargo.toml` already uses `version = "x.y.z"` style; treat that as caret-compatible per cargo defaults. Anchor and Solana SDK crate versions stay aligned across `programs/nakama_coverage_protocol/Cargo.toml` and `Anchor.toml`.
 - **Lockfiles are the canonical reproducibility surface.** `package-lock.json`, `frontend/package-lock.json`, and `Cargo.lock` are checked in. Don't run `npm install --no-save` in CI; always use `npm ci`.
 
 When upgrading a major version of a runtime dep (e.g. `@solana/web3.js` v1 → v2), open a dedicated PR — bundling major bumps with feature work makes regressions hard to bisect.

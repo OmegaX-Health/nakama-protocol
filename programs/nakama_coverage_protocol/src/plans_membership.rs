@@ -22,7 +22,7 @@ pub(crate) fn create_health_plan(
     require_id(&args.plan_id)?;
     require!(
         ctx.accounts.reserve_domain.active,
-        OmegaXProtocolError::ReserveDomainInactive
+        NakamaProtocolError::ReserveDomainInactive
     );
     require_domain_control(&ctx.accounts.plan_admin.key(), &ctx.accounts.reserve_domain)?;
 
@@ -94,7 +94,7 @@ fn require_quasar_plan_control(authority: &Pubkey, plan: &HealthPlanAccountData<
     if *authority == plan.plan_admin || *authority == plan.sponsor_operator {
         Ok(())
     } else {
-        Err(OmegaXProtocolError::Unauthorized.into())
+        Err(NakamaProtocolError::Unauthorized.into())
     }
 }
 
@@ -103,7 +103,7 @@ fn require_quasar_plan_control(authority: &Pubkey, plan: &HealthPlanAccountData<
 fn require_quasar_id(value: &str) -> Result<()> {
     require!(
         value.len() <= MAX_ID_LEN,
-        OmegaXProtocolError::IdentifierTooLong
+        NakamaProtocolError::IdentifierTooLong
     );
     Ok(())
 }
@@ -117,7 +117,7 @@ fn require_quasar_domain_control(
     if *authority == domain.domain_admin {
         Ok(())
     } else {
-        Err(OmegaXProtocolError::Unauthorized.into())
+        Err(NakamaProtocolError::Unauthorized.into())
     }
 }
 
@@ -197,7 +197,7 @@ pub(crate) fn create_health_plan<'info>(
     require_quasar_id(plan_id)?;
     require!(
         ctx.accounts.reserve_domain.active.get(),
-        OmegaXProtocolError::ReserveDomainInactive
+        NakamaProtocolError::ReserveDomainInactive
     );
     let plan_admin = *ctx.accounts.plan_admin.address();
     require_quasar_domain_control(&plan_admin, &ctx.accounts.reserve_domain)?;
@@ -309,7 +309,7 @@ pub(crate) fn version_policy_series<'info>(
     require_quasar_plan_control(&authority, &ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.current_policy_series.health_plan == *ctx.accounts.health_plan.address(),
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     require_quasar_id(series_id)?;
 
@@ -455,7 +455,7 @@ pub(crate) fn version_policy_series(
     require_plan_control(&ctx.accounts.authority.key(), &ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.current_policy_series.health_plan == ctx.accounts.health_plan.key(),
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     require_id(&args.series_id)?;
 
@@ -534,7 +534,7 @@ pub struct CreateHealthPlan<'info> {
             &crate::ID,
             &[SEED_RESERVE_DOMAIN, reserve_domain.domain_id().as_bytes()],
             reserve_domain.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     #[cfg_attr(
@@ -558,7 +558,7 @@ pub struct CreateHealthPlan<'info> {
                 &crate::ID,
                 &[SEED_HEALTH_PLAN, reserve_domain.address().as_ref(), plan_id],
                 health_plan.bump,
-            ) @ OmegaXProtocolError::HealthPlanMismatch
+            ) @ NakamaProtocolError::HealthPlanMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -586,7 +586,7 @@ pub struct UpdateHealthPlanControls<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
 }
@@ -627,7 +627,7 @@ pub struct CreatePolicySeries<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg_attr(
@@ -651,7 +651,7 @@ pub struct CreatePolicySeries<'info> {
                 &crate::ID,
                 &[SEED_POLICY_SERIES, health_plan.address().as_ref(), series_id],
                 policy_series.bump,
-            ) @ OmegaXProtocolError::PolicySeriesMismatch
+            ) @ NakamaProtocolError::PolicySeriesMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -695,7 +695,7 @@ pub struct VersionPolicySeries<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -709,7 +709,7 @@ pub struct VersionPolicySeries<'info> {
             &crate::ID,
             &[SEED_POLICY_SERIES, health_plan.address().as_ref(), current_policy_series.series_id().as_bytes()],
             current_policy_series.bump,
-        ) @ OmegaXProtocolError::PolicySeriesMismatch
+        ) @ NakamaProtocolError::PolicySeriesMismatch
     )]
     pub current_policy_series: Account<PolicySeriesAccountData<'info>>,
     #[cfg_attr(
@@ -733,7 +733,7 @@ pub struct VersionPolicySeries<'info> {
                 &crate::ID,
                 &[SEED_POLICY_SERIES, health_plan.address().as_ref(), series_id],
                 next_policy_series.bump,
-            ) @ OmegaXProtocolError::PolicySeriesMismatch
+            ) @ NakamaProtocolError::PolicySeriesMismatch
         )
     )]
     #[cfg(feature = "quasar")]

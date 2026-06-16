@@ -10,7 +10,7 @@ import protocolModule from "../frontend/lib/protocol.ts";
 import { loadEnvFile } from "./support/load_env_file.ts";
 
 const { getProgramId } = protocolModule as typeof import("../frontend/lib/protocol.ts");
-const DEPLOY_KEYPAIR_PATH = resolve(process.cwd(), "target/deploy/omegax_protocol-keypair.json");
+const DEPLOY_KEYPAIR_PATH = resolve(process.cwd(), "target/deploy/nakama_coverage_protocol-keypair.json");
 const DEFAULT_UPGRADE_AUTHORITY_PATH = "~/.config/solana/id.json";
 const FRONTEND_ENV_PATH = resolve(process.cwd(), "frontend/.env.local");
 
@@ -52,12 +52,12 @@ function main() {
       `[devnet-beta] deploy_keypair_program_id=${deployKeypairProgramId} (differs from canonical program id)`,
     );
     console.log(
-      "[devnet-beta] do not deploy shared devnet by relying on target/deploy/omegax_protocol-keypair.json.",
+      "[devnet-beta] do not deploy shared devnet by relying on target/deploy/nakama_coverage_protocol-keypair.json.",
     );
   }
   console.log("[devnet-beta] onchain deployment is intentionally operator-mediated for the hard-break migration.");
   console.log(
-    `[devnet-beta] next step: solana program deploy --program-id ${canonicalProgramId} --upgrade-authority ${DEFAULT_UPGRADE_AUTHORITY_PATH} target/deploy/omegax_protocol.so`,
+    `[devnet-beta] next step: solana program deploy --program-id ${canonicalProgramId} --upgrade-authority ${DEFAULT_UPGRADE_AUTHORITY_PATH} target/deploy/nakama_coverage_protocol.so`,
   );
   console.log("[devnet-beta] then apply the generated manifest under devnet/.");
 }

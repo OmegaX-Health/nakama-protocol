@@ -1,7 +1,7 @@
 {
-  "name": "omegax-protocol",
+  "name": "nakama-protocol",
   "version": "0.3.1",
-  "description": "Public OmegaX Solana protocol workspace with the on-chain program, frontend console, docs, and verification tooling.",
+  "description": "Public Nakama Solana protocol workspace with the on-chain program, frontend console, docs, and verification tooling.",
   "author": "OMEGAX HEALTH FZCO",
   "contributors": [
     "Marino Sabijan, MD"
@@ -10,19 +10,19 @@
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
-    "url": "https://github.com/OmegaX-Health/omegax-protocol.git"
+    "url": "https://github.com/OmegaX-Health/nakama-protocol.git"
   },
-  "homepage": "https://github.com/OmegaX-Health/omegax-protocol#readme",
+  "homepage": "https://github.com/OmegaX-Health/nakama-protocol#readme",
   "bugs": {
-    "url": "https://github.com/OmegaX-Health/omegax-protocol/issues"
+    "url": "https://github.com/OmegaX-Health/nakama-protocol/issues"
   },
   "type": "module",
   "scripts": {
     "anchor:build": "anchor build",
     "anchor:build:checked": "node scripts/anchor_build_with_stack_gate.mjs",
     "anchor:test": "node scripts/anchor_test_with_stack_gate.mjs",
-    "anchor:idl": "npm run anchor:build:checked && mkdir -p idl && cp target/idl/omegax_protocol.json idl/omegax_protocol.json && cp target/idl/omegax_private_claim_review.json idl/omegax_private_claim_review.json && node scripts/check_idl_freshness.mjs --write",
-    "quasar:check": "cargo check -p omegax_protocol --features quasar --lib",
+    "anchor:idl": "npm run anchor:build:checked && mkdir -p idl && cp target/idl/nakama_coverage_protocol.json idl/nakama_coverage_protocol.json && cp target/idl/nakama_private_claim_review.json idl/nakama_private_claim_review.json && node scripts/check_idl_freshness.mjs --write",
+    "quasar:check": "cargo check -p nakama_coverage_protocol --features quasar --lib",
     "quasar:discriminators": "node scripts/generate_quasar_discriminators.mjs",
     "idl:freshness:check": "node scripts/check_idl_freshness.mjs",
     "rust:fmt:check": "cargo fmt --all -- --check",

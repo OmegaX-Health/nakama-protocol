@@ -11,7 +11,7 @@ use ephemeral_rollups_sdk::anchor::{commit, delegate, ephemeral};
 use ephemeral_rollups_sdk::cpi::DelegateConfig;
 use ephemeral_rollups_sdk::ephem::commit_and_undelegate_accounts;
 
-use crate::program::OmegaxPrivateClaimReview;
+use crate::program::NakamaPrivateClaimReview;
 
 declare_id!("FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn");
 
@@ -34,7 +34,7 @@ pub const REVIEW_STATUS_FAILED: u8 = 6;
 
 #[ephemeral]
 #[program]
-pub mod omegax_private_claim_review {
+pub mod nakama_private_claim_review {
     use super::*;
 
     pub fn initialize_review_registry(
@@ -633,7 +633,7 @@ pub struct InitializeReviewRegistry<'info> {
     #[account(
         constraint = program.programdata_address()? == Some(program_data.key()) @ PrivateClaimReviewError::UnauthorizedRegistryInitializer
     )]
-    pub program: Program<'info, OmegaxPrivateClaimReview>,
+    pub program: Program<'info, NakamaPrivateClaimReview>,
     #[account(
         constraint = program_data.upgrade_authority_address == Some(authority.key()) @ PrivateClaimReviewError::UnauthorizedRegistryInitializer
     )]

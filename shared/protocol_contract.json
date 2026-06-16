@@ -1,5 +1,5 @@
 {
-  "sourceIdlPath": "idl/omegax_protocol.json",
+  "sourceIdlPath": "idl/nakama_coverage_protocol.json",
   "programId": "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM",
   "instructionSetVersion": 1,
   "instructions": [
