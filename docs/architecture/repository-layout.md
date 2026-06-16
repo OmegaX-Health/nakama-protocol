@@ -27,7 +27,7 @@ Treat these directories as generated outputs unless a local README says otherwis
 - `frontend/lib/generated/`
 
 Hand-edited source primarily lives in:
-- `programs/omegax_protocol/src/`
+- `programs/nakama_coverage_protocol/src/`
 - `frontend/app/`
 - `frontend/components/`
 - `frontend/lib/`

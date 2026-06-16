@@ -2,7 +2,7 @@
 
 ## Scope
 
-This plan covers the public OmegaX Protocol repository: the Anchor program,
+This plan covers the public Nakama Protocol repository: the Anchor program,
 frontend transaction builders, operator scripts, generated protocol artifacts,
 CI/CD, dependency gates, and devnet/localnet proof harnesses.
 

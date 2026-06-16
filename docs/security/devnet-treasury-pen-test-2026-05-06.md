@@ -3,7 +3,7 @@
 ## Scope
 
 Authorized devnet-only treasury theft rehearsal against the post-PR
-[`#70`](https://github.com/OmegaX-Health/omegax-protocol/pull/70) OmegaX
+[`#70`](https://github.com/OmegaX-Health/omegax-protocol/pull/70) Nakama
 protocol program. The runner used RPC simulation for attack transactions; it
 did not submit theft transactions and did not target mainnet.
 

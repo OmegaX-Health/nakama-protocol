@@ -16,12 +16,12 @@ Completed setup:
 - Root `Quasar.toml` declares the protocol project for the Quasar CLI.
 - `rust-toolchain.toml` and CI Rust pins are bumped to `1.89.0`, which is the
   current compiler floor required by the Quasar dependency graph.
-- `programs/omegax_protocol/src/platform.rs` centralizes framework imports so
+- `programs/nakama_coverage_protocol/src/platform.rs` centralizes framework imports so
   implementation modules no longer import Anchor preludes directly.
-- `programs/omegax_protocol/src/quasar_discriminators.rs` preserves the current
+- `programs/nakama_coverage_protocol/src/quasar_discriminators.rs` preserves the current
   checked-in IDL instruction, account, and event discriminator bytes.
 - `npm run quasar:discriminators` regenerates those constants from
-  `idl/omegax_protocol.json`.
+  `idl/nakama_coverage_protocol.json`.
 - `tests/quasar_discriminators.test.ts` verifies instruction, account, and
   event discriminator parity against the checked-in IDL.
 - Quasar account definitions now have explicit account discriminators. Dynamic
@@ -67,7 +67,7 @@ npm run quasar:check
 ```
 
 As of the latest migration checkpoint, that command compiles the
-`omegax_protocol` library under the Quasar feature path. The Quasar surface is
+`nakama_coverage_protocol` library under the Quasar feature path. The Quasar surface is
 therefore a release-chain input, not a fail-closed placeholder, and
 `npm run quasar:check` is part of the public release gate. Remaining work is
 runtime parity and adversarial coverage for Quasar money paths, especially

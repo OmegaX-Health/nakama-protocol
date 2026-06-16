@@ -7,7 +7,7 @@ Proposed on May 3, 2026.
 ## Context
 
 ADR 0001 established the reserve kernel, LP capital classes, allocation positions,
-and scoped ledgers as the canonical OmegaX protocol model. It deliberately left
+and scoped ledgers as the canonical Nakama protocol model. It deliberately left
 external yield adapters as an open question because productive reserve introduces
 a qualitatively different risk surface from claims, premium, and LP accounting.
 
@@ -34,10 +34,10 @@ DeFi router.
 
 ## Decision
 
-OmegaX will add reserve productivity as a gated extension, not as an
+Nakama will add reserve productivity as a gated extension, not as an
 unrestricted treasury feature.
 
-The core `omegax_protocol` program remains the custody and accounting gate:
+The core `nakama_coverage_protocol` program remains the custody and accounting gate:
 
 - it decides which reserve is free, restricted, encumbered, or impaired
 - it enforces reserve floors and deployment caps

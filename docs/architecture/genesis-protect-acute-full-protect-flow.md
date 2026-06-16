@@ -74,12 +74,12 @@ MEMBER JOURNEY                    OPERATOR / ORACLE WORKFLOW               ONCHA
 
 ### 2.1 Member actions
 
-1. Member connects wallet to the OmegaX Health portal (or Breakpoint registration flow).
+1. Member connects wallet to the Nakama Health portal (or Breakpoint registration flow).
 2. Member selects a product SKU: **Event 7** ($39 / 7 days) or activates reserved **Travel 30** Founder access ($99 / 30 days; exact cap locked at activation).
 3. Member reviews coverage terms and exclusion schedule (Phase 0: mandatory pre-sign review via
    `protocol-transaction-review` frontend component).
 4. Member pays premium in USDC — the `record_premium_payment` instruction is executed.
-5. OmegaX Health records the activated coverage window offchain and keeps the claimant wallet bound to the issued terms.
+5. Nakama Health records the activated coverage window offchain and keeps the claimant wallet bound to the issued terms.
 
 ### 2.2 Operator checks at onboarding
 
@@ -131,7 +131,7 @@ as the claimant. The operator cannot change the beneficiary wallet at this stage
 
 ### 4.1 Portal submission flow
 
-The OmegaX Health oracle portal is the **only authorized channel** for claim evidence submission.
+The Nakama Health oracle portal is the **only authorized channel** for claim evidence submission.
 Evidence submitted via email, social media, or any other channel is not accepted.
 
 | Step | Member action | System action |
@@ -280,7 +280,7 @@ If the operator discovers an issue that was not caught by the AI:
 ## 8. Stage 7 — Oracle / Operator Decision Handoff
 
 After evidence review, the oracle/operator workflow produces a decision artifact for internal audit
-and hands the decision to the base-program adjudication path. The base `omegax_protocol` program no
+and hands the decision to the base-program adjudication path. The base `nakama_coverage_protocol` program no
 longer stores `ClaimAttestation` accounts; it stores only evidence and decision proof fingerprints
 on the claim case.
 
@@ -288,7 +288,7 @@ on the claim case.
 
 | Requirement | Enforcement |
 |---|---|
-| Evidence packet reviewed against the published schema | Offchain OmegaX Health/oracle workflow |
+| Evidence packet reviewed against the published schema | Offchain Nakama Health/oracle workflow |
 | MagicBlock receipt verified when the adjunct path is used | Offchain consumer verifies registry, reviewer, expected hashes, payment reference, and committed ownership |
 | Correct plan-level operator signs adjudication | `adjudicate_claim_case` requires the plan's claims operator or plan admin |
 | Reserve and settlement remain base-program controlled | `reserve_obligation`, `settle_claim_case`, and `settle_obligation` enforce reserve-domain custody |
@@ -398,7 +398,7 @@ set by the member via `authorize_claim_recipient`). The member is responsible fo
 provider directly, or the payout supplements a payment the member has already made.
 
 This is the correct conservative posture for Phase 0:
-- No legal relationship between OmegaX and the provider is required
+- No legal relationship between Nakama and the provider is required
 - No provider onboarding is needed to launch
 - Settlement can proceed through the existing member-recipient rail once approved and once reserve,
   oracle-quality, fee, and rail checks pass
@@ -409,8 +409,8 @@ In Phase 1, the oracle service (`protocol-oracle-service`) may introduce direct 
 settlement, where the member authorizes routing to a provider wallet rather than the member wallet.
 
 Requirements before Phase 1 provider settlement can launch:
-- Provider has completed OmegaX KYB (Know Your Business) process
-- Provider wallet is registered in the OmegaX provider registry
+- Provider has completed Nakama KYB (Know Your Business) process
+- Provider wallet is registered in the Nakama provider registry
 - Member has authorized provider as `delegate_recipient` during claim submission
 - Provider has agreed to accept USDC as payment for the specific claim
 

@@ -1,9 +1,9 @@
-# OmegaX Protocol — Codex Adversarial Challenge
+# Nakama Protocol — Codex Adversarial Challenge
 
 - **Date:** 2026-04-29
 - **Reviewer:** OpenAI Codex defensive audit pass
 - **Driver:** Internal defensive challenge workflow
-- **Scope:** Holistic safety-property audit of `programs/omegax_protocol/src/lib.rs` (~9000 LOC) and `programs/omegax_protocol/src/core_accounts.rs`. Frontend (`frontend/lib/protocol.ts`) in scope only as it affects on-chain instruction construction.
+- **Scope:** Holistic safety-property audit of `programs/nakama_coverage_protocol/src/lib.rs` (~9000 LOC) and `programs/nakama_coverage_protocol/src/core_accounts.rs`. Frontend (`frontend/lib/protocol.ts`) in scope only as it affects on-chain instruction construction.
 - **Mode:** Defensive pre-mainnet hardening review, framed as 10 safety properties to verify.
 - **Companion to:** [`docs/security/pre-mainnet-pen-test-2026-04-27.md`](pre-mainnet-pen-test-2026-04-27.md) (PT-01 .. PT-13 already remediated; this run is fresh ground).
 - **Run metadata:** omitted from the public record.
@@ -64,10 +64,10 @@ The team should treat this report as a **must-fix gate before mainnet**, with PR
 - **Severity:** P1 (defense-in-depth gap)
 - **Status:** DOES_NOT_HOLD per Codex; verified at handler-runtime level the attack is blocked, but Anchor account-resolution is loose.
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:3514`](../../programs/omegax_protocol/src/lib.rs#L3514) — `RecordPremiumPayment.protocol_fee_vault: Option<...>` with only `#[account(mut)]`
-  - [`programs/omegax_protocol/src/lib.rs:3813`](../../programs/omegax_protocol/src/lib.rs#L3813) — `SettleClaimCase.protocol_fee_vault` (same pattern)
-  - [`programs/omegax_protocol/src/lib.rs:3822`](../../programs/omegax_protocol/src/lib.rs#L3822) — `SettleClaimCase.pool_oracle_fee_vault` (same pattern)
-  - [`programs/omegax_protocol/src/lib.rs:3827`](../../programs/omegax_protocol/src/lib.rs#L3827) — `SettleClaimCase.pool_oracle_policy` (same pattern)
+  - [`programs/nakama_coverage_protocol/src/lib.rs:3514`](../../programs/nakama_coverage_protocol/src/lib.rs#L3514) — `RecordPremiumPayment.protocol_fee_vault: Option<...>` with only `#[account(mut)]`
+  - [`programs/nakama_coverage_protocol/src/lib.rs:3813`](../../programs/nakama_coverage_protocol/src/lib.rs#L3813) — `SettleClaimCase.protocol_fee_vault` (same pattern)
+  - [`programs/nakama_coverage_protocol/src/lib.rs:3822`](../../programs/nakama_coverage_protocol/src/lib.rs#L3822) — `SettleClaimCase.pool_oracle_fee_vault` (same pattern)
+  - [`programs/nakama_coverage_protocol/src/lib.rs:3827`](../../programs/nakama_coverage_protocol/src/lib.rs#L3827) — `SettleClaimCase.pool_oracle_policy` (same pattern)
 - **Pre-conditions:** A privileged operator (claims_operator, sponsor_operator, plan_admin) supplies a fee-vault account during a flow.
 - **Verification:** Runtime checks DO exist:
   - `record_premium_payment` checks `protocol_fee_vault.reserve_domain == health_plan.reserve_domain` at lines 977–986
@@ -81,7 +81,7 @@ The team should treat this report as a **must-fix gate before mainnet**, with PR
       mut,
       seeds = [SEED_PROTOCOL_FEE_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
       bump = protocol_fee_vault.bump,
-      constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ OmegaXProtocolError::FeeVaultMismatch,
+      constraint = protocol_fee_vault.reserve_domain == health_plan.reserve_domain @ NakamaProtocolError::FeeVaultMismatch,
   )]
   pub protocol_fee_vault: Option<Box<Account<'info, ProtocolFeeVault>>>,
   ```
@@ -94,9 +94,9 @@ The team should treat this report as a **must-fix gate before mainnet**, with PR
 - **Severity:** P1 (defense-in-depth; matters under privileged-key compromise)
 - **Status:** PARTIAL
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:4073`](../../programs/omegax_protocol/src/lib.rs#L4073) — `WithdrawProtocolFeeSpl.recipient_token_account`
-  - [`programs/omegax_protocol/src/lib.rs:4131`](../../programs/omegax_protocol/src/lib.rs#L4131) — `WithdrawPoolTreasurySpl.recipient_token_account`
-  - [`programs/omegax_protocol/src/lib.rs:4198`](../../programs/omegax_protocol/src/lib.rs#L4198) — `WithdrawPoolOracleFeeSpl.recipient_token_account`
+  - [`programs/nakama_coverage_protocol/src/lib.rs:4073`](../../programs/nakama_coverage_protocol/src/lib.rs#L4073) — `WithdrawProtocolFeeSpl.recipient_token_account`
+  - [`programs/nakama_coverage_protocol/src/lib.rs:4131`](../../programs/nakama_coverage_protocol/src/lib.rs#L4131) — `WithdrawPoolTreasurySpl.recipient_token_account`
+  - [`programs/nakama_coverage_protocol/src/lib.rs:4198`](../../programs/nakama_coverage_protocol/src/lib.rs#L4198) — `WithdrawPoolOracleFeeSpl.recipient_token_account`
 - **Pre-conditions:** A privileged signer (governance, curator, oracle, or oracle_profile.admin) calls a withdraw instruction.
 - **Concrete evidence:** Each `recipient_token_account` is declared as:
   ```rust
@@ -111,7 +111,7 @@ The team should treat this report as a **must-fix gate before mainnet**, with PR
      #[account(
          mut,
          constraint = recipient_token_account.owner == protocol_fee_vault.configured_recipient
-             @ OmegaXProtocolError::Unauthorized,
+             @ NakamaProtocolError::Unauthorized,
      )]
      pub recipient_token_account: InterfaceAccount<'info, TokenAccount>,
      ```
@@ -125,9 +125,9 @@ The team should treat this report as a **must-fix gate before mainnet**, with PR
 - **Severity:** P1 (fee mis-routing across oracles in the same pool)
 - **Status:** DOES_NOT_HOLD
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:1672-1689`](../../programs/omegax_protocol/src/lib.rs#L1672) — settle_claim_case oracle_fee accrual
-  - [`programs/omegax_protocol/src/lib.rs:5022`](../../programs/omegax_protocol/src/lib.rs#L5022) — `PoolOraclePolicy` struct
-  - [`programs/omegax_protocol/src/lib.rs:3822`](../../programs/omegax_protocol/src/lib.rs#L3822) — optional `pool_oracle_fee_vault` account
+  - [`programs/nakama_coverage_protocol/src/lib.rs:1672-1689`](../../programs/nakama_coverage_protocol/src/lib.rs#L1672) — settle_claim_case oracle_fee accrual
+  - [`programs/nakama_coverage_protocol/src/lib.rs:5022`](../../programs/nakama_coverage_protocol/src/lib.rs#L5022) — `PoolOraclePolicy` struct
+  - [`programs/nakama_coverage_protocol/src/lib.rs:3822`](../../programs/nakama_coverage_protocol/src/lib.rs#L3822) — optional `pool_oracle_fee_vault` account
 - **Pre-conditions:** Multiple oracles can serve the same `(liquidity_pool, asset_mint)`. A claims_operator settles a claim and supplies a `pool_oracle_fee_vault` belonging to oracle B, while the actual adjudicator on the claim is oracle A.
 - **Concrete evidence:** `PoolOraclePolicy` (line 5022) stores only `liquidity_pool`, quorum, schema flag, `oracle_fee_bps`, delegate flag, challenge window, ts, bump. **It does NOT carry `oracle: Pubkey` or `asset_mint: Pubkey`.** The settlement check at lines 1672–1689 verifies:
   - `vault.asset_mint == funding_line.asset_mint` ✅
@@ -140,7 +140,7 @@ The team should treat this report as a **must-fix gate before mainnet**, with PR
      require_keys_eq!(
          vault.oracle,
          claim_case.adjudicator,
-         OmegaXProtocolError::OracleProfileMismatch
+         NakamaProtocolError::OracleProfileMismatch
      );
      ```
   2. In `SettleClaimCase` accounts struct (line 3822), bind seeds:
@@ -172,9 +172,9 @@ PROPERTY-4 holds. Init handlers (`init_protocol_fee_vault` line 340, `init_pool_
 - **Severity:** P2 (operational risk; LP payout routing IS protected)
 - **Status:** PARTIAL
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:2122`](../../programs/omegax_protocol/src/lib.rs#L2122) — `process_redemption_queue` `require_curator_control`
-  - [`programs/omegax_protocol/src/lib.rs:2223-2226`](../../programs/omegax_protocol/src/lib.rs#L2223) — recipient owner pinned to `lp_position.owner` ✅
-  - [`programs/omegax_protocol/src/lib.rs:2345-2349`](../../programs/omegax_protocol/src/lib.rs#L2345) — `withdraw_pool_treasury_*` `require_curator_control`
+  - [`programs/nakama_coverage_protocol/src/lib.rs:2122`](../../programs/nakama_coverage_protocol/src/lib.rs#L2122) — `process_redemption_queue` `require_curator_control`
+  - [`programs/nakama_coverage_protocol/src/lib.rs:2223-2226`](../../programs/nakama_coverage_protocol/src/lib.rs#L2223) — recipient owner pinned to `lp_position.owner` ✅
+  - [`programs/nakama_coverage_protocol/src/lib.rs:2345-2349`](../../programs/nakama_coverage_protocol/src/lib.rs#L2345) — `withdraw_pool_treasury_*` `require_curator_control`
 - **Pre-conditions:** Pool curator is single-keyed (no multisig at protocol level).
 - **Concrete evidence:** Redemption recipient IS pinned to `lp_position.owner` — curator cannot redirect LP payouts (good, codex confirms). But curator alone decides:
   - Order in which queued redemptions are processed (no FIFO invariant on-chain)
@@ -194,26 +194,26 @@ PROPERTY-4 holds. Init handlers (`init_protocol_fee_vault` line 340, `init_pool_
 - **Severity:** P1 (CRITICAL if the team plans to accept Token-2022 mints)
 - **Status:** REMEDIATED after this report. Current v1 custody rails reject Token-2022 mint/program ownership and require the classic SPL Token program.
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:6`](../../programs/omegax_protocol/src/lib.rs#L6) — `use anchor_spl::token_interface::{...};`
-  - [`programs/omegax_protocol/Cargo.toml`](../../programs/omegax_protocol/Cargo.toml) — `anchor-spl = "0.32.1"`
+  - [`programs/nakama_coverage_protocol/src/lib.rs:6`](../../programs/nakama_coverage_protocol/src/lib.rs#L6) — `use anchor_spl::token_interface::{...};`
+  - [`programs/nakama_coverage_protocol/Cargo.toml`](../../programs/nakama_coverage_protocol/Cargo.toml) — `anchor-spl = "0.32.1"`
   - All `vault_token_account: InterfaceAccount<'info, TokenAccount>` and `asset_mint: InterfaceAccount<'info, Mint>` fields throughout
 - **Pre-conditions:** Any operator initializes a `domain_asset_vault` with a Token-2022 mint that has the transfer-fee or transfer-hook extension enabled.
 - **Historical concrete evidence:** At the time of this report, the program imported `token_interface` (the Token-2022-compatible interface), declared all token accounts and mints as `InterfaceAccount<...>`, and used `Interface<TokenInterface>` for the token program without constraints excluding Token-2022 mints.
 - **Concrete impact paths:**
   - **Transfer-fee extension:** `transfer_to_domain_vault` deducts `args.amount` from source but the vault receives `amount - transfer_fee`. The protocol then books `total_assets += amount` — **NAV is overstated** by exactly the transfer fee on every deposit.
-  - **Transfer-hook extension:** A hook program runs on every transfer. A malicious hook can re-enter the OmegaX program through any other instruction (Solana CPI is single-call but the hook is called BEFORE return), arbitrarily mutating state if the hook author calls the program back. CEI (checks-effects-interactions) is not enforced — `deposit_into_capital_class` does the SPL transfer (line 1957) BEFORE state mutation (line 2008+), and `withdraw_*_fee_*` does the transfer (line 2287) BEFORE bumping `withdrawn_fees` (line 2288).
+  - **Transfer-hook extension:** A hook program runs on every transfer. A malicious hook can re-enter the Nakama program through any other instruction (Solana CPI is single-call but the hook is called BEFORE return), arbitrarily mutating state if the hook author calls the program back. CEI (checks-effects-interactions) is not enforced — `deposit_into_capital_class` does the SPL transfer (line 1957) BEFORE state mutation (line 2008+), and `withdraw_*_fee_*` does the transfer (line 2287) BEFORE bumping `withdrawn_fees` (line 2288).
   - **Confidential-transfer extension:** Amount is cryptographically hidden. `transfer_checked` may not even surface the real amount.
 - **Recommended fix (pick one):**
   1. **For mainnet launch (recommended):** restrict to classic SPL Token only. Add to every relevant accounts struct:
      ```rust
      #[account(
          constraint = asset_mint.to_account_info().owner == &anchor_spl::token::ID
-             @ OmegaXProtocolError::Token2022NotSupported,
+             @ NakamaProtocolError::Token2022NotSupported,
      )]
      pub asset_mint: InterfaceAccount<'info, Mint>,
      #[account(
          constraint = token_program.key() == anchor_spl::token::ID
-             @ OmegaXProtocolError::Token2022NotSupported,
+             @ NakamaProtocolError::Token2022NotSupported,
      )]
      pub token_program: Interface<'info, TokenInterface>,
      ```
@@ -234,8 +234,8 @@ PROPERTY-7 holds. `require_fee_vault_balance` correctly uses checked `withdrawn 
 - **Severity:** P2 (member-controlled action; "self-harm" or social-engineering vector)
 - **Status:** PARTIAL
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:1512-1524`](../../programs/omegax_protocol/src/lib.rs#L1512) — `authorize_claim_recipient` handler (no status gate)
-  - [`programs/omegax_protocol/src/lib.rs:3698-3721`](../../programs/omegax_protocol/src/lib.rs#L3698) — `AuthorizeClaimRecipient` accounts (member-only ✅)
+  - [`programs/nakama_coverage_protocol/src/lib.rs:1512-1524`](../../programs/nakama_coverage_protocol/src/lib.rs#L1512) — `authorize_claim_recipient` handler (no status gate)
+  - [`programs/nakama_coverage_protocol/src/lib.rs:3698-3721`](../../programs/nakama_coverage_protocol/src/lib.rs#L3698) — `AuthorizeClaimRecipient` accounts (member-only ✅)
 - **Pre-conditions:** Member's keypair signs `authorize_claim_recipient` after the claim is adjudicated/approved but before `settle_claim_case` runs.
 - **Concrete evidence:** The handler body is:
   ```rust
@@ -245,7 +245,7 @@ PROPERTY-7 holds. `require_fee_vault_balance` correctly uses checked `withdrawn 
   Ok(())
   ```
   No `require!(claim_case.intake_status < CLAIM_INTAKE_APPROVED ...)` gate. No paid-amount check. Member can mutate the recipient arbitrarily late in the lifecycle.
-- **Impact:** Approval/audit was performed assuming member's wallet was the recipient; member can redirect to a third-party wallet right before settlement. May violate KYC/AML or reviewer-trust assumptions. Not a fund-loss vector for OmegaX (member-authorized) but breaks the audit chain.
+- **Impact:** Approval/audit was performed assuming member's wallet was the recipient; member can redirect to a third-party wallet right before settlement. May violate KYC/AML or reviewer-trust assumptions. Not a fund-loss vector for Nakama (member-authorized) but breaks the audit chain.
 - **Recommended fix:**
   ```rust
   pub fn authorize_claim_recipient(...) -> Result<()> {
@@ -253,11 +253,11 @@ PROPERTY-7 holds. `require_fee_vault_balance` correctly uses checked `withdrawn 
       let claim_case = &ctx.accounts.claim_case;
       require!(
           claim_case.intake_status < CLAIM_INTAKE_APPROVED,
-          OmegaXProtocolError::ClaimRecipientLocked
+          NakamaProtocolError::ClaimRecipientLocked
       );
       require!(
           claim_case.paid_amount == 0,
-          OmegaXProtocolError::ClaimRecipientLocked
+          NakamaProtocolError::ClaimRecipientLocked
       );
       // ... mutate ...
   }
@@ -271,9 +271,9 @@ PROPERTY-7 holds. `require_fee_vault_balance` correctly uses checked `withdrawn 
 - **Severity: P0 — direct fund loss to existing LPs**
 - **Status:** DOES_NOT_HOLD
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:1947-2052`](../../programs/omegax_protocol/src/lib.rs#L1947) — `deposit_into_capital_class` handler
-  - [`programs/omegax_protocol/src/lib.rs:1995-2001`](../../programs/omegax_protocol/src/lib.rs#L1995) — the broken shares calculation
-  - [`programs/omegax_protocol/src/lib.rs:2008-2015`](../../programs/omegax_protocol/src/lib.rs#L2008) — `nav_assets` and `total_shares` updated naively
+  - [`programs/nakama_coverage_protocol/src/lib.rs:1947-2052`](../../programs/nakama_coverage_protocol/src/lib.rs#L1947) — `deposit_into_capital_class` handler
+  - [`programs/nakama_coverage_protocol/src/lib.rs:1995-2001`](../../programs/nakama_coverage_protocol/src/lib.rs#L1995) — the broken shares calculation
+  - [`programs/nakama_coverage_protocol/src/lib.rs:2008-2015`](../../programs/nakama_coverage_protocol/src/lib.rs#L2008) — `nav_assets` and `total_shares` updated naively
 - **Pre-conditions:** A capital class with `restriction_mode == OPEN`, `min_lockup_seconds == 0` (or already elapsed), and an existing NAV ratio ≠ 1:1 (i.e., the pool has accumulated returns OR taken impairments OR has accrued fees that affect nav_assets).
 - **The bug:** Lines 1995–2001 read:
   ```rust
@@ -310,10 +310,10 @@ PROPERTY-7 holds. `require_fee_vault_balance` correctly uses checked `withdrawn 
       u64::try_from(
           (net_amount as u128)
               .checked_mul(class.total_shares as u128)
-              .ok_or(OmegaXProtocolError::ArithmeticOverflow)?
+              .ok_or(NakamaProtocolError::ArithmeticOverflow)?
               .checked_div(class.nav_assets as u128)
-              .ok_or(OmegaXProtocolError::ArithmeticOverflow)?
-      ).map_err(|_| OmegaXProtocolError::ArithmeticOverflow)?
+              .ok_or(NakamaProtocolError::ArithmeticOverflow)?
+      ).map_err(|_| NakamaProtocolError::ArithmeticOverflow)?
   };
   // Stop honoring caller-supplied args.shares for OPEN classes.
   // Allow it ONLY for restricted/wrapper classes where the caller is a credentialed subscription manager.
@@ -327,8 +327,8 @@ PROPERTY-7 holds. `require_fee_vault_balance` correctly uses checked `withdrawn 
 - **Severity:** P2 (operational; not exploitable without governance signature)
 - **Status:** DOES_NOT_HOLD
 - **Files:**
-  - [`programs/omegax_protocol/src/lib.rs:193-209`](../../programs/omegax_protocol/src/lib.rs#L193) — handler
-  - [`programs/omegax_protocol/src/lib.rs:6010-6022`](../../programs/omegax_protocol/src/lib.rs#L6010) — state mutation
+  - [`programs/nakama_coverage_protocol/src/lib.rs:193-209`](../../programs/nakama_coverage_protocol/src/lib.rs#L193) — handler
+  - [`programs/nakama_coverage_protocol/src/lib.rs:6010-6022`](../../programs/nakama_coverage_protocol/src/lib.rs#L6010) — state mutation
 - **Pre-conditions:** Current governance signs a rotation transaction.
 - **Concrete evidence:** Rotation immediately writes `governance.governance_authority = new_governance_authority`. Only zero-pubkey is rejected. There is no pending authority field, no separate accept step, no timeout / cancel path, and no recovery mechanism in the account state.
 - **Impact:** A single bad rotation (typo, dead key, misconfigured multisig, lost device) permanently bricks every governance-gated operation: protocol pause, fee withdrawals, authority changes, schema updates. The protocol becomes inoperable; only a redeploy with state migration (impossible for a live program with funds custody) recovers it.
@@ -380,7 +380,7 @@ The complete, unedited Codex JSONL stream lives in this conversation's task outp
 ### PROPERTY-1: Fee-vault account binding integrity
 - **Status:** DOES_NOT_HOLD
 - **Severity (if not HOLDS):** P1 (fee leakage / mis-routing)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:3514-3515, 3813-3827, 3961-3962, 4009-4010
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:3514-3515, 3813-3827, 3961-3962, 4009-4010
 - **Pre-conditions:** A caller supplies optional fee-vault accounts during premium/deposit/settlement/redemption flows.
 - **Concrete evidence:** The optional `protocol_fee_vault`, `pool_treasury_vault`, `pool_oracle_fee_vault`, and `pool_oracle_policy` fields are only `#[account(mut)]` / plain optional accounts in the `#[derive(Accounts)]` structs. Runtime checks exist at lines 976-986, 1651-1687, 1978-1988, and 2147-2158, but the account resolver does not enforce canonical PDA seeds for these optional vaults.
 - **Impact:** Wrong-domain/mint is mostly rejected in handlers, but canonical account binding is not enforced at account-resolution time. Oracle-fee routing is especially exposed because the supplied oracle fee vault is not bound to the adjudicator.
@@ -389,28 +389,28 @@ The complete, unedited Codex JSONL stream lives in this conversation's task outp
 ### PROPERTY-2: Withdraw-rail account isolation
 - **Status:** PARTIAL
 - **Severity (if not HOLDS):** P1 (fee leakage / mis-routing)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:4073-4075, 4131-4133, 4198-4200, 2277-2284, 2356-2363, 2435-2442
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:4073-4075, 4131-4133, 4198-4200, 2277-2284, 2356-2363, 2435-2442
 - **Pre-conditions:** Governance, pool curator, oracle wallet/admin, or a compromised privileged signer calls a withdraw instruction.
 - **Concrete evidence:** SPL withdraw recipient token accounts are mutable `InterfaceAccount<TokenAccount>` with no owner constraint. `transfer_from_domain_vault` checks mint and self-transfer only at lines 6899-6923. Balance safety holds via `require_fee_vault_balance` using checked `withdrawn + requested <= accrued` at lines 6833-6840. Cross-rail confusion is mostly blocked by distinct account types, PDA seeds, and SOL/SPL rail constraints at lines 4050-4056, 4108-4114, 4174-4181.
 - **Impact:** A privileged or mistaken caller can send accrued fees to any token account of the correct mint.
-- **Recommended fix:** Add recipient-owner constraints, e.g. `constraint = recipient_token_account.owner == authority.key() @ OmegaXProtocolError::Unauthorized`, or add configured fee recipient fields per vault and require `recipient_token_account.owner == vault.configured_recipient`.
+- **Recommended fix:** Add recipient-owner constraints, e.g. `constraint = recipient_token_account.owner == authority.key() @ NakamaProtocolError::Unauthorized`, or add configured fee recipient fields per vault and require `recipient_token_account.owner == vault.configured_recipient`.
 
 ### PROPERTY-3: Oracle fee accrual binding
 - **Status:** DOES_NOT_HOLD
 - **Severity (if not HOLDS):** P1 (fee leakage / mis-routing)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:1672-1687, 3815-3827, 5022-5031
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:1672-1687, 3815-3827, 5022-5031
 - **Pre-conditions:** Claim settlement supplies both `pool_oracle_fee_vault` and `pool_oracle_policy`.
 - **Concrete evidence:** Settlement checks only `vault.asset_mint == funding_line.asset_mint` and `vault.liquidity_pool == policy.liquidity_pool`. `PoolOraclePolicy` stores only `liquidity_pool` and fee settings, not oracle or asset. There is no `vault.oracle == claim_case.adjudicator` check.
 - **Impact:** A valid fee vault for another oracle on the same pool/asset can receive the adjudicator fee.
-- **Recommended fix:** Add `require_keys_eq!(vault.oracle, ctx.accounts.claim_case.adjudicator, OmegaXProtocolError::OracleProfileMismatch);` and constrain the optional account with seeds including that expected oracle.
+- **Recommended fix:** Add `require_keys_eq!(vault.oracle, ctx.accounts.claim_case.adjudicator, NakamaProtocolError::OracleProfileMismatch);` and constrain the optional account with seeds including that expected oracle.
 
 ### PROPERTY-4: PDA seed canonicality + init re-init protection
-PROPERTY-4: HOLDS — defense is governance-only handlers plus canonical `init` PDA seeds for protocol, pool treasury, and pool oracle fee vaults at programs/omegax_protocol/src/lib.rs:344-366, 384-410, 429-462, 3206-3213, 3237-3244, 3283-3290.
+PROPERTY-4: HOLDS — defense is governance-only handlers plus canonical `init` PDA seeds for protocol, pool treasury, and pool oracle fee vaults at programs/nakama_coverage_protocol/src/lib.rs:344-366, 384-410, 429-462, 3206-3213, 3237-3244, 3283-3290.
 
 ### PROPERTY-5: Curator authority scope
 - **Status:** PARTIAL
 - **Severity (if not HOLDS):** P2 (DoS / griefing)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:2122-2126, 2223-2226, 2345-2349, 6579-6588
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:2122-2126, 2223-2226, 2345-2349, 6579-6588
 - **Pre-conditions:** Pool curator or governance signs redemption processing or pool-treasury withdrawal.
 - **Concrete evidence:** Redemption recipient is pinned to `lp_position.owner` at lines 2223-2226, so curator cannot redirect LP payouts. However `require_curator_control` is only curator-or-governance, and there is no processing timelock, multisig, FIFO queue invariant, or destination owner constraint for treasury withdrawals.
 - **Impact:** LP payout routing is protected, but curator discretion over redemption timing/order and pool-treasury withdrawals remains broad.
@@ -419,28 +419,28 @@ PROPERTY-4: HOLDS — defense is governance-only handlers plus canonical `init` 
 ### PROPERTY-6: Token program / mint extension safety
 - **Status:** REMEDIATED after this report; v1 launch rails are classic SPL only.
 - **Severity (if not HOLDS):** P1 (fee leakage / mis-routing)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:6, 3518-3521, 3837-3848, 3965-3968, 4023-4024, 6784-6788, 6941-6945
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:6, 3518-3521, 3837-3848, 3965-3968, 4023-4024, 6784-6788, 6941-6945
 - **Pre-conditions:** A Token-2022 mint or token account is used for an asset rail.
 - **Historical concrete evidence:** At report time, `anchor_spl::token_interface` accounts did not yet have the classic SPL owner/program constraints later added by the remediation patch.
 - **Impact:** Token-2022 transfer fees/hooks can break exact accounting assumptions or create reentrancy-sensitive windows.
 - **Recommended fix:** For mainnet launch, either require classic SPL Token with `constraint = asset_mint.to_account_info().owner == &anchor_spl::token::ID` and `constraint = token_program.key() == anchor_spl::token::ID`, or explicitly inspect and forbid unsafe Token-2022 extensions and move all state updates before CPI with a reentrancy guard.
 
 ### PROPERTY-7: SOL-rail lamport accounting
-PROPERTY-7: HOLDS — defense is checked `withdrawn + requested <= accrued` at programs/omegax_protocol/src/lib.rs:6833-6840 plus post-transfer rent preservation in `transfer_lamports_from_fee_vault` at lines 6861-6869.
+PROPERTY-7: HOLDS — defense is checked `withdrawn + requested <= accrued` at programs/nakama_coverage_protocol/src/lib.rs:6833-6840 plus post-transfer rent preservation in `transfer_lamports_from_fee_vault` at lines 6861-6869.
 
 ### PROPERTY-8: Settlement recipient routing under delegate_recipient
 - **Status:** PARTIAL
 - **Severity (if not HOLDS):** P2 (DoS / griefing)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:1512-1522, 3698-3720, 6480-6488
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:1512-1522, 3698-3720, 6480-6488
 - **Pre-conditions:** Member signs `authorize_claim_recipient` after claim approval but before settlement.
 - **Concrete evidence:** Only the member can set the delegate because `member_position.wallet == authority.key()` and `claim_case.member_position == member_position.key()`. But the handler has no status gate, paid-amount gate, or approval-time recipient snapshot, so it can run between approval and settlement.
 - **Impact:** Payout recipient can change after approval, which may violate approval/review assumptions.
-- **Recommended fix:** Add `require!(claim_case.intake_status < CLAIM_INTAKE_APPROVED && claim_case.paid_amount == 0, OmegaXProtocolError::ClaimRecipientLocked);` or snapshot/freeze `settlement_recipient` during adjudication.
+- **Recommended fix:** Add `require!(claim_case.intake_status < CLAIM_INTAKE_APPROVED && claim_case.paid_amount == 0, NakamaProtocolError::ClaimRecipientLocked);` or snapshot/freeze `settlement_recipient` during adjudication.
 
 ### PROPERTY-9: Capital-class deposit access boundary
 - **Status:** DOES_NOT_HOLD
 - **Severity (if not HOLDS):** P0 (fund-loss path)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:1947-2015, 2083-2087, 2064-2067
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:1947-2015, 2083-2087, 2064-2067
 - **Pre-conditions:** Capital class is `OPEN`, `min_lockup_seconds == 0` or already elapsed, and redemption can be processed by curator/governance.
 - **Concrete evidence:** Deposits have no signer-role gate, open access is allowed at lines 2008-2011, and caller-supplied `args.shares` is honored verbatim at lines 1995-2000. Redemption value is later computed pro-rata from `capital_class.total_shares` and `nav_assets` at lines 2083-2087. There is no NAV snapshot or deposit-to-redeem delay beyond optional lockup.
 - **Impact:** A dust depositor can mint mispriced shares, then redeem against existing NAV if the pool is open and lockup is zero/short.
@@ -449,7 +449,7 @@ PROPERTY-7: HOLDS — defense is checked `withdrawn + requested <= accrued` at p
 ### PROPERTY-10: Authority rotation
 - **Status:** DOES_NOT_HOLD
 - **Severity (if not HOLDS):** P2 (DoS / griefing)
-- **File:line(s):** programs/omegax_protocol/src/lib.rs:217-229, 3097-3100, 6010-6022
+- **File:line(s):** programs/nakama_coverage_protocol/src/lib.rs:217-229, 3097-3100, 6010-6022
 - **Pre-conditions:** Current governance signs rotation to a typo, dead key, or inaccessible key.
 - **Concrete evidence:** Rotation immediately writes `governance.governance_authority = new_governance_authority`; only zero pubkey is rejected. There is no pending authority, accept step, timeout, cancel, or recovery path in the account.
 - **Impact:** A bad rotation can brick governance-controlled protocol operations.

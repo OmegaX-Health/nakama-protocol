@@ -1,6 +1,6 @@
 # Devnet Beta Runbook
 
-This runbook covers shared-devnet rollout for the current canonical OmegaX protocol surface, including the mounted console, frontend parity, operator drawer simulation, and observability sign-off.
+This runbook covers shared-devnet rollout for the current canonical Nakama protocol surface, including the mounted console, frontend parity, operator drawer simulation, and observability sign-off.
 
 ## Go / No-Go Gate
 
@@ -26,10 +26,10 @@ If the launch window requires a rehearsal deployment, run the same sequence agai
 
 1. Re-lock the checked artifacts with `npm run anchor:idl` and `npm run protocol:contract`, then rerun `npm run verify:public` and `npm run test:e2e:localnet`.
 2. Run `npm run devnet:beta:deploy` to rebuild the checked deploy artifact and refresh the canonical bootstrap bundle under `devnet/` and `frontend/`.
-3. Upgrade the canonical shared-devnet program id explicitly with the checked `target/deploy/omegax_protocol.so`.
-   Use the canonical program id from `Anchor.toml` / `frontend/lib/protocol.ts`, not the raw `target/deploy/omegax_protocol-keypair.json` address if those ever drift.
+3. Upgrade the canonical shared-devnet program id explicitly with the checked `target/deploy/nakama_coverage_protocol.so`.
+   Use the canonical program id from `Anchor.toml` / `frontend/lib/protocol.ts`, not the raw `target/deploy/nakama_coverage_protocol-keypair.json` address if those ever drift.
    The helper now prints the exact canonical command:
-   `solana program deploy --program-id 6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM --upgrade-authority ~/.config/solana/id.json target/deploy/omegax_protocol.so`
+   `solana program deploy --program-id 6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM --upgrade-authority ~/.config/solana/id.json target/deploy/nakama_coverage_protocol.so`
 4. Run `npm run protocol:bootstrap:devnet-live` to seed or refresh the canonical reserve-domain, asset-vault, plan, policy-series, funding-line, and proof-claim graph on shared devnet. This bootstrap does not create retired governance, member-seat, oracle-registry, liquidity-pool, capital-class, or allocation accounts, and it does not move SPL custody balances.
 5. Run `npm run devnet:frontend:bootstrap` and `npm run devnet:frontend:signoff` so the mounted console is validated against the refreshed shared-devnet fixture/env set.
 6. Run `npm run devnet:operator:drawer:sim` to prove current reserve, plan, funding, obligation, claim, and control builders still reach the deployed program without mutating state.

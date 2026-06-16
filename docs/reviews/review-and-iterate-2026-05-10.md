@@ -44,22 +44,22 @@ the surrounding `liquidity_pool` and `capital_class`.
 
 Evidence:
 
-- `programs/omegax_protocol/src/capital/allocations.rs:107`
-- `programs/omegax_protocol/src/capital/allocations.rs:128`
-- `programs/omegax_protocol/src/capital/allocations.rs:153`
+- `programs/nakama_coverage_protocol/src/capital/allocations.rs:107`
+- `programs/nakama_coverage_protocol/src/capital/allocations.rs:128`
+- `programs/nakama_coverage_protocol/src/capital/allocations.rs:153`
 
 Recommended fix:
 
 ```rust
 require!(
     ctx.accounts.liquidity_pool.active,
-    OmegaXProtocolError::LiquidityPoolInactive
+    NakamaProtocolError::LiquidityPoolInactive
 );
 require_capital_class_active(&ctx.accounts.capital_class)?;
 require!(
     ctx.accounts.allocation_position.active
         && !ctx.accounts.allocation_position.deallocation_only,
-    OmegaXProtocolError::AllocationPositionInactive,
+    NakamaProtocolError::AllocationPositionInactive,
 );
 ```
 
@@ -78,9 +78,9 @@ the browser's derived lookup.
 Evidence:
 
 - `frontend/lib/private-claim-review.ts:113`
-- `programs/omegax_private_claim_review/src/lib.rs:186`
-- `programs/omegax_private_claim_review/src/lib.rs:704`
-- `programs/omegax_private_claim_review/src/lib.rs:721`
+- `programs/nakama_private_claim_review/src/lib.rs:186`
+- `programs/nakama_private_claim_review/src/lib.rs:704`
+- `programs/nakama_private_claim_review/src/lib.rs:721`
 
 Recommended fix:
 

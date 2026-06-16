@@ -1,6 +1,6 @@
 # Release `v0.3.1`
 
-`v0.3.1` is a security and accounting hardening release for the canonical OmegaX health-capital-markets protocol surface.
+`v0.3.1` is a security and accounting hardening release for the canonical Nakama health-capital-markets protocol surface.
 
 ## Release Meaning
 

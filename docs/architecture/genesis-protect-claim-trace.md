@@ -18,7 +18,7 @@ The following objects exist before the first claim is opened. Their addresses, o
 | `HealthPlan` | `genesis-protect-acute-v1` | Owns plan-level pause flags and the `claims_operator` / `plan_admin` keys |
 | `PolicySeries` (Event 7) | `genesis-event-7-v1` | 7-day acute event cover; tier benefits up to USD 3,000; fixed-only |
 | `PolicySeries` (Travel 30) | `genesis-travel-30-v1` | 30-day acute travel cover; tier benefits + reimbursement top-up up to the cap locked at activation; hybrid |
-| Schema hash | `genesis-protect-acute-claim` v1 | Off-chain evidence schema used by the OmegaX Health/oracle review workflow |
+| Schema hash | `genesis-protect-acute-claim` v1 | Off-chain evidence schema used by the Nakama Health/oracle review workflow |
 | `FundingLine` (premium) | `genesis-event7-premium` / `genesis-travel30-premium` | Member premium income; reduces claims-paying floor when reserved against |
 | `FundingLine` (sponsor budget) | `genesis-event7-sponsor` (Event 7 only) | Sponsor backstop; secondary reserve lane |
 | `FundingLine` (LP allocation) | `genesis-event7-liquidity` / `genesis-travel30-liquidity` | LP capital, reserved against by allocations |
@@ -26,7 +26,7 @@ The following objects exist before the first claim is opened. Their addresses, o
 
 ## The happy path — one Travel 30 claim, end to end
 
-Member: `M_wallet`. OmegaX Health activated Travel 30 coverage for that wallet 12 days ago, recorded premium proof, enforced the 7-day illness wait, and the member was hospitalized for 2 nights with an acute illness covered under the policy.
+Member: `M_wallet`. Nakama Health activated Travel 30 coverage for that wallet 12 days ago, recorded premium proof, enforced the 7-day illness wait, and the member was hospitalized for 2 nights with an acute illness covered under the policy.
 
 ### Step 1 — `open_claim_case`
 
@@ -48,9 +48,9 @@ The default recipient is the member's own wallet. This step lets the member rout
 
 ### Step 3 — off-chain or adjunct evidence review
 
-Raw medical content, AI review output, and optional MagicBlock private-review receipts stay outside the base `omegax_protocol` account surface. The operator/oracle workflow verifies the packet and produces evidence and decision fingerprints for the claim case, but the base program still does not store `ClaimAttestation` accounts.
+Raw medical content, AI review output, and optional MagicBlock private-review receipts stay outside the base `nakama_coverage_protocol` account surface. The operator/oracle workflow verifies the packet and produces evidence and decision fingerprints for the claim case, but the base program still does not store `ClaimAttestation` accounts.
 
-**Member-visible**: the claim shows review progress through OmegaX Health/operator systems. The public protocol console should not imply that raw evidence or attestation state lives in the base program.
+**Member-visible**: the claim shows review progress through Nakama Health/operator systems. The public protocol console should not imply that raw evidence or attestation state lives in the base program.
 
 **Truth chain**: the base chain records the claim identity, evidence/decision fingerprints, and later adjudication, reserve, and settlement consequences. Evidence provenance is auditable through authorized off-chain manifests or adjunct receipt verification.
 
@@ -130,7 +130,7 @@ In **Phase 1** (post-launch), `protocol-oracle-service` adds dispute-case state 
 For each Genesis claim, a reviewer should be able to answer:
 
 1. **Who opened it?** → `claim_case.claimant` and the opening transaction's signer
-2. **What off-chain review artifact supports it?** → authorized OmegaX Health/oracle manifest or adjunct receipt, not base-program account data
+2. **What off-chain review artifact supports it?** → authorized Nakama Health/oracle manifest or adjunct receipt, not base-program account data
 3. **Who adjudicated?** → adjudication transaction signer (must be `claims_operator`)
 4. **What was the decision and why?** → `claim_case.state` + reason hash
 5. **What was reserved and from where?** → `obligation` + `funding_line.reserved` deltas

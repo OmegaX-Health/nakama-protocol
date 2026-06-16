@@ -18,7 +18,7 @@ This document defines the optional off-chain metadata JSON used for LP-facing `L
     "apyBps": 1250,
     "apyWindowDays": 30,
     "apyAsOfTs": 1730000000,
-    "apyMethodologyUri": "https://docs.omegax.health/methodology/liquidity-apy"
+    "apyMethodologyUri": "https://docs.nakama.health/methodology/liquidity-apy"
   }
 }
 ```

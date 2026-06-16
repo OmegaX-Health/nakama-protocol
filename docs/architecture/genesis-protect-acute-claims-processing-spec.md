@@ -44,9 +44,9 @@ reserve snapshot, waiting periods, exclusions, and quote expiry are locked.
 | Role | Who | What they can do | What they cannot do |
 |---|---|---|---|
 | **Member** | Activated claimant wallet | Open claim case, submit evidence via oracle portal, authorize payout recipient, check claim status | Adjudicate their own claim or mutate base-program state after settlement |
-| **Claims Operator** | OmegaX ops team (claims_operator key) | Adjudicate, reserve obligation, settle claim, open claim on behalf of incapacitated claimant | Move funds outside claim-linked liabilities |
+| **Claims Operator** | Nakama ops team (claims_operator key) | Adjudicate, reserve obligation, settle claim, open claim on behalf of incapacitated claimant | Move funds outside claim-linked liabilities |
 | **Oracle Authority** | Offchain/adjunct review signer | Support evidence review and decision feeds outside the base protocol | Adjudicate or settle claim unilaterally |
-| **Plan Admin** | OmegaX admin key (plan_admin) | Pause plan, set operational controls, open claim on behalf of incapacitated member | Rewrite approved or settled liabilities |
+| **Plan Admin** | Nakama admin key (plan_admin) | Pause plan, set operational controls, open claim on behalf of incapacitated member | Rewrite approved or settled liabilities |
 | **LP / Sponsor** | Capital providers | Monitor reserve exposure, fund FundingLine | Intervene in individual claim decisions |
 | **TEE Reviewer** | MagicBlock private review path (Phase 0 demo) | Inspect private evidence in TEE, emit hash-bounded review artifact | Access raw PHI outside TEE, adjudicate or settle claim |
 
@@ -104,9 +104,9 @@ Failure at any of these gates results in an immediate denial without entering th
 
 ## 5. Required Evidence
 
-All evidence is submitted **offchain** through the OmegaX Health oracle portal. The operator
+All evidence is submitted **offchain** through the Nakama Health oracle portal. The operator
 computes and retains a SHA-256 hash of the evidence packet in the offchain claim manifest or adjunct
-receipt system. Raw medical documents are not stored in the base `omegax_protocol` accounts or
+receipt system. Raw medical documents are not stored in the base `nakama_coverage_protocol` accounts or
 published publicly; the base claim case stores only evidence and decision proof fingerprints.
 
 ### 5.1 Mandatory Documents (all claims)
@@ -187,7 +187,7 @@ UCR-benchmarked line items and capped so the total approved amount never exceeds
 
 ## 6b. MagicBlock Private Claim Review Path (Optional Oracle Path)
 
-As of protocol v0.3.2, a **MagicBlock Ephemeral Rollup adjunct** (`omegax_private_claim_review`) is
+As of protocol v0.3.2, a **MagicBlock Ephemeral Rollup adjunct** (`nakama_private_claim_review`) is
 available as an optional oracle attestation adjunct for cases where standard human review would
 benefit from stronger privacy boundaries — for example, when evidence is inspected by a Trusted
 Execution Environment (TEE) reviewer without placing raw PHI on the Solana base layer.
@@ -213,7 +213,7 @@ Execution Environment (TEE) reviewer without placing raw PHI on the Solana base 
 
 ### Boundaries (must not be crossed)
 
-- The main `omegax_protocol` program is **not** delegated to MagicBlock — only the adjunct session PDA is.
+- The main `nakama_coverage_protocol` program is **not** delegated to MagicBlock — only the adjunct session PDA is.
 - `ClaimCase`, reserves, vaults, FundingLines, Obligations, and payout accounts are never delegated.
 - The adjunct is **not authoritative by itself** — consumers must verify registry binding, reviewer
   binding, expected hashes, payment reference, and committed ownership before treating the result
@@ -371,7 +371,7 @@ Level 4 — Legal / Compliance Team
 
 In Phase 0, there is no onchain dispute-case state. Member appeals are handled as follows:
 
-1. Member notifies OmegaX Health via the oracle portal within 14 days of denial.
+1. Member notifies Nakama Health via the oracle portal within 14 days of denial.
 2. Claims operator opens a **new** `ClaimCase` PDA with updated or additional evidence.
 3. Senior operator reviews the appeal claim independently of the original decision.
 4. The original denied `ClaimCase` is not modified — both the original denial and the appeal
@@ -494,7 +494,7 @@ claim integrity without access to PHI using the following steps:
 
 1. Retrieve the `ClaimCase` PDA from any Solana RPC using the claim's transaction signature.
 2. Verify the offchain claim manifest or adjunct receipt hash matches the full evidence packet
-   provided by OmegaX Health under NDA with auditor.
+   provided by Nakama Health under NDA with auditor.
 3. Verify the adjudication transaction signer matches the registered `claims_operator` key.
 4. Verify settlement transaction via `transfer_from_domain_vault` — net payout, fee vaults, recipient.
 5. Cross-check `FundingLine.reserved` and `domain_asset_vault.balance` deltas.
@@ -507,7 +507,7 @@ All six steps can be performed without accessing any PHI.
 
 When a claim is denied, the member receives:
 
-1. A notification via the OmegaX Health oracle portal within 2 hours of adjudication.
+1. A notification via the Nakama Health oracle portal within 2 hours of adjudication.
 2. The denial reason category (from §8 — no raw clinical language disclosed).
 3. Information on the appeal process (see §10.3).
 4. Confirmation that no money has moved and no reserve has been booked.
@@ -528,7 +528,7 @@ This spec governs Phase 0 launch. The following behaviors change in Phase 1:
 | Dispute handling | Offchain — new ClaimCase opened for appeal | Onchain dispute-case state via `protocol-oracle-service` |
 | Oracle quorum | Single oracle authority per HealthPlan | Multi-attestation finality gate |
 | Fraud referral state | Offchain hold, ClaimCase stays `proposed` | Dedicated onchain `fraud_hold` state |
-| Operator audit trail | Offchain manifest maintained by OmegaX Health | Protocol-level operator action log |
+| Operator audit trail | Offchain manifest maintained by Nakama Health | Protocol-level operator action log |
 
 Any public-facing claim posture statement in Phase 0 must accurately represent the above. Specifically:
 appeals, disputes, and fraud holds are operator-workflow concerns in Phase 0, not decentralized

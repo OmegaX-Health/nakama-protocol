@@ -1,6 +1,6 @@
 # Protocol Console Functional Specification
 
-This document is the target-state functional brief for the public OmegaX protocol console.
+This document is the target-state functional brief for the public Nakama protocol console.
 
 It is intentionally future-state:
 
@@ -13,7 +13,7 @@ Use this together with:
 
 - [`frontend-information-architecture.md`](./frontend-information-architecture.md)
 - [`solana-instruction-map.md`](./solana-instruction-map.md)
-- the OmegaX design system references in the separate design-system repo
+- the Nakama design system references in the separate design-system repo
 
 ## 1. Product Rules
 

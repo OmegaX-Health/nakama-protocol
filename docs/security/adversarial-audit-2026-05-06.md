@@ -15,7 +15,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 - Date: 2026-05-06.
 - Branch: `codex/fix-adversarial-findings-20260506`.
 - Source snapshot audited: implementation branch at report write time, after generated IDL/contract refresh.
-- In scope: `programs/omegax_protocol/`, `frontend/lib/protocol.ts`, generated IDL/contract artifacts, localnet/e2e matrices, public security docs, release-gate docs, bootstrap scripts, QEDGen and Certora local lanes.
+- In scope: `programs/nakama_coverage_protocol/`, `frontend/lib/protocol.ts`, generated IDL/contract artifacts, localnet/e2e matrices, public security docs, release-gate docs, bootstrap scripts, QEDGen and Certora local lanes.
 - Read-only/out of scope: mainnet sends, production funding, private key material, external private services, and live devnet mutation beyond the simulate-only operator command.
 - Assumption: governance and high-value roles are intended to be multisig-backed before real-money launch. If raw keypairs are used for mainnet, severity on privileged-role findings increases.
 
@@ -94,7 +94,7 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 - Preconditions: caller controls or curates one liquidity pool but not the target allocation pool.
 - Concrete path: `update_allocation_caps` called `require_allocator(authority, governance, liquidity_pool)` without first requiring `allocation_position.liquidity_pool == liquidity_pool.key()`.
 - Violated invariant: every scoped mutation must bind the mutable account to the exact authority scope before authorization.
-- Evidence: `programs/omegax_protocol/src/capital/allocations.rs` now has the pool equality check before `require_allocator`.
+- Evidence: `programs/nakama_coverage_protocol/src/capital/allocations.rs` now has the pool equality check before `require_allocator`.
 - Fix: add `require_keys_eq!(allocation_position.liquidity_pool, liquidity_pool.key(), LiquidityPoolMismatch)`.
 - Regression test: `tests/security/cybersecurity_plan_regression.test.ts` `CSO-2026-05-06`.
 
@@ -194,11 +194,11 @@ What is probably fine now because current code and tests prove it: classic-SPL-o
 Passed:
 
 - `npm run anchor:idl`
-  - Regenerated `idl/omegax_protocol.json` and source hash.
+  - Regenerated `idl/nakama_coverage_protocol.json` and source hash.
 - `npm run protocol:contract`
   - Regenerated `shared/protocol_contract.json` and frontend generated contract files.
   - Contract SHA: `5988efbe9e29ff7b6da5363223ed00a8085adf5278d766e03fad94f5318b940b`.
-- `cargo test -p omegax_protocol --lib`
+- `cargo test -p nakama_coverage_protocol --lib`
   - Rust unit tests: 89 passed.
 - `npm run test:node`
   - Node tests: 256 passed.

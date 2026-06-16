@@ -1,6 +1,6 @@
 # Release `v0.3.0`
 
-`v0.3.0` is the first publishable canonical OmegaX health-capital-markets release.
+`v0.3.0` is the first publishable canonical Nakama health-capital-markets release.
 
 ## Release meaning
 
@@ -63,7 +63,7 @@ It is intentionally a hard-break devnet migration rather than a compatibility re
 - plan-control saves now preserve decoded numeric membership mode and gate-kind values instead of reconstructing them from display labels
 - the hosted frontend keeps the canonical `v0.3.0` surface while improving workbench readability, queue visibility, and operator-facing chrome for the public deployment
 - Genesis-facing console and metadata copy now align to the actual launch posture: Travel 30 Founder reservations pending activation, Event 7 fast-demo readiness, and Phase 0 operator-backed claim review with later AI and decentralized review framed as roadmap
-- publish the matching docs update alongside the frontend deployment so [docs.omegax.health](https://docs.omegax.health/docs) reflects the current console experience
+- publish the matching docs update alongside the frontend deployment so [docs.nakama.health](https://docs.nakama.health/docs) reflects the current console experience
 
 ## Operations release notes
 
@@ -106,4 +106,4 @@ Before treating `v0.3.0` as publish-ready, confirm:
 - `npm run devnet:governance:ui:readonly`
 - `npm run devnet:beta:observe`
 
-Then confirm that the SDK and [docs.omegax.health](https://docs.omegax.health/docs) describe the same canonical surface before tagging or public announcement.
+Then confirm that the SDK and [docs.nakama.health](https://docs.nakama.health/docs) describe the same canonical surface before tagging or public announcement.

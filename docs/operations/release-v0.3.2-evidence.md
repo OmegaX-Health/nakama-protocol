@@ -41,9 +41,9 @@ CodeQL after merge.
 
 | Artifact | SHA-256 |
 |----------|---------|
-| `idl/omegax_protocol.json` | `8f125d44dd7d3a42b8e97dbc95ed5644cd2bb69b10ed30481dce8fd118dabf82` |
-| `idl/omegax_protocol.source-hash` file | `91217de7d3d43b83ebec95ac27edbd6a02a97207831198d00b953ad48cee2b66` |
-| `idl/omegax_protocol.source-hash` value | `b6b759e8d453ff0b03ee3e0b56de3758d9a697fc5a71aa182bb0c64e3aaecf1c` |
+| `idl/nakama_coverage_protocol.json` | `8f125d44dd7d3a42b8e97dbc95ed5644cd2bb69b10ed30481dce8fd118dabf82` |
+| `idl/nakama_coverage_protocol.source-hash` file | `91217de7d3d43b83ebec95ac27edbd6a02a97207831198d00b953ad48cee2b66` |
+| `idl/nakama_coverage_protocol.source-hash` value | `b6b759e8d453ff0b03ee3e0b56de3758d9a697fc5a71aa182bb0c64e3aaecf1c` |
 | `shared/protocol_contract.json` | `d4d46a73a199bfa2035785856bc9d4badf3d3326a307200c651d7046766f3076` |
 | `frontend/lib/generated/protocol-contract.ts` | `ecdb19541f8457ec721739f1e2911662631e8266e754402eb1cf59c9617d7933` |
 | `frontend/lib/generated/protocol-contract.js` | `5c682f1fd138654cedf5dbd21a966edb6624c50c00dddec07096313dfb90e5e1` |
@@ -276,7 +276,7 @@ green on `d9fa872dc289dcba6886f81551d21ba0d2016bb7`.
 
 The former on-chain Founder commitment custody surface has been retired from
 the active protocol surface. Founder reservations now live in the website and
-OmegaX Health oracle-service flow, are paid into Squads custody with unique
+Nakama Health oracle-service flow, are paid into Squads custody with unique
 Solana Pay references, and remain off-chain reservation records until a later
 activation/posting process books reserve through the existing premium and
 reserve controls. Pending reservations are not active cover and do not count as

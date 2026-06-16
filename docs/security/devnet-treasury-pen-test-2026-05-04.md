@@ -2,7 +2,7 @@
 
 ## Scope
 
-Authorized devnet-only treasury theft rehearsal against the current OmegaX
+Authorized devnet-only treasury theft rehearsal against the current Nakama
 protocol program. The runner used RPC simulation for attack transactions; it
 did not submit theft transactions and did not target mainnet.
 

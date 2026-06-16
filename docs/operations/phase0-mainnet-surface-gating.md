@@ -1,8 +1,8 @@
 # Phase 0 Mainnet Surface Gating
 
-Phase 0 keeps the on-chain OmegaX program broad and permissioned, but narrows the public mainnet console and bootstrap paths to the conservative live surface.
+Phase 0 keeps the on-chain Nakama program broad and permissioned, but narrows the public mainnet console and bootstrap paths to the conservative live surface.
 
-There is no on-chain `phase0` switch and no duplicated Founder checkout in this repository. The public console is the reserve, liability, LP, operator, and auditor surface. The consumer Founder reservation flow remains outside this repository in the OmegaX website and OmegaX Health protocol oracle service.
+There is no on-chain `phase0` switch and no duplicated Founder checkout in this repository. The public console is the reserve, liability, LP, operator, and auditor surface. The consumer Founder reservation flow remains outside this repository in the Nakama website and Nakama Health protocol oracle service.
 
 ## Mainnet Profile
 
