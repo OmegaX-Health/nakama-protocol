@@ -1,6 +1,6 @@
 # Certora Solana Security Lane
 
-This directory is the manual Certora Solana lane for the OmegaX on-chain
+This directory is the manual Certora Solana lane for the Nakama on-chain
 program. It is intentionally separate from `npm run verify:public`: Certora
 runs submit jobs to Certora's remote prover service, require a personal access
 key, and are release-candidate evidence rather than normal public CI.
