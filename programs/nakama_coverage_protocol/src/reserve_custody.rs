@@ -26,14 +26,14 @@ fn require_quasar_domain_control(
     if *authority == domain.domain_admin {
         Ok(())
     } else {
-        Err(OmegaXProtocolError::Unauthorized.into())
+        Err(NakamaProtocolError::Unauthorized.into())
     }
 }
 
 #[cfg(feature = "quasar")]
 #[inline(always)]
 fn require_quasar_domain_admin(authority: &Pubkey, domain_admin: &Pubkey) -> Result<()> {
-    require_keys_eq!(*authority, *domain_admin, OmegaXProtocolError::Unauthorized);
+    require_keys_eq!(*authority, *domain_admin, NakamaProtocolError::Unauthorized);
     Ok(())
 }
 
@@ -42,7 +42,7 @@ fn require_quasar_domain_admin(authority: &Pubkey, domain_admin: &Pubkey) -> Res
 fn require_quasar_id(value: &str) -> Result<()> {
     require!(
         value.len() <= MAX_ID_LEN,
-        OmegaXProtocolError::IdentifierTooLong
+        NakamaProtocolError::IdentifierTooLong
     );
     Ok(())
 }
@@ -55,7 +55,7 @@ pub(crate) fn create_reserve_domain(
     require_keys_eq!(
         ctx.accounts.authority.key(),
         args.domain_admin,
-        OmegaXProtocolError::Unauthorized
+        NakamaProtocolError::Unauthorized
     );
     require_id(&args.domain_id)?;
 
@@ -189,7 +189,7 @@ pub(crate) fn create_domain_asset_vault(
     require_domain_control(&ctx.accounts.authority.key(), &ctx.accounts.reserve_domain)?;
     require!(
         args.asset_mint != ZERO_PUBKEY,
-        OmegaXProtocolError::VaultTokenAccountInvalid
+        NakamaProtocolError::VaultTokenAccountInvalid
     );
     require_classic_spl_token(&ctx.accounts.asset_mint, &ctx.accounts.token_program)?;
 
@@ -255,7 +255,7 @@ pub(crate) fn create_domain_asset_vault<'info>(
     require_quasar_domain_control(&authority, &ctx.accounts.reserve_domain)?;
     require!(
         asset_mint_key != ZERO_PUBKEY,
-        OmegaXProtocolError::VaultTokenAccountInvalid
+        NakamaProtocolError::VaultTokenAccountInvalid
     );
 
     ctx.accounts.domain_asset_vault.set_inner(
@@ -317,7 +317,7 @@ pub struct CreateReserveDomain<'info> {
                 &crate::ID,
                 &[SEED_RESERVE_DOMAIN, domain_id],
                 reserve_domain.bump,
-            ) @ OmegaXProtocolError::ReserveDomainMismatch
+            ) @ NakamaProtocolError::ReserveDomainMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -345,7 +345,7 @@ pub struct UpdateReserveDomainControls<'info> {
             &crate::ID,
             &[SEED_RESERVE_DOMAIN, reserve_domain.domain_id().as_bytes()],
             reserve_domain.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
 }
@@ -370,7 +370,7 @@ pub struct CreateDomainAssetVault<'info> {
             &crate::ID,
             &[SEED_RESERVE_DOMAIN, reserve_domain.domain_id().as_bytes()],
             reserve_domain.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub reserve_domain: Account<ReserveDomainAccountData<'info>>,
     #[cfg_attr(
@@ -426,13 +426,13 @@ pub struct CreateDomainAssetVault<'info> {
     // region). Operators no longer pre-create the token account externally.
     #[cfg(not(feature = "quasar"))]
     #[account(
-        constraint = asset_mint.key() == args.asset_mint @ OmegaXProtocolError::AssetMintMismatch,
-        constraint = asset_mint.to_account_info().owner == &anchor_spl::token::ID @ OmegaXProtocolError::Token2022NotSupported,
+        constraint = asset_mint.key() == args.asset_mint @ NakamaProtocolError::AssetMintMismatch,
+        constraint = asset_mint.to_account_info().owner == &anchor_spl::token::ID @ NakamaProtocolError::Token2022NotSupported,
     )]
     pub asset_mint: Account<'info, Mint>,
     #[cfg(feature = "quasar")]
     #[account(
-        constraint = *asset_mint.address() == asset_mint_key @ OmegaXProtocolError::AssetMintMismatch,
+        constraint = *asset_mint.address() == asset_mint_key @ NakamaProtocolError::AssetMintMismatch,
     )]
     pub asset_mint: &'info Account<quasar_spl::Mint>,
     #[cfg_attr(
@@ -461,7 +461,7 @@ pub struct CreateDomainAssetVault<'info> {
     pub vault_token_account: &'info mut Account<quasar_spl::Token>,
     #[cfg(not(feature = "quasar"))]
     #[account(
-        constraint = token_program.key() == anchor_spl::token::ID @ OmegaXProtocolError::Token2022NotSupported,
+        constraint = token_program.key() == anchor_spl::token::ID @ NakamaProtocolError::Token2022NotSupported,
     )]
     pub token_program: Program<'info, TokenInterface>,
     #[cfg(feature = "quasar")]

@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { extractRustFunctionBody, programSource } from "./program_source.ts";
 
 const idl = JSON.parse(
-  readFileSync(new URL("../../idl/omegax_protocol.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../idl/nakama_coverage_protocol.json", import.meta.url), "utf8"),
 ) as {
   instructions: Array<{ name: string }>;
   accounts?: Array<{ name: string }>;

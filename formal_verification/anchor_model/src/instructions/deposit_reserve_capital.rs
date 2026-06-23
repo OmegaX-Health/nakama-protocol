@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{DepositReserveCapital, DepositReserveCapitalArgs};
 
 impl<'info> DepositReserveCapital<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "deposit_reserve_capital", hash = "2e59555e1859b51c", spec_hash = "4ca58a8df152497e")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "deposit_reserve_capital", hash = "2e59555e1859b51c", spec_hash = "4ca58a8df152497e")]
     #[inline(always)]
     pub fn handler(&mut self, args: DepositReserveCapitalArgs) -> Result<()> {
         guards::deposit_reserve_capital(self, args)?;

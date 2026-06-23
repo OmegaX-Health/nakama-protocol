@@ -6,7 +6,7 @@ Accepted on April 3, 2026.
 
 ## Context
 
-The pre-rearchitecture OmegaX protocol surface used `Pool` as the root noun for too many economic meanings at once:
+The pre-rearchitecture Nakama protocol surface used `Pool` as the root noun for too many economic meanings at once:
 
 - sponsor-funded reward programs
 - member-facing plan rights
@@ -21,11 +21,11 @@ That shape created three long-term failures:
 2. reserve truth existed, but only as partial treasury bookkeeping instead of a canonical accounting kernel
 3. product/UI language could not stay economically honest because "pool" meant different things to sponsors, members, and capital providers
 
-OmegaX is still on devnet. This redesign therefore chooses long-term correctness, auditability, and market legibility over backward compatibility.
+Nakama is still on devnet. This redesign therefore chooses long-term correctness, auditability, and market legibility over backward compatibility.
 
 ## Decision
 
-OmegaX Protocol now uses one canonical health capital markets model:
+Nakama Protocol now uses one canonical health capital markets model:
 
 - `ReserveDomain`: the hard legal, custody, and settlement segregation boundary
 - `DomainAssetVault`: asset custody per `[reserve_domain, asset_mint]`

@@ -1,5 +1,5 @@
 [project]
-name = "omegax_protocol"
+name = "nakama_coverage_protocol"
 
 [toolchain]
 type = "solana"

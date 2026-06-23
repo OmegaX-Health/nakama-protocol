@@ -1,7 +1,7 @@
 # Founder Reservation Runbook
 
-Founder reservations are public launch holds collected through the OmegaX
-website and the OmegaX Health protocol-oracle service. They are paid into one
+Founder reservations are public launch holds collected through the Nakama
+website and the Nakama Health protocol-oracle service. They are paid into one
 configured Squads vault with a unique Solana Pay reference per buyer. No custom
 waitlist program is deployed for this flow.
 

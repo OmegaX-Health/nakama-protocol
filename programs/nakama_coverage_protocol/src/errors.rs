@@ -6,7 +6,7 @@ use crate::platform::*;
 
 #[cfg(not(feature = "quasar"))]
 #[error_code]
-pub enum OmegaXProtocolError {
+pub enum NakamaProtocolError {
     #[msg("Caller is not authorized for this scope")]
     Unauthorized,
     #[msg("Reserve domain is inactive")]
@@ -101,7 +101,7 @@ pub enum OmegaXProtocolError {
 
 #[cfg(feature = "quasar")]
 #[error_code]
-pub enum OmegaXProtocolError {
+pub enum NakamaProtocolError {
     Unauthorized,
     ReserveDomainInactive,
     VaultTokenAccountInvalid,

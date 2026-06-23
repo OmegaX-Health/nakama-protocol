@@ -2,9 +2,9 @@
 
 This map lists the current public instructions after the Quasar trimming pass.
 The authoritative facade is
-[`programs/omegax_protocol/src/lib.rs`](../../programs/omegax_protocol/src/lib.rs);
+[`programs/nakama_coverage_protocol/src/lib.rs`](../../programs/nakama_coverage_protocol/src/lib.rs);
 implementation and account contexts live in the domain modules under
-`programs/omegax_protocol/src/`.
+`programs/nakama_coverage_protocol/src/`.
 
 ## Reserve Domains and Plans
 

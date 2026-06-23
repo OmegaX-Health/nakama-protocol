@@ -11,7 +11,7 @@ const frontendProtocolSource = readFileSync(
   "utf8",
 );
 const idl = JSON.parse(
-  readFileSync(new URL("../../idl/omegax_protocol.json", import.meta.url), "utf8"),
+  readFileSync(new URL("../../idl/nakama_coverage_protocol.json", import.meta.url), "utf8"),
 ) as { errors?: Array<{ name: string }> };
 
 test("[CSO-2026-05-04] claim recipients lock after approval or payout", () => {

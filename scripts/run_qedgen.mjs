@@ -10,8 +10,8 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-const SPEC = 'omegax_protocol.qedspec';
-const ANCHOR_PROJECT = 'programs/omegax_protocol';
+const SPEC = 'nakama_coverage_protocol.qedspec';
+const ANCHOR_PROJECT = 'programs/nakama_coverage_protocol';
 const MODEL_DIR = 'formal_verification/anchor_model';
 const LEAN_DIR = 'formal_verification';
 const LEAN_SPEC = `${LEAN_DIR}/Spec.lean`;

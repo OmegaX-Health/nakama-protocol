@@ -6,8 +6,8 @@ import { existsSync } from 'node:fs';
 
 const requiredFiles = [
   'formal_verification/certora/configs/sanity.conf',
-  'formal_verification/certora/summaries/omegax_solana_inlining.txt',
-  'formal_verification/certora/summaries/omegax_solana_summaries.txt',
+  'formal_verification/certora/summaries/nakama_solana_inlining.txt',
+  'formal_verification/certora/summaries/nakama_solana_summaries.txt',
 ];
 
 const failures = [];

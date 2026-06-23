@@ -1,6 +1,6 @@
 # Creative Devnet Zero-Day Hunt - 2026-05-04
 
-**Scope:** authorized OmegaX Protocol devnet/local source review only. No
+**Scope:** authorized Nakama Protocol devnet/local source review only. No
 mainnet transactions, private-key discovery, or live-fund movement.
 
 **Program:** `Bn6eixac1QEEVErGBvBjxAd6pgB9e2q4XHvAkinQ5y1B`.
@@ -9,7 +9,7 @@ mainnet transactions, private-key discovery, or live-fund movement.
 
 No unauthenticated devnet treasury drain was demonstrated. The live devnet
 treasury runner still blocked all raw SPL vault drain attempts, and the richer
-OmegaX linked-claim settlement probe now runs against a live seeded canary and
+Nakama linked-claim settlement probe now runs against a live seeded canary and
 is blocked by on-chain authorization. Fee-vault and LP-redemption probes remain
 limited by missing governance-authorized canary state.
 

@@ -10,7 +10,7 @@ use quasar_lang::sysvars::Sysvar;
 #[inline(always)]
 fn quasar_checked_add(lhs: u64, rhs: u64) -> Result<u64> {
     lhs.checked_add(rhs)
-        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+        .ok_or(NakamaProtocolError::ArithmeticError.into())
 }
 
 #[cfg(feature = "quasar")]
@@ -22,11 +22,11 @@ fn quasar_recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
         .and_then(|value| value.checked_add(sheet.impaired))
         .and_then(|value| value.checked_add(sheet.pending_redemption))
         .and_then(|value| value.checked_add(sheet.restricted))
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+        .ok_or(NakamaProtocolError::ArithmeticError)?;
     sheet.free = sheet.funded.saturating_sub(encumbered);
     let redeemable_encumbered = encumbered
         .checked_add(sheet.allocated)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+        .ok_or(NakamaProtocolError::ArithmeticError)?;
     sheet.redeemable = sheet.funded.saturating_sub(redeemable_encumbered);
     Ok(())
 }
@@ -42,7 +42,7 @@ fn quasar_book_owed(sheet: &mut ReserveBalanceSheet, amount: u64) -> Result<()> 
 fn require_quasar_id(value: &str) -> Result<()> {
     require!(
         value.len() <= MAX_ID_LEN,
-        OmegaXProtocolError::IdentifierTooLong
+        NakamaProtocolError::IdentifierTooLong
     );
     Ok(())
 }
@@ -53,13 +53,13 @@ fn require_quasar_plan_control(authority: &Pubkey, plan: &HealthPlanAccountData<
     if *authority == plan.plan_admin || *authority == plan.sponsor_operator {
         Ok(())
     } else {
-        Err(OmegaXProtocolError::Unauthorized.into())
+        Err(NakamaProtocolError::Unauthorized.into())
     }
 }
 
 #[cfg(feature = "quasar")]
 fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
-    require!(plan.active.get(), OmegaXProtocolError::HealthPlanInactive);
+    require!(plan.active.get(), NakamaProtocolError::HealthPlanInactive);
     Ok(())
 }
 
@@ -67,7 +67,7 @@ fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result
 fn require_quasar_plan_pause_flags_clear(
     plan: &HealthPlanAccountData<'_>,
     flags: u32,
-    error: OmegaXProtocolError,
+    error: NakamaProtocolError,
 ) -> Result<()> {
     if plan.pause_flags.get() & flags == 0 {
         Ok(())
@@ -82,14 +82,14 @@ fn require_quasar_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Resu
     require_quasar_plan_pause_flags_clear(
         plan,
         PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
-        OmegaXProtocolError::HealthPlanPaused,
+        NakamaProtocolError::HealthPlanPaused,
     )
 }
 
 #[cfg(feature = "quasar")]
 #[inline(always)]
 fn require_quasar_positive_amount(amount: u64) -> Result<()> {
-    require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
+    require!(amount > 0, NakamaProtocolError::AmountMustBePositive);
     Ok(())
 }
 
@@ -98,7 +98,7 @@ fn require_quasar_positive_amount(amount: u64) -> Result<()> {
 fn require_quasar_supported_obligation_delivery_mode(delivery_mode: u8) -> Result<()> {
     match delivery_mode {
         OBLIGATION_DELIVERY_MODE_CLAIMABLE | OBLIGATION_DELIVERY_MODE_PAYABLE => Ok(()),
-        _ => Err(OmegaXProtocolError::InvalidObligationDeliveryMode.into()),
+        _ => Err(NakamaProtocolError::InvalidObligationDeliveryMode.into()),
     }
 }
 
@@ -110,16 +110,16 @@ fn validate_quasar_obligation_creation_scope(
     require_keys_eq!(
         funding_line.reserve_domain,
         health_plan.reserve_domain,
-        OmegaXProtocolError::ReserveDomainMismatch
+        NakamaProtocolError::ReserveDomainMismatch
     );
     require_keys_eq!(
         funding_line.health_plan,
         *health_plan.address(),
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     require!(
         is_supported_funding_line_type(funding_line.line_type),
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     Ok(())
 }
@@ -145,17 +145,17 @@ pub(crate) fn create_obligation<'info>(
     require_keys_eq!(
         ctx.accounts.funding_line.health_plan,
         health_plan_key,
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     require_keys_eq!(
         ctx.accounts.funding_line.asset_mint,
         asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         ctx.accounts.funding_line.policy_series,
         policy_series,
-        OmegaXProtocolError::PolicySeriesMismatch
+        NakamaProtocolError::PolicySeriesMismatch
     );
     require_quasar_positive_amount(amount)?;
 
@@ -239,16 +239,16 @@ pub(crate) fn create_obligation(
     require_plan_operations_open(&ctx.accounts.health_plan)?;
     require!(
         ctx.accounts.funding_line.health_plan == ctx.accounts.health_plan.key(),
-        OmegaXProtocolError::HealthPlanMismatch
+        NakamaProtocolError::HealthPlanMismatch
     );
     require!(
         ctx.accounts.funding_line.asset_mint == args.asset_mint,
-        OmegaXProtocolError::AssetMintMismatch
+        NakamaProtocolError::AssetMintMismatch
     );
     require_keys_eq!(
         ctx.accounts.funding_line.policy_series,
         args.policy_series,
-        OmegaXProtocolError::PolicySeriesMismatch
+        NakamaProtocolError::PolicySeriesMismatch
     );
     require_positive_amount(args.amount)?;
     validate_obligation_creation_scope(&ctx.accounts.health_plan, &ctx.accounts.funding_line)?;
@@ -326,7 +326,7 @@ pub struct CreateObligation<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -340,7 +340,7 @@ pub struct CreateObligation<'info> {
                 &crate::ID,
                 &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), asset_mint.as_ref()],
                 domain_asset_ledger.bump,
-            ) @ OmegaXProtocolError::ReserveDomainMismatch
+            ) @ NakamaProtocolError::ReserveDomainMismatch
         )]
     pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -354,7 +354,7 @@ pub struct CreateObligation<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE, health_plan.address().as_ref(), funding_line.line_id().as_bytes()],
             funding_line.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -368,7 +368,7 @@ pub struct CreateObligation<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), funding_line.asset_mint.as_ref()],
             funding_line_ledger.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -382,7 +382,7 @@ pub struct CreateObligation<'info> {
                 &crate::ID,
                 &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), asset_mint.as_ref()],
                 plan_reserve_ledger.bump,
-            ) @ OmegaXProtocolError::HealthPlanMismatch
+            ) @ NakamaProtocolError::HealthPlanMismatch
         )]
     pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     #[cfg_attr(
@@ -406,7 +406,7 @@ pub struct CreateObligation<'info> {
                 &crate::ID,
                 &[SEED_OBLIGATION, funding_line.address().as_ref(), obligation_id],
                 obligation.bump,
-            ) @ OmegaXProtocolError::ObligationMismatch
+            ) @ NakamaProtocolError::ObligationMismatch
         )
     )]
     #[cfg(feature = "quasar")]

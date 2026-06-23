@@ -2,7 +2,7 @@
 
 # Protocol Surface Audit
 
-This note describes the current heavy localnet audit for the canonical OmegaX health-capital-markets surface.
+This note describes the current heavy localnet audit for the canonical Nakama health-capital-markets surface.
 
 ## Scope
 
@@ -27,7 +27,7 @@ The heavy audit is defined by:
 The live public instruction set comes from:
 
 - `shared/protocol_contract.json`
-- `idl/omegax_protocol.json`
+- `idl/nakama_coverage_protocol.json`
 
 ## Canonical scenario families
 

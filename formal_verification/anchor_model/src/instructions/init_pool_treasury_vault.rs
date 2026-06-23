@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{InitPoolTreasuryVault, InitPoolTreasuryVaultArgs};
 
 impl<'info> InitPoolTreasuryVault<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "init_pool_treasury_vault", hash = "e8329d4635a05be7", spec_hash = "90b4682f75757d92")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "init_pool_treasury_vault", hash = "e8329d4635a05be7", spec_hash = "90b4682f75757d92")]
     #[inline(always)]
     pub fn handler(&mut self, args: InitPoolTreasuryVaultArgs) -> Result<()> {
         guards::init_pool_treasury_vault(self, args)?;

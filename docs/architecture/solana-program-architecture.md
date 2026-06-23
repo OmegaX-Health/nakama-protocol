@@ -1,15 +1,15 @@
 # Solana Program Architecture
 
-This document explains the current OmegaX onchain architecture after the health-capital-markets rearchitecture.
+This document explains the current Nakama onchain architecture after the health-capital-markets rearchitecture.
 
 ## Read Order
 
 Read in this order:
 
 1. [`docs/adr/0001-health-capital-markets-rearchitecture.md`](../adr/0001-health-capital-markets-rearchitecture.md)
-2. [`programs/omegax_protocol/src/lib.rs`](../../programs/omegax_protocol/src/lib.rs) for the Anchor facade and public re-exports
+2. [`programs/nakama_coverage_protocol/src/lib.rs`](../../programs/nakama_coverage_protocol/src/lib.rs) for the Anchor facade and public re-exports
 3. [`docs/architecture/solana-instruction-map.md`](./solana-instruction-map.md)
-4. The matching implementation module in `programs/omegax_protocol/src/`
+4. The matching implementation module in `programs/nakama_coverage_protocol/src/`
 5. [`docs/MIGRATION_MATRIX.md`](../MIGRATION_MATRIX.md)
 
 ## Canonical Layers
@@ -86,7 +86,7 @@ The key questions the kernel must always answer are:
 
 ## File Reality
 
-The canonical public instruction surface is declared in [`programs/omegax_protocol/src/lib.rs`](../../programs/omegax_protocol/src/lib.rs). The facade delegates to domain modules that keep each handler near the `#[derive(Accounts)]` context it relies on:
+The canonical public instruction surface is declared in [`programs/nakama_coverage_protocol/src/lib.rs`](../../programs/nakama_coverage_protocol/src/lib.rs). The facade delegates to domain modules that keep each handler near the `#[derive(Accounts)]` context it relies on:
 
 - `governance.rs` for protocol governance and emergency controls
 - `reserve_custody.rs` for reserve domains and domain asset vaults

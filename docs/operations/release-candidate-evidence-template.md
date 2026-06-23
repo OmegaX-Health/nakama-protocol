@@ -29,10 +29,10 @@ Hash the checked-in generated artifacts at this commit. Drift between any of the
 ```bash
 # at the candidate commit, with the toolchain installed
 shasum -a 256 \
-  idl/omegax_protocol.json \
-  idl/omegax_protocol.source-hash \
-  idl/omegax_private_claim_review.json \
-  idl/omegax_private_claim_review.source-hash \
+  idl/nakama_coverage_protocol.json \
+  idl/nakama_coverage_protocol.source-hash \
+  idl/nakama_private_claim_review.json \
+  idl/nakama_private_claim_review.source-hash \
   shared/protocol_contract.json \
   frontend/lib/generated/protocol-contract.ts \
   frontend/lib/generated/protocol-contract.js
@@ -40,10 +40,10 @@ shasum -a 256 \
 
 | Artifact | SHA-256 |
 |----------|---------|
-| `idl/omegax_protocol.json` | `<sha256>` |
-| `idl/omegax_protocol.source-hash` (value, not file hash) | `<the hex hash inside the file>` |
-| `idl/omegax_private_claim_review.json` | `<sha256>` |
-| `idl/omegax_private_claim_review.source-hash` (value, not file hash) | `<the hex hash inside the file>` |
+| `idl/nakama_coverage_protocol.json` | `<sha256>` |
+| `idl/nakama_coverage_protocol.source-hash` (value, not file hash) | `<the hex hash inside the file>` |
+| `idl/nakama_private_claim_review.json` | `<sha256>` |
+| `idl/nakama_private_claim_review.source-hash` (value, not file hash) | `<the hex hash inside the file>` |
 | `shared/protocol_contract.json` | `<sha256>` |
 | `frontend/lib/generated/protocol-contract.ts` | `<sha256>` |
 | `frontend/lib/generated/protocol-contract.js` | `<sha256>` |
@@ -185,15 +185,15 @@ date -u +%Y-%m-%dT%H:%M:%SZ
 
 # 2. artifact hashes
 shasum -a 256 \
-  idl/omegax_protocol.json \
-  idl/omegax_protocol.source-hash \
-  idl/omegax_private_claim_review.json \
-  idl/omegax_private_claim_review.source-hash \
+  idl/nakama_coverage_protocol.json \
+  idl/nakama_coverage_protocol.source-hash \
+  idl/nakama_private_claim_review.json \
+  idl/nakama_private_claim_review.source-hash \
   shared/protocol_contract.json \
   frontend/lib/generated/protocol-contract.ts \
   frontend/lib/generated/protocol-contract.js
-head -1 idl/omegax_protocol.source-hash
-head -1 idl/omegax_private_claim_review.source-hash
+head -1 idl/nakama_coverage_protocol.source-hash
+head -1 idl/nakama_private_claim_review.source-hash
 npm run idl:freshness:check
 npm run protocol:contract:check
 

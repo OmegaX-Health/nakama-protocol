@@ -1,11 +1,11 @@
 # Certora Rules
 
-Add CVLR rules incrementally and keep each rule mapped to an existing OmegaX
+Add CVLR rules incrementally and keep each rule mapped to an existing Nakama
 security invariant or regression test. The current sanity lane intentionally
 uses constrained kernel/scalar models that Certora Solana can prove remotely
 today; it does not claim full Anchor handler/account-flow proofs.
 
-Implemented in `programs/omegax_protocol/src/certora.rs`:
+Implemented in `programs/nakama_coverage_protocol/src/certora.rs`:
 
 - `rule_selected_asset_payout_bounds`: selected-asset payout value must stay
   between the claim value and the configured maximum overpay.

@@ -1,6 +1,6 @@
-# OmegaX Protocol
+# Nakama Protocol
 
-OmegaX Protocol's current launch job is concrete: help a sponsor fund Travel 30 acute travel protection for a cohort, show whether the reserve posture can support it, and trace every claim from intake to payout.
+Nakama Protocol's current launch job is concrete: help a sponsor fund Travel 30 acute travel protection for a cohort, show whether the reserve posture can support it, and trace every claim from intake to payout.
 
 Plainly: a sponsor can fund a protected group, see what backs the promise, and audit what happened when a claim is reviewed or paid.
 
@@ -16,9 +16,9 @@ On Solana devnet beta today, the public surface in this repository can already a
 
 - [Genesis Protect V1 Curve Launch Plan](./docs/architecture/genesis-protect-v1-curve-launch.md)
 - [Genesis Protect Claim Trace](./docs/architecture/genesis-protect-claim-trace.md)
-- [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface)
+- [What Exists Today](https://docs.nakama.health/docs/protocol/current-program-surface)
 - [Repository Documentation Map](./docs/README.md)
-- [SDK Overview](https://docs.omegax.health/docs/sdk/sdk-overview)
+- [SDK Overview](https://docs.nakama.health/docs/sdk/sdk-overview)
 
 ## Choose Your Path
 
@@ -30,7 +30,7 @@ Start with:
 
 - [Genesis Protect V1 Curve Launch Plan](./docs/architecture/genesis-protect-v1-curve-launch.md)
 - [Genesis Protect Claim Trace](./docs/architecture/genesis-protect-claim-trace.md)
-- [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface)
+- [What Exists Today](https://docs.nakama.health/docs/protocol/current-program-surface)
 
 ### Reserve and backstop integrators
 
@@ -38,19 +38,19 @@ Connect domain vaults, sponsor budgets, premiums, backstops, and reserve-domain 
 
 Start with:
 
-- [Protocol Architecture](https://docs.omegax.health/docs/protocol/architecture)
+- [Protocol Architecture](https://docs.nakama.health/docs/protocol/architecture)
 - [Public Release Gate](./docs/operations/public-release-gate.md)
 - [Release v0.3.1](./docs/operations/release-v0.3.1.md)
 
 ### Oracle and event producers
 
-Build normalized event pipelines, oracle operators, and verification services that feed OmegaX-compatible outcomes into the protocol.
+Build normalized event pipelines, oracle operators, and verification services that feed Nakama-compatible outcomes into the protocol.
 
 Start with:
 
-- [Oracle Event Production](https://docs.omegax.health/docs/oracle/event-production)
-- [SDK Overview](https://docs.omegax.health/docs/sdk/sdk-overview)
-- [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface)
+- [Oracle Event Production](https://docs.nakama.health/docs/oracle/event-production)
+- [SDK Overview](https://docs.nakama.health/docs/sdk/sdk-overview)
+- [What Exists Today](https://docs.nakama.health/docs/protocol/current-program-surface)
 
 ### Health / wallet / app builders
 
@@ -58,9 +58,9 @@ Use the public SDK and read models to integrate member state, claim intake, payo
 
 Start with:
 
-- [SDK Getting Started](https://docs.omegax.health/docs/sdk/sdk-getting-started)
-- [SDK Workflows](https://docs.omegax.health/docs/sdk/sdk-workflows)
-- [What Exists Today](https://docs.omegax.health/docs/protocol/current-program-surface)
+- [SDK Getting Started](https://docs.nakama.health/docs/sdk/sdk-getting-started)
+- [SDK Workflows](https://docs.nakama.health/docs/sdk/sdk-workflows)
+- [What Exists Today](https://docs.nakama.health/docs/protocol/current-program-surface)
 
 ## What Exists Today on Devnet Beta
 
@@ -70,7 +70,7 @@ Start with:
 
 ## Long-Term Destination
 
-OmegaX Health is the first oracle and the public sponsor/operator console is the first managed experience around the protocol.
+Nakama Health is the first oracle and the public sponsor/operator console is the first managed experience around the protocol.
 
 The destination is one shared settlement foundation that can support sponsor programs, coverage products, outside oracle builders, wallet-native health apps, and reserve partners without fragmenting the underlying accounting truth.
 
@@ -101,7 +101,7 @@ This repository treats the earlier pool-first surface as retired devnet history 
 
 Current publish target: `v0.3.1`
 
-This patch hardens the first publishable canonical OmegaX reserve, obligation, and claim surface.
+This patch hardens the first publishable canonical Nakama reserve, obligation, and claim surface.
 
 - reserve inflows now require checked SPL token transfers into the configured domain vault token account before ledgers increase
 - emergency pause now covers reserve-moving exits and settlement paths; Founder reservations remain off-chain Squads custody until activation/posting
@@ -146,7 +146,7 @@ Read the canonical design set first:
 
 ## Repository Layout
 
-- [`programs/omegax_protocol/`](./programs/omegax_protocol/) contains the onchain Anchor program
+- [`programs/nakama_coverage_protocol/`](./programs/nakama_coverage_protocol/) contains the onchain Anchor program
 - [`frontend/`](./frontend/) contains the public protocol console and deterministic read models
 - [`tests/`](./tests/) contains the fast Node-based scenario suite
 - [`e2e/`](./e2e/) contains the heavier localnet audit entrypoint
@@ -192,7 +192,7 @@ npm run verify:public
 The QEDGen spec lives at [`omegax_protocol.qedspec`](./omegax_protocol.qedspec)
 and `.qed/config.json` pins it for local commands. Generated verification code
 is intentionally isolated under [`formal_verification/`](./formal_verification/)
-so the live Anchor program in `programs/omegax_protocol/` is not overwritten by
+so the live Anchor program in `programs/nakama_coverage_protocol/` is not overwritten by
 QEDGen scaffolding.
 
 ```bash
@@ -241,7 +241,7 @@ These helpers are for repo maintainers and shared-devnet operators rather than f
   - runs the checked build and artifact parity
   - regenerates the canonical bootstrap artifacts
   - leaves the final live deploy step operator-mediated for auditability
-  - prints the exact canonical `solana program deploy --program-id ...` upgrade command and warns if `target/deploy/omegax_protocol-keypair.json` has drifted away from the canonical program id
+  - prints the exact canonical `solana program deploy --program-id ...` upgrade command and warns if `target/deploy/nakama_coverage_protocol-keypair.json` has drifted away from the canonical program id
 - `npm run devnet:frontend:smoke`
   - checks that the canonical fixture set is present and coherent
 - `npm run devnet:frontend:signoff`

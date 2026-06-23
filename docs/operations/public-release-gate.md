@@ -99,7 +99,7 @@ Shared-devnet rollout remains an operator-mediated sign-off step even after the 
 Recommended sequence:
 
 1. `npm run devnet:beta:deploy`
-2. upgrade the canonical shared-devnet program id with the checked `target/deploy/omegax_protocol.so`
+2. upgrade the canonical shared-devnet program id with the checked `target/deploy/nakama_coverage_protocol.so`
    Use the canonical `6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM` program id directly if the checked deploy keypair file has drifted.
 3. `npm run protocol:bootstrap:devnet-live`
 4. `npm run devnet:frontend:bootstrap`

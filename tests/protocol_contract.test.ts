@@ -15,7 +15,7 @@ test("canonical contract exposes the reserve-accounting surface", () => {
   const instructionNames = Object.keys(PROTOCOL_INSTRUCTION_DISCRIMINATORS);
   const accountNames = Object.keys(PROTOCOL_ACCOUNT_DISCRIMINATORS);
   const serializedAccounts = JSON.stringify(PROTOCOL_INSTRUCTION_ACCOUNTS);
-  const idl = JSON.parse(readFileSync(new URL("../idl/omegax_protocol.json", import.meta.url), "utf8")) as {
+  const idl = JSON.parse(readFileSync(new URL("../idl/nakama_coverage_protocol.json", import.meta.url), "utf8")) as {
     instructions: Array<{ name: string }>;
     types: Array<{ name: string; type: { kind: string; fields?: Array<{ name: string }> } }>;
   };

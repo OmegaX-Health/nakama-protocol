@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{RecordReserveEarnings, RecordReserveEarningsArgs};
 
 impl<'info> RecordReserveEarnings<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "record_reserve_earnings", hash = "c3dd874b90d109f0", spec_hash = "264ef3256e76dde0")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "record_reserve_earnings", hash = "c3dd874b90d109f0", spec_hash = "264ef3256e76dde0")]
     #[inline(always)]
     pub fn handler(&mut self, args: RecordReserveEarningsArgs) -> Result<()> {
         guards::record_reserve_earnings(self, args)?;

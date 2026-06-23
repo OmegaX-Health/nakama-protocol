@@ -10,7 +10,7 @@ The on-chain program enforces role checks for plan control, claim operations, re
 
 ## 1. Privileged roles
 
-Every entry below maps to a `require_*` check in the onchain program source (`programs/omegax_protocol/src/kernel.rs`, `programs/omegax_protocol/src/kernel/`, and the relevant domain module) and to a configurable role wallet in `scripts/support/genesis_live_bootstrap_config.ts`. The "Pre-fix default" column documents what the bootstrap fell back to before the mainnet guard added in this doc landed; the **mainnet column is what production must use**.
+Every entry below maps to a `require_*` check in the onchain program source (`programs/nakama_coverage_protocol/src/kernel.rs`, `programs/nakama_coverage_protocol/src/kernel/`, and the relevant domain module) and to a configurable role wallet in `scripts/support/genesis_live_bootstrap_config.ts`. The "Pre-fix default" column documents what the bootstrap fell back to before the mainnet guard added in this doc landed; the **mainnet column is what production must use**.
 
 | Role | Guards (program) | Allowed actions | Custody owner | Mainnet signer (required) | Pre-fix default |
 |------|------------------|-----------------|---------------|---------------------------|-----------------|
@@ -19,7 +19,7 @@ Every entry below maps to a `require_*` check in the onchain program source (`pr
 | **Plan admin / Sponsor** | `require_plan_control` | `update_health_plan`, sponsor-budget funding, plan pause flags | Sponsor entity | Distinct wallet (multisig recommended for >$10k exposure) | `governanceAuthority` |
 | **Sponsor operator** | `require_plan_control` (sponsor lane) | premium recording, sponsor-budget operations | Operations team | Distinct wallet | `governanceAuthority` |
 | **Claims operator** | `require_claim_operator` | `adjudicate_claim_case`, `settle_claim_case` | Claims operations team | Distinct hot wallet (rotated quarterly), backed by ≥2-of-N multisig for high-value claims | `governanceAuthority` |
-| **Oracle authority** | Off-chain/adjunct review signer for Phase 0 evidence workflows | Evidence review and claim-decision feeds outside the base protocol | Oracle operator (OmegaX Health for v1) | Distinct hot wallet, rotated quarterly | (none — must be set explicitly) |
+| **Oracle authority** | Off-chain/adjunct review signer for Phase 0 evidence workflows | Evidence review and claim-decision feeds outside the base protocol | Oracle operator (Nakama Health for v1) | Distinct hot wallet, rotated quarterly | (none — must be set explicitly) |
 | **Pool curator** | `require_curator_control` | `create_capital_class`, capital-class restriction updates, manager credentialing | LP product team | Distinct wallet, multisig for production | `governanceAuthority` |
 | **Pool allocator** | `require_allocator` | `create_allocation_position`, allocation cap & weight updates | Capital management team | Distinct wallet | `governanceAuthority` |
 | **Pool sentinel** | no broad economic mutation helper; sentinel remains a configured emergency role for future narrow pause/throttle surfaces | pool-level pause flags, redemption-queue throttle | On-call sentinel | Distinct hot wallet (low blast radius — short-lived rotation OK) | `governanceAuthority` |
@@ -117,7 +117,7 @@ For release notes, sponsor decks, or LP communication that touches role custody,
 
 ## Appendix: source-of-truth pointers
 
-- Program role checks: `programs/omegax_protocol/src/kernel.rs`, `programs/omegax_protocol/src/kernel/`, and the calling domain modules (`require_governance`, `require_plan_control`, `require_claim_operator`, `require_curator_control`, `require_allocator`)
+- Program role checks: `programs/nakama_coverage_protocol/src/kernel.rs`, `programs/nakama_coverage_protocol/src/kernel/`, and the calling domain modules (`require_governance`, `require_plan_control`, `require_claim_operator`, `require_curator_control`, `require_allocator`)
 - Bootstrap config: `scripts/support/genesis_live_bootstrap_config.ts`
 - PT-05 distinct-keys guard: shipped in commit `8c219fe`; tests in `tests/genesis_live_bootstrap_config.test.ts`
 - Pen-test report: [`./pre-mainnet-pen-test-2026-04-27.md`](./pre-mainnet-pen-test-2026-04-27.md)

@@ -1,8 +1,8 @@
 # MagicBlock Private Claim Room
 
-OmegaX Private Claim Room is a hackathon adjunct for private Genesis Protect Acute claim review. It uses MagicBlock Ephemeral Rollups for delegated review-session state while the main `omegax_protocol` program remains the Solana claim, reserve, and settlement kernel.
+Nakama Private Claim Room is a hackathon adjunct for private Genesis Protect Acute claim review. It uses MagicBlock Ephemeral Rollups for delegated review-session state while the main `nakama_coverage_protocol` program remains the Solana claim, reserve, and settlement kernel.
 
-The adjunct program is `omegax_private_claim_review`. It stores only public-safe hashes and session state:
+The adjunct program is `nakama_private_claim_review`. It stores only public-safe hashes and session state:
 
 - registry/session authority
 - registered review operator
@@ -21,18 +21,18 @@ Raw medical evidence, encrypted evidence payloads, OCR text, storage paths, and 
 
 1. `omegax-health` prepares a redacted Genesis Protect Acute claim packet and hashes the private evidence bundle.
 2. The private-review program upgrade authority initializes `PrivateReviewRegistry` and registers an active `PrivateReviewOperator` with the expected review binary hash.
-3. `omegax_private_claim_review::open_review_session` creates a public review-session PDA on base Solana. The PDA is seeded by session authority, claim case, and session id to prevent third-party squatting.
+3. `nakama_private_claim_review::open_review_session` creates a public review-session PDA on base Solana. The PDA is seeded by session authority, claim case, and session id to prevent third-party squatting.
 4. `delegate_review_session` verifies the session authority, marks the session delegated, and delegates that session PDA to MagicBlock ER.
 5. A TEE/private reviewer checks the private packet and emits a hash-bounded review artifact.
 6. `record_private_review` records only review hashes and status on the delegated session. Only the active registered reviewer can write the result, and the submitted review binary hash must match the operator registry entry.
 7. The MagicBlock Private Payments API builds a devnet reimbursement preview; `record_private_payment_ref` stores only its reference hash and is limited to the configured payment attestor.
 8. `commit_and_close_review_session` schedules the MagicBlock commit and undelegates the review session back to Solana. Approved sessions require a private payment reference before commit. This instruction deliberately leaves account data unchanged and only invokes the MagicBlock commit CPI.
-9. After the session PDA is owned by `omegax_private_claim_review` on base Solana again, `finalize_committed_review_session` stamps `committed_at` on the base-layer receipt.
+9. After the session PDA is owned by `nakama_private_claim_review` on base Solana again, `finalize_committed_review_session` stamps `committed_at` on the base-layer receipt.
 10. Off-chain consumers or operator tooling refetch and verify the committed adjunct account, then use the review artifact as support for the base program's `adjudicate_claim_case` / reserve / settlement path.
 
 ## Boundaries
 
-- The main `omegax_protocol` program is not delegated to MagicBlock.
+- The main `nakama_coverage_protocol` program is not delegated to MagicBlock.
 - `ClaimCase`, reserves, vaults, funding lines, obligations, and payout accounts are not delegated.
 - The private reviewer may inspect plaintext inside the TEE path, but public Solana only receives hashes and status.
 - The hackathon reimbursement preview demonstrates MagicBlock private payments; it does not replace the production reserve kernel.

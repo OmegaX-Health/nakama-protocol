@@ -3,7 +3,7 @@
 import { BorshCoder, type Idl } from "@coral-xyz/anchor";
 import { Buffer } from "buffer";
 import { PublicKey, type Connection } from "@solana/web3.js";
-import privateClaimReviewIdl from "../../idl/omegax_private_claim_review.json";
+import privateClaimReviewIdl from "../../idl/nakama_private_claim_review.json";
 
 export const PRIVATE_CLAIM_REVIEW_PROGRAM_ID = new PublicKey(
   privateClaimReviewIdl.address ?? "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn",

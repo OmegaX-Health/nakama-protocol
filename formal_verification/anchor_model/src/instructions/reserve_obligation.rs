@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{ReserveObligation, ReserveObligationArgs};
 
 impl<'info> ReserveObligation<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "reserve_obligation", hash = "5422934bdc1bc2c9", spec_hash = "868654d12cbc6986")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "reserve_obligation", hash = "5422934bdc1bc2c9", spec_hash = "868654d12cbc6986")]
     #[inline(always)]
     pub fn handler(&mut self, args: ReserveObligationArgs) -> Result<()> {
         guards::reserve_obligation(self, args)?;

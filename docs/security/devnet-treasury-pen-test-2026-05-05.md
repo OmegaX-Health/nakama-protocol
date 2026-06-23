@@ -3,7 +3,7 @@
 ## Scope
 
 Authorized devnet-only treasury theft rehearsal against the merged hardened
-OmegaX protocol program. The runner used RPC simulation for attack
+Nakama protocol program. The runner used RPC simulation for attack
 transactions; it did not submit theft transactions and did not target mainnet.
 
 This run is the post-merge replay requested after PR

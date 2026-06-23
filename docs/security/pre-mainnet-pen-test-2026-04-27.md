@@ -1,4 +1,4 @@
-# Pre-Mainnet Penetration Test — OmegaX Protocol
+# Pre-Mainnet Penetration Test — Nakama Protocol
 
 **Date:** 2026-04-27 (original) · **Last updated:** 2026-04-29 (post-Phase 1.7 PR4)  
 **Reviewer:** Adversarial review pass, complementing the internal CSO infrastructure audit from 2026-04-27
@@ -15,8 +15,8 @@
 
 **Cleanup note (2026-05-03):** Several retired workspace components named in the historical PT-06 coverage map were removed after the original review. The historical counts below are preserved as audit evidence; the runnable PoC now enumerates mounted components dynamically.
 
-The original 2026-04-27 review found that the OmegaX program in
-`programs/omegax_protocol/` accepted SPL token deposits but had no on-chain
+The original 2026-04-27 review found that the Nakama program in
+`programs/nakama_coverage_protocol/` accepted SPL token deposits but had no on-chain
 instruction that released tokens back out. That historical finding is preserved
 below because it explains the remediation path. It is **not** the current tree
 state: as of the 2026-04-29 remediation table, claim settlement, obligation
@@ -90,7 +90,7 @@ PoCs run via `npm run test:node` (no localnet harness needed). Localnet PoCs wer
 **PoC:** [`tests/security/no_money_out_path.test.ts::[PT-01]`](../../tests/security/no_money_out_path.test.ts)  
 **Outcome:** `VULN_CONFIRMED`
 
-The on-chain program declares 45 instructions ending at `attest_claim_case` (lib.rs:2288). None matches `withdraw_*`, `sweep_*`, `collect_fee*`, `reclaim_*`, or `payout_*`. The IDL at `idl/omegax_protocol.json` confirms (zero "withdraw" mentions, case-insensitive).
+The on-chain program declares 45 instructions ending at `attest_claim_case` (lib.rs:2288). None matches `withdraw_*`, `sweep_*`, `collect_fee*`, `reclaim_*`, or `payout_*`. The IDL at `idl/nakama_coverage_protocol.json` confirms (zero "withdraw" mentions, case-insensitive).
 
 **Exploit narrative.** This is not an exploit per se — it is **the absence of any user-facing or operator-facing path to extract funds from the vaults**. Once a member, sponsor, or LP deposits SPL tokens via `fund_sponsor_budget` (lib.rs:719), `record_premium_payment` (lib.rs:770), or `deposit_into_capital_class` (lib.rs:1573), those tokens are routed to the program-owned `domain_asset_vault` and there is no on-chain instruction signed by anyone — including governance — that releases them.
 
@@ -307,7 +307,7 @@ The squatter also cannot abuse the profile to attest claims — `attest_claim_ca
 require_keys_eq!(
     args.oracle,
     ctx.accounts.admin.key(),
-    OmegaXProtocolError::Unauthorized
+    NakamaProtocolError::Unauthorized
 );
 ```
 

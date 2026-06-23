@@ -4,7 +4,7 @@
 // IDL freshness check.
 //
 // `npm run protocol:contract:check` verifies that downstream artifacts are
-// in sync with `idl/omegax_protocol.json`, but nothing verifies that the
+// in sync with `idl/nakama_coverage_protocol.json`, but nothing verifies that the
 // checked-in IDL itself matches the on-chain program source. If a developer
 // edits Rust under `programs/*/` and forgets to run `npm run anchor:idl`, the
 // stale IDL ships and silently desyncs every SDK downstream.
@@ -24,16 +24,16 @@ const REPO_ROOT = resolve(new URL('../', import.meta.url).pathname);
 const ROOT_CARGO_TOML = 'Cargo.toml';
 const PROGRAMS = [
   {
-    name: 'omegax_protocol',
-    programDir: 'programs/omegax_protocol',
-    idlFile: 'idl/omegax_protocol.json',
-    hashFile: 'idl/omegax_protocol.source-hash',
+    name: 'nakama_coverage_protocol',
+    programDir: 'programs/nakama_coverage_protocol',
+    idlFile: 'idl/nakama_coverage_protocol.json',
+    hashFile: 'idl/nakama_coverage_protocol.source-hash',
   },
   {
-    name: 'omegax_private_claim_review',
-    programDir: 'programs/omegax_private_claim_review',
-    idlFile: 'idl/omegax_private_claim_review.json',
-    hashFile: 'idl/omegax_private_claim_review.source-hash',
+    name: 'nakama_private_claim_review',
+    programDir: 'programs/nakama_private_claim_review',
+    idlFile: 'idl/nakama_private_claim_review.json',
+    hashFile: 'idl/nakama_private_claim_review.source-hash',
   },
 ];
 

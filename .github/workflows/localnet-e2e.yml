@@ -138,7 +138,7 @@ jobs:
 
       - name: Build Solana program
         if: steps.localnet_changes.outputs.relevant == 'true'
-        # The e2e harness pre-checks for target/deploy/omegax_protocol.so
+        # The e2e harness pre-checks for target/deploy/nakama_coverage_protocol.so
         # before its own build step (a guard-rail for operators who run
         # `anchor:idl` first). In CI we have no prior step, so we build
         # explicitly here and skip the harness's internal build.

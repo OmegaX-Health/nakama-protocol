@@ -112,7 +112,7 @@ payout safety.
 
 For the live program surface, start with:
 
-- [`programs/omegax_protocol/src/lib.rs`](../../programs/omegax_protocol/src/lib.rs)
+- [`programs/nakama_coverage_protocol/src/lib.rs`](../../programs/nakama_coverage_protocol/src/lib.rs)
 - [`docs/architecture/solana-instruction-map.md`](./solana-instruction-map.md)
 - [`frontend/lib/protocol.ts`](../../frontend/lib/protocol.ts)
 

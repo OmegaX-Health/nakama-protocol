@@ -14,7 +14,7 @@ pub(crate) fn fund_sponsor_budget(
     require_positive_amount(args.amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_SPONSOR_BUDGET,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     transfer_to_domain_vault(
         args.amount,
@@ -52,7 +52,7 @@ pub(crate) fn record_premium_payment(
     require_positive_amount(args.amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_PREMIUM_INCOME,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     transfer_to_domain_vault(
         args.amount,
@@ -87,11 +87,11 @@ pub(crate) fn record_premium_payment(
 fn require_reserve_capital_line(funding_line: &FundingLine) -> Result<()> {
     require!(
         funding_line.line_type == FUNDING_LINE_TYPE_BACKSTOP,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     require!(
         funding_line.status == FUNDING_LINE_STATUS_OPEN,
-        OmegaXProtocolError::FundingLineMismatch
+        NakamaProtocolError::FundingLineMismatch
     );
     Ok(())
 }
@@ -101,17 +101,17 @@ fn require_reserve_earnings_line(funding_line: &FundingLine) -> Result<()> {
     require!(
         funding_line.line_type == FUNDING_LINE_TYPE_BACKSTOP
             || funding_line.line_type == FUNDING_LINE_TYPE_SUBSIDY,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     require!(
         funding_line.status == FUNDING_LINE_STATUS_OPEN,
-        OmegaXProtocolError::FundingLineMismatch
+        NakamaProtocolError::FundingLineMismatch
     );
     Ok(())
 }
 
 #[cfg(not(feature = "quasar"))]
-fn require_nonzero_hash(hash: &[u8; 32], error: OmegaXProtocolError) -> Result<()> {
+fn require_nonzero_hash(hash: &[u8; 32], error: NakamaProtocolError) -> Result<()> {
     if hash.iter().any(|byte| *byte != 0) {
         Ok(())
     } else {
@@ -174,22 +174,22 @@ pub(crate) fn deposit_reserve_capital(
         require_keys_eq!(
             contribution.contributor,
             ctx.accounts.contributor.key(),
-            OmegaXProtocolError::Unauthorized
+            NakamaProtocolError::Unauthorized
         );
         require_keys_eq!(
             contribution.funding_line,
             ctx.accounts.funding_line.key(),
-            OmegaXProtocolError::FundingLineMismatch
+            NakamaProtocolError::FundingLineMismatch
         );
         require_keys_eq!(
             contribution.asset_mint,
             ctx.accounts.funding_line.asset_mint,
-            OmegaXProtocolError::AssetMintMismatch
+            NakamaProtocolError::AssetMintMismatch
         );
         if contribution.contributed_amount > contribution.returned_amount {
             require!(
                 contribution.terms_hash == args.terms_hash,
-                OmegaXProtocolError::CapitalContributionTermsMismatch
+                NakamaProtocolError::CapitalContributionTermsMismatch
             );
         } else {
             contribution.terms_hash = args.terms_hash;
@@ -233,12 +233,12 @@ pub(crate) fn return_reserve_capital(
     )?;
     require!(
         contribution_available >= args.amount,
-        OmegaXProtocolError::CapitalContributionAmountExceedsAvailable
+        NakamaProtocolError::CapitalContributionAmountExceedsAvailable
     );
     require_keys_eq!(
         ctx.accounts.recipient_token_account.owner,
         ctx.accounts.capital_contribution.contributor,
-        OmegaXProtocolError::TokenAccountOwnerMismatch
+        NakamaProtocolError::TokenAccountOwnerMismatch
     );
 
     let amount = args.amount;
@@ -283,7 +283,7 @@ pub(crate) fn record_reserve_earnings(
     require_positive_amount(args.amount)?;
     require_nonzero_hash(
         &args.earnings_ref_hash,
-        OmegaXProtocolError::ReserveEarningsReferenceRequired,
+        NakamaProtocolError::ReserveEarningsReferenceRequired,
     )?;
     require_reserve_earnings_line(&ctx.accounts.funding_line)?;
     transfer_to_domain_vault(
@@ -321,20 +321,20 @@ pub(crate) fn record_reserve_earnings(
 #[inline(always)]
 fn quasar_checked_add(lhs: u64, rhs: u64) -> Result<u64> {
     lhs.checked_add(rhs)
-        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+        .ok_or(NakamaProtocolError::ArithmeticError.into())
 }
 
 #[cfg(feature = "quasar")]
 #[inline(always)]
 fn quasar_checked_sub(lhs: u64, rhs: u64) -> Result<u64> {
     lhs.checked_sub(rhs)
-        .ok_or(OmegaXProtocolError::ArithmeticError.into())
+        .ok_or(NakamaProtocolError::ArithmeticError.into())
 }
 
 #[cfg(feature = "quasar")]
 #[inline(always)]
 fn require_quasar_positive_amount(amount: u64) -> Result<()> {
-    require!(amount > 0, OmegaXProtocolError::AmountMustBePositive);
+    require!(amount > 0, NakamaProtocolError::AmountMustBePositive);
     Ok(())
 }
 
@@ -344,13 +344,13 @@ fn require_quasar_plan_control(authority: &Pubkey, plan: &HealthPlanAccountData<
     if *authority == plan.plan_admin || *authority == plan.sponsor_operator {
         Ok(())
     } else {
-        err!(OmegaXProtocolError::Unauthorized)
+        err!(NakamaProtocolError::Unauthorized)
     }
 }
 
 #[cfg(feature = "quasar")]
 fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result<()> {
-    require!(plan.active.get(), OmegaXProtocolError::HealthPlanInactive);
+    require!(plan.active.get(), NakamaProtocolError::HealthPlanInactive);
     Ok(())
 }
 
@@ -358,7 +358,7 @@ fn require_quasar_health_plan_active(plan: &HealthPlanAccountData<'_>) -> Result
 fn require_quasar_plan_pause_flags_clear(
     plan: &HealthPlanAccountData<'_>,
     flags: u32,
-    error: OmegaXProtocolError,
+    error: NakamaProtocolError,
 ) -> Result<()> {
     if plan.pause_flags.get() & flags == 0 {
         Ok(())
@@ -373,7 +373,7 @@ fn require_quasar_plan_operations_open(plan: &HealthPlanAccountData<'_>) -> Resu
     require_quasar_plan_pause_flags_clear(
         plan,
         PAUSE_FLAG_PROTOCOL_EMERGENCY | PAUSE_FLAG_PLAN_OPERATIONS,
-        OmegaXProtocolError::HealthPlanPaused,
+        NakamaProtocolError::HealthPlanPaused,
     )
 }
 
@@ -383,7 +383,7 @@ fn require_quasar_reserve_rails_open(plan: &HealthPlanAccountData<'_>) -> Result
     require_quasar_plan_pause_flags_clear(
         plan,
         PAUSE_FLAG_DOMAIN_RAILS | PAUSE_FLAG_ALLOCATION_FREEZE,
-        OmegaXProtocolError::HealthPlanPaused,
+        NakamaProtocolError::HealthPlanPaused,
     )
 }
 
@@ -393,7 +393,7 @@ fn require_quasar_capital_subscriptions_open(plan: &HealthPlanAccountData<'_>) -
     require_quasar_plan_pause_flags_clear(
         plan,
         PAUSE_FLAG_CAPITAL_SUBSCRIPTIONS,
-        OmegaXProtocolError::HealthPlanPaused,
+        NakamaProtocolError::HealthPlanPaused,
     )
 }
 
@@ -403,7 +403,7 @@ fn require_quasar_reserve_redemptions_open(plan: &HealthPlanAccountData<'_>) -> 
     require_quasar_plan_pause_flags_clear(
         plan,
         PAUSE_FLAG_REDEMPTION_QUEUE_ONLY,
-        OmegaXProtocolError::HealthPlanPaused,
+        NakamaProtocolError::HealthPlanPaused,
     )
 }
 
@@ -416,11 +416,11 @@ fn quasar_recompute_sheet(sheet: &mut ReserveBalanceSheet) -> Result<()> {
         .and_then(|value| value.checked_add(sheet.impaired))
         .and_then(|value| value.checked_add(sheet.pending_redemption))
         .and_then(|value| value.checked_add(sheet.restricted))
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+        .ok_or(NakamaProtocolError::ArithmeticError)?;
     sheet.free = sheet.funded.saturating_sub(encumbered);
     let redeemable_encumbered = encumbered
         .checked_add(sheet.allocated)
-        .ok_or(OmegaXProtocolError::ArithmeticError)?;
+        .ok_or(NakamaProtocolError::ArithmeticError)?;
     sheet.redeemable = sheet.funded.saturating_sub(redeemable_encumbered);
     Ok(())
 }
@@ -435,7 +435,7 @@ fn quasar_book_inflow_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Res
 fn quasar_require_free_reserve_capacity(sheet: &ReserveBalanceSheet, amount: u64) -> Result<()> {
     require!(
         sheet.free >= amount,
-        OmegaXProtocolError::InsufficientFreeReserveCapacity
+        NakamaProtocolError::InsufficientFreeReserveCapacity
     );
     Ok(())
 }
@@ -451,11 +451,11 @@ fn quasar_book_return_sheet(sheet: &mut ReserveBalanceSheet, amount: u64) -> Res
 fn require_quasar_reserve_capital_line(funding_line: &FundingLineAccountData<'_>) -> Result<()> {
     require!(
         funding_line.line_type == FUNDING_LINE_TYPE_BACKSTOP,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     require!(
         funding_line.status == FUNDING_LINE_STATUS_OPEN,
-        OmegaXProtocolError::FundingLineMismatch
+        NakamaProtocolError::FundingLineMismatch
     );
     Ok(())
 }
@@ -465,17 +465,17 @@ fn require_quasar_reserve_earnings_line(funding_line: &FundingLineAccountData<'_
     require!(
         funding_line.line_type == FUNDING_LINE_TYPE_BACKSTOP
             || funding_line.line_type == FUNDING_LINE_TYPE_SUBSIDY,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     require!(
         funding_line.status == FUNDING_LINE_STATUS_OPEN,
-        OmegaXProtocolError::FundingLineMismatch
+        NakamaProtocolError::FundingLineMismatch
     );
     Ok(())
 }
 
 #[cfg(feature = "quasar")]
-fn require_quasar_nonzero_hash(hash: &[u8; 32], error: OmegaXProtocolError) -> Result<()> {
+fn require_quasar_nonzero_hash(hash: &[u8; 32], error: NakamaProtocolError) -> Result<()> {
     if hash.iter().any(|byte| *byte != 0) {
         Ok(())
     } else {
@@ -494,7 +494,7 @@ pub(crate) fn fund_sponsor_budget<'info>(
     require_quasar_positive_amount(amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_SPONSOR_BUDGET,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     transfer_to_domain_vault(
         amount,
@@ -598,7 +598,7 @@ pub(crate) fn record_premium_payment<'info>(
     require_quasar_positive_amount(amount)?;
     require!(
         ctx.accounts.funding_line.line_type == FUNDING_LINE_TYPE_PREMIUM_INCOME,
-        OmegaXProtocolError::FundingLineTypeMismatch
+        NakamaProtocolError::FundingLineTypeMismatch
     );
     transfer_to_domain_vault(
         amount,
@@ -733,22 +733,22 @@ pub(crate) fn deposit_reserve_capital<'info>(
         require_keys_eq!(
             contribution.contributor,
             contributor,
-            OmegaXProtocolError::Unauthorized
+            NakamaProtocolError::Unauthorized
         );
         require_keys_eq!(
             contribution.funding_line,
             funding_line_key,
-            OmegaXProtocolError::FundingLineMismatch
+            NakamaProtocolError::FundingLineMismatch
         );
         require_keys_eq!(
             contribution.asset_mint,
             ctx.accounts.funding_line.asset_mint,
-            OmegaXProtocolError::AssetMintMismatch
+            NakamaProtocolError::AssetMintMismatch
         );
         if existing_contributed > existing_returned {
             require!(
                 contribution.terms_hash == terms_hash,
-                OmegaXProtocolError::CapitalContributionTermsMismatch
+                NakamaProtocolError::CapitalContributionTermsMismatch
             );
         }
     }
@@ -876,12 +876,12 @@ pub(crate) fn return_reserve_capital<'info>(
     )?;
     require!(
         contribution_available >= amount,
-        OmegaXProtocolError::CapitalContributionAmountExceedsAvailable
+        NakamaProtocolError::CapitalContributionAmountExceedsAvailable
     );
     require_keys_eq!(
         *ctx.accounts.recipient_token_account.owner(),
         ctx.accounts.capital_contribution.contributor,
-        OmegaXProtocolError::TokenAccountOwnerMismatch
+        NakamaProtocolError::TokenAccountOwnerMismatch
     );
 
     let mut domain_sheet = ctx.accounts.domain_asset_ledger.sheet;
@@ -1011,7 +1011,7 @@ pub(crate) fn record_reserve_earnings<'info>(
     require_quasar_positive_amount(amount)?;
     require_quasar_nonzero_hash(
         &earnings_ref_hash,
-        OmegaXProtocolError::ReserveEarningsReferenceRequired,
+        NakamaProtocolError::ReserveEarningsReferenceRequired,
     )?;
     require_quasar_reserve_earnings_line(&ctx.accounts.funding_line)?;
     transfer_to_domain_vault(
@@ -1121,7 +1121,7 @@ pub struct FundSponsorBudget<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1135,7 +1135,7 @@ pub struct FundSponsorBudget<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired
+        ) @ NakamaProtocolError::DomainAssetVaultRequired
     )]
     pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
@@ -1149,7 +1149,7 @@ pub struct FundSponsorBudget<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_ledger.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1163,7 +1163,7 @@ pub struct FundSponsorBudget<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE, health_plan.address().as_ref(), funding_line.line_id().as_bytes()],
             funding_line.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1177,7 +1177,7 @@ pub struct FundSponsorBudget<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), funding_line.asset_mint.as_ref()],
             funding_line_ledger.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1191,7 +1191,7 @@ pub struct FundSponsorBudget<'info> {
             &crate::ID,
             &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), funding_line.asset_mint.as_ref()],
             plan_reserve_ledger.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1231,7 +1231,7 @@ pub struct RecordPremiumPayment<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1245,7 +1245,7 @@ pub struct RecordPremiumPayment<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired
+        ) @ NakamaProtocolError::DomainAssetVaultRequired
     )]
     pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
@@ -1259,7 +1259,7 @@ pub struct RecordPremiumPayment<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_ledger.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1273,7 +1273,7 @@ pub struct RecordPremiumPayment<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE, health_plan.address().as_ref(), funding_line.line_id().as_bytes()],
             funding_line.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1287,7 +1287,7 @@ pub struct RecordPremiumPayment<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), funding_line.asset_mint.as_ref()],
             funding_line_ledger.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1301,7 +1301,7 @@ pub struct RecordPremiumPayment<'info> {
             &crate::ID,
             &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), funding_line.asset_mint.as_ref()],
             plan_reserve_ledger.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1345,7 +1345,7 @@ pub struct DepositReserveCapital<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1359,7 +1359,7 @@ pub struct DepositReserveCapital<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired
+        ) @ NakamaProtocolError::DomainAssetVaultRequired
     )]
     pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
@@ -1373,7 +1373,7 @@ pub struct DepositReserveCapital<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_ledger.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1387,7 +1387,7 @@ pub struct DepositReserveCapital<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE, health_plan.address().as_ref(), funding_line.line_id().as_bytes()],
             funding_line.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg_attr(
@@ -1411,7 +1411,7 @@ pub struct DepositReserveCapital<'info> {
                 &crate::ID,
                 &[SEED_CAPITAL_CONTRIBUTION, funding_line.address().as_ref(), contributor.address().as_ref()],
                 capital_contribution.bump,
-            ) @ OmegaXProtocolError::FundingLineMismatch
+            ) @ NakamaProtocolError::FundingLineMismatch
         )
     )]
     #[cfg(feature = "quasar")]
@@ -1427,7 +1427,7 @@ pub struct DepositReserveCapital<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), funding_line.asset_mint.as_ref()],
             funding_line_ledger.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1441,7 +1441,7 @@ pub struct DepositReserveCapital<'info> {
             &crate::ID,
             &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), funding_line.asset_mint.as_ref()],
             plan_reserve_ledger.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1486,7 +1486,7 @@ pub struct ReturnReserveCapital<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1500,7 +1500,7 @@ pub struct ReturnReserveCapital<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired
+        ) @ NakamaProtocolError::DomainAssetVaultRequired
     )]
     pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
@@ -1514,7 +1514,7 @@ pub struct ReturnReserveCapital<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_ledger.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1528,7 +1528,7 @@ pub struct ReturnReserveCapital<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE, health_plan.address().as_ref(), funding_line.line_id().as_bytes()],
             funding_line.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1542,7 +1542,7 @@ pub struct ReturnReserveCapital<'info> {
             &crate::ID,
             &[SEED_CAPITAL_CONTRIBUTION, funding_line.address().as_ref(), capital_contribution.contributor.as_ref()],
             capital_contribution.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub capital_contribution: &'info mut Account<CapitalContribution>,
     #[cfg(not(feature = "quasar"))]
@@ -1556,7 +1556,7 @@ pub struct ReturnReserveCapital<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), funding_line.asset_mint.as_ref()],
             funding_line_ledger.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1570,7 +1570,7 @@ pub struct ReturnReserveCapital<'info> {
             &crate::ID,
             &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), funding_line.asset_mint.as_ref()],
             plan_reserve_ledger.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1611,7 +1611,7 @@ pub struct RecordReserveEarnings<'info> {
             &crate::ID,
             &[SEED_HEALTH_PLAN, health_plan.reserve_domain.as_ref(), health_plan.health_plan_id().as_bytes()],
             health_plan.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub health_plan: Account<HealthPlanAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1625,7 +1625,7 @@ pub struct RecordReserveEarnings<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_VAULT, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_vault.bump,
-        ) @ OmegaXProtocolError::DomainAssetVaultRequired
+        ) @ NakamaProtocolError::DomainAssetVaultRequired
     )]
     pub domain_asset_vault: &'info mut Account<DomainAssetVault>,
     #[cfg(not(feature = "quasar"))]
@@ -1639,7 +1639,7 @@ pub struct RecordReserveEarnings<'info> {
             &crate::ID,
             &[SEED_DOMAIN_ASSET_LEDGER, health_plan.reserve_domain.as_ref(), funding_line.asset_mint.as_ref()],
             domain_asset_ledger.bump,
-        ) @ OmegaXProtocolError::ReserveDomainMismatch
+        ) @ NakamaProtocolError::ReserveDomainMismatch
     )]
     pub domain_asset_ledger: &'info mut Account<DomainAssetLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1653,7 +1653,7 @@ pub struct RecordReserveEarnings<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE, health_plan.address().as_ref(), funding_line.line_id().as_bytes()],
             funding_line.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line: Account<FundingLineAccountData<'info>>,
     #[cfg(not(feature = "quasar"))]
@@ -1667,7 +1667,7 @@ pub struct RecordReserveEarnings<'info> {
             &crate::ID,
             &[SEED_FUNDING_LINE_LEDGER, funding_line.address().as_ref(), funding_line.asset_mint.as_ref()],
             funding_line_ledger.bump,
-        ) @ OmegaXProtocolError::FundingLineMismatch
+        ) @ NakamaProtocolError::FundingLineMismatch
     )]
     pub funding_line_ledger: &'info mut Account<FundingLineLedger>,
     #[cfg(not(feature = "quasar"))]
@@ -1681,7 +1681,7 @@ pub struct RecordReserveEarnings<'info> {
             &crate::ID,
             &[SEED_PLAN_RESERVE_LEDGER, health_plan.address().as_ref(), funding_line.asset_mint.as_ref()],
             plan_reserve_ledger.bump,
-        ) @ OmegaXProtocolError::HealthPlanMismatch
+        ) @ NakamaProtocolError::HealthPlanMismatch
     )]
     pub plan_reserve_ledger: &'info mut Account<PlanReserveLedger>,
     #[cfg(not(feature = "quasar"))]

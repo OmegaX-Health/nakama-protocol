@@ -1,4 +1,4 @@
-# OmegaX Protocol Vision and Capability Narrative
+# Nakama Protocol Vision and Capability Narrative
 
 ## Branch Context
 
@@ -11,7 +11,7 @@ surface.
 
 ## Core Vision
 
-OmegaX Protocol is an on-chain reserve, claim, and settlement backbone for
+Nakama Protocol is an on-chain reserve, claim, and settlement backbone for
 community-owned health protection.
 
 Traditional insurance is a black box. Members pay premiums to a company, the
@@ -19,7 +19,7 @@ company controls reserves, the company decides claims, and the company keeps the
 float and yield. Members usually cannot inspect the reserve truth behind the
 promise.
 
-OmegaX flips that into a community reserve model:
+Nakama flips that into a community reserve model:
 
 - a community, sponsor, school, company, or network state creates its own health
   protection plan
@@ -38,7 +38,7 @@ and proof fingerprints.
 
 ## What The Protocol Enables
 
-OmegaX can support multiple community health protection products, for example:
+Nakama can support multiple community health protection products, for example:
 
 - Network School Travel 30
 - Event 7 emergency cover
@@ -175,7 +175,7 @@ they are not part of the current base program.
 
 ## Current Narrative
 
-OmegaX lets communities build and own their own health protection layer.
+Nakama lets communities build and own their own health protection layer.
 
 The community can collect sponsor funds and premiums, accept simple backstop
 capital, track claims, reserve money for payouts, and publish auditable reserve

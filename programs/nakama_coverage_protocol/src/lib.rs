@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Canonical OmegaX health capital markets program surface.
+//! Canonical Nakama health capital markets program surface.
 
 pub mod platform;
 
@@ -51,7 +51,7 @@ pub(crate) use funding_obligations::{
 };
 #[cfg(not(feature = "quasar"))]
 #[program]
-pub mod omegax_protocol {
+pub mod nakama_coverage_protocol {
     use super::*;
 
     pub fn create_reserve_domain(
@@ -198,7 +198,7 @@ pub mod omegax_protocol {
 
 #[cfg(feature = "quasar")]
 #[program]
-pub mod omegax_protocol {
+pub mod nakama_coverage_protocol {
     use super::*;
     #[inline(always)]
     fn quasar_handler_port_pending() -> Result<()> {

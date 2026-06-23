@@ -38,13 +38,13 @@ The remaining concerns are high-priority cleanup items, not publish blockers.
 - Keep moving explanatory comments toward the complex program edges: quote verification, treasury reserve accounting, and cohort settlement.
 - Replace broad `use super::*` imports in the heaviest handler files with more explicit imports as those files are touched next.
 - Add a few more unit tests around shared helper modules, especially treasury and quote validation helpers.
-- Keep `programs/omegax_protocol/README.md` and the instruction map updated whenever entrypoint routing changes.
+- Keep `programs/nakama_coverage_protocol/README.md` and the instruction map updated whenever entrypoint routing changes.
 
 ## Structural refactors
 
 - Split the old lifecycle-heavy modules by concern so configuration, enrollment, liquidity, quote verification, and settlement state writes are easier to review.
 - Separate quote verification from fund movement and state-write stages in the heaviest activation paths.
-- Continue thinning `programs/omegax_protocol/src/lib.rs` so it remains an entrypoint facade rather than a second place to understand state layout.
+- Continue thinning `programs/nakama_coverage_protocol/src/lib.rs` so it remains an entrypoint facade rather than a second place to understand state layout.
 - Consider replacing mode/status `u8` constants with typed enums or tightly documented wrappers where Anchor compatibility allows it without changing the public wire shape.
 
 ## What improved in this pass

@@ -46,7 +46,7 @@ audited.
 | Localnet E2E summary | `artifacts/localnet-e2e-summary-2026-05-04T16-40-45-011Z.json` | ignored artifact; current local evidence path |
 | Localnet adversarial matrix | `artifacts/localnet-adversarial-matrix-2026-05-04T16-40-45-011Z.json` | ignored artifact; `57 blocked`, `0 unexpectedSuccess`, `0 inconclusive` |
 | Devnet strict JSON | `artifacts/devnet-security-rehearsal-hardened-2026-05-05/devnet-treasury-pen-test-2026-05-04T18-49-38-251Z.json` | ignored artifact; tracked summary above |
-| IDL | [`../../idl/omegax_protocol.json`](../../idl/omegax_protocol.json) | generated Anchor IDL |
+| IDL | [`../../idl/nakama_coverage_protocol.json`](../../idl/nakama_coverage_protocol.json) | generated Anchor IDL |
 | Protocol contract | [`../../shared/protocol_contract.json`](../../shared/protocol_contract.json) | generated public contract artifact |
 
 ## Remote CI At Current PR Head
@@ -127,9 +127,9 @@ devnet program `BtLPiswEfzwxenWM3GR6hihViZHpXLU6Pygw3nmH3B2s`.
 
 Primary code paths:
 
-- `programs/omegax_protocol/src/lib.rs`
-- `programs/omegax_protocol/src/claims.rs`
-- `programs/omegax_protocol/src/kernel.rs`
+- `programs/nakama_coverage_protocol/src/lib.rs`
+- `programs/nakama_coverage_protocol/src/claims.rs`
+- `programs/nakama_coverage_protocol/src/kernel.rs`
 
 Review focus:
 
@@ -144,9 +144,9 @@ Review focus:
 
 Primary code paths:
 
-- `programs/omegax_protocol/src/obligations.rs`
-- `programs/omegax_protocol/src/reserve.rs`
-- `programs/omegax_protocol/src/capital_pool.rs`
+- `programs/nakama_coverage_protocol/src/obligations.rs`
+- `programs/nakama_coverage_protocol/src/reserve.rs`
+- `programs/nakama_coverage_protocol/src/capital_pool.rs`
 
 Review focus:
 
@@ -162,8 +162,8 @@ Review focus:
 
 Primary code paths:
 
-- `programs/omegax_protocol/src/capital_pool.rs`
-- `programs/omegax_protocol/src/kernel.rs`
+- `programs/nakama_coverage_protocol/src/capital_pool.rs`
+- `programs/nakama_coverage_protocol/src/kernel.rs`
 
 Review focus:
 
@@ -177,9 +177,9 @@ Review focus:
 
 Primary code paths:
 
-- `programs/omegax_protocol/src/fees.rs`
-- `programs/omegax_protocol/src/capital_pool.rs`
-- `programs/omegax_protocol/src/oracle.rs`
+- `programs/nakama_coverage_protocol/src/fees.rs`
+- `programs/nakama_coverage_protocol/src/capital_pool.rs`
+- `programs/nakama_coverage_protocol/src/oracle.rs`
 
 Review focus:
 
@@ -193,8 +193,8 @@ Review focus:
 
 Primary code paths:
 
-- `programs/omegax_protocol/src/governance.rs`
-- `programs/omegax_protocol/src/kernel.rs`
+- `programs/nakama_coverage_protocol/src/governance.rs`
+- `programs/nakama_coverage_protocol/src/kernel.rs`
 
 Review focus:
 

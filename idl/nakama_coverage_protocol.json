@@ -1,10 +1,10 @@
 {
   "address": "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM",
   "metadata": {
-    "name": "omegax_protocol",
+    "name": "nakama_coverage_protocol",
     "version": "0.3.1",
     "spec": "0.1.0",
-    "description": "OmegaX health reserve protocol with reserve domains, health plans, funding lines, obligations, and claims"
+    "description": "Nakama health reserve protocol with reserve domains, health plans, funding lines, obligations, and claims"
   },
   "instructions": [
     {

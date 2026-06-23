@@ -2,7 +2,7 @@
 
 //! Explicit Quasar discriminators for the public protocol surface.
 //!
-//! These values are generated from `idl/omegax_protocol.json` so the Quasar
+//! These values are generated from `idl/nakama_coverage_protocol.json` so the Quasar
 //! migration preserves the existing Anchor instruction/account byte prefixes.
 
 pub mod instruction {

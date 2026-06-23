@@ -31,9 +31,9 @@ const DEFAULT_RPC_URL = "https://api.devnet.solana.com";
 const DEFAULT_FUNDER_KEYPAIR_PATH = resolve(homedir(), ".config/solana/id.json");
 const LOCAL_DEVNET_DIR = resolve(homedir(), ".config/solana/omegax-devnet");
 const ANCHOR_TOML_PATH = resolve(process.cwd(), "Anchor.toml");
-const PROGRAM_LIB_PATH = resolve(process.cwd(), "programs/omegax_protocol/src/lib.rs");
-const TARGET_PROGRAM_KEYPAIR_PATH = resolve(process.cwd(), "target/deploy/omegax_protocol-keypair.json");
-const PROGRAM_SO_PATH = resolve(process.cwd(), "target/deploy/omegax_protocol.so");
+const PROGRAM_LIB_PATH = resolve(process.cwd(), "programs/nakama_coverage_protocol/src/lib.rs");
+const TARGET_PROGRAM_KEYPAIR_PATH = resolve(process.cwd(), "target/deploy/nakama_coverage_protocol-keypair.json");
+const PROGRAM_SO_PATH = resolve(process.cwd(), "target/deploy/nakama_coverage_protocol.so");
 const CANONICAL_PROGRAM_ID = "6EXiDfGVbG7V1X2xaEALDZ7CtSuezkM8ZvXXFpk5WxQM";
 
 function nowStamp(): string {

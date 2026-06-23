@@ -1,10 +1,10 @@
 {
   "address": "FADqaRcJHERauzMo3BRzXZVY2qvrpPqg1ie2FGqACCVn",
   "metadata": {
-    "name": "omegax_private_claim_review",
+    "name": "nakama_private_claim_review",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "OmegaX MagicBlock private claim review session adjunct program"
+    "description": "Nakama MagicBlock private claim review session adjunct program"
   },
   "instructions": [
     {

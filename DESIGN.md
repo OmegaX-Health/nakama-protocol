@@ -1,6 +1,6 @@
-# OmegaX Protocol Design System
+# Nakama Protocol Design System
 
-This is the UI/UX source of truth for the public OmegaX Protocol repository and
+This is the UI/UX source of truth for the public Nakama Protocol repository and
 its Next.js protocol console in `frontend/`.
 
 The console is not a marketing site, not a consumer checkout, and not a generic
@@ -39,7 +39,7 @@ to sign, configure, or interpret protocol state.
 ## Brand Palette
 
 The existing palette is the protocol brand baseline. Do not replace it with a
-new palette unless the broader OmegaX brand direction explicitly changes.
+new palette unless the broader Nakama brand direction explicitly changes.
 
 - Protocol Canvas `#F8F9FA` - light app background.
 - Protocol Canvas Dark `#0A1525` - dark app background.
@@ -48,7 +48,7 @@ new palette unless the broader OmegaX brand direction explicitly changes.
 - Protocol Ink `#191C1D` - primary light-mode text.
 - Protocol Ink Dark `#F0F1F2` - primary dark-mode text.
 - Muted Slate `#495A63` / `#94A3B8` - secondary labels and descriptions.
-- OmegaX Cyan `#33C5F4` - the single brand accent for active states, focus,
+- Nakama Cyan `#33C5F4` - the single brand accent for active states, focus,
   network sync, and selected protocol context.
 - Reserve Green `#19B47A` - semantic success only.
 - Warning Amber `#F5A524` - semantic caution only.
@@ -179,7 +179,7 @@ Banned:
 
 Stitch MCP was checked during the May 2026 polish pass. The API key and service
 were healthy through `npx -y @_davideast/stitch-mcp@latest doctor`, but no
-OmegaX Protocol-specific Stitch project or screen was available through callable
+Nakama Protocol-specific Stitch project or screen was available through callable
 tools. The CLI project viewer exposed unrelated projects and then failed because
 raw terminal mode is unavailable in this Codex environment; direct tool schema
 calls also failed on a Stitch schema reference error. Treat Stitch as design
