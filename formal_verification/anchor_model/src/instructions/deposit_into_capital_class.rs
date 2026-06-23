@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{DepositIntoCapitalClass, DepositIntoCapitalClassArgs};
 
 impl<'info> DepositIntoCapitalClass<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "deposit_into_capital_class", hash = "9e47af0e79d68f26", spec_hash = "9df835a35e72e7b4")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "deposit_into_capital_class", hash = "9e47af0e79d68f26", spec_hash = "9df835a35e72e7b4")]
     #[inline(always)]
     pub fn handler(&mut self, args: DepositIntoCapitalClassArgs) -> Result<()> {
         guards::deposit_into_capital_class(self, args)?;

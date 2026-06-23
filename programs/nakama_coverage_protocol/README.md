@@ -104,7 +104,7 @@ npm run protocol:contract
 ## QEDGen onboarding
 
 The repo now has a brownfield QEDGen spec at
-[`../../omegax_protocol.qedspec`](../../omegax_protocol.qedspec), with
+[`../../nakama_coverage_protocol.qedspec`](../../nakama_coverage_protocol.qedspec), with
 project metadata in [`../../.qed/config.json`](../../.qed/config.json).
 
 Run the current spec sanity check from the repository root:

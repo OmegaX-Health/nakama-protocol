@@ -34,7 +34,7 @@ jobs:
             exit 0
           fi
           changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")"
-          if printf '%s\n' "$changed" | grep -Eq '^(\.qed/|formal_verification/|omegax_protocol\.qedspec|programs/omegax_protocol/src/|programs/omegax_protocol/Cargo\.toml|programs/omegax_private_claim_review/|idl/omegax_private_claim_review\.json|scripts/(run_qedgen|check_private_claim_review_qedgen)\.mjs|Anchor\.toml|Cargo\.(toml|lock)|package(-lock)?\.json|\.github/workflows/qedgen-verify\.yml)'; then
+          if printf '%s\n' "$changed" | grep -Eq '^(\.qed/|formal_verification/|nakama_coverage_protocol\.qedspec|programs/nakama_coverage_protocol/src/|programs/nakama_coverage_protocol/Cargo\.toml|programs/nakama_private_claim_review/|idl/nakama_private_claim_review\.json|scripts/(run_qedgen|check_private_claim_review_qedgen)\.mjs|Anchor\.toml|Cargo\.(toml|lock)|package(-lock)?\.json|\.github/workflows/qedgen-verify\.yml)'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else
             echo "relevant=false" >> "$GITHUB_OUTPUT"
@@ -122,10 +122,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # TODO(NAKAMA-REBRAND-03): rename omegax_protocol.qedspec -> nakama_coverage_protocol.qedspec
-          # and update the line-37 path filter (programs/omegax_protocol/**) when qedgen is regenerated.
           git diff --exit-code -- \
-            omegax_protocol.qedspec \
+            nakama_coverage_protocol.qedspec \
             formal_verification
 
       - name: Run generated backends

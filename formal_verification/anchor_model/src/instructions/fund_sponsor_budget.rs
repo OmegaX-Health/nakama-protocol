@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{FundSponsorBudget, FundSponsorBudgetArgs};
 
 impl<'info> FundSponsorBudget<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "fund_sponsor_budget", hash = "19172b59ab0e63bc", spec_hash = "bfc871b3e8e745b8")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "fund_sponsor_budget", hash = "19172b59ab0e63bc", spec_hash = "bfc871b3e8e745b8")]
     #[inline(always)]
     pub fn handler(&mut self, args: FundSponsorBudgetArgs) -> Result<()> {
         guards::fund_sponsor_budget(self, args)?;

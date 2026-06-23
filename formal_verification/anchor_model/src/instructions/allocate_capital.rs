@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{AllocateCapital, AllocateCapitalArgs};
 
 impl<'info> AllocateCapital<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "allocate_capital", hash = "20f45822038685a9", spec_hash = "d1512270dfd491fb")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "allocate_capital", hash = "20f45822038685a9", spec_hash = "d1512270dfd491fb")]
     #[inline(always)]
     pub fn handler(&mut self, args: AllocateCapitalArgs) -> Result<()> {
         guards::allocate_capital(self, args)?;

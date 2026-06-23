@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{CreateLiquidityPool, CreateLiquidityPoolArgs};
 
 impl<'info> CreateLiquidityPool<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "create_liquidity_pool", hash = "173dd366fb25f601", spec_hash = "7637fd5ca6f57773")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "create_liquidity_pool", hash = "173dd366fb25f601", spec_hash = "7637fd5ca6f57773")]
     #[inline(always)]
     pub fn handler(&mut self, args: CreateLiquidityPoolArgs) -> Result<()> {
         guards::create_liquidity_pool(self, args)?;

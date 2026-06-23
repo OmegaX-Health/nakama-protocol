@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{RotateProtocolGovernanceAuthority, RotateProtocolGovernanceAuthorityArgs};
 
 impl<'info> RotateProtocolGovernanceAuthority<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "rotate_protocol_governance_authority", hash = "95f05868c11cd4d6", spec_hash = "6c9910fcf48d71ef")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "rotate_protocol_governance_authority", hash = "95f05868c11cd4d6", spec_hash = "6c9910fcf48d71ef")]
     #[inline(always)]
     pub fn handler(&mut self, args: RotateProtocolGovernanceAuthorityArgs) -> Result<()> {
         guards::rotate_protocol_governance_authority(self, args)?;

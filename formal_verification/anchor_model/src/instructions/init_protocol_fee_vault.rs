@@ -10,7 +10,7 @@ use qedgen_macros::qed;
 use crate::{InitProtocolFeeVault, InitProtocolFeeVaultArgs};
 
 impl<'info> InitProtocolFeeVault<'info> {
-    #[qed(verified, spec = "../../omegax_protocol.qedspec", handler = "init_protocol_fee_vault", hash = "dd8fef841cb08f2c", spec_hash = "db1fd7befd892468")]
+    #[qed(verified, spec = "../../nakama_coverage_protocol.qedspec", handler = "init_protocol_fee_vault", hash = "dd8fef841cb08f2c", spec_hash = "db1fd7befd892468")]
     #[inline(always)]
     pub fn handler(&mut self, args: InitProtocolFeeVaultArgs) -> Result<()> {
         guards::init_protocol_fee_vault(self, args)?;
