@@ -43,6 +43,13 @@ summaries to Certora's remote service:
 npm run certora:solana:sanity
 ```
 
+Because the workspace contains more than one `cdylib` program, the sanity
+config sets `build_script` to `build_sanity_coverage.sh`, which scopes the
+Certora SBF build to `programs/nakama_coverage_protocol` (the only crate wired
+for Certora). Without it, `cargo certora-sbf` fails with "more than one cdylib
+package found". Keep the script's `--tools-version` / `--features` in sync with
+`cargo_tools_version` / `cargo_features` in the sanity config.
+
 The committed sanity config runs the CVLR rules compiled under the program's
 `certora` feature:
 
