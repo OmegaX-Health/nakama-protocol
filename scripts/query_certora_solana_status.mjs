@@ -67,7 +67,7 @@ function parseJobStatus(html) {
 }
 
 async function downloadReportBundle(job, status) {
-  const tmp = mkdtempSync(join(tmpdir(), 'omegax-certora-'));
+  const tmp = mkdtempSync(join(tmpdir(), 'nakama-certora-'));
   const bundle = join(tmp, 'outputs.tar.gz');
   const url = new URL(status.zipOutputUrl || `${job.domain}/v1/domain/jobs/${job.job_id}/f/outputs`);
   if (!url.searchParams.has('anonymousKey')) {
