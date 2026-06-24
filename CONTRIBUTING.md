@@ -69,8 +69,8 @@ If you are new to the repository, start with:
 - Keep changes focused and reviewable.
 - Add or update tests for behavior changes.
 - Keep the public release gate green: `npm run verify:public`.
-- PRs that touch `programs/`, `idl/`, `shared/`, `frontend/lib/protocol.ts`, `frontend/lib/protocol-action.ts`, or `e2e/` automatically trigger the [Localnet E2E workflow](.github/workflows/localnet-e2e.yml). It runs `npm run test:e2e:localnet` against a fresh local validator. First run is ~15-30 min (Solana CLI + Anchor install); subsequent runs reuse cached toolchains.
-- For local pre-flight on the same PRs, run `npm run test:e2e:localnet` before pushing — the public release gate doc lists the canonical sequence.
+- PRs that touch `programs/`, `idl/`, `shared/`, `frontend/lib/protocol.ts`, `frontend/lib/protocol-action.ts`, or `e2e/` need local Localnet E2E before pushing. Run `npm run anchor:build:checked` and then `OMEGAX_E2E_SKIP_BUILD=1 npm run test:e2e:localnet`.
+- Use the hosted [Localnet E2E workflow](.github/workflows/localnet-e2e.yml) manually for release candidates or when local reproduction is not enough. First hosted run is ~15-30 min (Solana CLI + Anchor install); subsequent runs reuse cached toolchains.
 - Do not commit secrets, private keys, local validator data, or deployment-only config.
 - Keep public documentation and templates aligned with code changes.
 - Preserve the visible in-app source/legal links for hosted frontend builds.

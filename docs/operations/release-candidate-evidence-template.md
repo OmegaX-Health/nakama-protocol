@@ -201,7 +201,7 @@ npm run protocol:contract:check
 #    latest run on the branch)
 gh pr checks 18 --json state,statusCheckRollup
 gh run list --workflow=ci.yml --branch <branch> --limit 1
-gh run list --workflow=localnet-e2e.yml --branch <branch> --limit 1
+gh run list --workflow=localnet-e2e.yml --branch <branch> --limit 1 # manual release-candidate gate
 
 # 4. branch protection
 gh api repos/OmegaX-Health/omegax-protocol/branches/main/protection

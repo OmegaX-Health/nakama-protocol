@@ -2,7 +2,34 @@ name: Public CI
 
 on:
   pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'output/**'
+      - 'screenshots/**'
+      - 'tmp/**'
+      - '.codex/**'
+      - '.claude/**'
+      - '.gstack/**'
   push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'output/**'
+      - 'screenshots/**'
+      - 'tmp/**'
+      - '.codex/**'
+      - '.claude/**'
+      - '.gstack/**'
+  workflow_dispatch:
+
+concurrency:
+  group: public-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -10,6 +37,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd

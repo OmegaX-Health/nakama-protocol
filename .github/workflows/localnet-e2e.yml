@@ -1,17 +1,14 @@
 name: Localnet E2E
 
-# Always reports a check. Runs the heavier `npm run test:e2e:localnet` suite
-# when a PR touches the on-chain program, the IDL, the shared protocol
-# contract, the frontend protocol/SDK surface, the e2e harness itself, or this
-# workflow file; otherwise exits successfully as a no-op so branch protection
-# can require this workflow safely.
+# Manual hosted gate for the heavier `npm run test:e2e:localnet` suite.
+# Run it locally before pushing protocol-sensitive changes. Use the hosted
+# workflow only for release candidates or when local reproduction is not enough.
 #
 # Expected first-run time: ~15-30 min (Solana CLI install + Anchor cargo
 # install + anchor build + localnet boot + suite). Subsequent runs reuse the
 # cached toolchains and target dir, dropping to ~8-12 min.
 
 on:
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -41,11 +38,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "relevant=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")"
+          base="${{ github.event.repository.default_branch }}"
+          git fetch --no-tags --depth=1 origin "${base}"
+          changed="$(git diff --name-only "origin/${base}" HEAD)"
           if printf '%s\n' "$changed" | grep -Eq '^(programs/|idl/|shared/|e2e/|frontend/lib/(protocol|protocol-action|protocol-action-toast|plan-launch-tx|network-config)\.ts|frontend/components/(plan-operator-drawer|capital-operator-drawer|governance-operator-drawer|pool-treasury-panel)\.tsx|scripts/(bootstrap_genesis_live_protocol|bootstrap_devnet_live_protocol|devnet_operator_drawer_sim)\.ts|scripts/run_localnet_e2e\.mjs|Anchor\.toml|Cargo\.(toml|lock)|\.github/workflows/localnet-e2e\.yml)'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else

@@ -1,7 +1,6 @@
 name: QEDGen Verify
 
 on:
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -29,11 +28,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "relevant=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          changed="$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")"
+          base="${{ github.event.repository.default_branch }}"
+          git fetch --no-tags --depth=1 origin "${base}"
+          changed="$(git diff --name-only "origin/${base}" HEAD)"
           if printf '%s\n' "$changed" | grep -Eq '^(\.qed/|formal_verification/|nakama_coverage_protocol\.qedspec|programs/nakama_coverage_protocol/src/|programs/nakama_coverage_protocol/Cargo\.toml|programs/nakama_private_claim_review/|idl/nakama_private_claim_review\.json|scripts/(run_qedgen|check_private_claim_review_qedgen)\.mjs|Anchor\.toml|Cargo\.(toml|lock)|package(-lock)?\.json|\.github/workflows/qedgen-verify\.yml)'; then
             echo "relevant=true" >> "$GITHUB_OUTPUT"
           else

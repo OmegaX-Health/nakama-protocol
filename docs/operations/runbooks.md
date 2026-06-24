@@ -49,7 +49,7 @@ npm run idl:freshness:check     # CI-mirrored guard: fails if any gated program 
 npm run protocol:contract:check # CI-mirrored guard: fails if generated downstreams drifted from the IDL
 ```
 
-CI runs `idl:freshness:check` and `protocol:contract:check` automatically (see `.github/workflows/ci.yml`). The Localnet E2E workflow (`.github/workflows/localnet-e2e.yml`) runs the full e2e matrix on protocol-touching PRs.
+CI runs `idl:freshness:check` and `protocol:contract:check` automatically (see `.github/workflows/ci.yml`). Run Localnet E2E locally before pushing protocol-touching changes. The hosted Localnet E2E workflow (`.github/workflows/localnet-e2e.yml`) is manual and reserved for release candidates or cases where local reproduction is not enough.
 
 ## Public-safety guardrails
 
